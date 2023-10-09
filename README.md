@@ -6,6 +6,7 @@ The ultimate repository that empowers developers to create NEXT13 applications. 
 
 - **Tailwind CSS**: Rapidly develop beautiful and responsive user interfaces.
 - **Firebase Database**: Easily manage user data and authentication.
+- **Redux State Management**: Efficiently manage your application's state with Redux.
 - **GSAP Animations**: Create captivating user experiences with animations.
 - **TypeScript Ready**: Develop with confidence using TypeScript.
 - **Compact and Organized**: Enjoy a well-structured folder hierarchy.
