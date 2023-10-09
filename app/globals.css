@@ -1,0 +1,107 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  scroll-behavior: smooth;
+  scroll-padding-top: 20rem;
+  /* cursor: none !important; */
+}
+
+:root {
+  --primary-black: #0d0d0d;
+  --secondary-white: #f0f0f0;
+  --accent-color: #536eff;
+}
+
+@font-face {
+  font-family: "PIXELADE";
+  src: url("/fonts/pixelade/PIXELADE.TTF") format("truetype"),
+    url("/fonts/pixelade/PIXELADE.woff2") format("woff2"),
+    url("/fonts/pixelade/PIXELADE.woff") format("woff");
+  font-weight: 300;
+  font-style: normal;
+}
+
+body {
+  min-height: 100vh;
+  font-family: "PIXELADE", sans-serif;
+  font-weight: 300;
+  scroll-behavior: smooth;
+  transition: scroll-behavior 1s ease-in-out;
+}
+
+/* Selections  */
+
+::-moz-selection {
+  /* Code for Firefox */
+  @apply text-primary-black bg-secondary-white;
+}
+
+::selection {
+  @apply text-primary-black bg-secondary-white;
+}
+
+/* scrollbar width */
+::-webkit-scrollbar {
+  @apply w-2;
+}
+
+/* scrollbar Track */
+::-webkit-scrollbar-track {
+  border-left: 1px solid var(--secondary-white);
+  border-right: 1px solid var(--secondary-white);
+  background: var(--primary-black);
+}
+
+/* scrollbar Handle */
+::-webkit-scrollbar-thumb {
+  @apply bg-secondary-white;
+}
+
+/* scrollbar Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-accent-color;
+}
+
+/* GSAP */
+.gsap-marker-scroller-start,
+.gsap-marker-scroller-end,
+.gsap-marker-start {
+  display: none !important;
+}
+
+/* body */
+
+.screen-height-with-header {
+  @apply h-[calc(100vh-45px)] md:h-[calc(100vh-57px)];
+}
+
+.hide-on-mobile {
+  @apply !hidden sm:!flex;
+}
+
+.center-in-screen {
+  @apply fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2;
+}
+
+.center-in-parent {
+  @apply absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2;
+}
+
+.loop_f_l_t_r {
+  position: relative;
+  animation: loop_f_l_t_r 10s infinite linear;
+}
+
+@keyframes loop_f_l_t_r {
+  from {
+    left: -1%;
+  }
+  to {
+    left: -210%;
+  }
+}

@@ -1,0 +1,15 @@
+
+.floating-word {
+  position: absolute;
+  cursor: grab;
+  @apply hover:text-accent-color pointer-events-none;
+}
+
+canvas {
+  @apply fixed top-0 left-0 z-[-1];
+}
+
+.Spline canvas {
+  @apply !z-[0] w-full h-full;
+}
+
