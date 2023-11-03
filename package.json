@@ -23,7 +23,7 @@
     "gsap": "^3.12.2",
     "gsap-trial": "^3.12.2",
     "matter-js": "^0.19.0",
-    "next": "13.1.2",
+    "next": "^14.0.1",
     "next-redux-wrapper": "^8.1.0",
     "next-themes": "^0.2.1",
     "node-fetch": "^3.3.0",
