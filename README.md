@@ -1,6 +1,6 @@
-# Ultimate-nextjs13-starter-repo
+# Ultimate-nextjs14-starter-repo
 
-The ultimate repository that empowers developers to create NEXT13 applications. This comprehensive toolkit combines Tailwind, Firebase as the DB, GSAP for stunning animations, TypeScript for type safety, and much more—all conveniently organized in a well-structured folder hierarchy. No more setting up everything from scratch; simply plug and play!
+The ultimate repository that empowers developers to create NEXT14 applications. This comprehensive toolkit combines Tailwind, Firebase as the DB, GSAP for stunning animations, TypeScript for type safety, and much more—all conveniently organized in a well-structured folder hierarchy. No more setting up everything from scratch; simply plug and play!
 
 ## Key Features
 
@@ -14,7 +14,7 @@ The ultimate repository that empowers developers to create NEXT13 applications. 
 
 ## Getting Started
 
-Clone this repository to kickstart your NEXT13 project. No more tedious setup; start building right away!
+Clone this repository to kickstart your NEXT14 project. No more tedious setup; start building right away!
 
 ## Contributions Welcome
 
