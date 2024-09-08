@@ -1,11 +1,13 @@
-import { configureStore } from '@reduxjs/toolkit';
-import { createWrapper } from 'next-redux-wrapper';
-import { useDispatch } from 'react-redux';
-import UIConfig from './UIConfig';
+import { configureStore } from "@reduxjs/toolkit";
+import { createWrapper } from "next-redux-wrapper";
+import { useDispatch } from "react-redux";
+import UIConfig from "./UIConfig";
+import AudioConfig from "./AudioConfig";
 
 const store = configureStore({
   reducer: {
     UIConfig: UIConfig,
+    AudioConfig: AudioConfig,
   },
 });
 

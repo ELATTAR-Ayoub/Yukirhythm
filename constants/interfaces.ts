@@ -1,17 +1,25 @@
-// project.ts
-
-export interface Project {
+export interface Owner {
+  name: string;
   ID: string;
-  title: string;
-  date?: string;
-  completed: boolean;
+  canonicalURL: string;
+  thumbnails?: string[];
 }
 
-export interface Offer {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  additionalInfo: string;
-  reasons: string[];
+export interface Audio {
+  ID: string;
+  URL: string;
+  title: string;
+  thumbnails: string[];
+  owner: Owner;
+  audioLengthSec?: number;
+  message?: string;
+}
+
+// Type for our state
+export interface AudioConfigType {
+  audioState: Audio[];
+  currentAudio: number;
+  audioLoading: boolean;
+  audioPlaying: boolean;
+  audioVolume: number;
 }

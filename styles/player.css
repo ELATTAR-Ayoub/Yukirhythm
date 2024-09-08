@@ -1,0 +1,138 @@
+.AudioSeekBar input[type="range"] {
+  height: 5px;
+  -webkit-appearance: none;
+  width: 42px;
+  background: transparent;
+  /* overflow: hidden; */
+}
+
+.AudioSeekBar {
+  @apply w-full;
+}
+
+.time_slider:hover .AudioSeekBar input[type="range"] {
+  @apply transition-all duration-500 w-full;
+}
+
+.AudioSeekBar input[type="range"]:focus {
+  outline: none;
+}
+
+/* track */
+.AudioSeekBar input[type="range"]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  background: var(--dark-shade-50);
+  border-radius: 1px;
+  border-radius: 999px;
+}
+.AudioSeekBar input[type="range"]::-moz-range-track {
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  background: var(--dark-shade-50);
+  border-radius: 1px;
+  border-radius: 999px;
+}
+.AudioSeekBar input[type="range"]::-ms-track {
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  border-radius: 999px;
+}
+
+/* thumnb */
+.AudioSeekBar input[type="range"]::-webkit-slider-thumb {
+  height: 8px;
+  width: 8px;
+  border-radius: 999px;
+  background: var(--primary-black);
+  cursor: pointer;
+  -webkit-appearance: none;
+  margin-top: -1.7px;
+  opacity: 0;
+  @apply transition-all;
+}
+.AudioSeekBar input[type="range"]::-moz-range-thumb {
+  height: 8px;
+  width: 8px;
+  border-radius: 999px;
+  background: var(--primary-black);
+  cursor: pointer;
+  -webkit-appearance: none;
+  margin-top: -1.7px;
+  opacity: 0;
+  @apply transition-all;
+}
+.AudioSeekBar input[type="range"]::-ms-thumb {
+  height: 8px;
+  width: 8px;
+  border-radius: 999px;
+  background: var(--primary-black);
+  cursor: pointer;
+  -webkit-appearance: none;
+  margin-top: -1.7px;
+  opacity: 0;
+  @apply transition-all;
+}
+
+.time_slider:hover .AudioSeekBar input[type="range"]::-webkit-slider-thumb {
+  @apply opacity-100;
+}
+
+.time_slider:hover .AudioSeekBar input[type="range"]::-ms-thumb {
+  @apply opacity-100;
+}
+
+.time_slider:hover .AudioSeekBar input[type="range"]::-moz-range-thumb {
+  @apply opacity-100;
+}
+
+/* progress-value */
+
+.AudioSeekBar input[type="range"]::-webkit-progress-value {
+  background-color: var(--primary-black);
+}
+.AudioSeekBar input[type="range"]::-moz-range-progress {
+  background-color: var(--primary-black);
+}
+.AudioSeekBar input[type="range"]::-ms-range-progress {
+  background-color: var(--primary-black);
+}
+
+/* Disc */
+
+.Disc {
+  @apply transition-all duration-700 absolute left-1/2 -translate-x-1/2 -top-44  w-full aspect-square rounded-full bg-primary-black z-10 overflow-hidden;
+
+  box-shadow: 0px 1px 16.8px 0px rgba(4, 5, 6, 0.4),
+    0px 0px 75px 0px rgba(4, 5, 6, 0.5),
+    0px 5px 12.8px 0px rgba(182, 184, 195, 0.25) inset;
+}
+
+.Disc:hover {
+  @apply left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 h-full rounded-none overflow-hidden;
+}
+
+.Disc:hover .disc_info {
+  @apply opacity-100;
+}
+
+.Disc::after {
+  content: "";
+  @apply absolute top-0 left-0 h-full w-full opacity-0 transition-all duration-300 bg-primary-black z-[-1];
+}
+
+.Disc:hover::after {
+  @apply opacity-30;
+}
+
+.Disc:hover .Middle_Disc {
+  @apply opacity-0;
+}
+
+.Disc:hover img {
+  animation-play-state: paused;
+  scale: 1.15;
+}

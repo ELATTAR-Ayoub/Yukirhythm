@@ -55,7 +55,7 @@ const Menu = () => {
     <aside
       className={`fixed left-4 bottom-4 gap-24 h-auto w-20 sideBar ${
         styles.flexCenter
-      } flex-col bg-secondary-white text-primary-black ${
+      } flex-col bg-primary-white text-primary-black ${
         menuToggle ? " " : "-translate-x-[150%]"
       } overflow-hidden z-[25] transition-all duration-500`}
     >
@@ -70,7 +70,7 @@ const Menu = () => {
               scrollToSection(link.name);
             }}
             data-value={link.name}
-            className={` ${styles.flexCenter} p-1 py-0 no-underline text-base sm:text-lg lg:text-base uppercase hover:text-secondary-white hover:bg-primary-black transition-all duration-300`}
+            className={` ${styles.flexCenter} p-1 py-0 no-underline text-base sm:text-lg lg:text-base uppercase hover:text-primary-white hover:bg-primary-black transition-all duration-300`}
           >
             {link.name}
           </Link>

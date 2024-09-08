@@ -33,20 +33,18 @@ export default function RootLayout({
     <html lang="en">
       <head />
       <body
-        className={` ${styles.flexStart} flex-col relative bg-primary-black h-screen text-secondary-white overflow-x-hidden`}
+        className={` ${styles.flexStart} flex-col relative bg-[#BFBFBF] h-screen text-primary-black overflow-x-hidden`}
       >
         <Provider store={store_0001}>
           <AuthContextProvider>
             <ThemeProvider attribute="class">
               {/* <CursorFollower /> */}
               <Header />
-              <main
-                className={` relative w-full h-auto pt-[45px] md:pt-[56px] `}
-              >
+              <main className={` relative w-full h-auto `}>
                 <SideBar />
                 {children}
               </main>
-              <Footer />
+              {/* <Footer /> */}
             </ThemeProvider>
           </AuthContextProvider>
         </Provider>
