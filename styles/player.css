@@ -132,7 +132,6 @@
   @apply opacity-0;
 }
 
-.Disc:hover img {
-  animation-play-state: paused;
-  scale: 1.15;
-}
+/* .Disc:hover .Disk_img {
+  transform: rotate(0deg);
+} */

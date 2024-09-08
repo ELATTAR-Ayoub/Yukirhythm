@@ -92,7 +92,7 @@ const Hero = () => {
         <div
           className={` ${
             audioConfig.length === 0 && " pointer-events-none"
-          } Disc `}
+          } Disc ${styles.flexCenter}`}
         >
           <div
             className={`Middle_Disc transition-all duration-300 w-20 aspect-square center-in-parent disc_shadow rounded-full `}
@@ -107,13 +107,22 @@ const Hero = () => {
               alt={"disc"}
             ></Image>
           </div>
-          <img
-            className={`${
-              audioPlaying ? "discRotation" : ""
-            } h-full object-cover relative z-[-1] transition-all pointer-events-none`}
-            src={audioConfig[current] ? audioConfig[current].thumbnails[0] : ""}
-            alt="audio_thumbnails"
-          />
+
+          <div
+            className={` ${
+              audioPlaying
+                ? "discRotation"
+                : " discRotation animation-state-pause"
+            } Disk_img transition-all duration-300 h-full aspect-video z-[-1] pointer-events-none`}
+          >
+            <img
+              className={` w-full h-full object-cover relative `}
+              src={
+                audioConfig[current] ? audioConfig[current].thumbnails[0] : ""
+              }
+              alt="audio_thumbnails"
+            />
+          </div>
 
           <div
             className={`absolute px-12 left-1/2 -translate-x-1/2 bottom-8 disc_info opacity-0 pointer-events-none w-full ${styles.flexCenter} flex-col gap-4 transition-all duration-300 `}

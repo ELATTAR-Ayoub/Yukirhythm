@@ -165,6 +165,10 @@ body {
     0px 5px 12.8px 0px rgba(182, 184, 195, 0.5) inset;
 }
 
+.animation-state-pause {
+  animation-play-state: paused;
+}
+
 /* Chadcn */
 
 @layer base {
