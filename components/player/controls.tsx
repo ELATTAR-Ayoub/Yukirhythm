@@ -184,7 +184,9 @@ const Controls = ({ videoId }: { videoId: string }) => {
 
       {/* time and slider */}
       <div
-        className={`${styles.flexCenter} flex-col w-full gap-1 time_slider pt-4`}
+        className={` ${audioConfig.length === 0 && " pointer-events-none"} ${
+          styles.flexCenter
+        } flex-col w-full gap-1 time_slider pt-4`}
       >
         <div className={`AudioSeekBar ${styles.flexCenter}`}>
           <input

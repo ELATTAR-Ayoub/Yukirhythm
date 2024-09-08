@@ -71,9 +71,6 @@ const Hero = () => {
           dispatch(ADD_ITEM(data));
           console.log(audioConfig);
           setLoading(false);
-          if (audioConfig.length < 1) {
-            dispatch(SET_PLAYING(true));
-          }
         })
         .catch((error) => {
           console.log(error);

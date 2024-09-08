@@ -1,24 +1,21 @@
 # Ultimate-nextjs14-starter-repo
 
-The ultimate repository that empowers developers to create NEXT14 applications. This comprehensive toolkit combines Tailwind, Firebase as the DB, GSAP for stunning animations, TypeScript for type safety, and much more—all conveniently organized in a well-structured folder hierarchy. No more setting up everything from scratch; simply plug and play!
+TC
 
 ## Key Features
 
-- **Tailwind CSS**: Rapidly develop beautiful and responsive user interfaces.
-- **Firebase Database**: Easily manage user data and authentication.
-- **Redux State Management**: Efficiently manage your application's state with Redux.
+- **TC**: TC
+- **TC**: TC
+- **TC**: TC
 - **GSAP Animations**: Create captivating user experiences with animations.
-- **TypeScript Ready**: Develop with confidence using TypeScript.
-- **Compact and Organized**: Enjoy a well-structured folder hierarchy.
-- **Customizable Themes**: Implement dark and light modes for a great user experience.
 
-## Getting Started
+## TC
 
-Clone this repository to kickstart your NEXT14 project. No more tedious setup; start building right away!
+TC
 
-## Contributions Welcome
+## TC
 
-We encourage contributions from the open-source community. Help us improve and expand this starter repository by submitting issues, feature requests, and pull requests!
+TC
 
 ## License
 
