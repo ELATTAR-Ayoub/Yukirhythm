@@ -22,7 +22,6 @@ import {
 } from "firebase/storage";
 
 // Interfaces
-import { Project } from "@/constants/interfaces";
 
 // route
 import { useRouter, usePathname } from "next/navigation";
