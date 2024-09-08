@@ -119,8 +119,10 @@ const Controls = ({ videoId }: { videoId: string }) => {
                   fs: 0,
                   disablekb: 1,
                   iv_load_policy: 3,
+                  autohide: 1,
                   loop: 1,
                   mute: 0,
+                  progressInterval: 1000,
                 },
               },
             }}

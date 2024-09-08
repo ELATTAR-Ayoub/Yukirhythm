@@ -106,16 +106,6 @@ export const footerLinks = [
 
 export const headerLinks = [
   {
-    name: "Player",
-    url: "/Player",
-    title: "Player",
-  },
-  {
-    name: "Collections",
-    url: "/collections",
-    title: "Collections",
-  },
-  {
     name: "Home",
     url: "/",
     title: "Home",

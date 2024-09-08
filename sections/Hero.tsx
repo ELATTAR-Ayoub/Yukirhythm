@@ -83,7 +83,7 @@ const Hero = () => {
 
   return (
     <section
-      className={` relative ${styles.flexCenter} flex-col w-full h-screen overflow-hidden `}
+      className={` relative ${styles.flexCenter} flex-col w-full h-screen overflow-hidden px-4 `}
     >
       <section
         className={`relative player_shadow bg-dark-shade-85 ${styles.flexCenter} pt-52 pb-6 px-6 max-w-[350px] w-full rounded-[60px] overflow-hidden  `}

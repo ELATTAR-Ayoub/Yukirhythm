@@ -40,7 +40,7 @@ const Header = () => {
         <li
           className={` ${styles.flexStart} gap-6 ${styles.small} font-medium  `}
         >
-          {headerLinks.slice(0, 2).map((link, index) => (
+          {headerLinks.slice(0, 1).map((link, index) => (
             <Link key={index} href={link.url} data-value={link.name}>
               {link.name}
             </Link>
@@ -60,7 +60,7 @@ const Header = () => {
         <li
           className={` ${styles.flexStart} gap-6 ${styles.small} font-medium `}
         >
-          {headerLinks.slice(2, 4).map((link, index) => (
+          {headerLinks.slice(1, 2).map((link, index) => (
             <Link key={index} href={link.url} data-value={link.name}>
               {link.name}
             </Link>
