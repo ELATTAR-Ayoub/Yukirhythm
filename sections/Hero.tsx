@@ -18,6 +18,7 @@ import SolidSvg from "@/components/SolidSVG";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Controls from "@/components/player/controls";
+import AudioList from "@/components/player/AudioList";
 
 // redux
 import {
@@ -85,8 +86,9 @@ const Hero = () => {
     <section
       className={` relative ${styles.flexCenter} flex-col w-full h-screen overflow-hidden px-4 `}
     >
+      <AudioList />
       <section
-        className={`relative player_shadow bg-dark-shade-85 ${styles.flexCenter} pt-52 pb-6 px-6 max-w-[350px] w-full rounded-[60px] overflow-hidden  `}
+        className={`relative player_shadow bg-dark-shade-85 ${styles.flexCenter} pt-44 pb-4 px-4 max-w-[300px] w-full rounded-[60px] overflow-hidden  `}
       >
         {/* audio disc rotating */}
         <div
@@ -95,7 +97,7 @@ const Hero = () => {
           } Disc ${styles.flexCenter}`}
         >
           <div
-            className={`Middle_Disc transition-all duration-300 w-20 aspect-square center-in-parent disc_shadow rounded-full `}
+            className={`Middle_Disc transition-all duration-700 w-20 aspect-square center-in-parent disc_shadow rounded-full `}
           >
             <Image
               className={`object-contain w-full h-full ${
@@ -113,7 +115,7 @@ const Hero = () => {
               audioPlaying
                 ? "discRotation"
                 : " discRotation animation-state-pause"
-            } Disk_img transition-all duration-300 h-full aspect-video z-[-1] pointer-events-none`}
+            } Disk_img transition-all duration-700 h-full aspect-video z-[-1] pointer-events-none`}
           >
             <img
               className={` w-full h-full object-cover relative `}
@@ -125,7 +127,7 @@ const Hero = () => {
           </div>
 
           <div
-            className={`absolute px-12 left-1/2 -translate-x-1/2 bottom-8 disc_info opacity-0 pointer-events-none w-full ${styles.flexCenter} flex-col gap-4 transition-all duration-300 `}
+            className={`absolute px-12 left-1/2 -translate-x-1/2 bottom-8 disc_info opacity-0 pointer-events-none w-full ${styles.flexCenter} flex-col gap-3 transition-all duration-300 `}
           >
             {/* sound waves */}
 
@@ -142,12 +144,14 @@ const Hero = () => {
               <Link
                 href={audioConfig[current]?.owner?.canonicalURL || ""}
                 target="_"
-                className={` ${styles.Xsmall} text-primary-white  `}
+                title={audioConfig[current]?.owner?.name || "Welcome!"}
+                className={` ${styles.Xsmall} text-primary-white ellipsis-on-1line `}
               >
                 {audioConfig[current]?.owner?.name || "Welcome!"}
               </Link>
               <p
-                className={` ${styles.Xsmall} font-semibold text-primary-white cursor-default`}
+                title={audioConfig[current]?.title || "Search below"}
+                className={` ${styles.Xsmall} font-semibold text-primary-white cursor-default ellipsis-on-2line`}
               >
                 {audioConfig[current]?.title || "Search below"}
               </p>
@@ -156,7 +160,7 @@ const Hero = () => {
         </div>
 
         {/* main contorls */}
-        <div className={`relative w-full ${styles.flexCenter} flex-col gap-4 `}>
+        <div className={`relative w-full ${styles.flexCenter} flex-col gap-3 `}>
           {/* sound waves */}
 
           <div className={` soundwaves ${audioPlaying && "active"}`}>
@@ -172,11 +176,15 @@ const Hero = () => {
             <Link
               href={audioConfig[current]?.owner?.canonicalURL || ""}
               target="_"
-              className={` ${styles.Xsmall} text-dark-shade-15  `}
+              title={audioConfig[current]?.owner?.name || "Welcome!"}
+              className={` ${styles.Xsmall} text-dark-shade-15 ellipsis-on-1line `}
             >
               {audioConfig[current]?.owner?.name || "Welcome!"}
             </Link>
-            <p className={` ${styles.normal} font-semibold `}>
+            <p
+              title={audioConfig[current]?.title || "Search below"}
+              className={` ${styles.normal} font-semibold ellipsis-on-2line`}
+            >
               {audioConfig[current]?.title || "Search below"}
             </p>
           </div>
@@ -199,14 +207,14 @@ const Hero = () => {
                 setInputValue(e.target.value);
               }}
               value={inputValue}
-              className={` w-0 p-0 border-0 group-hover:w-full group-hover:px-3 group-hover:border group-hover:py-1 duration-500 `}
+              className={` h-8 w-0 p-0 border-0 group-hover:w-full group-hover:px-3 group-hover:border group-hover:py-1 duration-500 `}
               type="text"
               placeholder="Search"
             />
             <Button className=" flex-none" size="icon">
               <span className={` icon_clothes`}>
                 <Image
-                  className={`object-contain w-4 aspect-square ${
+                  className={`object-contain w-3 aspect-square ${
                     loading ? " animate-spin" : ""
                   } `}
                   width={24}

@@ -25,6 +25,7 @@ const styles = {
   normal: " text-sm md:text-base",
   small: "text-[0.55rem] md:text-sm ",
   Xsmall: "text-[0.6rem] md:text-[0.7rem] ",
+  XXsmall: "text-[0.5rem] md:text-[0.6rem] ",
 };
 
 export default styles;

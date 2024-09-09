@@ -101,7 +101,7 @@ const Controls = ({ videoId }: { videoId: string }) => {
   return (
     <div className={`relative w-full ${styles.flexCenter} flex-col gap-0`}>
       {/* main buttons */}
-      <div className={`${styles.flexStart} gap-4`}>
+      <div className={`${styles.flexStart} gap-3`}>
         {/* player */}
         <div className=" hidden">
           <ReactPlayer
@@ -146,7 +146,7 @@ const Controls = ({ videoId }: { videoId: string }) => {
         >
           <span className={` icon_clothes`}>
             <Image
-              className={`object-contain w-4 aspect-square `}
+              className={`object-contain w-3 aspect-square `}
               width={24}
               height={24}
               src={"/svgs/previous.svg"}
@@ -155,10 +155,14 @@ const Controls = ({ videoId }: { videoId: string }) => {
           </span>
         </Button>
 
-        <Button onClick={handlePlayPause} size="icon">
+        <Button
+          onClick={handlePlayPause}
+          size="icon"
+          disabled={audioConfig.length == 0}
+        >
           <span className={` icon_clothes`}>
             <Image
-              className={`object-contain w-4 aspect-square `}
+              className={`object-contain w-3 aspect-square `}
               width={24}
               height={24}
               src={`/svgs/${playing ? "pause.svg" : "play.svg"}`}
@@ -169,12 +173,14 @@ const Controls = ({ videoId }: { videoId: string }) => {
 
         <Button
           onClick={() => skipAudio(1)}
-          disabled={audioConfig.length - 1 === current}
+          disabled={
+            audioConfig.length - 1 === current || audioConfig.length == 0
+          }
           size="icon"
         >
           <span className={` icon_clothes`}>
             <Image
-              className={`object-contain w-4 aspect-square `}
+              className={`object-contain w-3 aspect-square `}
               width={24}
               height={24}
               src={"/svgs/next.svg"}
@@ -203,7 +209,7 @@ const Controls = ({ videoId }: { videoId: string }) => {
           />
         </div>
 
-        <p className={` ${styles.normal}  font-semibold cursor-default`}>
+        <p className={` ${styles.small}  font-semibold cursor-default`}>
           {`${Math.floor(currentTime / 60)
             .toString()
             .padStart(1, "0")}:${Math.floor(currentTime % 60)

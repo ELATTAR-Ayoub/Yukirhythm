@@ -41,31 +41,23 @@ body {
 
 /* scrollbar width */
 ::-webkit-scrollbar {
-  @apply w-2;
+  @apply w-0;
 }
 
 /* scrollbar Track */
 ::-webkit-scrollbar-track {
-  border-left: 1px solid var(--primary-white);
-  border-right: 1px solid var(--primary-white);
-  background: var(--primary-black);
+  background: var(--dark-shade-50);
+  @apply rounded-full;
 }
 
 /* scrollbar Handle */
 ::-webkit-scrollbar-thumb {
-  @apply bg-primary-white;
+  @apply bg-dark-shade-15;
 }
 
 /* scrollbar Handle on hover */
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-accent-color;
-}
-
-/* GSAP */
-.gsap-marker-scroller-start,
-.gsap-marker-scroller-end,
-.gsap-marker-start {
-  display: none !important;
+  @apply bg-primary-black;
 }
 
 /* body */
@@ -84,6 +76,22 @@ body {
 
 .center-in-parent {
   @apply absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2;
+}
+
+.ellipsis-on-1line {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+}
+
+.ellipsis-on-2line {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 /* main */
@@ -158,6 +166,13 @@ body {
   box-shadow: 0px 1px 16.8px 0px rgba(4, 5, 6, 0.4),
     0px 0px 75px 0px rgba(4, 5, 6, 0.5),
     0px 5px 12.8px 0px rgba(182, 184, 195, 0.25) inset;
+}
+
+.AudioCard {
+  background: var(--Black-1, #262626);
+  box-shadow: 0px 0px 6.2px 0px rgba(4, 5, 6, 0.3),
+    0px -4px 5.8px 0px rgba(158, 159, 172, 0.25) inset,
+    0px 3px 6.3px 0px rgba(182, 184, 195, 0.3) inset;
 }
 
 .player_shadow {
