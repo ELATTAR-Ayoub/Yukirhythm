@@ -29,9 +29,20 @@ const Header = () => {
       className={` fixed top-0 ${styles.flexBetween} flex-col z-30 w-full border-y border-primary-black `}
     >
       <div
-        className={`relative ${styles.flexCenter}  w-full py-2 text-primary-white bg-primary-black border-b border-primary-black`}
+        className={`relative ${styles.flexCenter} w-full py-2 text-primary-white bg-primary-black border-b border-primary-black ${styles.Xsmall} text-center`}
       >
-        <p className={` ${styles.Xsmall} text-center `}> Yo</p>
+        <div className={` w-full border-r border-primary-white min-w-min `}>
+          Engineered with love by{" "}
+          <Link target="_" href={"https://github.com/ELATTAR-Ayoub"}>
+            {" "}
+            Elattar Ayoub
+          </Link>{" "}
+          &lt;3
+        </div>
+
+        <div className={` w-full min-w-min`}>
+          © {new Date().getFullYear()} Yukirhythm | All Rights Reserved.
+        </div>
       </div>
 
       <nav
