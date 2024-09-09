@@ -29,20 +29,14 @@ const Header = () => {
       className={` fixed top-0 ${styles.flexBetween} flex-col z-30 w-full border-y border-primary-black `}
     >
       <div
-        className={`relative ${styles.flexCenter} w-full py-2 text-primary-white bg-primary-black border-b border-primary-black ${styles.Xsmall} text-center`}
+        className={` w-full bg-primary-black ${styles.Xsmall} text-center text-primary-white py-1`}
       >
-        <div className={` w-full border-r border-primary-white min-w-min `}>
-          Engineered with love by{" "}
-          <Link target="_" href={"https://github.com/ELATTAR-Ayoub"}>
-            {" "}
-            Elattar Ayoub
-          </Link>{" "}
-          &lt;3
-        </div>
-
-        <div className={` w-full min-w-min`}>
-          © {new Date().getFullYear()} Yukirhythm.
-        </div>
+        Engineered with love by{" "}
+        <Link target="_" href={"https://github.com/ELATTAR-Ayoub"}>
+          {" "}
+          Elattar Ayoub
+        </Link>{" "}
+        &lt;3
       </div>
 
       <nav
@@ -78,6 +72,12 @@ const Header = () => {
           ))}
         </li>
       </nav>
+
+      {/* <div
+        className={` w-full bg-primary-black ${styles.Xsmall} text-center text-primary-white py-1`}
+      >
+        © {new Date().getFullYear()} Yukirhythm.
+      </div> */}
     </header>
   );
 };
