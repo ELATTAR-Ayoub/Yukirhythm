@@ -41,7 +41,7 @@ const Header = () => {
         </div>
 
         <div className={` w-full min-w-min`}>
-          © {new Date().getFullYear()} Yukirhythm | All Rights Reserved.
+          © {new Date().getFullYear()} Yukirhythm.
         </div>
       </div>
 
