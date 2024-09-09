@@ -80,11 +80,11 @@ const Controls = () => {
 
   return (
     <div
-      className={`fixed w-full sm:w-auto min-w-[300px] xl:min-w-min min-h-[325px] max-h-[400px] xl:right-[${
-        ListOpen ? "0px" : "-26rem"
-      }] right-1/2 xl:-translate-x-0 translate-x-1/2  bottom-[${
-        ListOpen ? "0px" : "-16rem"
-      }] top-auto xl:top-1/2 xl:-translate-y-1/2 bg-dark-shade-85 
+      className={`fixed w-full sm:w-auto min-w-[300px] xl:min-w-min min-h-[325px] max-h-[400px] ${
+        ListOpen ? "xl:right-0" : "xl:-right-[26rem]"
+      } right-1/2 xl:-translate-x-0 translate-x-1/2 ${
+        ListOpen ? "bottom-0" : "-bottom-64"
+      } top-auto xl:top-1/2 xl:-translate-y-1/2 bg-dark-shade-85 
         flex justify-start items-center flex-col xl:flex-row gap-3 px-4 py-6 AudioList z-20 player_shadow transition-all duration-700`}
     >
       {/* Controles */}

@@ -86,7 +86,8 @@ const Hero = () => {
     <section
       className={` relative ${styles.flexCenter} flex-col w-full h-screen overflow-hidden px-4 `}
     >
-      <AudioList />
+      {audioConfig.length > 0 && <AudioList />}
+
       <section
         className={`relative player_shadow bg-dark-shade-85 ${styles.flexCenter} pt-44 pb-4 px-4 max-w-[300px] w-full rounded-[60px] overflow-hidden  `}
       >
