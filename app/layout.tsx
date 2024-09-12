@@ -33,7 +33,7 @@ export default function RootLayout({
     <html lang="en">
       <head />
       <body
-        className={` ${styles.flexStart} flex-col relative bg-[#BFBFBF] h-screen text-primary-black overflow-x-hidden`}
+        className={` ${styles.flexStart} flex-col relative bg-background h-screen overflow-x-hidden`}
       >
         <Provider store={store_0001}>
           <AuthContextProvider>

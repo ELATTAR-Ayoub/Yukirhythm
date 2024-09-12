@@ -13,12 +13,16 @@ import "@/styles/player.css";
 // constants
 import { Owner, Audio } from "@/constants/interfaces";
 
+// Icons
+import { MagnifyingGlassIcon, UpdateIcon } from "@radix-ui/react-icons";
+
 // components
 import SolidSvg from "@/components/SolidSVG";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Controls from "@/components/player/controls";
 import AudioList from "@/components/player/AudioList";
+import { ListDrawer } from "@/components/player/ListDrawer";
 
 // redux
 import {
@@ -59,18 +63,14 @@ const Hero = () => {
     if (inputValue) {
       fetch("/api/searchEngine", {
         method: "POST",
-        body: JSON.stringify({ string: inputValue }),
+        body: JSON.stringify({ string: `${inputValue} music or podcast` }),
         headers: {
           "Content-Type": "application/json",
         },
       })
         .then((res) => res.json())
         .then((data: Audio) => {
-          console.log("data =>>>>>");
-          console.log(data);
-          console.log(data.URL);
           dispatch(ADD_ITEM(data));
-          console.log(audioConfig);
           setLoading(false);
         })
         .catch((error) => {
@@ -84,12 +84,10 @@ const Hero = () => {
 
   return (
     <section
-      className={` relative ${styles.flexCenter} flex-col w-full h-screen overflow-hidden px-4 `}
+      className={` relative flex sm:justify-center justify-end items-center flex-col w-full h-screen overflow-hidden p-4 `}
     >
-      {audioConfig.length > 0 && <AudioList />}
-
       <section
-        className={`relative player_shadow bg-dark-shade-85 ${styles.flexCenter} pt-44 pb-4 px-4 max-w-[300px] w-full rounded-[60px] overflow-hidden  `}
+        className={`relative player_shadow bg-card ${styles.flexEnd} sm:pt-44 pt-4 pb-4 px-4 max-w-[300px] w-full h-auto sm:rounded-[60px] rounded-[42px] overflow-hidden `}
       >
         {/* audio disc rotating */}
         <div
@@ -98,7 +96,7 @@ const Hero = () => {
           } Disc ${styles.flexCenter}`}
         >
           <div
-            className={`Middle_Disc transition-all duration-700 w-20 aspect-square center-in-parent disc_shadow rounded-full `}
+            className={`Middle_Disc transition-all duration-700 sm:w-16 w-20 aspect-square center-in-parent disc_shadow rounded-full `}
           >
             <Image
               className={`object-contain w-full h-full ${
@@ -132,7 +130,7 @@ const Hero = () => {
           >
             {/* sound waves */}
 
-            <div className={` soundwaves white ${audioPlaying && "active"}`}>
+            <div className={` soundwaves ${audioPlaying && "active"}`}>
               <div></div>
               <div></div>
               <div></div>
@@ -146,13 +144,13 @@ const Hero = () => {
                 href={audioConfig[current]?.owner?.canonicalURL || ""}
                 target="_"
                 title={audioConfig[current]?.owner?.name || "Welcome!"}
-                className={` ${styles.Xsmall} text-primary-white ellipsis-on-1line `}
+                className={` ${styles.Xsmall} text-primary ellipsis-on-1line `}
               >
                 {audioConfig[current]?.owner?.name || "Welcome!"}
               </Link>
               <p
                 title={audioConfig[current]?.title || "Search below"}
-                className={` ${styles.Xsmall} font-semibold text-primary-white cursor-default ellipsis-on-2line`}
+                className={` ${styles.Xsmall} font-semibold text-primary cursor-default ellipsis-on-2line`}
               >
                 {audioConfig[current]?.title || "Search below"}
               </p>
@@ -161,7 +159,9 @@ const Hero = () => {
         </div>
 
         {/* main contorls */}
-        <div className={`relative w-full ${styles.flexCenter} flex-col gap-3 `}>
+        <div
+          className={`relative w-full ${styles.flexEndCenter} flex-col gap-3 `}
+        >
           {/* sound waves */}
 
           <div className={` soundwaves ${audioPlaying && "active"}`}>
@@ -178,7 +178,7 @@ const Hero = () => {
               href={audioConfig[current]?.owner?.canonicalURL || ""}
               target="_"
               title={audioConfig[current]?.owner?.name || "Welcome!"}
-              className={` ${styles.Xsmall} text-dark-shade-15 ellipsis-on-1line `}
+              className={` ${styles.Xsmall} text-primary ellipsis-on-1line `}
             >
               {audioConfig[current]?.owner?.name || "Welcome!"}
             </Link>
@@ -201,28 +201,25 @@ const Hero = () => {
           {/* search bar */}
           <form
             onSubmit={searchAudio}
-            className={`${styles.flexCenter} group gap-1 w-full max-w-[250px]`}
+            className={`${styles.flexCenter} SearchAudioForm gap-1 w-full max-w-[250px]`}
           >
             <Input
               onChange={(e) => {
                 setInputValue(e.target.value);
               }}
               value={inputValue}
-              className={` h-8 w-0 p-0 border-0 group-hover:w-full group-hover:px-3 group-hover:border group-hover:py-1 duration-500 `}
+              className={` h-8 w-0 p-0 border-0 delay-200 duration-500 `}
               type="text"
+              required
               placeholder="Search"
             />
             <Button className=" flex-none" size="icon">
               <span className={` icon_clothes`}>
-                <Image
-                  className={`object-contain w-3 aspect-square ${
-                    loading ? " animate-spin" : ""
-                  } `}
-                  width={24}
-                  height={24}
-                  src={`/svgs/${loading ? "load.svg" : "search.svg"}`}
-                  alt={"disc"}
-                ></Image>
+                {loading ? (
+                  <UpdateIcon className="h-3 w-3 animate-spin" />
+                ) : (
+                  <MagnifyingGlassIcon className="h-3 w-3" />
+                )}
               </span>
             </Button>
           </form>

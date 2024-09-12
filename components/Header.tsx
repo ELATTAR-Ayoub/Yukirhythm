@@ -26,10 +26,10 @@ const Header = () => {
 
   return (
     <header
-      className={` fixed top-0 ${styles.flexBetween} flex-col z-30 w-full border-y border-primary-black `}
+      className={` fixed top-0 ${styles.flexBetween} flex-col z-30 w-full border-b border-primary bg-primary text-secondary`}
     >
       <div
-        className={` w-full bg-primary-black ${styles.Xsmall} text-center text-primary-white py-1`}
+        className={` w-full ${styles.Xsmall} text-center bg-card text-card-foreground py-1`}
       >
         Engineered with love by{" "}
         <Link target="_" href={"https://github.com/ELATTAR-Ayoub"}>
@@ -40,7 +40,7 @@ const Header = () => {
       </div>
 
       <nav
-        className={`relative ${styles.flexBetween} uppercase flex-wrap w-full py-4 ${styles.xPaddings} `}
+        className={`relative ${styles.flexBetween} flex-wrap w-full py-4 ${styles.xPaddings} `}
       >
         <li
           className={` ${styles.flexStart} gap-6 ${styles.small} font-medium  `}
@@ -74,7 +74,7 @@ const Header = () => {
       </nav>
 
       {/* <div
-        className={` w-full bg-primary-black ${styles.Xsmall} text-center text-primary-white py-1`}
+        className={` w-full bg-primary ${styles.Xsmall} text-center text-secondary py-1`}
       >
         © {new Date().getFullYear()} Yukirhythm.
       </div> */}

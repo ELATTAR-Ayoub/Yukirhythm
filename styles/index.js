@@ -15,6 +15,7 @@ const styles = {
   flexBetweenEnd: "flex justify-between items-end",
   flexStart: "flex justify-start items-start",
   flexEnd: "flex justify-end",
+  flexEndCenter: "flex justify-end items-center",
   navPadding: "pt-[98px]",
 
   // hero section

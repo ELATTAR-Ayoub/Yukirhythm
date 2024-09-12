@@ -46,7 +46,7 @@ const Footer = () => {
         styles.flexBetween
       } flex-col-reverse lg:flex-row gap-12 md:gap-6 ${
         pathname != "/" ? ` flex` : ` hidden`
-      } w-full bg-primary-black  border-t-0 border border-primary-white  px-4 py-12 md:px-12`}
+      } w-full bg-primary  border-t-0 border border-primary-white  px-4 py-12 md:px-12`}
     >
       <div
         className={` grid grid-cols-2 grid-rows-2 h-full w-full lg:w-[400px] text-xs md:text-base`}

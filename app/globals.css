@@ -32,11 +32,11 @@ body {
 
 ::-moz-selection {
   /* Code for Firefox */
-  @apply text-primary-white bg-dark-shade-15;
+  @apply text-secondary bg-ring;
 }
 
 ::selection {
-  @apply text-primary-white bg-dark-shade-15;
+  @apply text-primary bg-ring;
 }
 
 /* scrollbar width */
@@ -46,18 +46,18 @@ body {
 
 /* scrollbar Track */
 ::-webkit-scrollbar-track {
-  background: var(--dark-shade-50);
+  background: var(--muted);
   @apply rounded-full;
 }
 
 /* scrollbar Handle */
 ::-webkit-scrollbar-thumb {
-  @apply bg-dark-shade-15;
+  @apply bg-popover;
 }
 
 /* scrollbar Handle on hover */
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-primary-black;
+  @apply bg-primary;
 }
 
 /* body */
@@ -110,11 +110,11 @@ body {
 }
 
 .soundwaves div {
-  @apply bg-primary-black;
+  @apply bg-primary;
 }
 
 .soundwaves.white div {
-  @apply bg-primary-white;
+  @apply bg-secondary;
 }
 
 .soundwaves.active div:nth-child(4) {
@@ -152,14 +152,14 @@ body {
 }
 
 .main_shadow {
-  @apply bg-primary-white;
+  @apply bg-secondary;
   box-shadow: 0px 1px 9px 0px rgba(4, 5, 6, 0.15),
     0px 3px 7.8px 0px rgba(253, 254, 254, 0.25) inset,
     0px 5px 12.8px 0px rgba(182, 184, 195, 0.5) inset;
 }
 
 .icon_clothes {
-  @apply bg-primary-black rounded-full flex justify-center items-center p-[6px];
+  @apply bg-card/20 rounded-full flex justify-center items-center p-[6px];
 }
 
 .disc_shadow {
@@ -169,7 +169,7 @@ body {
 }
 
 .AudioCard {
-  background: var(--Black-1, #262626);
+  background: var(--card);
   box-shadow: 0px 0px 6.2px 0px rgba(4, 5, 6, 0.3),
     0px -4px 5.8px 0px rgba(158, 159, 172, 0.25) inset,
     0px 3px 6.3px 0px rgba(182, 184, 195, 0.3) inset;
@@ -188,13 +188,6 @@ body {
 
 @layer base {
   :root {
-    /* mine */
-    --primary-black: #121212;
-    --primary-white: #f2f2f2;
-    --accent-color: #536eff;
-    --dark-shade-15: #262626;
-    --dark-shade-50: #7f7f7f;
-    --dark-shade-85: #d9d9d9;
     /* chadcn */
     --background: 0 0% 100%;
     --foreground: 240 10% 3.9%;
@@ -220,7 +213,7 @@ body {
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
-    --radius: 0.5rem;
+    --radius: 999rem;
   }
   .dark {
     --background: 240 10% 3.9%;

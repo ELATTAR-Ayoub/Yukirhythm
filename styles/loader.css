@@ -1,8 +1,7 @@
-
 .floating-word {
   position: absolute;
   cursor: grab;
-  @apply hover:text-accent-color pointer-events-none;
+  @apply pointer-events-none;
 }
 
 canvas {
@@ -12,4 +11,3 @@ canvas {
 .Spline canvas {
   @apply !z-[0] w-full h-full;
 }
-

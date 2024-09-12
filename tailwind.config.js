@@ -20,11 +20,7 @@ module.exports = {
     },
     extend: {
       colors: {
-        "primary-black": "#121212",
-        "primary-white": "#F2F2F2",
-        "accent-color": "#536EFF",
-        "dark-shade-15": "#262626",
-        "dark-shade-50": "#7F7F7F",
+        popover: "#262626",
         "dark-shade-85": "#D9D9D9",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",

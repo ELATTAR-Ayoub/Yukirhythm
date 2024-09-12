@@ -10,6 +10,16 @@ import ReactPlayer from "react-player";
 import styles from "@/styles/index";
 import "@/styles/player.css";
 
+// Icons
+import {
+  ListBulletIcon,
+  LoopIcon,
+  PauseIcon,
+  PlayIcon,
+  TrackNextIcon,
+  TrackPreviousIcon,
+} from "@radix-ui/react-icons";
+
 // constants
 import { Owner, Audio } from "@/constants/interfaces";
 
@@ -17,6 +27,7 @@ import { Owner, Audio } from "@/constants/interfaces";
 import SolidSvg from "@/components/SolidSVG";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ListDrawer } from "./ListDrawer";
 
 // redux
 import {
@@ -31,6 +42,7 @@ import {
   SET_PLAYING,
 } from "@/store/AudioConfig";
 import { useDispatch, useSelector } from "react-redux";
+import { Slider } from "../ui/slider";
 
 const Controls = ({ videoId }: { videoId: string }) => {
   // redux
@@ -140,18 +152,25 @@ const Controls = ({ videoId }: { videoId: string }) => {
         </div>
 
         <Button
+          size="icon"
+          variant={`${looping ? "default" : "outline"}`}
+          onClick={() => {
+            setLooping(!looping);
+          }}
+          disabled={audioConfig.length == 0}
+        >
+          <span className={` icon_clothes`}>
+            <LoopIcon className="h-3 w-3 " />
+          </span>
+        </Button>
+
+        <Button
           onClick={() => skipAudio(0)}
           disabled={current === 0}
           size="icon"
         >
           <span className={` icon_clothes`}>
-            <Image
-              className={`object-contain w-3 aspect-square `}
-              width={24}
-              height={24}
-              src={"/svgs/previous.svg"}
-              alt={"disc"}
-            ></Image>
+            <TrackPreviousIcon className="h-3 w-3 " />
           </span>
         </Button>
 
@@ -161,13 +180,11 @@ const Controls = ({ videoId }: { videoId: string }) => {
           disabled={audioConfig.length == 0}
         >
           <span className={` icon_clothes`}>
-            <Image
-              className={`object-contain w-3 aspect-square `}
-              width={24}
-              height={24}
-              src={`/svgs/${playing ? "pause.svg" : "play.svg"}`}
-              alt={"disc"}
-            ></Image>
+            {playing ? (
+              <PauseIcon className="h-3 w-3 " />
+            ) : (
+              <PlayIcon className="h-3 w-3" />
+            )}
           </span>
         </Button>
 
@@ -179,15 +196,11 @@ const Controls = ({ videoId }: { videoId: string }) => {
           size="icon"
         >
           <span className={` icon_clothes`}>
-            <Image
-              className={`object-contain w-3 aspect-square `}
-              width={24}
-              height={24}
-              src={"/svgs/next.svg"}
-              alt={"disc"}
-            ></Image>
+            <TrackNextIcon className="h-3 w-3 " />
           </span>
         </Button>
+
+        <ListDrawer />
       </div>
 
       {/* time and slider */}
@@ -197,7 +210,7 @@ const Controls = ({ videoId }: { videoId: string }) => {
         } flex-col w-full gap-1 time_slider pt-4`}
       >
         <div className={`AudioSeekBar ${styles.flexCenter}`}>
-          <input
+          {/* <input
             aria-label="Seek bar"
             className="w-full SeekBar"
             id="AudioSeekBar"
@@ -206,16 +219,24 @@ const Controls = ({ videoId }: { videoId: string }) => {
             max={duration}
             value={currentTime}
             onChange={(e) => handleJumpTo(parseFloat(e.target.value))}
+          /> */}
+
+          <Slider
+            value={[currentTime]}
+            onValueChange={(value) => handleJumpTo(value[0])}
+            max={duration}
+            step={1}
+            className="rangeSlider"
           />
         </div>
 
-        <p className={` ${styles.small}  font-semibold cursor-default`}>
+        <p className={` ${styles.small}  font-semibold cursor-default `}>
           {`${Math.floor(currentTime / 60)
             .toString()
             .padStart(1, "0")}:${Math.floor(currentTime % 60)
             .toString()
             .padStart(2, "0")}`}{" "}
-          <span className={` font-normal text-dark-shade-15`}>
+          <span className={` font-normal text-primary opacity-70`}>
             /{" "}
             {`${Math.floor(duration / 60)
               .toString()

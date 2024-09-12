@@ -55,7 +55,7 @@ const Menu = () => {
     <aside
       className={`fixed left-4 bottom-4 gap-24 h-auto w-20 sideBar ${
         styles.flexCenter
-      } flex-col bg-primary-white text-primary-black ${
+      } flex-col bg-secondary text-secondary ${
         menuToggle ? " " : "-translate-x-[150%]"
       } overflow-hidden z-[25] transition-all duration-500`}
     >
@@ -70,7 +70,7 @@ const Menu = () => {
               scrollToSection(link.name);
             }}
             data-value={link.name}
-            className={` ${styles.flexCenter} p-1 py-0 no-underline text-base sm:text-lg lg:text-base uppercase hover:text-primary-white hover:bg-primary-black transition-all duration-300`}
+            className={` ${styles.flexCenter} p-1 py-0 no-underline text-base sm:text-lg lg:text-base uppercase hover:text-secondary hover:bg-secondary transition-all duration-300`}
           >
             {link.name}
           </Link>
@@ -82,7 +82,7 @@ const Menu = () => {
         onClick={() => {
           dispatch(setMenuToggle(false));
         }}
-        className={`${styles.flexCenter} p-1 py-2 hover:bg-primary-black w-full transition-all duration-300 close`}
+        className={`${styles.flexCenter} p-1 py-2 hover:bg-secondary w-full transition-all duration-300 close`}
       >
         <SolidSvg
           className={`closeSVG w-6 aspect-square transition-all duration-300`}
