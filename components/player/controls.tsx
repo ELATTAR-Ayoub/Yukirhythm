@@ -223,6 +223,7 @@ const Controls = ({ videoId }: { videoId: string }) => {
 
           <Slider
             value={[currentTime]}
+            defaultValue={[0]}
             onValueChange={(value) => handleJumpTo(value[0])}
             max={duration}
             step={1}
