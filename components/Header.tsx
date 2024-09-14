@@ -42,17 +42,7 @@ const Header = () => {
       <nav
         className={`relative ${styles.flexBetween} flex-wrap w-full py-4 ${styles.xPaddings} `}
       >
-        <li
-          className={` ${styles.flexStart} gap-6 ${styles.small} font-medium  `}
-        >
-          {headerLinks.slice(0, 1).map((link, index) => (
-            <Link key={index} href={link.url} data-value={link.name}>
-              {link.name}
-            </Link>
-          ))}
-        </li>
-
-        <Link href={"/"} className={` w-20 md:w-28 lg:w-32 center-in-parent`}>
+        <Link href={"/"} className={` w-20 md:w-28 lg:w-32 `}>
           <Image
             className={`object-contain w-full h-full `}
             width={24}
@@ -65,7 +55,7 @@ const Header = () => {
         <li
           className={` ${styles.flexStart} gap-6 ${styles.small} font-medium `}
         >
-          {headerLinks.slice(1, 2).map((link, index) => (
+          {headerLinks.slice(1, 3).map((link, index) => (
             <Link key={index} href={link.url} data-value={link.name}>
               {link.name}
             </Link>

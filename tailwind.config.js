@@ -1,3 +1,7 @@
+const {
+  default: flattenColorPalette,
+} = require("tailwindcss/lib/util/flattenColorPalette");
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
@@ -62,6 +66,19 @@ module.exports = {
           4: "hsl(var(--chart-4))",
           5: "hsl(var(--chart-5))",
         },
+        animation: {
+          aurora: "aurora 60s linear infinite",
+        },
+        keyframes: {
+          aurora: {
+            from: {
+              backgroundPosition: "50% 50%, 50% 50%",
+            },
+            to: {
+              backgroundPosition: "350% 50%, 350% 50%",
+            },
+          },
+        },
       },
       transitionTimingFunction: {
         "out-flex": "cubic-bezier(0.05, 0.6, 0.4, 0.9)",
@@ -76,5 +93,17 @@ module.exports = {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [require("tailwindcss-animate"), addVariablesForColors],
 };
+
+// This plugin adds each Tailwind color as a global CSS variable, e.g. var(--gray-200).
+function addVariablesForColors({ addBase, theme }) {
+  let allColors = flattenColorPalette(theme("colors"));
+  let newVars = Object.fromEntries(
+    Object.entries(allColors).map(([key, val]) => [`--${key}`, val])
+  );
+
+  addBase({
+    ":root": newVars,
+  });
+}

@@ -115,4 +115,9 @@ export const headerLinks = [
     url: "/login",
     title: "Join the family",
   },
+  {
+    name: "Sign up",
+    url: "/signup",
+    title: "Join the family",
+  },
 ];

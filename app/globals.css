@@ -63,7 +63,7 @@ body {
 /* body */
 
 .screen-height-with-header {
-  @apply h-[calc(100vh-45px)] md:h-[calc(100vh-88px)];
+  @apply pt-[90px];
 }
 
 .hide-on-mobile {
@@ -185,6 +185,8 @@ body {
 }
 
 /* Chadcn */
+
+/* red FF1A4B */
 
 @layer base {
   :root {

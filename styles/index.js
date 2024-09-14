@@ -21,7 +21,7 @@ const styles = {
   // hero section
   heroHeading: "text-4xl md:text-6xl lg:text-7xl",
   H1: " text-3xl md:text-5xl lg:text-6xl ",
-  H2: " text-lg md:text-2xl lg:text-4xl",
+  H2: " text-lg md:text-xl lg:text-2xl",
   large: " text-base md:text-lg lg:text-xl  ",
   normal: " text-sm md:text-base",
   small: "text-[0.55rem] md:text-sm ",

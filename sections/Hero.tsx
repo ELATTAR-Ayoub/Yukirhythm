@@ -208,7 +208,7 @@ const Hero = () => {
                 setInputValue(e.target.value);
               }}
               value={inputValue}
-              className={` h-8 w-0 p-0 border-0 delay-200 duration-500 `}
+              className={`main_shadow h-8 w-0 p-0 border-0 delay-200 duration-500 `}
               type="text"
               required
               placeholder="Search"
