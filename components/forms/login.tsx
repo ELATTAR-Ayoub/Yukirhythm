@@ -32,9 +32,6 @@ import Link from "next/link";
 import Loader from "../Loader";
 
 const formSchema = z.object({
-  username: z.string().min(3, {
-    message: "Username must be at least 3 characters.",
-  }),
   email: z.string().min(10, {
     message: "Email must be at least 10 characters.",
   }),
@@ -47,10 +44,8 @@ export function LoginForm() {
   const { user, signin, signinPopup } = useAuth();
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState(false);
+  const [errMsg, setErrMsg] = useState("");
   const [emailLogin, setEmailLogin] = useState(false);
-  const [userAvatar, setUserAvatar] = useState(
-    "https://api.dicebear.com/5.x/lorelei/svg?seed=A"
-  );
   // ...
 
   // inputs
@@ -58,23 +53,25 @@ export function LoginForm() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      username: "",
+      email: "",
     },
   });
 
   // 2. Define a submit handler.
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    console.log("sdd");
+
     // Do something with the form values.
     // ✅ This will be type-safe and validated.
     setLoading(true);
     try {
-      await signin(values.email, values.password, userAvatar, values.username);
+      await signin(values.email, values.password);
       setLoading(false);
       //   router.push(`/`);
     } catch (err) {
-      console.log(err);
+      const errorMessage = (err as Error).message; // Assert err as Error to access message
       setErr(true);
-
+      setErrMsg(errorMessage);
       setLoading(false);
     }
   }
@@ -84,8 +81,10 @@ export function LoginForm() {
       setLoading(true);
       await signinPopup("google");
     } catch (err) {
-      console.log(err);
+      const errorMessage = (err as Error).message; // Assert err as Error to access message
       setErr(true);
+      setErrMsg(errorMessage);
+      setLoading(false);
     } finally {
       setLoading(false);
     }
@@ -97,8 +96,10 @@ export function LoginForm() {
     try {
       await signinPopup("facebook");
     } catch (err) {
-      console.log(err);
+      const errorMessage = (err as Error).message; // Assert err as Error to access message
       setErr(true);
+      setErrMsg(errorMessage);
+      setLoading(false);
     } finally {
       setLoading(false);
     }
@@ -198,7 +199,6 @@ export function LoginForm() {
                   <FormLabel>Email</FormLabel>
                   <FormControl>
                     <Input
-                      autoComplete="username"
                       type="email"
                       placeholder="Yuki@contact.com"
                       {...field}
@@ -247,11 +247,7 @@ export function LoginForm() {
         </Form>
       </div>
 
-      {err && (
-        <p className={` ${styles.small} text-destructive`}>
-          We had an issue signing you up, please try again.
-        </p>
-      )}
+      {err && <p className={` ${styles.small} text-destructive`}>{errMsg}</p>}
 
       {/* loading */}
       {loading ? <Loader /> : <></>}

@@ -47,6 +47,7 @@ export function SignupForm() {
   const { user, signup, signupPopup } = useAuth();
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState(false);
+  const [errMsg, setErrMsg] = useState("");
   const [emailLogin, setEmailLogin] = useState(false);
   const [userAvatar, setUserAvatar] = useState(
     `https://api.dicebear.com/5.x/lorelei/svg?seed=`
@@ -66,15 +67,15 @@ export function SignupForm() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     // Do something with the form values.
     setUserAvatar(setUserAvatar + values.username);
-    // ✅ This will be type-safe and validated.
     setLoading(true);
     try {
       await signup(values.email, values.password, userAvatar, values.username);
       setLoading(false);
-      //   router.push(`/`);
+      // router.push(`/`);
     } catch (err) {
-      console.log(err);
+      const errorMessage = (err as Error).message; // Assert err as Error to access message
       setErr(true);
+      setErrMsg(errorMessage);
       setLoading(false);
     }
   }
@@ -85,7 +86,10 @@ export function SignupForm() {
       await signupPopup("google");
     } catch (err) {
       console.log(err);
+      const errorMessage = (err as Error).message; // Assert err as Error to access message
       setErr(true);
+      setErrMsg(errorMessage);
+      setLoading(false);
     } finally {
       setLoading(false);
     }
@@ -98,7 +102,10 @@ export function SignupForm() {
       await signupPopup("facebook");
     } catch (err) {
       console.log(err);
+      const errorMessage = (err as Error).message; // Assert err as Error to access message
       setErr(true);
+      setErrMsg(errorMessage);
+      setLoading(false);
     } finally {
       setLoading(false);
     }
@@ -266,11 +273,7 @@ export function SignupForm() {
         </Form>
       </div>
 
-      {err && (
-        <p className={` ${styles.small} text-destructive`}>
-          We had an issue signing you up, please try again.
-        </p>
-      )}
+      {err && <p className={` ${styles.small} text-destructive`}>{errMsg}</p>}
 
       {/* loading */}
       {loading ? <Loader /> : <></>}

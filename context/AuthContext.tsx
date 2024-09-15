@@ -106,7 +106,7 @@ export const AuthContextProvider = ({
           userName: user.displayName ? user.displayName : name,
           email: user.email,
           avatar: avatar,
-          marketingEmails: marketingEmails,
+          marketingEmails: false,
           collections: [],
           lovedSongs: [],
           lovedCollections: [],
@@ -123,6 +123,7 @@ export const AuthContextProvider = ({
             router.push(`/profile/${userData.ID}`);
           } catch (e) {
             console.error("Error adding document: ", e);
+            throw new Error(e as string); // Return the error message
           }
         }
       })
@@ -130,7 +131,7 @@ export const AuthContextProvider = ({
         const errorCode = error.code;
         const errorMessage = error.message;
         console.log(errorCode, errorMessage);
-        return errorCode;
+        throw new Error(errorCode); // Return the error code to the frontend
       });
   };
 
@@ -188,6 +189,7 @@ export const AuthContextProvider = ({
         // ...
         console.log(errorCode, errorMessage);
         console.log(email, credential);
+        throw new Error(errorCode); // Return the error code to the frontend
       });
   };
 
@@ -211,6 +213,7 @@ export const AuthContextProvider = ({
         const errorCode = error.code;
         const errorMessage = error.message;
         console.log(errorCode, errorMessage);
+        throw new Error(errorCode); // Return the error code to the frontend
       });
   };
 
@@ -228,6 +231,7 @@ export const AuthContextProvider = ({
         const errorCode = error.code;
         const errorMessage = error.message;
         console.log(errorCode, errorMessage);
+        throw new Error(errorCode); // Return the error code to the frontend
       });
   };
 
