@@ -27,6 +27,7 @@ import {
 
 import { selectMenuToggle, setMenuToggle } from "../store/UIConfig";
 import { useDispatch, useSelector } from "react-redux";
+import { DropdownMenuIcon, HamburgerMenuIcon } from "@radix-ui/react-icons";
 
 const Header = () => {
   const pathname = usePathname();
@@ -39,73 +40,54 @@ const Header = () => {
 
   return (
     <header
-      className={` ${pathname === "/" ? " fixed top-0" : " relative"}  ${
-        styles.flexBetween
-      } flex-col z-30 w-full border-b border-primary bg-primary text-secondary`}
+      className={` fixed right-4 bottom-4 ${styles.flexBetween} flex-col z-30 w-full text-primary shadow-lg`}
     >
-      <div
-        className={` w-full ${styles.Xsmall} text-center bg-card text-card-foreground py-1`}
-      >
-        Engineered with love by{" "}
-        <Link target="_" href={"https://elattar.dev"}>
-          {" "}
-          Elattar Ayoub
-        </Link>{" "}
-        &lt;3
-      </div>
-
-      <nav
-        className={`relative ${styles.flexBetween} flex-wrap w-full py-4 ${styles.xPaddings} `}
-      >
-        <Link href={"/"} className={` w-20 md:w-28 lg:w-32 `}>
-          <Image
-            className={`object-contain w-full h-full `}
-            width={24}
-            height={24}
-            src={"/svgs/logo.svg"}
-            alt={"logo"}
-          ></Image>
-        </Link>
-
-        {!user.ID && (
-          <li
-            className={` ${styles.flexStart} gap-6 ${styles.small} font-medium `}
-          >
-            {headerLinks.slice(1, 2).map((link, index) => (
-              <Link key={index} href={link.url} data-value={link.name}>
-                {link.name}
-              </Link>
-            ))}
-          </li>
-        )}
-
-        {user.ID && (
-          <DropdownMenu>
-            <DropdownMenuTrigger>
+      <nav className={`relative ${styles.flexCenter} `}>
+        <DropdownMenu>
+          <DropdownMenuTrigger>
+            {!user.ID ? (
+              <div
+                className={`relative ${styles.flexCenter} w-10 sm:w-12 aspect-square bg-secondary/50 rounded-full p-1 `}
+              >
+                <HamburgerMenuIcon className="w-5 h-5 " />
+              </div>
+            ) : (
               <Avatar>
                 <AvatarImage src={user.avatar} />
                 <AvatarFallback>{user.userName.slice(0.2)}</AvatarFallback>
               </Avatar>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuLabel> My Account </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <Link href={`/profile/${user.ID}`}>
-                <DropdownMenuItem>Profile</DropdownMenuItem>
-              </Link>{" "}
-              <Link href={`/profile/${user.ID}/collections`}>
-                <DropdownMenuItem>Collections</DropdownMenuItem>
-              </Link>{" "}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={logout()}
-                className="bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90"
-              >
-                Log out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+            )}
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuLabel> Menu </DropdownMenuLabel>
+            <Link href={`/`}>
+              <DropdownMenuItem>Home</DropdownMenuItem>
+            </Link>{" "}
+            {!user.ID ? (
+              <Link href={`/login`}>
+                <DropdownMenuItem>Login</DropdownMenuItem>
+              </Link>
+            ) : (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel> My Account </DropdownMenuLabel>
+                <Link href={`/profile/${user.ID}`}>
+                  <DropdownMenuItem>Profile</DropdownMenuItem>
+                </Link>{" "}
+                <Link href={`/profile/${user.ID}/collections`}>
+                  <DropdownMenuItem>Collections</DropdownMenuItem>
+                </Link>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={logout}
+                  className="bg-destructive text-destructive-foreground shadow-sm hover:!bg-destructive/90"
+                >
+                  Log out
+                </DropdownMenuItem>
+              </>
+            )}{" "}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </nav>
 
       {/* <div

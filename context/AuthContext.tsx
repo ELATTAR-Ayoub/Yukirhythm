@@ -23,6 +23,9 @@ import {
 import { auth, firestore } from "@/config/firebase";
 import { async } from "@firebase/util";
 
+// components
+import Loader from "@/components/Loader";
+
 // route
 import { useRouter, usePathname } from "next/navigation";
 
@@ -58,10 +61,13 @@ export const AuthContextProvider = ({
 
   useEffect(() => {
     let mounted = true;
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (mounted && user) {
-        getUser(user.uid);
-      } else {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setLoading(true); // Set loading to true when authentication state changes
+      if (mounted && firebaseUser) {
+        await getUser(firebaseUser.uid);
+        console.log(firebaseUser);
+      } else if (mounted && !firebaseUser) {
+        // Only reset user if no Firebase user is present
         setUser({
           ID: "",
           avatar: "",
@@ -75,8 +81,9 @@ export const AuthContextProvider = ({
           following: [],
         });
       }
-      setLoading(false);
+      setLoading(false); // Set loading to false once everything is complete
     });
+
     return () => {
       unsubscribe();
       mounted = false;
@@ -130,6 +137,7 @@ export const AuthContextProvider = ({
   // avatar = https://api.dicebear.com/5.x/lorelei/svg?seed=A
 
   const signupPopup = async (prov: string) => {
+    console.log("signupPopup");
     let provider;
     if (prov == "facebook") {
       provider = new FacebookAuthProvider();
@@ -184,6 +192,8 @@ export const AuthContextProvider = ({
   };
 
   const signinPopup = async (prov: string) => {
+    console.log("signInWithPopup");
+
     let provider;
     if (prov == "facebook") {
       provider = new FacebookAuthProvider();
@@ -205,6 +215,8 @@ export const AuthContextProvider = ({
   };
 
   const signin = (email: string, password: string) => {
+    console.log("signInWithEmailAndPassword");
+
     return signInWithEmailAndPassword(auth, email, password)
       .then((userCredential) => {
         // Signed in
@@ -226,9 +238,6 @@ export const AuthContextProvider = ({
     );
     const querySnapshot = await getDocs(q);
     querySnapshot.forEach((doc) => {
-      // console.log(doc.id, " => ", doc.data());
-      // console.log(doc.data().userData.ID);
-
       setUser({
         ID: doc.data().userData.ID,
         avatar: doc.data().userData.avatar,
@@ -242,20 +251,25 @@ export const AuthContextProvider = ({
         following: [...doc.data().userData.following],
       });
 
-      const userData = {
-        ID: doc.data().userData.ID,
-        avatar: doc.data().userData.avatar,
-        userName: doc.data().userData.userName,
-        email: doc.data().userData.email,
-        marketingEmails: doc.data().userData.marketingEmails,
-        lovedSongs: [...doc.data().userData.lovedSongs],
-        collections: [...doc.data().userData.collections],
-        lovedCollections: [...doc.data().userData.lovedCollections],
-        followers: [...doc.data().userData.followers],
-        following: [...doc.data().userData.following],
-      };
-      return userData;
+      // const userData = {
+      //   ID: doc.data().userData.ID,
+      //   avatar: doc.data().userData.avatar,
+      //   userName: doc.data().userData.userName,
+      //   email: doc.data().userData.email,
+      //   marketingEmails: doc.data().userData.marketingEmails,
+      //   lovedSongs: [...doc.data().userData.lovedSongs],
+      //   collections: [...doc.data().userData.collections],
+      //   lovedCollections: [...doc.data().userData.lovedCollections],
+      //   followers: [...doc.data().userData.followers],
+      //   following: [...doc.data().userData.following],
+      // };
+
+      // console.log("userData", userData);
+
+      // return userData;
     });
+
+    console.log("getUser");
   };
 
   const logout = async () => {
@@ -279,7 +293,7 @@ export const AuthContextProvider = ({
         console.log(error);
       });
 
-    console.log("user done dead2");
+    console.log("logout");
   };
 
   const likeMusic = async (audio: Audio) => {
@@ -504,7 +518,7 @@ export const AuthContextProvider = ({
         dislikeCollection,
       }}
     >
-      {children}
+      {loading ? <Loader /> : children}
     </AuthContext.Provider>
   );
 };

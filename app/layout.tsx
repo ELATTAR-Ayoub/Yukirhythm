@@ -40,8 +40,8 @@ export default function RootLayout({
             <ThemeProvider attribute="class">
               {/* <CursorFollower /> */}
               <Header />
-              <main className={` relative w-full h-auto `}>
-                <SideBar />
+              <main className={` relative w-full min-h-screen `}>
+                {/* <SideBar /> */}
                 {children}
               </main>
               {/* <Footer /> */}

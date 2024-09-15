@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 // components
+import Loader from "../Loader";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -29,7 +30,6 @@ import {
 } from "@radix-ui/react-icons";
 import router from "next/router";
 import Link from "next/link";
-import Loader from "../Loader";
 
 const formSchema = z.object({
   username: z.string().min(3, {
@@ -197,7 +197,11 @@ export function SignupForm() {
                 <FormItem>
                   <FormLabel>Username</FormLabel>
                   <FormControl>
-                    <Input placeholder="Chad Nickle" {...field} />
+                    <Input
+                      autoComplete="username"
+                      placeholder="Chad Nickle"
+                      {...field}
+                    />
                   </FormControl>
                   <FormDescription>
                     This is your public display name.
@@ -236,6 +240,7 @@ export function SignupForm() {
                   <FormLabel>Password</FormLabel>
                   <FormControl>
                     <Input
+                      autoComplete="current-password"
                       type="password"
                       placeholder="a small secret"
                       {...field}

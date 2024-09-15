@@ -44,7 +44,7 @@ const formSchema = z.object({
 });
 
 export function LoginForm() {
-  const { user, signup, signupPopup } = useAuth();
+  const { user, signin, signinPopup } = useAuth();
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState(false);
   const [emailLogin, setEmailLogin] = useState(false);
@@ -68,7 +68,7 @@ export function LoginForm() {
     // ✅ This will be type-safe and validated.
     setLoading(true);
     try {
-      await signup(values.email, values.password, userAvatar, values.username);
+      await signin(values.email, values.password, userAvatar, values.username);
       setLoading(false);
       //   router.push(`/`);
     } catch (err) {
@@ -82,7 +82,7 @@ export function LoginForm() {
   const signupGoogleFunc = async () => {
     try {
       setLoading(true);
-      await signupPopup("google");
+      await signinPopup("google");
     } catch (err) {
       console.log(err);
       setErr(true);
@@ -95,7 +95,7 @@ export function LoginForm() {
     setLoading(true);
 
     try {
-      await signupPopup("facebook");
+      await signinPopup("facebook");
     } catch (err) {
       console.log(err);
       setErr(true);
@@ -198,6 +198,7 @@ export function LoginForm() {
                   <FormLabel>Email</FormLabel>
                   <FormControl>
                     <Input
+                      autoComplete="username"
                       type="email"
                       placeholder="Yuki@contact.com"
                       {...field}
@@ -219,6 +220,7 @@ export function LoginForm() {
                   <FormLabel>Password</FormLabel>
                   <FormControl>
                     <Input
+                      autoComplete="current-password"
                       type="password"
                       placeholder="our small secret"
                       {...field}
