@@ -71,7 +71,7 @@ const Header = () => {
           <li
             className={` ${styles.flexStart} gap-6 ${styles.small} font-medium `}
           >
-            {headerLinks.slice(1, 3).map((link, index) => (
+            {headerLinks.slice(1, 2).map((link, index) => (
               <Link key={index} href={link.url} data-value={link.name}>
                 {link.name}
               </Link>
