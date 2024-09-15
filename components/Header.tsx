@@ -9,11 +9,21 @@ import Image from "next/image";
 import styles from "../styles/index";
 
 // components
-import Logo from "./Logo";
-import SolidSvg from "./SolidSVG";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+// auth
+import { useAuth } from "@/context/AuthContext";
 
 // constant
 import { headerLinks, footerLinks } from "@/constants/index";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 import { selectMenuToggle, setMenuToggle } from "../store/UIConfig";
 import { useDispatch, useSelector } from "react-redux";
@@ -24,15 +34,20 @@ const Header = () => {
   const menuToggle = useSelector(selectMenuToggle);
   const dispatch = useDispatch();
 
+  // auth
+  const { user, logout } = useAuth();
+
   return (
     <header
-      className={` fixed top-0 ${styles.flexBetween} flex-col z-30 w-full border-b border-primary bg-primary text-secondary`}
+      className={` ${pathname === "/" ? " fixed top-0" : " relative"}  ${
+        styles.flexBetween
+      } flex-col z-30 w-full border-b border-primary bg-primary text-secondary`}
     >
       <div
         className={` w-full ${styles.Xsmall} text-center bg-card text-card-foreground py-1`}
       >
         Engineered with love by{" "}
-        <Link target="_" href={"https://github.com/ELATTAR-Ayoub"}>
+        <Link target="_" href={"https://elattar.dev"}>
           {" "}
           Elattar Ayoub
         </Link>{" "}
@@ -52,15 +67,45 @@ const Header = () => {
           ></Image>
         </Link>
 
-        <li
-          className={` ${styles.flexStart} gap-6 ${styles.small} font-medium `}
-        >
-          {headerLinks.slice(1, 3).map((link, index) => (
-            <Link key={index} href={link.url} data-value={link.name}>
-              {link.name}
-            </Link>
-          ))}
-        </li>
+        {!user.ID && (
+          <li
+            className={` ${styles.flexStart} gap-6 ${styles.small} font-medium `}
+          >
+            {headerLinks.slice(1, 3).map((link, index) => (
+              <Link key={index} href={link.url} data-value={link.name}>
+                {link.name}
+              </Link>
+            ))}
+          </li>
+        )}
+
+        {user.ID && (
+          <DropdownMenu>
+            <DropdownMenuTrigger>
+              <Avatar>
+                <AvatarImage src={user.avatar} />
+                <AvatarFallback>{user.userName.slice(0.2)}</AvatarFallback>
+              </Avatar>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuLabel> My Account </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <Link href={`/profile/${user.ID}`}>
+                <DropdownMenuItem>Profile</DropdownMenuItem>
+              </Link>{" "}
+              <Link href={`/profile/${user.ID}/collections`}>
+                <DropdownMenuItem>Collections</DropdownMenuItem>
+              </Link>{" "}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={logout()}
+                className="bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90"
+              >
+                Log out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </nav>
 
       {/* <div

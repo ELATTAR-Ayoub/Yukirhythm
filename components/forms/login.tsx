@@ -43,13 +43,13 @@ const formSchema = z.object({
   }),
 });
 
-export function SignupForm() {
+export function LoginForm() {
   const { user, signup, signupPopup } = useAuth();
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState(false);
   const [emailLogin, setEmailLogin] = useState(false);
   const [userAvatar, setUserAvatar] = useState(
-    `https://api.dicebear.com/5.x/lorelei/svg?seed=`
+    "https://api.dicebear.com/5.x/lorelei/svg?seed=A"
   );
   // ...
 
@@ -65,7 +65,6 @@ export function SignupForm() {
   // 2. Define a submit handler.
   async function onSubmit(values: z.infer<typeof formSchema>) {
     // Do something with the form values.
-    setUserAvatar(setUserAvatar + values.username);
     // ✅ This will be type-safe and validated.
     setLoading(true);
     try {
@@ -75,6 +74,7 @@ export function SignupForm() {
     } catch (err) {
       console.log(err);
       setErr(true);
+
       setLoading(false);
     }
   }
@@ -106,7 +106,7 @@ export function SignupForm() {
 
   return (
     <div
-      className={`  relative ${styles.flexStart} w-full flex-col max-w-[400px] space-y-4`}
+      className={`  relative ${styles.flexStart} w-full flex-col sm:max-w-[400px] space-y-4`}
     >
       {/* quick form */}
       <div
@@ -125,7 +125,7 @@ export function SignupForm() {
         </div>
 
         <h1 className={` w-full ${styles.H2} font-semibold text-center `}>
-          Welcome to YukiRhythem
+          Welcome back to YukiRhythem
         </h1>
 
         {/* google and facebook signup-in */}
@@ -145,7 +145,7 @@ export function SignupForm() {
               src={"/svgs/google.svg"}
               alt={"disc"}
             ></Image>
-            Signup with Google
+            Login with Google
           </Button>
           <Button
             onClick={signupFacebookFunc}
@@ -159,7 +159,7 @@ export function SignupForm() {
               src={"/svgs/facebook.svg"}
               alt={"disc"}
             ></Image>
-            Signup with Facebook
+            Login with Facebook
           </Button>
         </div>
 
@@ -173,7 +173,7 @@ export function SignupForm() {
             variant="outline"
             className={`w-full`}
           >
-            <EnvelopeOpenIcon className="mr-2 h-4 w-4" /> Signup with Email
+            <EnvelopeOpenIcon className="mr-2 h-4 w-4" /> Login with Email
           </Button>
         )}
       </div>
@@ -190,23 +190,6 @@ export function SignupForm() {
             onSubmit={form.handleSubmit(onSubmit)}
             className="space-y-4 w-full"
           >
-            <FormField
-              control={form.control}
-              name="username"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Username</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Chad Nickle" {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    This is your public display name.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
             <FormField
               control={form.control}
               name="email"
@@ -237,7 +220,7 @@ export function SignupForm() {
                   <FormControl>
                     <Input
                       type="password"
-                      placeholder="a small secret"
+                      placeholder="our small secret"
                       {...field}
                     />
                   </FormControl>
@@ -250,10 +233,11 @@ export function SignupForm() {
             <Button variant={"normal"} type="submit">
               Submit
             </Button>
+
             <p className={` ${styles.small}`}>
-              Already have an account?{" "}
-              <Link className=" underline" href={"/login"}>
-                login
+              Don't have an account?{" "}
+              <Link className=" underline" href={"/signup"}>
+                sign up
               </Link>
               .
             </p>

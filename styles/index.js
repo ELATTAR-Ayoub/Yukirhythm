@@ -24,7 +24,7 @@ const styles = {
   H2: " text-lg md:text-xl lg:text-2xl",
   large: " text-base md:text-lg lg:text-xl  ",
   normal: " text-sm md:text-base",
-  small: "text-[0.55rem] md:text-sm ",
+  small: "text-[0.775rem] md:text-sm ",
   Xsmall: "text-[0.6rem] md:text-[0.7rem] ",
   XXsmall: "text-[0.5rem] md:text-[0.6rem] ",
 };

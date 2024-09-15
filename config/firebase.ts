@@ -16,7 +16,6 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-// Incomment these when setup the passwords in the .env
 // const analytics = getAnalytics(app);
-// export const auth = getAuth();
+export const auth = getAuth();
 export const firestore = getFirestore(app);

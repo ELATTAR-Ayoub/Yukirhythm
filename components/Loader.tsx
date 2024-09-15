@@ -5,10 +5,10 @@ import "../styles/loader.css";
 const Loader = () => {
   return (
     <div
-      className={` fixed top-0 left-0 w-screen h-screen grid z-30 bg-primary`}
+      className={` fixed top-0 left-0 w-screen h-screen grid z-[100] bg-secondary/50`}
     >
       <div
-        className={`center-in-screen animate-pulse w-12 h-12 bg-primary-white transition-all `}
+        className={`center-in-screen animate-pulse w-16 aspect-square bg-secondary transition-all rounded-full `}
       ></div>
     </div>
   );
