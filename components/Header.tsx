@@ -40,14 +40,14 @@ const Header = () => {
 
   return (
     <header
-      className={` fixed right-4 bottom-4 ${styles.flexBetween} flex-col z-30 w-full text-primary shadow-lg`}
+      className={` fixed bottom-4 ${styles.flexCenter} z-30 w-full text-primary shadow-lg`}
     >
-      <nav className={`relative ${styles.flexCenter} `}>
+      <nav className={`relative ${styles.flexCenter} w-full `}>
         <DropdownMenu>
           <DropdownMenuTrigger>
             {!user.ID ? (
               <div
-                className={`relative ${styles.flexCenter} w-10 sm:w-12 aspect-square bg-secondary/50 rounded-full p-1 `}
+                className={`relative ${styles.flexCenter} w-10 sm:w-12 aspect-square bg-secondary/50 rounded-full`}
               >
                 <HamburgerMenuIcon className="w-5 h-5 " />
               </div>
