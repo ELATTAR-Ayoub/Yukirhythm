@@ -40,7 +40,7 @@ const Header = () => {
 
   return (
     <header
-      className={` fixed bottom-4 ${styles.flexCenter} z-30 w-full text-primary shadow-lg`}
+      className={` fixed right-4 sm:left-1/2 sm:-translate-x-1/2 bottom-4 ${styles.flexCenterStart} z-30 text-primary shadow-lg`}
     >
       <nav className={`relative ${styles.flexCenter} w-full `}>
         <DropdownMenu>
