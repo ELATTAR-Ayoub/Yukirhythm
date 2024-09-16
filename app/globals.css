@@ -188,6 +188,30 @@ body {
   animation-play-state: paused;
 }
 
+.collectionDisks {
+  width: fit-content;
+}
+
+.drop-shadow-on-disk {
+  filter: drop-shadow(4px 0px 6.7px rgba(0, 0, 0, 0.5));
+}
+
+.collectionDisks div:nth-child(1) {
+  @apply right-0 z-[5] drop-shadow-2xl;
+}
+
+.collectionDisks div:nth-child(2) {
+  @apply right-12 z-[4];
+}
+
+.collectionDisks div:nth-child(3) {
+  @apply right-24 z-[3];
+}
+
+.collectionDisks div:nth-child(4) {
+  @apply right-48 z-[2];
+}
+
 /* Chadcn */
 
 /* red FF1A4B */

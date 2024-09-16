@@ -50,10 +50,9 @@ import { useAuth } from "@/context/AuthContext";
 
 export function UserAudioList({ id }: { id: string }) {
   // auth
-  const { user, logout, getProfileUser, dislikeAudio, likeAudio } = useAuth();
+  const { user, getProfileUser, dislikeAudio, likeAudio } = useAuth();
 
   // redux
-  // const audioConfig = useSelector(selectAudioConfig);
   const current = useSelector(selectCurrentAudio);
   const playing = useSelector(selectAudioPlaying);
   const dispatch = useDispatch();
@@ -138,15 +137,9 @@ export function UserAudioList({ id }: { id: string }) {
   };
 
   const handleDislikeAudio = async (audio: Audio) => {
-    const Audio_small = {
-      ID: audio.ID,
-      title: audio.title,
-      thumbnails: [audio.thumbnails[0]],
-    };
-
     if (user.lovedSongs.some((lovedSong: any) => lovedSong.ID === audio.ID)) {
       try {
-        await dislikeAudio(Audio_small);
+        await dislikeAudio(audio);
         toast("Removed from favorite audios successfully", {
           action: {
             label: "Undo",
@@ -262,16 +255,16 @@ export function UserAudioList({ id }: { id: string }) {
               </Button>
               {user.ID == profileUser.ID && (
                 <AlertDialog>
-                  <AlertDialogTrigger className="main_shadow bg-secondary text-secondary-foreground shadow hover:bg-primary-white border border-primary-black h-8 w-8 p-0 inline-flex items-center justify-center whitespace-nowrap rounded-full text-sm font-medium transition-all hover:scale-105 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50">
-                    <span className={` icon_clothes`}>
-                      {!profileUser.lovedSongs.some(
+                  <AlertDialogTrigger asChild>
+                    <Button variant={"stylized"} size={"icon"}>
+                      {!user.lovedSongs.some(
                         (lovedSong: any) => lovedSong.ID === audio.ID
                       ) ? (
                         <HeartIcon className="h-3 w-3 " />
                       ) : (
                         <HeartFilledIcon className="h-3 w-3 " />
                       )}
-                    </span>
+                    </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
@@ -279,7 +272,7 @@ export function UserAudioList({ id }: { id: string }) {
                         Are you absolutely sure?
                       </AlertDialogTitle>
                       <AlertDialogDescription>
-                        This will delete this audio from your favorites.
+                        This will remove this audio from your favorites.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

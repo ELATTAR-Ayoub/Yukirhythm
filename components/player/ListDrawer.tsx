@@ -32,6 +32,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
+import { AddCollectionForm } from "@/components/forms/addCollection";
 
 // constants
 import { Owner, Audio, User } from "@/constants/interfaces";
@@ -217,8 +218,16 @@ export function ListDrawer() {
       <DrawerContent>
         <div className="mx-auto w-full max-w-sm">
           <DrawerHeader>
-            <DrawerTitle>Audio Drawer</DrawerTitle>
-            <DrawerDescription>Manage your audio list here.</DrawerDescription>
+            <div className={`${styles.flexBetween} gap-2`}>
+              <div className={`${styles.flexStart} gap-2 flex-col`}>
+                <DrawerTitle>Audio Drawer</DrawerTitle>
+                <DrawerDescription>
+                  Manage your audio list here.
+                </DrawerDescription>
+              </div>
+
+              <AddCollectionForm audios={audioConfig} />
+            </div>
           </DrawerHeader>
           <div className="p-4 pb-0 max-h-64 overflow-auto">
             {/* Audio list */}

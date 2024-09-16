@@ -24,17 +24,23 @@ export interface AudioConfigType {
   audioVolume: number;
 }
 
+export interface CollectionOwner {
+  name: string;
+  ID: string;
+  docID: string;
+  avatar: string;
+}
+
 export interface Collection {
   ID: string;
   title: string;
   desc: string;
   thumbnails: string[];
-  ownerID: string;
-  ownerUserName: string;
+  owner: CollectionOwner;
   audio: Audio[];
   likes: number;
   tags: string[];
-  date: Date;
+  date: string;
   private: Boolean;
   collectionLengthSec?: number;
 }

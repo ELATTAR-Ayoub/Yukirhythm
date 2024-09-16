@@ -424,15 +424,58 @@ export const AuthContextProvider = ({
     }
   };
 
-  const AddCollection = async (collection_0001: any) => {
+  async function getUserCollections(uid: string) {
+    const q = query(
+      collection(firestore, "collections"),
+      where("collectionData.owner.ID", "==", uid)
+    );
+    const querySnapshot = await getDocs(q);
+    let collectionsData: Collection[] = [];
+
+    try {
+      querySnapshot.forEach((doc) => {
+        const Data = {
+          ID: doc.id,
+          title: doc.data().collectionData.title,
+          desc: doc.data().collectionData.desc,
+          thumbnails: [...doc.data().collectionData.thumbnails],
+          owner: {
+            ID: doc.data().collectionData.owner.ID,
+            docID: doc.data().collectionData.owner.docID,
+            name: doc.data().collectionData.owner.name,
+            avatar: doc.data().collectionData.owner.profilePic,
+          },
+          audio: [...doc.data().collectionData.audio],
+          likes: doc.data().collectionData.likes,
+          tags: [...doc.data().collectionData.tags],
+          date: doc.data().collectionData.date,
+          private: doc.data().collectionData.private,
+          collectionLengthSec: doc.data().collectionData.collectionLengthSec,
+        };
+        collectionsData.push(Data);
+      });
+      return collectionsData;
+    } catch (error: any) {
+      const errorCode = error.code;
+      const errorMessage = error.message;
+      console.log(errorCode, errorMessage);
+      throw new Error(errorCode); // Return the error code to the frontend
+    }
+  }
+
+  const addCollection = async (collection_0001: Collection) => {
     if (user.ID) {
       //
       const collectionData = {
         title: collection_0001.title,
         desc: collection_0001.desc,
         thumbnails: [...collection_0001.thumbnails],
-        ownerID: user.ID,
-        ownerUserName: user.userName,
+        owner: {
+          ID: user.ID,
+          docID: user.docID,
+          name: user.userName,
+          avatar: user.avatar,
+        },
         audio: [...collection_0001.audio],
         likes: 0,
         tags: [...collection_0001.tags],
@@ -447,9 +490,12 @@ export const AuthContextProvider = ({
             collectionData,
           });
           console.log("Document written with ID: ", docRef.id);
-          router.push(`/collections/${docRef.id}`);
-        } catch (e) {
-          console.error("Error adding document: ", e);
+          router.push(`/collections/${user.ID}`);
+        } catch (error: any) {
+          const errorCode = error.code;
+          const errorMessage = error.message;
+          console.log(errorCode, errorMessage);
+          throw new Error(errorCode); // Return the error code to the frontend
         }
       }
     }
@@ -481,8 +527,11 @@ export const AuthContextProvider = ({
           .catch((error) => {
             console.log(error);
           });
-      } catch (error) {
-        console.error("Error updating loved songs: ", error);
+      } catch (error: any) {
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        console.log(errorCode, errorMessage);
+        throw new Error(errorCode); // Return the error code to the frontend
       }
     }
 
@@ -556,8 +605,11 @@ export const AuthContextProvider = ({
           .catch((error) => {
             console.log(error);
           });
-      } catch (error) {
-        console.error("Error updating the collection: ", error);
+      } catch (error: any) {
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        console.log(errorCode, errorMessage);
+        throw new Error(errorCode); // Return the error code to the frontend
       }
     }
   };
@@ -574,10 +626,11 @@ export const AuthContextProvider = ({
         getUser,
         likeAudio,
         dislikeAudio,
-        AddCollection,
+        addCollection,
         likeCollection,
         dislikeCollection,
         getProfileUser,
+        getUserCollections,
       }}
     >
       {loading ? <Loader /> : children}

@@ -31,6 +31,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserCollectionList } from "@/components/player/UserCollectionsList";
 
 // redux
 import { selectMenuToggle, setMenuToggle } from "@/store/UIConfig";
@@ -110,7 +111,7 @@ const Page = ({ params }: any) => {
             <CardHeader>
               <CardTitle>Favorite Audio</CardTitle>
               <CardDescription>
-                This card showcases the track that you made so far.
+                This card showcases the track that you loved so far.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
@@ -124,11 +125,11 @@ const Page = ({ params }: any) => {
             <CardHeader>
               <CardTitle>Collections</CardTitle>
               <CardDescription>
-                This card showcases the collections that you created so far.
+                This card showcases the collections that you made so far.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
-              <span className="text-muted-foreground">Coming soon.</span>
+              <UserCollectionList id={params.id} />
             </CardContent>
           </Card>
         </TabsContent>
