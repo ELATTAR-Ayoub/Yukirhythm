@@ -39,7 +39,13 @@ import {
   ADD_ITEM,
 } from "@/store/AudioConfig";
 import { useDispatch, useSelector } from "react-redux";
-import { PauseIcon, PlayIcon, TrashIcon } from "@radix-ui/react-icons";
+import {
+  HeartFilledIcon,
+  HeartIcon,
+  PauseIcon,
+  PlayIcon,
+  TrashIcon,
+} from "@radix-ui/react-icons";
 import { useAuth } from "@/context/AuthContext";
 
 export function UserAudioList({ id }: { id: string }) {
@@ -102,6 +108,7 @@ export function UserAudioList({ id }: { id: string }) {
     setLoading(true);
     const data = await getProfileUser(id);
     setProfileUser(data);
+    setLoading(false);
   };
 
   const handlePlayPause = (audio: Audio) => {
@@ -116,12 +123,10 @@ export function UserAudioList({ id }: { id: string }) {
         action: {
           label: "Undo",
           onClick: () => {
-            handleDelete(audio);
+            handleDislikeAudio(audio);
           },
         },
       });
-
-      fetchData();
 
       return;
     } catch (err) {
@@ -132,7 +137,7 @@ export function UserAudioList({ id }: { id: string }) {
     }
   };
 
-  const handleDelete = async (audio: Audio) => {
+  const handleDislikeAudio = async (audio: Audio) => {
     const Audio_small = {
       ID: audio.ID,
       title: audio.title,
@@ -151,8 +156,6 @@ export function UserAudioList({ id }: { id: string }) {
           },
         });
 
-        fetchData();
-
         return;
       } catch (err) {
         const errorMessage = (err as Error).message; // Assert err as Error to access message
@@ -161,6 +164,17 @@ export function UserAudioList({ id }: { id: string }) {
         });
       }
     }
+  };
+
+  const handleInteractionWithLike = async (audio: Audio) => {
+    if (user.lovedSongs.some((lovedSong: any) => lovedSong.ID === audio.ID)) {
+      await handleDislikeAudio(audio);
+      fetchData();
+      return;
+    }
+
+    await handleLikeAudio(audio);
+    fetchData();
   };
 
   return (
@@ -250,7 +264,13 @@ export function UserAudioList({ id }: { id: string }) {
                 <AlertDialog>
                   <AlertDialogTrigger className="main_shadow bg-secondary text-secondary-foreground shadow hover:bg-primary-white border border-primary-black h-8 w-8 p-0 inline-flex items-center justify-center whitespace-nowrap rounded-full text-sm font-medium transition-all hover:scale-105 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50">
                     <span className={` icon_clothes`}>
-                      <TrashIcon className="h-3 w-3 " />
+                      {!profileUser.lovedSongs.some(
+                        (lovedSong: any) => lovedSong.ID === audio.ID
+                      ) ? (
+                        <HeartIcon className="h-3 w-3 " />
+                      ) : (
+                        <HeartFilledIcon className="h-3 w-3 " />
+                      )}
                     </span>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
@@ -264,7 +284,9 @@ export function UserAudioList({ id }: { id: string }) {
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => handleDelete(audio)}>
+                      <AlertDialogAction
+                        onClick={() => handleInteractionWithLike(audio)}
+                      >
                         Continue
                       </AlertDialogAction>
                     </AlertDialogFooter>

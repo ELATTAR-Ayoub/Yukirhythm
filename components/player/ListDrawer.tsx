@@ -4,6 +4,8 @@ import Image from "next/image";
 
 // Icon
 import {
+  HeartFilledIcon,
+  HeartIcon,
   ListBulletIcon,
   MinusIcon,
   PauseIcon,
@@ -28,6 +30,14 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
+import { Toaster } from "@/components/ui/sonner";
+import { toast } from "sonner";
+
+// constants
+import { Owner, Audio, User } from "@/constants/interfaces";
+
+// auth
+import { useAuth } from "@/context/AuthContext";
 
 // redux
 import {
@@ -88,6 +98,9 @@ const data = [
 ];
 
 export function ListDrawer() {
+  // auth
+  const { user, dislikeAudio, likeAudio } = useAuth();
+
   // redux
   const audioConfig = useSelector(selectAudioConfig);
   const current = useSelector(selectCurrentAudio);
@@ -131,8 +144,69 @@ export function ListDrawer() {
     dispatch(SET_PLAYING(!playing));
   };
 
+  const handleLikeAudio = async (audio: Audio) => {
+    try {
+      await likeAudio(audio);
+      toast("Add to favorite audios successfully", {
+        action: {
+          label: "Undo",
+          onClick: () => {
+            handleDislikeAudio(audio);
+          },
+        },
+      });
+
+      return;
+    } catch (err) {
+      const errorMessage = (err as Error).message; // Assert err as Error to access message
+      toast("We had an error!", {
+        description: errorMessage,
+      });
+    }
+  };
+
+  const handleDislikeAudio = async (audio: Audio) => {
+    const Audio_small = {
+      ID: audio.ID,
+      title: audio.title,
+      thumbnails: [audio.thumbnails[0]],
+    };
+
+    if (user.lovedSongs.some((lovedSong: any) => lovedSong.ID === audio.ID)) {
+      try {
+        await dislikeAudio(Audio_small);
+        toast("Removed from favorite audios successfully", {
+          action: {
+            label: "Undo",
+            onClick: () => {
+              handleLikeAudio(audio);
+            },
+          },
+        });
+
+        return;
+      } catch (err) {
+        const errorMessage = (err as Error).message; // Assert err as Error to access message
+        toast("We had an error!", {
+          description: errorMessage,
+        });
+      }
+    }
+  };
+
+  const handleInteractionWithLike = async (audio: Audio) => {
+    if (user.lovedSongs.some((lovedSong: any) => lovedSong.ID === audio.ID)) {
+      await handleDislikeAudio(audio);
+      return;
+    }
+
+    await handleLikeAudio(audio);
+  };
+
   return (
     <Drawer>
+      <Toaster />
+
       <DrawerTrigger asChild>
         <Button variant={"stylized"} size="icon">
           <span className={` icon_clothes`}>
@@ -240,6 +314,22 @@ export function ListDrawer() {
                       >
                         <span className={` icon_clothes`}>
                           <TrashIcon className="h-3 w-3 " />
+                        </span>
+                      </Button>
+
+                      <Button
+                        variant={"stylized"}
+                        onClick={() => handleInteractionWithLike(audio)}
+                        size="icon"
+                      >
+                        <span className={` icon_clothes`}>
+                          {!user.lovedSongs.some(
+                            (lovedSong: any) => lovedSong.ID === audio.ID
+                          ) ? (
+                            <HeartIcon className="h-3 w-3 " />
+                          ) : (
+                            <HeartFilledIcon className="h-3 w-3 " />
+                          )}
                         </span>
                       </Button>
                     </div>
