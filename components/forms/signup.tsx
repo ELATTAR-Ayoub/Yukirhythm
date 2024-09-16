@@ -139,11 +139,7 @@ export function SignupForm() {
         <div
           className={` w-full ${styles.flexCenter} sm:flex-row flex-col gap-2 `}
         >
-          <Button
-            onClick={signupGoogleFunc}
-            variant="normal"
-            className={`w-full`}
-          >
+          <Button onClick={signupGoogleFunc} className={`w-full`}>
             {" "}
             <Image
               className="mr-2 h-4 w-4"
@@ -154,12 +150,7 @@ export function SignupForm() {
             ></Image>
             Signup with Google
           </Button>
-          <Button
-            onClick={signupFacebookFunc}
-            variant="normal"
-            className={`w-full`}
-            disabled
-          >
+          <Button onClick={signupFacebookFunc} className={`w-full`} disabled>
             <Image
               className="mr-2 h-4 w-4"
               width={24}
@@ -260,9 +251,7 @@ export function SignupForm() {
               )}
             />
 
-            <Button variant={"normal"} type="submit">
-              Submit
-            </Button>
+            <Button type="submit">Submit</Button>
             <p className={` ${styles.small}`}>
               Already have an account?{" "}
               <Link className=" underline" href={"/login"}>

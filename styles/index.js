@@ -2,11 +2,11 @@ const styles = {
   innerWidth: "2xl:max-w-[1440px] w-full",
   interWidth: "lg:w-[80%] w-[100%]",
 
-  paddings: "sm:p-16 xs:p-8 px-6 py-12",
-  yPaddings: "sm:py-16 xs:py-8 py-12",
-  xPaddings: "sm:px-16 px-8",
-  topPaddings: "sm:pt-16 xs:pt-8 pt-12",
-  bottomPaddings: "sm:pb-16 xs:pb-8 pb-12",
+  paddings: "sm:py-12 py-4 sm:px-12 px-4",
+  yPaddings: "sm:py-12 py-4 ",
+  xPaddings: "sm:px-12 px-4",
+  topPaddings: "sm:pt-12 xs:pt-4 pt-12",
+  bottomPaddings: "sm:pb-12 xs:pb-4 pb-12",
 
   flexCenter: "flex justify-center items-center",
   flexCenterStart: "flex justify-center items-start",

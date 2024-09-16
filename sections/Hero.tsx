@@ -21,7 +21,6 @@ import SolidSvg from "@/components/SolidSVG";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Controls from "@/components/player/controls";
-import AudioList from "@/components/player/AudioList";
 import { ListDrawer } from "@/components/player/ListDrawer";
 
 // redux
@@ -63,7 +62,10 @@ const Hero = () => {
     if (inputValue) {
       fetch("/api/searchEngine", {
         method: "POST",
-        body: JSON.stringify({ string: `${inputValue} music or podcast` }),
+        body: JSON.stringify({
+          string: `${inputValue} music or podcast`,
+          quantity: 1,
+        }),
         headers: {
           "Content-Type": "application/json",
         },
@@ -213,7 +215,7 @@ const Hero = () => {
               required
               placeholder="Search"
             />
-            <Button className=" flex-none" size="icon">
+            <Button variant={"stylized"} className=" flex-none" size="icon">
               <span className={` icon_clothes`}>
                 {loading ? (
                   <UpdateIcon className="h-3 w-3 animate-spin" />

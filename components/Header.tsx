@@ -25,7 +25,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { selectMenuToggle, setMenuToggle } from "../store/UIConfig";
+// constants
+import { Owner, Audio, Collection, User } from "@/constants/interfaces";
+
+import { selectMenuToggle, setMenuToggle } from "@/store/UIConfig";
 import { useDispatch, useSelector } from "react-redux";
 import { DropdownMenuIcon, HamburgerMenuIcon } from "@radix-ui/react-icons";
 
@@ -52,14 +55,26 @@ const Header = () => {
                 <HamburgerMenuIcon className="w-5 h-5 " />
               </div>
             ) : (
-              <Avatar>
+              <Avatar className=" border">
                 <AvatarImage src={user.avatar} />
                 <AvatarFallback>{user.userName.slice(0.2)}</AvatarFallback>
               </Avatar>
             )}
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuLabel> Menu </DropdownMenuLabel>
+            <DropdownMenuLabel>
+              <div className={`relative ${styles.flexStart} flex-col w-full `}>
+                <p>{user.ID ? user.userName : "Menu"} </p>
+                {user.ID && (
+                  <p
+                    className={`${styles.Xsmall} font-light text-muted-foreground mr-12`}
+                  >
+                    {user.email}
+                  </p>
+                )}
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
             <Link href={`/`}>
               <DropdownMenuItem>Home</DropdownMenuItem>
             </Link>{" "}
@@ -69,14 +84,9 @@ const Header = () => {
               </Link>
             ) : (
               <>
-                <DropdownMenuSeparator />
-                <DropdownMenuLabel> My Account </DropdownMenuLabel>
                 <Link href={`/profile/${user.ID}`}>
                   <DropdownMenuItem>Profile</DropdownMenuItem>
                 </Link>{" "}
-                <Link href={`/profile/${user.ID}/collections`}>
-                  <DropdownMenuItem>Collections</DropdownMenuItem>
-                </Link>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={logout}

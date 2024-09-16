@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { Owner, Audio, User } from "@/constants/interfaces";
 
 const { getVideo, getPlaylist, search } =
   require("@fabricio-191/youtube").setDefaultOptions({
@@ -8,29 +9,12 @@ const { getVideo, getPlaylist, search } =
     requestsOptions: {},
   });
 
-interface owner {
-  name: string;
-  ID: string;
-  canonicalURL: string;
-  thumbnails?: string[];
-}
-
-interface Data {
-  ID: string;
-  URL: string;
-  title: string;
-  thumbnails: string[];
-  owner: owner;
-  musicLengthSec?: number;
-  message?: string;
-}
-
-var Data: Data = {
+var Data: Audio = {
   ID: "",
   URL: "",
   title: "",
   thumbnails: [],
-  musicLengthSec: 0,
+  audioLengthSec: 0,
   owner: {
     name: "",
     ID: "",
@@ -39,9 +23,9 @@ var Data: Data = {
   },
 };
 
-const searchMusic = (string: string) => {
+const searchAudio = (string: string, quantity: number) => {
   return new Promise((resolve, reject) => {
-    search(string, { quantity: 1 })
+    search(string, { quantity: quantity })
       .then((data: any) => {
         if (data.results.length === 0) {
           reject(new Error("No video found"));
@@ -65,7 +49,7 @@ const searchMusic = (string: string) => {
             canonicalURL: video.owner.canonicalURL,
             thumbnails: [video.owner.thumbnails[0].url],
           };
-          Data.musicLengthSec = video.duration.number;
+          Data.audioLengthSec = video.duration.number;
 
           // console.log('the returned is ' + Data);
           resolve(Data);
@@ -77,7 +61,7 @@ const searchMusic = (string: string) => {
   });
 };
 
-// searchMusic('quran yu baqara');
+// searchAudio('quran yu baqara');
 
 // export default function handler(
 //     req: NextApiRequest,
@@ -88,17 +72,20 @@ const searchMusic = (string: string) => {
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<Data>
+  res: NextApiResponse<Audio>
 ) {
   try {
     console.log("you sent =>" + req.body.string);
-    const data = await searchMusic(req.body.string as string);
+    const data = await searchAudio(
+      req.body.string as string,
+      req.body.quantity as number
+    );
 
     const responseData = { ...Data, object: data };
     res.status(200).json(responseData);
   } catch (error) {
     const errorAsError = error as Error;
-    const responseData: Data = { ...Data, message: errorAsError.message };
+    const responseData: Audio = { ...Data, message: errorAsError.message };
     res.status(404).json(responseData);
   }
 }

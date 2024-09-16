@@ -134,7 +134,7 @@ export function ListDrawer() {
   return (
     <Drawer>
       <DrawerTrigger asChild>
-        <Button size="icon">
+        <Button variant={"stylized"} size="icon">
           <span className={` icon_clothes`}>
             <ListBulletIcon className="h-3 w-3 " />
           </span>
@@ -201,7 +201,7 @@ export function ListDrawer() {
                         href={audioConfig[index]?.owner?.canonicalURL || ""}
                         target="_"
                         title={audioConfig[index]?.owner?.name || ""}
-                        className={` ${styles.XXsmall} text-primary ellipsis-on-1line `}
+                        className={` ${styles.XXsmall} text-muted-foreground ellipsis-on-1line `}
                       >
                         {audioConfig[index]?.owner?.name || "Welcome!"}
                       </Link>
@@ -216,6 +216,7 @@ export function ListDrawer() {
                     {/* Controls */}
                     <div className={`${styles.flexStart}  gap-2`}>
                       <Button
+                        variant={"stylized"}
                         onClick={() => {
                           dispatch(SET_CURRENT(index));
                           if (current === index) {
@@ -233,6 +234,7 @@ export function ListDrawer() {
                         </span>
                       </Button>
                       <Button
+                        variant={"stylized"}
                         onClick={() => handleDelete(audio.ID)}
                         size="icon"
                       >

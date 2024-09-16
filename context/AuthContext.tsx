@@ -19,6 +19,7 @@ import {
   updateDoc,
   query,
   where,
+  getDoc,
 } from "firebase/firestore";
 import { auth, firestore } from "@/config/firebase";
 import { async } from "@firebase/util";
@@ -47,6 +48,7 @@ export const AuthContextProvider = ({
 
   const [user, setUser] = useState<User>({
     ID: "",
+    docID: "",
     avatar: "",
     userName: "",
     email: "",
@@ -70,6 +72,7 @@ export const AuthContextProvider = ({
         // Only reset user if no Firebase user is present
         setUser({
           ID: "",
+          docID: "",
           avatar: "",
           userName: "",
           email: "",
@@ -155,6 +158,8 @@ export const AuthContextProvider = ({
         // The signed-in user info.
         const user = result.user;
 
+        console.log(user);
+
         const userData = {
           ID: user.uid,
           userName: user.displayName,
@@ -167,6 +172,21 @@ export const AuthContextProvider = ({
           followers: [],
           following: [],
         };
+
+        // Stop firebase from creating dublicate of the accounts we already have if the user wanted to login using the signup function
+        const userRef = doc(firestore, "users", user.uid);
+        console.log("userRef", userRef);
+        console.log("path", userRef.path);
+        // const docSnapshot = await getDoc(userRef);
+
+        // if (userRef.path) {
+        //   console.log(
+        //     "User already exists in Firestore, redirecting to profile"
+        //   );
+        //   router.push(`/profile/${user.uid}`);
+        //   return;
+        // }
+
         if (user.uid) {
           console.log(userData);
           try {
@@ -244,6 +264,7 @@ export const AuthContextProvider = ({
     querySnapshot.forEach((doc) => {
       setUser({
         ID: doc.data().userData.ID,
+        docID: doc.id,
         avatar: doc.data().userData.avatar,
         userName: doc.data().userData.userName,
         email: doc.data().userData.email,
@@ -272,15 +293,38 @@ export const AuthContextProvider = ({
 
       // return userData;
     });
-
-    console.log("getUser");
   };
+
+  async function getProfileUser(uid: string) {
+    const q = query(
+      collection(firestore, "users"),
+      where("userData.ID", "==", uid)
+    );
+    const querySnapshot = await getDocs(q);
+    let userData: any = {};
+    querySnapshot.forEach((doc) => {
+      userData = {
+        ID: doc.data().userData.ID,
+        avatar: doc.data().userData.avatar,
+        userName: doc.data().userData.userName,
+        email: doc.data().userData.email,
+        marketingEmails: doc.data().userData.marketingEmails,
+        lovedSongs: [...doc.data().userData.lovedSongs],
+        collections: [...doc.data().userData.collections],
+        lovedCollections: [...doc.data().userData.lovedCollections],
+        followers: [...doc.data().userData.followers],
+        following: [...doc.data().userData.following],
+      };
+    });
+    return userData;
+  }
 
   const logout = async () => {
     signOut(auth)
       .then(() => {
         setUser({
           ID: "",
+          docID: "",
           avatar: "",
           userName: "",
           email: "",
@@ -300,8 +344,15 @@ export const AuthContextProvider = ({
     console.log("logout");
   };
 
-  const likeMusic = async (audio: Audio) => {
-    if (user.ID) {
+  const likeAudio = async (audio: Audio) => {
+    console.log("in - likeAudio");
+
+    if (
+      user.ID &&
+      user.lovedSongs.every((lovedSong: any) => lovedSong.ID !== audio.ID)
+    ) {
+      console.log("in in  - likeAudio");
+
       const data = {
         userData: {
           ID: user.ID,
@@ -317,7 +368,7 @@ export const AuthContextProvider = ({
         },
       };
       try {
-        const docRef = doc(firestore, "users", user.ID);
+        const docRef = doc(firestore, "users", user.docID);
         updateDoc(docRef, data)
           .then((docRef) => {
             console.log("Entire Document has been updated successfully");
@@ -326,13 +377,16 @@ export const AuthContextProvider = ({
           .catch((error) => {
             console.log(error);
           });
-      } catch (error) {
-        console.error("Error updating loved songs: ", error);
+      } catch (error: any) {
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        console.log(errorCode, errorMessage);
+        throw new Error(errorCode); // Return the error code to the frontend
       }
     }
   };
 
-  const dislikeMusic = async (audio: Audio) => {
+  const dislikeAudio = async (audio: Audio) => {
     if (user.ID) {
       const result = user.lovedSongs.filter((item) => item.ID !== audio.ID);
 
@@ -352,7 +406,7 @@ export const AuthContextProvider = ({
       };
 
       try {
-        const docRef = doc(firestore, "users", user.ID);
+        const docRef = doc(firestore, "users", user.docID);
         updateDoc(docRef, data)
           .then((docRef) => {
             console.log("Entire Document has been updated successfully");
@@ -361,8 +415,11 @@ export const AuthContextProvider = ({
           .catch((error) => {
             console.log(error);
           });
-      } catch (error) {
-        console.error("Error updating loved songs: ", error);
+      } catch (error: any) {
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        console.log(errorCode, errorMessage);
+        throw new Error(errorCode); // Return the error code to the frontend
       }
     }
   };
@@ -376,7 +433,7 @@ export const AuthContextProvider = ({
         thumbnails: [...collection_0001.thumbnails],
         ownerID: user.ID,
         ownerUserName: user.userName,
-        audio: [...collection_0001.music],
+        audio: [...collection_0001.audio],
         likes: 0,
         tags: [...collection_0001.tags],
         date: collection_0001.date,
@@ -415,7 +472,7 @@ export const AuthContextProvider = ({
         },
       };
       try {
-        const docRef = doc(firestore, "users", user.ID);
+        const docRef = doc(firestore, "users", user.docID);
         updateDoc(docRef, data)
           .then((docRef) => {
             console.log("Entire Document has been updated successfully");
@@ -470,7 +527,7 @@ export const AuthContextProvider = ({
       };
 
       try {
-        const docRef = doc(firestore, "users", user.ID);
+        const docRef = doc(firestore, "users", user.docID);
         updateDoc(docRef, data)
           .then((docRef) => {
             console.log("Entire Document has been updated successfully");
@@ -515,11 +572,12 @@ export const AuthContextProvider = ({
         signinPopup,
         logout,
         getUser,
-        likeMusic,
-        dislikeMusic,
+        likeAudio,
+        dislikeAudio,
         AddCollection,
         likeCollection,
         dislikeCollection,
+        getProfileUser,
       }}
     >
       {loading ? <Loader /> : children}
