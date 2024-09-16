@@ -1,6 +1,6 @@
 # Ultimate-nextjs14-starter-repo
 
-TC
+Yukirhythm is a music and podcast player that utilizes YouTube to find and play content based on your searches. Simply enter your favorite type, track, or podcast into the search bar, and Yukirhythm will scrape YouTube to deliver relevant results. Whether you’re looking for a specific track, podcast, or just something new to listen to, Yukirhythm makes it easy to find and enjoy the content you want directly from the web.
 
 ## Key Features
 
