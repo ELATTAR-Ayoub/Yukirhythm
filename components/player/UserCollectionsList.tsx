@@ -47,6 +47,7 @@ import {
   TrashIcon,
 } from "@radix-ui/react-icons";
 import { useAuth } from "@/context/AuthContext";
+import { Badge } from "../ui/badge";
 
 export function UserCollectionList({ id }: { id: string }) {
   // auth
@@ -154,27 +155,23 @@ export function UserCollectionList({ id }: { id: string }) {
   };
 
   const handleDislikeCollection = async (collection: Collection) => {
-    if (
-      user.lovedSongs.some((lovedSong: any) => lovedSong.ID === collection.ID)
-    ) {
-      try {
-        await dislikeCollection(collection);
-        toast("Removed from favorite collections successfully", {
-          action: {
-            label: "Undo",
-            onClick: () => {
-              handleLikeCollection(collection);
-            },
+    try {
+      await dislikeCollection(collection);
+      toast("Removed from favorite collections successfully", {
+        action: {
+          label: "Undo",
+          onClick: () => {
+            handleLikeCollection(collection);
           },
-        });
+        },
+      });
 
-        return;
-      } catch (err) {
-        const errorMessage = (err as Error).message; // Assert err as Error to access message
-        toast("We had an error!", {
-          description: errorMessage,
-        });
-      }
+      return;
+    } catch (err) {
+      const errorMessage = (err as Error).message; // Assert err as Error to access message
+      toast("We had an error!", {
+        description: errorMessage,
+      });
     }
   };
 
@@ -256,6 +253,16 @@ export function UserCollectionList({ id }: { id: string }) {
               >
                 {collection.title || ""}
               </p>
+
+              {/* {collection.tags && (
+                <div className={`${styles.flexStart} flex-wrap gap-1`}>
+                  {collection.tags.map((tg, index) => (
+                    <Badge size={"sm"} key={index} variant="secondary">
+                      {tg.trim()}
+                    </Badge>
+                  ))}
+                </div>
+              )} */}
             </div>
 
             {/* Controls */}
