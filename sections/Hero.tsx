@@ -275,9 +275,9 @@ const Hero = () => {
                   {/* disk */}
                   <div
                     className={` ${
-                      audio.URL == audioConfig[current].URL && playing
+                      audioConfig[current]?.URL === audio.URL && playing
                         ? "discRotation"
-                        : " discRotation animation-state-pause"
+                        : "discRotation animation-state-pause"
                     }  h-full aspect-square rounded-full bg-primary-black overflow-hidden flex-0 shadow-lg ${
                       styles.flexCenter
                     }`}
