@@ -14,49 +14,42 @@ const searchAudio = (string: string, quantity: number) => {
   return new Promise((resolve, reject) => {
     search(string)
       .then((data: any) => {
-        if (data.results.length === 0) {
+        if (!data.results || data.results.length === 0) {
           reject(new Error("No video found"));
         } else {
-          console.log("data.results");
-          console.log(data.results);
-
           let videos = data.results
             .filter((el: any) => el.type === "video")
             .slice(0, quantity);
 
-          for (let index = 0; index < videos.length; index++) {
-            const element = videos[index];
+          let formattedData: Audio[] = [];
 
-            var v = {
-              ID: element.ID,
-              URL: element.URL,
-              title: element.title,
-              thumbnails: [
-                element.thumbnails[0].url,
-                element.thumbnails[1] && element.thumbnails[1].url
-                  ? element.thumbnails[1].url
-                  : null,
-              ],
-              owner: {
-                name: element.owner.name,
-                ID: element.owner.ID,
-                canonicalURL: element.owner.canonicalURL,
-                thumbnails: [element.owner.thumbnails[0].url],
-              },
-              audioLengthSec: element.duration.number,
-            };
+          videos.forEach((element: any) => {
+            if (element && element.ID && element.URL && element.title) {
+              formattedData.push({
+                ID: element.ID,
+                URL: element.URL,
+                title: element.title,
+                thumbnails: [
+                  element.thumbnails[0]?.url || "",
+                  element.thumbnails[1]?.url || "",
+                ],
+                owner: {
+                  name: element.owner?.name || "Unknown",
+                  ID: element.owner?.ID || "",
+                  canonicalURL: element.owner?.canonicalURL || "",
+                  thumbnails: [element.owner?.thumbnails[0]?.url || ""],
+                },
+                audioLengthSec: element.duration?.number || 0,
+              });
+            }
+          });
 
-            Data.push(v);
-          }
-
-          // console.log("The returned value is ", Data.length);
-          // console.log(Data);
-          resolve(Data);
+          resolve(formattedData);
         }
       })
       .catch((error: Error) => {
         reject(error);
-        console.log(error);
+        console.error("Search Error:", error);
       });
   });
 };

@@ -105,20 +105,30 @@ export function UserCollectionList({ id }: { id: string }) {
   }, [id]);
 
   const searchAudio = (inputValue: string) => {
-    fetch("/api/searchEngine", {
-      method: "POST",
-      body: JSON.stringify({ string: inputValue, quantity: 1 }),
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-      .then((res) => res.json())
-      .then((data: Audio) => {
-        dispatch(ADD_ITEM(data));
+    setLoading(true);
+    //
+    if (inputValue) {
+      fetch("/api/searchEngine", {
+        method: "POST",
+        body: JSON.stringify({
+          string: `${inputValue}`,
+          quantity: 1,
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
       })
-      .catch((error) => {
-        console.log(error);
-      });
+        .then((res) => res.json())
+        .then((data: Audio[]) => {
+          dispatch(ADD_ITEM(data[0]));
+          setLoading(false);
+        })
+        .catch((error) => {
+          console.log(error);
+          setLoading(false);
+        });
+    }
+    //
   };
 
   const fetchData = async () => {
@@ -129,7 +139,11 @@ export function UserCollectionList({ id }: { id: string }) {
   };
 
   const handlePlayPause = (audios: Audio[]) => {
-    audios.map((audio, index) => searchAudio(audio.ID));
+    audios.map((audio, index) => {
+      const query = audio.title + " " + (audio.owner?.name || "");
+      searchAudio(query);
+    });
+
     router.push(`/`);
   };
 
@@ -196,6 +210,7 @@ export function UserCollectionList({ id }: { id: string }) {
         {/* All collections */}
         {userCollections.map((collection, index) => (
           <div
+            key={index}
             className={` w-full h-16 ${styles.flexCenter}  pr-3 sm:gap-4 gap-2 rounded-full AudioCard`}
           >
             {/* disk */}

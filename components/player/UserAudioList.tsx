@@ -87,21 +87,30 @@ export function UserAudioList({ id }: { id: string }) {
   }, [id]);
 
   const searchAudio = (inputValue: string) => {
-    fetch("/api/searchEngine", {
-      method: "POST",
-      body: JSON.stringify({ string: inputValue, quantity: 1 }),
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-      .then((res) => res.json())
-      .then((data: Audio[]) => {
-        console.log(data[0]);
-        // dispatch(ADD_ITEM(data[0]));
+    setLoading(true);
+    //
+    if (inputValue) {
+      fetch("/api/searchEngine", {
+        method: "POST",
+        body: JSON.stringify({
+          string: `${inputValue}`,
+          quantity: 1,
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
       })
-      .catch((error) => {
-        console.log(error);
-      });
+        .then((res) => res.json())
+        .then((data: Audio[]) => {
+          dispatch(ADD_ITEM(data[0]));
+          setLoading(false);
+        })
+        .catch((error) => {
+          console.log(error);
+          setLoading(false);
+        });
+    }
+    //
   };
 
   const fetchData = async () => {
@@ -112,8 +121,9 @@ export function UserAudioList({ id }: { id: string }) {
   };
 
   const handlePlayPause = (audio: Audio) => {
-    searchAudio(audio.ID);
-    // router.push(`/`);
+    const query = audio.title + " " + (audio.owner?.name || "");
+    searchAudio(query);
+    router.push(`/`);
   };
 
   const handleLikeAudio = async (audio: Audio) => {
@@ -181,6 +191,7 @@ export function UserAudioList({ id }: { id: string }) {
         {/* All audios */}
         {profileUser.lovedSongs.map((audio, index) => (
           <div
+            key={index}
             className={` w-full h-16 ${styles.flexCenter} pr-3 sm:gap-4 gap-2 rounded-full AudioCard`}
           >
             {/* disk */}
