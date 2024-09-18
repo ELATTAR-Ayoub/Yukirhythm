@@ -13,7 +13,7 @@ import Logo from "./Logo";
 import SolidSvg from "./SolidSVG";
 
 // constant
-import { socials } from "@/constants/index";
+import { socialLinks } from "@/constants/index";
 
 const links = [
   {
@@ -42,50 +42,8 @@ const Footer = () => {
 
   return (
     <footer
-      className={` relative ${
-        styles.flexBetween
-      } flex-col-reverse lg:flex-row gap-12 md:gap-6 ${
-        pathname != "/" ? ` flex` : ` hidden`
-      } w-full bg-primary  border-t-0 border border-primary-white  px-4 py-12 md:px-12`}
-    >
-      <div
-        className={` grid grid-cols-2 grid-rows-2 h-full w-full lg:w-[400px] text-xs md:text-base`}
-      >
-        {links.map((link, index) => (
-          <Link
-            key={index}
-            href={link.url}
-            target={"_blank"}
-            data-value={link.name}
-            className={` ${
-              index == 2 ? "col-span-2 border-b border-l" : "col-span-1"
-            } ${
-              index == 0 ? "border-l" : ""
-            } p-4 py-2 border-r border-t border-primary-white grid place-content-center  hacker-text uppercase`}
-          >
-            {" "}
-            {link.name}{" "}
-          </Link>
-        ))}
-      </div>
-
-      <div
-        className={` grid grid-cols-2 md:grid-cols-2 md:grid-rows-2 gap-6 w-full md:w-auto `}
-      >
-        {socials.map((social, index) => (
-          <Link
-            key={index}
-            href={social.url}
-            target={"_blank"}
-            data-value={social.name}
-            className={` ${styles.flexCenter} underline CTA-secondary p-2 px-4 uppercase !text-xs md:!text-base`}
-          >
-            {" "}
-            {social.name}
-          </Link>
-        ))}
-      </div>
-    </footer>
+      className={` relative  w-full bg-primary  border-t-0 border border-primary-white  px-4 py-12 md:px-12`}
+    ></footer>
   );
 };
 
