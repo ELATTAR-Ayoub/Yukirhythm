@@ -95,8 +95,9 @@ export function UserAudioList({ id }: { id: string }) {
       },
     })
       .then((res) => res.json())
-      .then((data: Audio) => {
-        dispatch(ADD_ITEM(data));
+      .then((data: Audio[]) => {
+        console.log(data[0]);
+        // dispatch(ADD_ITEM(data[0]));
       })
       .catch((error) => {
         console.log(error);
@@ -112,7 +113,7 @@ export function UserAudioList({ id }: { id: string }) {
 
   const handlePlayPause = (audio: Audio) => {
     searchAudio(audio.ID);
-    router.push(`/`);
+    // router.push(`/`);
   };
 
   const handleLikeAudio = async (audio: Audio) => {

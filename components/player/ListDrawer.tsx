@@ -110,35 +110,31 @@ export function ListDrawer() {
   const volume = useSelector(selectAudioVolume);
   const dispatch = useDispatch();
 
-  // player config
-  const [looping, setLooping] = useState(false);
-  const [shuffling, setShuffling] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [ListOpen, setListOpen] = useState(false);
+  const handleDelete = (audio: Audio, index: number) => {
+    dispatch(DELETE_ITEM(audio.ID));
 
-  function seektoBegining() {
-    setDuration(0);
-    dispatch(SET_PLAYING(false));
-    setTimeout(() => {
-      dispatch(SET_PLAYING(true));
-    }, 1000);
-  }
-
-  function skipAudio(change: number) {
-    if (change === 0) {
+    if (current > index) {
+      console.log("current > index");
       dispatch(SKIP_PREV(1));
-      setDuration(0);
-    } else {
-      dispatch(SKIP_NEXT(1));
-      setDuration(0);
+      return;
     }
-  }
 
-  const handleDelete = (id: string) => {
-    console.log(id);
+    if (
+      audio.ID === audioConfig[current].ID &&
+      audioConfig.length - 1 === index
+    ) {
+      console.log("audio.ID === audioConfig[current].ID - mmm");
 
-    dispatch(DELETE_ITEM(id));
+      dispatch(SKIP_PREV(1));
+      return;
+    }
+
+    if (audio.ID === audioConfig[current].ID && index === 0) {
+      console.log("audio.ID === audioConfig[current].ID && index === 0");
+
+      dispatch(SKIP_NEXT(0));
+      return;
+    }
   };
 
   const handlePlayPause = () => {
@@ -236,6 +232,7 @@ export function ListDrawer() {
               {audioConfig[current] &&
                 audioConfig.map((audio, index) => (
                   <div
+                    key={index}
                     className={` w-full h-16 ${styles.flexCenter} pr-3 sm:gap-4 gap-2 rounded-full AudioCard`}
                   >
                     {/* disk */}
@@ -318,7 +315,7 @@ export function ListDrawer() {
                       </Button>
                       <Button
                         variant={"stylized"}
-                        onClick={() => handleDelete(audio.ID)}
+                        onClick={() => handleDelete(audio, index)}
                         size="icon"
                       >
                         <span className={` icon_clothes`}>

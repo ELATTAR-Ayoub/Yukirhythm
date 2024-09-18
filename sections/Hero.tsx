@@ -14,7 +14,11 @@ import "@/styles/player.css";
 import { Owner, Audio } from "@/constants/interfaces";
 
 // Icons
-import { MagnifyingGlassIcon, UpdateIcon } from "@radix-ui/react-icons";
+import {
+  MagnifyingGlassIcon,
+  PlayIcon,
+  UpdateIcon,
+} from "@radix-ui/react-icons";
 
 // components
 import SolidSvg from "@/components/SolidSVG";
@@ -22,6 +26,16 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Controls from "@/components/player/controls";
 import { ListDrawer } from "@/components/player/ListDrawer";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Toaster } from "@/components/ui/sonner";
+import { toast } from "sonner";
 
 // redux
 import {
@@ -43,11 +57,14 @@ const Hero = () => {
   const volume = useSelector(selectAudioVolume);
   const audioPlaying = useSelector(selectAudioPlaying);
   const audioLoading = useSelector(selectAudioLoading);
+  const playing = useSelector(selectAudioPlaying);
   const dispatch = useDispatch();
 
   // value
   const [inputValue, setInputValue] = useState("");
   const [loading, setLoading] = useState(false);
+  const [openSearchList, setOpenSearchList] = useState(false);
+  const [searchedAudios, setSearchedAudios] = useState<Audio[]>([]);
 
   // function
 
@@ -63,16 +80,19 @@ const Hero = () => {
       fetch("/api/searchEngine", {
         method: "POST",
         body: JSON.stringify({
-          string: `${inputValue} music or podcast`,
-          quantity: 1,
+          string: `${inputValue}`,
+          quantity: 10,
         }),
         headers: {
           "Content-Type": "application/json",
         },
       })
         .then((res) => res.json())
-        .then((data: Audio) => {
-          dispatch(ADD_ITEM(data));
+        .then((data: Audio[]) => {
+          console.log("data", data);
+          setSearchedAudios(data);
+          setOpenSearchList(true);
+          // dispatch(ADD_ITEM(data));
           setLoading(false);
         })
         .catch((error) => {
@@ -82,6 +102,11 @@ const Hero = () => {
     }
     //
     setInputValue("");
+  };
+
+  const handleCloseSearchedAudio = () => {
+    setSearchedAudios([]);
+    setOpenSearchList(false);
   };
 
   return (
@@ -227,6 +252,116 @@ const Hero = () => {
           </form>
         </div>
       </section>
+
+      {openSearchList && (
+        <Card className="w-full max-w-5xl max-h-screen fixed center-in-screen z-20 ">
+          <CardHeader>
+            <CardTitle>Searched Audios</CardTitle>
+            <CardDescription>
+              A curated list of audios based on your search input.
+            </CardDescription>
+          </CardHeader>
+          <CardContent
+            className={`grid md:grid-cols-2 xl:grid-cols-3 max-h-96 overflow-auto gap-2 `}
+          >
+            {/* All searched audios */}
+            {/* Check if searchedAudios is an array and has elements */}
+            {Array.isArray(searchedAudios) && searchedAudios.length > 0 ? (
+              searchedAudios.map((audio, index) => (
+                <div
+                  key={index}
+                  className={` w-full h-16 ${styles.flexCenter} pr-3 sm:gap-4 gap-2 rounded-full AudioCard`}
+                >
+                  {/* disk */}
+                  <div
+                    className={` ${
+                      audio.URL == audioConfig[current].URL && playing
+                        ? "discRotation"
+                        : " discRotation animation-state-pause"
+                    }  h-full aspect-square rounded-full bg-primary-black overflow-hidden flex-0 shadow-lg ${
+                      styles.flexCenter
+                    }`}
+                  >
+                    {/* disk middle */}
+                    <div
+                      className={` w-6 aspect-square center-in-parent disc_shadow rounded-full `}
+                    >
+                      <Image
+                        className={`object-contain w-full h-full `}
+                        width={12}
+                        height={12}
+                        src={"/svgs/disc_middle.svg"}
+                        alt={"disc"}
+                      ></Image>
+                    </div>
+                    {/* disk img */}
+                    <div
+                      className={`  Disk_img transition-all duration-700 h-full aspect-video z-[-1] pointer-events-none`}
+                    >
+                      <img
+                        className={` w-full h-full object-cover relative `}
+                        src={audio ? audio.thumbnails[0] : ""}
+                        alt="audio_thumbnails"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Audio info */}
+                  <div
+                    className={`${styles.flexCenter} flex-col gap-1 text-center flex-1 overflow-hidden`}
+                  >
+                    <Link
+                      href={audio?.owner?.canonicalURL || ""}
+                      target="_"
+                      title={audio?.owner?.name || ""}
+                      className={` ${styles.XXsmall} text-muted-foreground ellipsis-on-1line  `}
+                    >
+                      {audio?.owner?.name || "Unavailable!"}
+                    </Link>
+                    <p
+                      title={audio?.title || ""}
+                      className={` ${styles.XXsmall} font-semibold text-primary cursor-default ellipsis-on-1line`}
+                    >
+                      {audio?.title || "Search below"}
+                    </p>
+                  </div>
+
+                  {/* Controls */}
+                  <div className={`${styles.flexStart}  gap-2`}>
+                    <Button
+                      variant={"stylized"}
+                      onClick={() => {
+                        dispatch(ADD_ITEM(audio));
+
+                        toast("Audio add to player successfully", {});
+                      }}
+                      size="icon"
+                    >
+                      <span className={` icon_clothes`}>
+                        <PlayIcon className="h-3 w-3" />
+                      </span>
+                    </Button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className={`${styles.small} text-muted-foreground `}>
+                No audios found. Please try searching again.
+              </p>
+            )}
+          </CardContent>
+          <CardFooter className="flex justify-between mt-2">
+            <Button
+              onClick={() => handleCloseSearchedAudio()}
+              variant="outline"
+              className=" w-full"
+            >
+              Cancel
+            </Button>
+          </CardFooter>
+        </Card>
+      )}
+      <Toaster />
     </section>
   );
 };
