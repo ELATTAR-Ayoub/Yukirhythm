@@ -87,6 +87,9 @@ const Header = () => {
                 <Link href={`/profile/${user.ID}`}>
                   <DropdownMenuItem>Profile</DropdownMenuItem>
                 </Link>{" "}
+                <Link href={`/credits`}>
+                  <DropdownMenuItem>Credits</DropdownMenuItem>
+                </Link>{" "}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={logout}

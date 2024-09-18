@@ -1,8 +1,13 @@
-export const socials = [
+export const socialLinks = [
+  {
+    name: "Portfolio",
+    svgPath: "/svgs/twitter.svg",
+    url: "https://elattar.dev",
+  },
   {
     name: "twitter",
     svgPath: "/svgs/twitter.svg",
-    url: "https://twitter.com/EA_Krowl",
+    url: "https://twitter.com/elattar_ux",
   },
   {
     name: "linkedin",

@@ -7,7 +7,7 @@ Yukirhythm is a music and podcast player that utilizes YouTube to find and play 
 - **TC**: TC
 - **TC**: TC
 - **TC**: TC
-- **GSAP Animations**: Create captivating user experiences with animations.
+- **TC**: TC
 
 ## TC
 
