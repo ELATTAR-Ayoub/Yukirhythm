@@ -230,7 +230,7 @@ export function ListDrawer() {
             <div className={`${styles.flexStart} flex-col h-full gap-2  `}>
               {/* All audios */}
               {audioConfig[current] &&
-                audioConfig.map((audio, index) => (
+                audioConfig.map((audio: Audio, index: number) => (
                   <div
                     key={index}
                     className={` w-full h-16 ${styles.flexCenter} pr-3 sm:gap-4 gap-2 rounded-full AudioCard`}
@@ -323,21 +323,23 @@ export function ListDrawer() {
                         </span>
                       </Button>
 
-                      <Button
-                        variant={"stylized"}
-                        onClick={() => handleInteractionWithLike(audio)}
-                        size="icon"
-                      >
-                        <span className={` icon_clothes`}>
-                          {!user.lovedSongs.some(
-                            (lovedSong: any) => lovedSong.ID === audio.ID
-                          ) ? (
-                            <HeartIcon className="h-3 w-3 " />
-                          ) : (
-                            <HeartFilledIcon className="h-3 w-3 " />
-                          )}
-                        </span>
-                      </Button>
+                      {user.ID && (
+                        <Button
+                          variant={"stylized"}
+                          onClick={() => handleInteractionWithLike(audio)}
+                          size="icon"
+                        >
+                          <span className={` icon_clothes`}>
+                            {!user.lovedSongs.some(
+                              (lovedSong: any) => lovedSong.ID === audio.ID
+                            ) ? (
+                              <HeartIcon className="h-3 w-3 " />
+                            ) : (
+                              <HeartFilledIcon className="h-3 w-3 " />
+                            )}
+                          </span>
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))}
