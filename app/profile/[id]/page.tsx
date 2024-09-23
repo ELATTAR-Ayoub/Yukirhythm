@@ -89,18 +89,20 @@ const Page = ({ params }: any) => {
 
           <div className={`relative ${styles.flexCenter} gap-2`}>
             <Avatar className=" border ">
-              <AvatarImage src={profileUser.avatar} />
-              <AvatarFallback>{profileUser.userName.slice(0.2)}</AvatarFallback>
+              <AvatarImage src={profileUser.avatar && profileUser.avatar} />
+              <AvatarFallback>
+                {profileUser.userName && profileUser.userName.slice(0.2)}
+              </AvatarFallback>
             </Avatar>
 
             <div className={`relative ${styles.flexStart} flex-col w-full `}>
               <p className={`${styles.small} font-semibold `}>
-                {profileUser.userName}{" "}
+                {profileUser.userName && profileUser.userName}{" "}
               </p>
               <p
                 className={`${styles.Xsmall} font-light text-muted-foreground `}
               >
-                {profileUser.email}
+                {profileUser.email && profileUser.email}
               </p>
             </div>
           </div>

@@ -43,7 +43,7 @@ const Header = () => {
 
   return (
     <header
-      className={` fixed right-4 sm:left-1/2 sm:-translate-x-1/2 bottom-4 ${styles.flexCenterStart} z-30 text-primary shadow-lg`}
+      className={` fixed right-4 sm:left-1/2 sm:-translate-x-1/2 bottom-4 ${styles.flexCenterStart} z-30 text-primary `}
     >
       <nav className={`relative ${styles.flexCenter} w-full `}>
         <DropdownMenu>
@@ -78,6 +78,9 @@ const Header = () => {
             <Link href={`/`}>
               <DropdownMenuItem>Home</DropdownMenuItem>
             </Link>{" "}
+            <Link href={`/credits`}>
+              <DropdownMenuItem>Credits</DropdownMenuItem>
+            </Link>{" "}
             {!user.ID ? (
               <Link href={`/login`}>
                 <DropdownMenuItem>Login</DropdownMenuItem>
@@ -86,9 +89,6 @@ const Header = () => {
               <>
                 <Link href={`/profile/${user.ID}`}>
                   <DropdownMenuItem>Profile</DropdownMenuItem>
-                </Link>{" "}
-                <Link href={`/credits`}>
-                  <DropdownMenuItem>Credits</DropdownMenuItem>
                 </Link>{" "}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
