@@ -238,7 +238,7 @@ const Hero = () => {
               className={`main_shadow h-8 w-0 p-0 border-0 delay-200 duration-500 `}
               type="text"
               required
-              placeholder="Search"
+              // placeholder="Search"
             />
             <Button variant={"stylized"} className=" flex-none" size="icon">
               <span className={` icon_clothes`}>

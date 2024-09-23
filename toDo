@@ -2,3 +2,7 @@
 
 5 - add loading state to the player when the audio is loading
 6 - add floating media control so it can play on all the pages not only the home
+7 - add the time in the music searched in the searxhed list
+8 - remove dublicated songs in the player and stop adding them in
+9 - stop the signup function from creating dublicated acc
+10 - add these inside authContext: toast("Audio add to player successfully", {});

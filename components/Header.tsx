@@ -78,9 +78,6 @@ const Header = () => {
             <Link href={`/`}>
               <DropdownMenuItem>Home</DropdownMenuItem>
             </Link>{" "}
-            <Link href={`/credits`}>
-              <DropdownMenuItem>Credits</DropdownMenuItem>
-            </Link>{" "}
             {!user.ID ? (
               <Link href={`/login`}>
                 <DropdownMenuItem>Login</DropdownMenuItem>
@@ -91,14 +88,19 @@ const Header = () => {
                   <DropdownMenuItem>Profile</DropdownMenuItem>
                 </Link>{" "}
                 <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={logout}
-                  className="bg-destructive text-destructive-foreground shadow-sm hover:!bg-destructive/90"
-                >
-                  Log out
-                </DropdownMenuItem>
               </>
             )}{" "}
+            <Link href={`/credits`}>
+              <DropdownMenuItem>Credits</DropdownMenuItem>
+            </Link>{" "}
+            {user.ID && (
+              <DropdownMenuItem
+                onClick={logout}
+                className="bg-destructive text-destructive-foreground shadow-sm hover:!bg-destructive/90"
+              >
+                Log out
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </nav>

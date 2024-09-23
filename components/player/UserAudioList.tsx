@@ -250,7 +250,7 @@ export function UserAudioList({ id }: { id: string }) {
               </div>
 
               {/* Controls */}
-              <div className={`${styles.flexStart}  gap-2`}>
+              <div className={`${styles.flexStart} flex-row-reverse gap-2`}>
                 <Button
                   variant={"stylized"}
                   onClick={() => {

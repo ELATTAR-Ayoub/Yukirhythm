@@ -222,7 +222,7 @@ export function ListDrawer() {
                 </DrawerDescription>
               </div>
 
-              <AddCollectionForm audios={audioConfig} />
+              {user.ID && <AddCollectionForm audios={audioConfig} />}
             </div>
           </DrawerHeader>
           <div className="p-4 pb-0 max-h-64 overflow-auto">
@@ -294,7 +294,9 @@ export function ListDrawer() {
                     </div>
 
                     {/* Controls */}
-                    <div className={`${styles.flexStart}  gap-2`}>
+                    <div
+                      className={`${styles.flexStart} flex-row-reverse  gap-2`}
+                    >
                       <Button
                         variant={"stylized"}
                         onClick={() => {
