@@ -189,118 +189,119 @@ export function UserAudioList({ id }: { id: string }) {
         className={`grid md:grid-cols-2 xl:grid-cols-3 w-full h-full gap-2 overflow-auto `}
       >
         {/* All audios */}
-        {profileUser.lovedSongs.map((audio, index) => (
-          <div
-            key={index}
-            className={` w-full h-16 ${styles.flexCenter} pr-3 sm:gap-4 gap-2 rounded-full AudioCard`}
-          >
-            {/* disk */}
+        {profileUser.lovedSongs &&
+          profileUser.lovedSongs.map((audio, index) => (
             <div
-              className={` ${
-                current == index && playing
-                  ? "discRotation"
-                  : " discRotation animation-state-pause"
-              }  h-full aspect-square rounded-full bg-primary-black overflow-hidden flex-0 shadow-lg ${
-                styles.flexCenter
-              }`}
+              key={index}
+              className={` w-full h-16 ${styles.flexCenter} pr-3 sm:gap-4 gap-2 rounded-full AudioCard`}
             >
-              {/* disk middle */}
+              {/* disk */}
               <div
-                className={` w-6 aspect-square center-in-parent disc_shadow rounded-full `}
+                className={` ${
+                  current == index && playing
+                    ? "discRotation"
+                    : " discRotation animation-state-pause"
+                }  h-full aspect-square rounded-full bg-primary-black overflow-hidden flex-0 shadow-lg ${
+                  styles.flexCenter
+                }`}
               >
-                <Image
-                  className={`object-contain w-full h-full `}
-                  width={12}
-                  height={12}
-                  src={"/svgs/disc_middle.svg"}
-                  alt={"disc"}
-                ></Image>
+                {/* disk middle */}
+                <div
+                  className={` w-6 aspect-square center-in-parent disc_shadow rounded-full `}
+                >
+                  <Image
+                    className={`object-contain w-full h-full `}
+                    width={12}
+                    height={12}
+                    src={"/svgs/disc_middle.svg"}
+                    alt={"disc"}
+                  ></Image>
+                </div>
+                {/* disk img */}
+                <div
+                  className={`  Disk_img transition-all duration-700 h-full aspect-video z-[-1] pointer-events-none`}
+                >
+                  <img
+                    className={` w-full h-full object-cover relative `}
+                    src={audio ? audio.thumbnails[0] : ""}
+                    alt="audio_thumbnails"
+                  />
+                </div>
               </div>
-              {/* disk img */}
+
+              {/* Audio info */}
               <div
-                className={`  Disk_img transition-all duration-700 h-full aspect-video z-[-1] pointer-events-none`}
+                className={`${styles.flexCenter} flex-col gap-1 text-center flex-1 overflow-hidden`}
               >
-                <img
-                  className={` w-full h-full object-cover relative `}
-                  src={audio ? audio.thumbnails[0] : ""}
-                  alt="audio_thumbnails"
-                />
+                <Link
+                  href={audio?.owner?.canonicalURL || ""}
+                  target="_"
+                  title={audio?.owner?.name || ""}
+                  className={` ${styles.XXsmall} text-muted-foreground ellipsis-on-1line  `}
+                >
+                  {audio?.owner?.name || "Unavailable!"}
+                </Link>
+                <p
+                  title={audio?.title || ""}
+                  className={` ${styles.XXsmall} font-semibold text-primary cursor-default ellipsis-on-1line`}
+                >
+                  {audio?.title || "Search below"}
+                </p>
+              </div>
+
+              {/* Controls */}
+              <div className={`${styles.flexStart}  gap-2`}>
+                <Button
+                  variant={"stylized"}
+                  onClick={() => {
+                    handlePlayPause(audio);
+                  }}
+                  size="icon"
+                >
+                  <span className={` icon_clothes`}>
+                    {current == index && playing ? (
+                      <PauseIcon className="h-3 w-3 " />
+                    ) : (
+                      <PlayIcon className="h-3 w-3" />
+                    )}
+                  </span>
+                </Button>
+                {user.ID == profileUser.ID && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant={"stylized"} size={"icon"}>
+                        {!user.lovedSongs.some(
+                          (lovedSong: any) => lovedSong.ID === audio.ID
+                        ) ? (
+                          <HeartIcon className="h-3 w-3 " />
+                        ) : (
+                          <HeartFilledIcon className="h-3 w-3 " />
+                        )}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>
+                          Are you absolutely sure?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will remove this audio from your favorites.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleInteractionWithLike(audio)}
+                        >
+                          Continue
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
               </div>
             </div>
-
-            {/* Audio info */}
-            <div
-              className={`${styles.flexCenter} flex-col gap-1 text-center flex-1 overflow-hidden`}
-            >
-              <Link
-                href={audio?.owner?.canonicalURL || ""}
-                target="_"
-                title={audio?.owner?.name || ""}
-                className={` ${styles.XXsmall} text-muted-foreground ellipsis-on-1line  `}
-              >
-                {audio?.owner?.name || "Unavailable!"}
-              </Link>
-              <p
-                title={audio?.title || ""}
-                className={` ${styles.XXsmall} font-semibold text-primary cursor-default ellipsis-on-1line`}
-              >
-                {audio?.title || "Search below"}
-              </p>
-            </div>
-
-            {/* Controls */}
-            <div className={`${styles.flexStart}  gap-2`}>
-              <Button
-                variant={"stylized"}
-                onClick={() => {
-                  handlePlayPause(audio);
-                }}
-                size="icon"
-              >
-                <span className={` icon_clothes`}>
-                  {current == index && playing ? (
-                    <PauseIcon className="h-3 w-3 " />
-                  ) : (
-                    <PlayIcon className="h-3 w-3" />
-                  )}
-                </span>
-              </Button>
-              {user.ID == profileUser.ID && (
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant={"stylized"} size={"icon"}>
-                      {!user.lovedSongs.some(
-                        (lovedSong: any) => lovedSong.ID === audio.ID
-                      ) ? (
-                        <HeartIcon className="h-3 w-3 " />
-                      ) : (
-                        <HeartFilledIcon className="h-3 w-3 " />
-                      )}
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>
-                        Are you absolutely sure?
-                      </AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This will remove this audio from your favorites.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => handleInteractionWithLike(audio)}
-                      >
-                        Continue
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              )}
-            </div>
-          </div>
-        ))}
+          ))}
       </div>
     </>
   );
