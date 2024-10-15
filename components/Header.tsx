@@ -87,19 +87,22 @@ const Header = () => {
                 <Link href={`/profile/${user.ID}`}>
                   <DropdownMenuItem>Profile</DropdownMenuItem>
                 </Link>{" "}
-                <DropdownMenuSeparator />
               </>
             )}{" "}
             <Link href={`/credits`}>
               <DropdownMenuItem>Credits</DropdownMenuItem>
             </Link>{" "}
             {user.ID && (
-              <DropdownMenuItem
-                onClick={logout}
-                className="bg-destructive text-destructive-foreground shadow-sm hover:!bg-destructive/90"
-              >
-                Log out
-              </DropdownMenuItem>
+              <>
+                <DropdownMenuSeparator />
+
+                <DropdownMenuItem
+                  onClick={logout}
+                  className="bg-destructive text-destructive-foreground shadow-sm hover:!bg-destructive/90"
+                >
+                  Log out
+                </DropdownMenuItem>
+              </>
             )}
           </DropdownMenuContent>
         </DropdownMenu>

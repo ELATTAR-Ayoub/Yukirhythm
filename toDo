@@ -1,8 +1,9 @@
 1- Say Besmi Allah and Make Great Things.
 
 5 - add loading state to the player when the audio is loading
-6 - add floating media control so it can play on all the pages not only the home
-7 - add the time in the music searched in the searxhed list
+6 - add floating media control so it can play on all the pages not only the home (not now if u dont want to)
+7 - add the time in the music searched in the searched list
 8 - remove dublicated songs in the player and stop adding them in
 9 - stop the signup function from creating dublicated acc
 10 - add these inside authContext: toast("Audio add to player successfully", {});
+11 - add an information so ppl that knwos the video wont be played by reactplayer knows

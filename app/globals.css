@@ -98,6 +98,12 @@ body {
   -webkit-box-orient: vertical;
 }
 
+/* Links */
+
+a {
+  @apply underline hover:opacity-75;
+}
+
 /* main */
 
 .soundwaves {

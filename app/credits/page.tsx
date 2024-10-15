@@ -23,7 +23,7 @@ const Page = () => {
     >
       <AuroraBackground className=" p-4">
         <section
-          className={` relative w-full max-w-max ${styles.flexStart} flex-col gap-6 rounded-xl border bg-card text-card-foreground shadow p-6 shadow-xl `}
+          className={` relative w-full max-w-max ${styles.flexStart} flex-col gap-6 rounded-xl border bg-card text-card-foreground p-6 shadow-xl  `}
         >
           <div className={`${styles.flexStart} gap-3 w-full`}>
             <Avatar className=" border">
@@ -50,9 +50,21 @@ const Page = () => {
             ))}
           </div>
 
-          <span
+          <p
             className={` ${styles.XXsmall} text-muted-foreground`}
-          >{`Built with <3 by ELATTAR Ayoub.`}</span>
+          >{`Built with <3 by ELATTAR Ayoub.`}</p>
+
+          <p className={` ${styles.XXsmall} text-muted-foreground`}>
+            Thanks to{" "}
+            <Link target="_" href={"https://ui.shadcn.com"}>
+              Chadcn
+            </Link>{" "}
+            and{" "}
+            <Link target="_" href={"https://github.com/Fabricio-191/youtube"}>
+              Fabricio-191
+            </Link>{" "}
+            for there fantastic libraries.
+          </p>
         </section>
       </AuroraBackground>
     </section>
