@@ -109,6 +109,22 @@ const Hero = () => {
     setOpenSearchList(false);
   };
 
+  function secondsToHMS(seconds: number): string {
+    const h = Math.floor(seconds / 3600); // 1 hour = 3600 seconds
+    const m = Math.floor((seconds % 3600) / 60); // 1 minute = 60 seconds
+    const s = seconds % 60;
+
+    // Format to ensure two digits for minutes and seconds (e.g., 05, 09)
+    const formattedH = h.toString();
+    const formattedM = m.toString().padStart(2, "0");
+    const formattedS = s.toString().padStart(2, "0");
+
+    // Only show hours if h > 0, otherwise show m:s
+    return h > 0
+      ? `${formattedH}:${formattedM}:${formattedS}`
+      : `${m}:${formattedS}`;
+  }
+
   return (
     <section
       className={` relative flex sm:justify-center justify-end items-center flex-col w-full h-screen overflow-hidden p-4 `}
@@ -313,19 +329,28 @@ const Hero = () => {
                       <div
                         className={`${styles.flexCenter} flex-col gap-1 text-center flex-1 overflow-hidden`}
                       >
-                        <Link
-                          href={audio?.owner?.canonicalURL || ""}
-                          target="_"
-                          title={audio?.owner?.name || ""}
-                          className={` ${styles.XXsmall} text-muted-foreground ellipsis-on-1line  `}
+                        {/*  */}
+                        <div
+                          className={` ${styles.flexCenter} gap-2 ${styles.XXsmall} text-muted-foreground w-full  `}
                         >
-                          {audio?.owner?.name || "Unavailable!"}
-                        </Link>
+                          <Link
+                            href={audio?.owner?.canonicalURL || ""}
+                            target="_"
+                            title={audio?.owner?.name || ""}
+                            className={` ${styles.XXsmall} text-muted-foreground ellipsis-on-1line  `}
+                          >
+                            {audio?.owner?.name || "Unavailable!"}
+                          </Link>
+                          <div className=" w-1 aspect-square bg-muted rounded-full"></div>
+
+                          <p>{secondsToHMS(audio?.audioLengthSec ?? 0)}</p>
+                        </div>
+                        {/*  */}
                         <p
                           title={audio?.title || ""}
                           className={` ${styles.XXsmall} font-semibold text-primary cursor-default ellipsis-on-1line`}
                         >
-                          {audio?.title || "Search below"}
+                          {audio?.title}
                         </p>
                       </div>
 
@@ -357,11 +382,10 @@ const Hero = () => {
               <LoadingSkeleton />
             )}
           </CardContent>
-          <CardFooter className="flex justify-between mt-2">
+          <CardFooter className="flex justify-center mt-2">
             <Button
               onClick={() => handleCloseSearchedAudio()}
               variant="outline"
-              className=" w-full"
             >
               Cancel
             </Button>
@@ -377,18 +401,16 @@ export default Hero;
 
 const LoadingSkeleton = () => {
   return (
-    <div
-      className={`grid md:grid-cols-2 xl:grid-cols-3 max-h-96 overflow-auto gap-2 `}
-    >
-      {Array(4)
+    <>
+      {Array(9)
         .fill(undefined)
         .map((_, index) => (
           <div
             key={index}
             style={{ animationDelay: `${200 * index}ms` }} // Corrected style syntax
-            className={` w-full h-16 pr-3 rounded-full bg-primary animate-pulse`}
+            className={` w-full h-16 pr-3 rounded-full bg-muted animate-pulse `}
           ></div>
         ))}
-    </div>
+    </>
   );
 };
