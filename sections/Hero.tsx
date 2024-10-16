@@ -75,6 +75,7 @@ const Hero = () => {
   ) => {
     event.preventDefault();
     setLoading(true);
+    setOpenSearchList(true);
     //
     if (inputValue) {
       fetch("/api/searchEngine", {
@@ -91,7 +92,6 @@ const Hero = () => {
         .then((data: Audio[]) => {
           console.log("data", data);
           setSearchedAudios(data);
-          setOpenSearchList(true);
           // dispatch(ADD_ITEM(data));
           setLoading(false);
         })
@@ -266,88 +266,95 @@ const Hero = () => {
           >
             {/* All searched audios */}
             {/* Check if searchedAudios is an array and has elements */}
-            {Array.isArray(searchedAudios) && searchedAudios.length > 0 ? (
-              searchedAudios.map((audio, index) => (
-                <div
-                  key={index}
-                  className={` w-full h-16 ${styles.flexCenter} pr-3 sm:gap-4 gap-2 rounded-full AudioCard`}
-                >
-                  {/* disk */}
-                  <div
-                    className={` ${
-                      audioConfig[current]?.URL === audio.URL && playing
-                        ? "discRotation"
-                        : "discRotation animation-state-pause"
-                    }  h-full aspect-square rounded-full bg-primary-black overflow-hidden flex-0 shadow-lg ${
-                      styles.flexCenter
-                    }`}
-                  >
-                    {/* disk middle */}
+
+            {!loading ? (
+              <>
+                {Array.isArray(searchedAudios) && searchedAudios.length > 0 ? (
+                  searchedAudios.map((audio, index) => (
                     <div
-                      className={` w-6 aspect-square center-in-parent disc_shadow rounded-full `}
+                      key={index}
+                      className={` w-full h-16 ${styles.flexCenter} pr-3 sm:gap-4 gap-2 rounded-full AudioCard`}
                     >
-                      <Image
-                        className={`object-contain w-full h-full `}
-                        width={12}
-                        height={12}
-                        src={"/svgs/disc_middle.svg"}
-                        alt={"disc"}
-                      ></Image>
+                      {/* disk */}
+                      <div
+                        className={` ${
+                          audioConfig[current]?.URL === audio.URL && playing
+                            ? "discRotation"
+                            : "discRotation animation-state-pause"
+                        }  h-full aspect-square rounded-full bg-primary-black overflow-hidden flex-0 shadow-lg ${
+                          styles.flexCenter
+                        }`}
+                      >
+                        {/* disk middle */}
+                        <div
+                          className={` w-6 aspect-square center-in-parent disc_shadow rounded-full `}
+                        >
+                          <Image
+                            className={`object-contain w-full h-full `}
+                            width={12}
+                            height={12}
+                            src={"/svgs/disc_middle.svg"}
+                            alt={"disc"}
+                          ></Image>
+                        </div>
+                        {/* disk img */}
+                        <div
+                          className={`  Disk_img transition-all duration-700 h-full aspect-video z-[-1] pointer-events-none`}
+                        >
+                          <img
+                            className={` w-full h-full object-cover relative `}
+                            src={audio ? audio.thumbnails[0] : ""}
+                            alt="audio_thumbnails"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Audio info */}
+                      <div
+                        className={`${styles.flexCenter} flex-col gap-1 text-center flex-1 overflow-hidden`}
+                      >
+                        <Link
+                          href={audio?.owner?.canonicalURL || ""}
+                          target="_"
+                          title={audio?.owner?.name || ""}
+                          className={` ${styles.XXsmall} text-muted-foreground ellipsis-on-1line  `}
+                        >
+                          {audio?.owner?.name || "Unavailable!"}
+                        </Link>
+                        <p
+                          title={audio?.title || ""}
+                          className={` ${styles.XXsmall} font-semibold text-primary cursor-default ellipsis-on-1line`}
+                        >
+                          {audio?.title || "Search below"}
+                        </p>
+                      </div>
+
+                      {/* Controls */}
+                      <div className={`${styles.flexStart}  gap-2`}>
+                        <Button
+                          variant={"stylized"}
+                          onClick={() => {
+                            dispatch(ADD_ITEM(audio));
+
+                            toast("Audio add to player successfully", {});
+                          }}
+                          size="icon"
+                        >
+                          <span className={` icon_clothes`}>
+                            <PlayIcon className="h-3 w-3" />
+                          </span>
+                        </Button>
+                      </div>
                     </div>
-                    {/* disk img */}
-                    <div
-                      className={`  Disk_img transition-all duration-700 h-full aspect-video z-[-1] pointer-events-none`}
-                    >
-                      <img
-                        className={` w-full h-full object-cover relative `}
-                        src={audio ? audio.thumbnails[0] : ""}
-                        alt="audio_thumbnails"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Audio info */}
-                  <div
-                    className={`${styles.flexCenter} flex-col gap-1 text-center flex-1 overflow-hidden`}
-                  >
-                    <Link
-                      href={audio?.owner?.canonicalURL || ""}
-                      target="_"
-                      title={audio?.owner?.name || ""}
-                      className={` ${styles.XXsmall} text-muted-foreground ellipsis-on-1line  `}
-                    >
-                      {audio?.owner?.name || "Unavailable!"}
-                    </Link>
-                    <p
-                      title={audio?.title || ""}
-                      className={` ${styles.XXsmall} font-semibold text-primary cursor-default ellipsis-on-1line`}
-                    >
-                      {audio?.title || "Search below"}
-                    </p>
-                  </div>
-
-                  {/* Controls */}
-                  <div className={`${styles.flexStart}  gap-2`}>
-                    <Button
-                      variant={"stylized"}
-                      onClick={() => {
-                        dispatch(ADD_ITEM(audio));
-
-                        toast("Audio add to player successfully", {});
-                      }}
-                      size="icon"
-                    >
-                      <span className={` icon_clothes`}>
-                        <PlayIcon className="h-3 w-3" />
-                      </span>
-                    </Button>
-                  </div>
-                </div>
-              ))
+                  ))
+                ) : (
+                  <p className={`${styles.small} text-muted-foreground `}>
+                    No audios found. Please try searching again.
+                  </p>
+                )}
+              </>
             ) : (
-              <p className={`${styles.small} text-muted-foreground `}>
-                No audios found. Please try searching again.
-              </p>
+              <LoadingSkeleton />
             )}
           </CardContent>
           <CardFooter className="flex justify-between mt-2">
@@ -367,3 +374,21 @@ const Hero = () => {
 };
 
 export default Hero;
+
+const LoadingSkeleton = () => {
+  return (
+    <div
+      className={`grid md:grid-cols-2 xl:grid-cols-3 max-h-96 overflow-auto gap-2 `}
+    >
+      {Array(4)
+        .fill(undefined)
+        .map((_, index) => (
+          <div
+            key={index}
+            style={{ animationDelay: `${200 * index}ms` }} // Corrected style syntax
+            className={` w-full h-16 pr-3 rounded-full bg-primary animate-pulse`}
+          ></div>
+        ))}
+    </div>
+  );
+};

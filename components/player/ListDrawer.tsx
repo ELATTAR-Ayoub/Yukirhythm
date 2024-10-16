@@ -315,15 +315,6 @@ export function ListDrawer() {
                           )}
                         </span>
                       </Button>
-                      <Button
-                        variant={"stylized"}
-                        onClick={() => handleDelete(audio, index)}
-                        size="icon"
-                      >
-                        <span className={` icon_clothes`}>
-                          <TrashIcon className="h-3 w-3 " />
-                        </span>
-                      </Button>
 
                       {user.ID && (
                         <Button
@@ -342,6 +333,16 @@ export function ListDrawer() {
                           </span>
                         </Button>
                       )}
+
+                      <Button
+                        variant={"stylized"}
+                        onClick={() => handleDelete(audio, index)}
+                        size="icon"
+                      >
+                        <span className={` icon_clothes`}>
+                          <TrashIcon className="h-3 w-3 " />
+                        </span>
+                      </Button>
                     </div>
                   </div>
                 ))}

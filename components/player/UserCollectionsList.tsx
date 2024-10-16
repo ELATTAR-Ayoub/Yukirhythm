@@ -281,7 +281,7 @@ export function UserCollectionList({ id }: { id: string }) {
             </div>
 
             {/* Controls */}
-            <div className={`${styles.flexStart}  gap-2`}>
+            <div className={`${styles.flexStart}  gap-2 flex-row-reverse`}>
               <Button
                 variant={"stylized"}
                 onClick={() => {
