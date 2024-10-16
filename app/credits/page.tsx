@@ -56,11 +56,19 @@ const Page = () => {
 
           <p className={` ${styles.XXsmall} text-muted-foreground`}>
             Thanks to{" "}
-            <Link target="_" href={"https://ui.shadcn.com"}>
+            <Link
+              className="underline hover:opacity-75"
+              target="_"
+              href={"https://ui.shadcn.com"}
+            >
               Chadcn
             </Link>{" "}
             and{" "}
-            <Link target="_" href={"https://github.com/Fabricio-191/youtube"}>
+            <Link
+              className="underline hover:opacity-75"
+              target="_"
+              href={"https://github.com/Fabricio-191/youtube"}
+            >
               Fabricio-191
             </Link>{" "}
             for there fantastic libraries.
