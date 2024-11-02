@@ -5,6 +5,11 @@ export const socialLinks = [
     url: "https://elattar.dev",
   },
   {
+    name: "dribbble",
+    svgPath: "/svgs/dribbble.svg",
+    url: "https://dribbble.com/Elattar_ux",
+  },
+  {
     name: "twitter",
     svgPath: "/svgs/twitter.svg",
     url: "https://twitter.com/elattar_ux",
