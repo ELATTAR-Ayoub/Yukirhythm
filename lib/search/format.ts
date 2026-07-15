@@ -27,8 +27,8 @@ export function validateSearchRequest(body: {
 export function formatVideos(results: any[], quantity: number): Audio[] {
   return results
     .filter((el) => el?.type === "video")
-    .slice(0, quantity)
     .filter((el) => el?.ID && el?.URL && el?.title)
+    .slice(0, quantity)
     .map((el) => ({
       ID: el.ID,
       URL: el.URL,

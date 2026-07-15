@@ -31,4 +31,14 @@ describe("formatVideos", () => {
     expect(out).toHaveLength(1);
     expect(out[0]).toMatchObject({ ID: "1", title: "t1", audioLengthSec: 100 });
   });
+
+  it("does not drop valid videos when early entries are incomplete", () => {
+    const raw = [
+      { type: "video", ID: "", URL: "", title: "" },
+      { type: "video", ID: "", URL: "", title: "" },
+      { type: "video", ID: "9", URL: "u9", title: "t9", thumbnails: [{ url: "a" }], owner: { name: "o", ID: "o", canonicalURL: "c" }, duration: { number: 42 } },
+    ];
+    const out = formatVideos(raw as any, 2);
+    expect(out.map((v) => v.ID)).toEqual(["9"]);
+  });
 });
