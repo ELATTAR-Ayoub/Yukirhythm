@@ -19,6 +19,10 @@ import {
   query,
   where,
   getDoc,
+  runTransaction,
+  arrayUnion,
+  arrayRemove,
+  increment,
 } from "firebase/firestore";
 import { auth, firestore } from "@/config/firebase";
 
@@ -278,82 +282,39 @@ export const AuthContextProvider = ({
   };
 
   const likeAudio = async (audio: Audio) => {
-    console.log("in - likeAudio");
-
-    if (
-      user.ID &&
-      user.lovedSongs.every((lovedSong: any) => lovedSong.ID !== audio.ID)
-    ) {
-      console.log("in in  - likeAudio");
-
-      const data = {
-        userData: {
-          ID: user.ID,
-          avatar: user.avatar,
-          userName: user.userName,
-          email: user.email,
-          marketingEmails: user.marketingEmails,
-          collections: [...user.collections],
-          lovedCollections: [...user.lovedCollections],
-          followers: [...user.followers],
-          following: [...user.following],
-          lovedSongs: [...user.lovedSongs, audio],
-        },
-      };
-      try {
-        const docRef = doc(firestore, "users", user.docID);
-        updateDoc(docRef, data)
-          .then((docRef) => {
-            console.log("Entire Document has been updated successfully");
-            if (user.ID) getUser(user.ID);
-          })
-          .catch((error) => {
-            console.log(error);
-          });
-      } catch (error: any) {
-        const errorCode = error.code;
-        const errorMessage = error.message;
-        console.log(errorCode, errorMessage);
-        throw new Error(errorCode); // Return the error code to the frontend
-      }
+    if (!user.ID) return;
+    const ref = doc(firestore, "users", user.docID);
+    try {
+      await runTransaction(firestore, async (tx) => {
+        const snap = await tx.get(ref);
+        if (!snap.exists()) return;
+        const current: Audio[] = snap.data().userData?.lovedSongs ?? [];
+        if (current.some((s) => s.ID === audio.ID)) return; // already loved
+        tx.update(ref, { "userData.lovedSongs": [...current, audio] });
+      });
+      await getUser(user.ID);
+    } catch (error) {
+      console.error(error);
+      throw new Error((error as Error).message);
     }
   };
 
   const dislikeAudio = async (audio: Audio) => {
-    if (user.ID) {
-      const result = user.lovedSongs.filter((item) => item.ID !== audio.ID);
-
-      const data = {
-        userData: {
-          ID: user.ID,
-          avatar: user.avatar,
-          userName: user.userName,
-          email: user.email,
-          marketingEmails: user.marketingEmails,
-          collections: [...user.collections],
-          lovedCollections: [...user.lovedCollections],
-          followers: [...user.followers],
-          following: [...user.following],
-          lovedSongs: result,
-        },
-      };
-
-      try {
-        const docRef = doc(firestore, "users", user.docID);
-        updateDoc(docRef, data)
-          .then((docRef) => {
-            console.log("Entire Document has been updated successfully");
-            if (user.ID) getUser(user.ID);
-          })
-          .catch((error) => {
-            console.log(error);
-          });
-      } catch (error: any) {
-        const errorCode = error.code;
-        const errorMessage = error.message;
-        console.log(errorCode, errorMessage);
-        throw new Error(errorCode); // Return the error code to the frontend
-      }
+    if (!user.ID) return;
+    const ref = doc(firestore, "users", user.docID);
+    try {
+      await runTransaction(firestore, async (tx) => {
+        const snap = await tx.get(ref);
+        if (!snap.exists()) return;
+        const current: Audio[] = snap.data().userData?.lovedSongs ?? [];
+        tx.update(ref, {
+          "userData.lovedSongs": current.filter((s) => s.ID !== audio.ID),
+        });
+      });
+      await getUser(user.ID);
+    } catch (error) {
+      console.error(error);
+      throw new Error((error as Error).message);
     }
   };
 
@@ -436,113 +397,46 @@ export const AuthContextProvider = ({
 
   const likeCollection = async (col: Collection) => {
     if (user.ID) {
-      const data = {
-        userData: {
-          ID: user.ID,
-          avatar: user.avatar,
-          userName: user.userName,
-          email: user.email,
-          marketingEmails: user.marketingEmails,
-          collections: [...user.collections],
-          lovedCollections: [...user.lovedCollections, col.ID],
-          followers: [...user.followers],
-          following: [...user.following],
-          lovedSongs: [...user.lovedSongs],
-        },
-      };
+      const userRef = doc(firestore, "users", user.docID);
       try {
-        const docRef = doc(firestore, "users", user.docID);
-        updateDoc(docRef, data)
-          .then((docRef) => {
-            console.log("Entire Document has been updated successfully");
-            if (user.ID) getUser(user.ID);
-          })
-          .catch((error) => {
-            console.log(error);
-          });
-      } catch (error: any) {
-        const errorCode = error.code;
-        const errorMessage = error.message;
-        console.log(errorCode, errorMessage);
-        throw new Error(errorCode); // Return the error code to the frontend
+        await updateDoc(userRef, {
+          "userData.lovedCollections": arrayUnion(col.ID),
+        });
+        await getUser(user.ID);
+      } catch (error) {
+        console.error(error);
+        throw new Error((error as Error).message);
       }
     }
-
     if (col.ID) {
-      const colData: any = { collectionData: {} };
-
-      colData.collectionData = col;
-      colData.collectionData.likes = col.likes + 1;
-
       try {
-        const docRef = doc(firestore, "collections", col.ID);
-        updateDoc(docRef, colData)
-          .then((docRef) => {
-            console.log("Entire Document has been updated successfully");
-          })
-          .catch((error) => {
-            console.log(error);
-          });
+        const colRef = doc(firestore, "collections", col.ID);
+        await updateDoc(colRef, { "collectionData.likes": increment(1) });
       } catch (error) {
-        console.error("Error updating the collection: ", error);
+        console.error("Error updating the collection:", error);
       }
     }
   };
 
   const dislikeCollection = async (col: Collection) => {
     if (user.ID) {
-      const result = user.lovedCollections.filter((item) => item !== col.ID);
-
-      const data = {
-        userData: {
-          ID: user.ID,
-          avatar: user.avatar,
-          userName: user.userName,
-          email: user.email,
-          marketingEmails: user.marketingEmails,
-          collections: [...user.collections],
-          lovedCollections: result,
-          followers: [...user.followers],
-          following: [...user.following],
-          lovedSongs: [...user.lovedSongs],
-        },
-      };
-
+      const userRef = doc(firestore, "users", user.docID);
       try {
-        const docRef = doc(firestore, "users", user.docID);
-        updateDoc(docRef, data)
-          .then((docRef) => {
-            console.log("Entire Document has been updated successfully");
-            if (user.ID) getUser(user.ID);
-          })
-          .catch((error) => {
-            console.log(error);
-          });
+        await updateDoc(userRef, {
+          "userData.lovedCollections": arrayRemove(col.ID),
+        });
+        await getUser(user.ID);
       } catch (error) {
-        console.error("Error updating loved songs: ", error);
+        console.error(error);
+        throw new Error((error as Error).message);
       }
     }
-
     if (col.ID) {
-      const colData: any = { collectionData: {} };
-
-      colData.collectionData = col;
-      colData.collectionData.likes = col.likes - 1;
-
       try {
-        const docRef = doc(firestore, "collections", col.ID);
-        updateDoc(docRef, colData)
-          .then((docRef) => {
-            console.log("Entire Document has been updated successfully");
-          })
-          .catch((error) => {
-            console.log(error);
-          });
-      } catch (error: any) {
-        const errorCode = error.code;
-        const errorMessage = error.message;
-        console.log(errorCode, errorMessage);
-        throw new Error(errorCode); // Return the error code to the frontend
+        const colRef = doc(firestore, "collections", col.ID);
+        await updateDoc(colRef, { "collectionData.likes": increment(-1) });
+      } catch (error) {
+        console.error("Error updating the collection:", error);
       }
     }
   };
