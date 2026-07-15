@@ -10,6 +10,8 @@
 
 **Working branch:** `phase-1-correctness` (already created; spec committed there).
 
+> ⚠️ **DEPLOYMENT ORDER (owner decision: strict clean, no read-fallback).** Task 6 makes user reads uid-keyed. Existing users' docs live under random IDs and will NOT load until migrated. Therefore, when this phase goes to production you MUST run the migration (Task 9) against prod **before or together with** deploying this code — otherwise existing users cannot log in. New users are unaffected. This ordering is a hard requirement, not a suggestion. (Building/testing on this branch is safe; the constraint is about the production deploy.)
+
 **Context notes for the engineer:**
 - Toasts use `sonner`: `import { toast } from "sonner";` — already used across the app. A `<Toaster />` is already rendered in the relevant screens.
 - Firestore/auth are exported from `config/firebase.ts` as `firestore` and `auth`. Import Firestore fns from `firebase/firestore`.
