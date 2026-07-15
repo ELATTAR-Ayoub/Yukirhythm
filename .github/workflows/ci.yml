@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      # Placeholder values so `next build` (which inlines NEXT_PUBLIC_* at
+      # build time) succeeds without real Firebase secrets.
+      NEXT_PUBLIC_APIKEY: ci-placeholder
+      NEXT_PUBLIC_AUTHDOMAIN: ci-placeholder.firebaseapp.com
+      NEXT_PUBLIC_PROJECTID: ci-placeholder
+      NEXT_PUBLIC_STORAGEBUCKET: ci-placeholder.appspot.com
+      NEXT_PUBLIC_MESSAGINGSENDERID: "0000000000"
+      NEXT_PUBLIC_APPID: ci-placeholder
+      NEXT_PUBLIC_MEASUREMENTID: G-CIPLACEHOLDER
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
