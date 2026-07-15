@@ -96,10 +96,17 @@ async function main() {
     toMigrate++;
     console.log(`MOVE uid=${uid}: winner ${winner.id} → users/${uid}`);
 
+    if (alreadyKeyed && winner.id !== uid) {
+      console.warn(
+        `OVERWRITE uid=${uid}: replacing existing users/${uid} with more-complete doc ${winner.id}`
+      );
+    }
+
     if (APPLY) {
       await db.collection("users").doc(uid).set(winner.data);
       for (const d of docs) {
         if (d.id !== uid) {
+          console.log(`  delete loser ${d.id} (uid=${uid})`);
           await db.collection("users").doc(d.id).delete();
         }
       }
