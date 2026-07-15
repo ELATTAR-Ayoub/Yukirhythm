@@ -118,8 +118,12 @@ export function UserCollectionList({ id }: { id: string }) {
           "Content-Type": "application/json",
         },
       })
-        .then((res) => res.json())
-        .then((data: Audio[]) => {
+        .then(async (res) => {
+          const body = await res.json();
+          if (!res.ok) throw new Error(body?.message || "Search failed");
+          return body as Audio[];
+        })
+        .then((data) => {
           const item = data[0];
           if (item) {
             const already = audioConfig.some((a: Audio) => a.ID === item.ID);
@@ -129,8 +133,8 @@ export function UserCollectionList({ id }: { id: string }) {
           setLoading(false);
         })
         .catch((error) => {
-          console.log(error);
           setLoading(false);
+          toast((error as Error).message || "Could not load this track");
         });
     }
     //
