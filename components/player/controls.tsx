@@ -5,6 +5,7 @@ import Link from "next/link";
 import { redirect, useRouter } from "next/navigation";
 import Image from "next/image";
 import ReactPlayer from "react-player";
+import { toast } from "sonner";
 
 // styles
 import styles from "@/styles/index";
@@ -100,8 +101,26 @@ const Controls = ({ videoId }: { videoId: string }) => {
     }
   }
 
-  const handleOnBuffer = () => {
-    dispatch(SET_LOADING(!AudioLoading));
+  const handleBufferStart = () => {
+    dispatch(SET_LOADING(true));
+  };
+
+  const handleBufferEnd = () => {
+    dispatch(SET_LOADING(false));
+  };
+
+  const handleReady = () => {
+    dispatch(SET_LOADING(false));
+  };
+
+  const handleError = () => {
+    dispatch(SET_LOADING(false));
+    toast("This video can't be played here — skipping.");
+    if (current + 1 < audioConfig.length) {
+      skipAudio(1);
+    } else {
+      dispatch(SET_PLAYING(false));
+    }
   };
 
   const handlePlayPause = () => {
@@ -142,7 +161,10 @@ const Controls = ({ videoId }: { videoId: string }) => {
             width={0}
             height={0}
             volume={volume}
-            onBuffer={() => handleOnBuffer()}
+            onReady={handleReady}
+            onBuffer={handleBufferStart}
+            onBufferEnd={handleBufferEnd}
+            onError={handleError}
             onPlay={() => dispatch(SET_PLAYING(true))}
             onPause={() => dispatch(SET_PLAYING(false))}
             onEnded={() => handleOnEnded()}
@@ -182,7 +204,9 @@ const Controls = ({ videoId }: { videoId: string }) => {
           variant={"stylized"}
         >
           <span className={` icon_clothes`}>
-            {playing ? (
+            {AudioLoading ? (
+              <LoopIcon className="h-3 w-3 animate-spin" />
+            ) : playing ? (
               <PauseIcon className="h-3 w-3 " />
             ) : (
               <PlayIcon className="h-3 w-3" />
