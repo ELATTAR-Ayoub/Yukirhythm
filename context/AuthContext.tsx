@@ -77,26 +77,30 @@ export const AuthContextProvider = ({
     let mounted = true;
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setLoading(true); // Set loading to true when authentication state changes
-      if (mounted && firebaseUser) {
-        await getUser(firebaseUser.uid);
-        console.log(firebaseUser);
-      } else if (mounted && !firebaseUser) {
-        // Only reset user if no Firebase user is present
-        setUser({
-          ID: "",
-          docID: "",
-          avatar: "",
-          userName: "",
-          email: "",
-          marketingEmails: false,
-          lovedSongs: [],
-          collections: [],
-          lovedCollections: [],
-          followers: [],
-          following: [],
-        });
+      try {
+        if (mounted && firebaseUser) {
+          await getUser(firebaseUser.uid);
+        } else if (mounted && !firebaseUser) {
+          // Only reset user if no Firebase user is present
+          setUser({
+            ID: "",
+            docID: "",
+            avatar: "",
+            userName: "",
+            email: "",
+            marketingEmails: false,
+            lovedSongs: [],
+            collections: [],
+            lovedCollections: [],
+            followers: [],
+            following: [],
+          });
+        }
+      } catch (error) {
+        console.error("Auth state handling failed:", error);
+      } finally {
+        if (mounted) setLoading(false);
       }
-      setLoading(false); // Set loading to false once everything is complete
     });
 
     return () => {
