@@ -53,6 +53,7 @@ export function UserAudioList({ id }: { id: string }) {
   const { user, getProfileUser, dislikeAudio, likeAudio } = useAuth();
 
   // redux
+  const audioConfig = useSelector(selectAudioConfig);
   const current = useSelector(selectCurrentAudio);
   const playing = useSelector(selectAudioPlaying);
   const dispatch = useDispatch();
@@ -102,7 +103,12 @@ export function UserAudioList({ id }: { id: string }) {
       })
         .then((res) => res.json())
         .then((data: Audio[]) => {
-          dispatch(ADD_ITEM(data[0]));
+          const item = data[0];
+          if (item) {
+            const already = audioConfig.some((a: Audio) => a.ID === item.ID);
+            dispatch(ADD_ITEM(item));
+            toast(already ? "Already in your player" : "Added to player");
+          }
           setLoading(false);
         })
         .catch((error) => {

@@ -358,9 +358,15 @@ const Hero = () => {
                         <Button
                           variant={"stylized"}
                           onClick={() => {
+                            const already = audioConfig.some(
+                              (a: Audio) => a.ID === audio.ID
+                            );
                             dispatch(ADD_ITEM(audio));
-
-                            toast("Audio add to player successfully", {});
+                            toast(
+                              already
+                                ? "Already in your player"
+                                : "Added to player"
+                            );
                           }}
                           size="icon"
                         >
