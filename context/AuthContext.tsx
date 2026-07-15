@@ -38,6 +38,13 @@ const AuthContext = createContext<any>({});
 
 export const useAuth = () => useContext(AuthContext);
 
+// Adapts firebase's getDoc/setDoc to the ensureUserDoc UserDocOps shape.
+const userDocOps = (ref: unknown) => ({
+  ref,
+  getDoc: (r: unknown) => getDoc(r as any),
+  setDoc: (r: unknown, v: unknown) => setDoc(r as any, v as any),
+});
+
 export const AuthContextProvider = ({
   children,
 }: {
@@ -117,15 +124,7 @@ export const AuthContextProvider = ({
           following: [],
         };
         const ref = doc(firestore, "users", fbUser.uid);
-        await ensureUserDoc(
-          {
-            ref,
-            getDoc: (r) => getDoc(r as any),
-            setDoc: (r, v) => setDoc(r as any, v as any),
-          },
-          fbUser.uid,
-          userData
-        );
+        await ensureUserDoc(userDocOps(ref), fbUser.uid, userData);
         router.push(`/profile/${fbUser.uid}`);
       })
       .catch((error) => {
@@ -157,15 +156,7 @@ export const AuthContextProvider = ({
           following: [],
         };
         const ref = doc(firestore, "users", fbUser.uid);
-        await ensureUserDoc(
-          {
-            ref,
-            getDoc: (r) => getDoc(r as any),
-            setDoc: (r, v) => setDoc(r as any, v as any),
-          },
-          fbUser.uid,
-          userData
-        );
+        await ensureUserDoc(userDocOps(ref), fbUser.uid, userData);
         router.push(`/profile/${fbUser.uid}`);
       })
       .catch((error) => {
@@ -194,15 +185,7 @@ export const AuthContextProvider = ({
           following: [],
         };
         const ref = doc(firestore, "users", fbUser.uid);
-        await ensureUserDoc(
-          {
-            ref,
-            getDoc: (r) => getDoc(r as any),
-            setDoc: (r, v) => setDoc(r as any, v as any),
-          },
-          fbUser.uid,
-          userData
-        );
+        await ensureUserDoc(userDocOps(ref), fbUser.uid, userData);
         await getUser(fbUser.uid);
         router.push(`/profile/${fbUser.uid}`);
       })
