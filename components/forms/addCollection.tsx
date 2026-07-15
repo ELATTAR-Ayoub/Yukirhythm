@@ -149,7 +149,7 @@ export function AddCollectionForm({ audios }: { audios: Audio[] }) {
                     />
                   </FormControl>
                   <FormDescription>
-                    This is your collection's public display title.
+                    This is your collection&apos;s public display title.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -170,7 +170,7 @@ export function AddCollectionForm({ audios }: { audios: Audio[] }) {
                     />
                   </FormControl>
                   <FormDescription>
-                    Your collection's public description.
+                    Your collection&apos;s public description.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -191,7 +191,7 @@ export function AddCollectionForm({ audios }: { audios: Audio[] }) {
                     />
                   </FormControl>
                   <FormDescription>
-                    Your collection's public tags.
+                    Your collection&apos;s public tags.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

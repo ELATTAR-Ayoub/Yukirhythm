@@ -44,7 +44,7 @@ const Page = () => {
 
           <div className={`${styles.flexStart} gap-2 w-full flex-wrap`}>
             {socialLinks.map((link, index) => (
-              <Link href={link.url} target="_">
+              <Link href={link.url} target="_" key={index}>
                 <Badge className=" capitalize">{link.name}</Badge>
               </Link>
             ))}

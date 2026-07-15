@@ -219,8 +219,9 @@ export function UserCollectionList({ id }: { id: string }) {
               <div
                 className={` h-full ${styles.flexCenter} gap-0 collectionDisks `}
               >
-                {collection.thumbnails.map((thumbnail, index) => (
+                {collection.thumbnails.map((thumbnail, thumbIndex) => (
                   <div
+                    key={thumbIndex}
                     className={`relative h-full aspect-square rounded-full bg-primary-black overflow-hidden flex-0 drop-shadow-on-disk ${styles.flexCenter}`}
                   >
                     {/* disk middle */}
