@@ -70,8 +70,7 @@ const Hero = () => {
 
   const searchAudio = (
     event:
-      | React.MouseEvent<HTMLButtonElement>
-      | React.FormEvent<HTMLFormElement>
+      React.MouseEvent<HTMLButtonElement> | React.FormEvent<HTMLFormElement>
   ) => {
     event.preventDefault();
     setLoading(true);

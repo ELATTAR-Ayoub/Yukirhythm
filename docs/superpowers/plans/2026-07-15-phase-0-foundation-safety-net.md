@@ -11,6 +11,7 @@
 **Working branch:** `phase-0-foundation` (already created; spec already committed there).
 
 **Context notes for the engineer:**
+
 - The repo uses **double quotes + semicolons** (see `lib/utils.ts`, `config/firebase.ts`). Match that; Prettier config below encodes it.
 - Path alias `@/*` → repo root (from `tsconfig.json` `paths`).
 - The only env vars the app reads are 7 `NEXT_PUBLIC_*` Firebase keys (grepped: `config/firebase.ts`). Nodemailer is a dependency but is **not** imported anywhere — do not invent env vars for it.
@@ -21,28 +22,29 @@
 
 ## File structure (what this phase creates/changes)
 
-| File | Responsibility | Task |
-|------|----------------|------|
-| `.nvmrc` | Pin supported Node version | 1 |
-| `package.json` | `engines`, new scripts, new devDeps | 1,2,3,4,5 |
-| `.eslintrc.js` | **deleted** (conflicting Airbnb config) | 2 |
-| `.eslintrc.json` | single ESLint config (+ prettier compat) | 2 |
-| `.prettierrc` / `.prettierignore` | formatting rules | 3 |
-| `tsconfig.json` | `target` es5 → ES2020 | 4 |
-| `vitest.config.ts` / `vitest.setup.ts` | test harness | 5 |
-| `lib/utils.test.ts` | smoke test (pure logic) | 5 |
-| `__tests__/environment.test.tsx` | smoke test (jsdom/RTL) | 5 |
-| `.github/workflows/ci.yml` | CI pipeline | 6 |
-| `context/AuthContext.tsx` | remove 2 dead imports | 7 |
-| `pages/api/searchEngine.ts` | remove dead `Data` global | 7 |
-| `config/firebase.ts` | `getAuth()` → `getAuth(app)` | 7 |
-| `.env.example` | document env vars | 8 |
+| File                                   | Responsibility                           | Task      |
+| -------------------------------------- | ---------------------------------------- | --------- |
+| `.nvmrc`                               | Pin supported Node version               | 1         |
+| `package.json`                         | `engines`, new scripts, new devDeps      | 1,2,3,4,5 |
+| `.eslintrc.js`                         | **deleted** (conflicting Airbnb config)  | 2         |
+| `.eslintrc.json`                       | single ESLint config (+ prettier compat) | 2         |
+| `.prettierrc` / `.prettierignore`      | formatting rules                         | 3         |
+| `tsconfig.json`                        | `target` es5 → ES2020                    | 4         |
+| `vitest.config.ts` / `vitest.setup.ts` | test harness                             | 5         |
+| `lib/utils.test.ts`                    | smoke test (pure logic)                  | 5         |
+| `__tests__/environment.test.tsx`       | smoke test (jsdom/RTL)                   | 5         |
+| `.github/workflows/ci.yml`             | CI pipeline                              | 6         |
+| `context/AuthContext.tsx`              | remove 2 dead imports                    | 7         |
+| `pages/api/searchEngine.ts`            | remove dead `Data` global                | 7         |
+| `config/firebase.ts`                   | `getAuth()` → `getAuth(app)`             | 7         |
+| `.env.example`                         | document env vars                        | 8         |
 
 ---
 
 ## Task 1: Baseline install + Node pinning
 
 **Files:**
+
 - Create: `.nvmrc`
 - Modify: `package.json` (add `engines`)
 
@@ -88,6 +90,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ## Task 2: Consolidate ESLint config
 
 **Files:**
+
 - Delete: `.eslintrc.js`
 - Modify: `.eslintrc.json`
 - Modify: `package.json` (add `eslint-config-prettier` devDep)
@@ -135,6 +138,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ## Task 3: Prettier setup + one-time format pass
 
 **Files:**
+
 - Create: `.prettierrc`, `.prettierignore`
 - Modify: `package.json` (add `prettier` devDep + `format`/`format:check` scripts)
 
@@ -208,6 +212,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ## Task 4: TypeScript baseline
 
 **Files:**
+
 - Modify: `package.json` (add `typecheck` script)
 - Modify: `tsconfig.json` (`target` es5 → ES2020)
 
@@ -239,6 +244,7 @@ git commit -m "chore: add typecheck script and modernize TS target to ES2020
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
+
 (Include any files touched by trivial type fixes in the `git add`.)
 
 ---
@@ -246,12 +252,14 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ## Task 5: Vitest harness + smoke tests
 
 **Files:**
+
 - Create: `vitest.config.ts`, `vitest.setup.ts`, `lib/utils.test.ts`, `__tests__/environment.test.tsx`
 - Modify: `package.json` (test scripts + devDeps)
 
 - [ ] **Step 1: Install test dependencies**
 
 Run:
+
 ```bash
 npm install --save-dev vitest @vitejs/plugin-react vite-tsconfig-paths jsdom @testing-library/react @testing-library/jest-dom @vitest/coverage-v8
 ```
@@ -347,6 +355,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ## Task 6: CI workflow
 
 **Files:**
+
 - Create: `.github/workflows/ci.yml`
 
 - [ ] **Step 1: Create the workflow**
@@ -387,9 +396,11 @@ jobs:
 - [ ] **Step 2: Verify the pipeline locally** (same order CI runs)
 
 Run each and confirm success:
+
 ```bash
 npm run lint && npm run typecheck && npm test && npm run build
 ```
+
 Expected: all four succeed in sequence.
 
 - [ ] **Step 3: Commit**
@@ -408,6 +419,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 Each edit below is a guaranteed no-op at runtime, verified by the build + tests that follow.
 
 **Files:**
+
 - Modify: `context/AuthContext.tsx`
 - Modify: `pages/api/searchEngine.ts`
 - Modify: `config/firebase.ts`
@@ -427,6 +439,7 @@ Change the React import on line 1 from:
 ```ts
 import { createContext, use, useContext, useEffect, useState } from "react";
 ```
+
 to:
 
 ```ts
@@ -446,6 +459,7 @@ Change:
 ```ts
 export const auth = getAuth();
 ```
+
 to:
 
 ```ts
@@ -455,9 +469,11 @@ export const auth = getAuth(app);
 - [ ] **Step 5: Verify nothing regressed**
 
 Run:
+
 ```bash
 npm run typecheck && npm run lint && npm test && npm run build
 ```
+
 Expected: all pass.
 
 - [ ] **Step 6: Commit**
@@ -478,6 +494,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ## Task 8: Environment documentation + final verification
 
 **Files:**
+
 - Create: `.env.example`
 
 - [ ] **Step 1: Create `.env.example`**
@@ -502,6 +519,7 @@ Expected: prints `.env` (already covered by `.gitignore`). Never commit a real `
 - [ ] **Step 3: Full green-gate verification**
 
 Run, in order, and confirm each succeeds:
+
 ```bash
 npm ci
 npm run lint
@@ -509,6 +527,7 @@ npm run typecheck
 npm test
 npm run build
 ```
+
 Expected: all green. This is the Phase 0 definition of done.
 
 - [ ] **Step 4: Commit**
