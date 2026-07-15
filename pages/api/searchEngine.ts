@@ -1,71 +1,90 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { Audio } from "@/constants/interfaces";
+import type { Audio } from "@/constants/interfaces";
+import { validateSearchRequest, formatVideos } from "@/lib/search/format";
+import { makeCacheKey, TtlCache } from "@/lib/search/cache";
 
-const { search } = require("@fabricio-191/youtube").setDefaultOptions({
+// The package's shipped type declarations use `export = Exports` where
+// `Exports` is a bare interface (no merged value/namespace/class). Under
+// TypeScript that produces a type-only binding no matter which import form
+// is used (`import x from ...`, `import * as x from ...`, or
+// `import x = require(...)`) - see TS2693 "only refers to a type, but is
+// being used as a value here". We fall back to a plain `require` with an
+// explicit local type for the two functions we actually call.
+const youtube = require("@fabricio-191/youtube") as {
+  setDefaultOptions(options: {
+    language?: string;
+    location?: string;
+    quantity?: number | "all";
+    requestsOptions?: Record<string, unknown>;
+  }): {
+    search(query: string): Promise<{ results: any[] }>;
+  };
+};
+
+const { search } = youtube.setDefaultOptions({
   language: "en",
   location: "US",
   quantity: "all",
   requestsOptions: {},
 });
 
-const searchAudio = (string: string, quantity: number) => {
+const CACHE_TTL_MS = 5 * 60 * 1000;
+const SEARCH_TIMEOUT_MS = 10_000;
+const cache = new TtlCache<Audio[]>(CACHE_TTL_MS);
+
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
   return new Promise((resolve, reject) => {
-    search(string)
-      .then((data: any) => {
-        if (!data.results || data.results.length === 0) {
-          reject(new Error("No video found"));
-        } else {
-          let videos = data.results
-            .filter((el: any) => el.type === "video")
-            .slice(0, quantity);
-
-          let formattedData: Audio[] = [];
-
-          videos.forEach((element: any) => {
-            if (element && element.ID && element.URL && element.title) {
-              formattedData.push({
-                ID: element.ID,
-                URL: element.URL,
-                title: element.title,
-                thumbnails: [
-                  element.thumbnails[0]?.url || "",
-                  element.thumbnails[1]?.url || "",
-                ],
-                owner: {
-                  name: element.owner?.name || "Unknown",
-                  ID: element.owner?.ID || "",
-                  canonicalURL: element.owner?.canonicalURL || "",
-                  thumbnails: [element.owner?.thumbnails[0]?.url || ""],
-                },
-                audioLengthSec: element.duration?.number || 0,
-              });
-            }
-          });
-
-          resolve(formattedData);
-        }
-      })
-      .catch((error: Error) => {
-        reject(error);
-        console.error("Search Error:", error);
-      });
+    const t = setTimeout(() => reject(new Error("timeout")), ms);
+    p.then(
+      (v) => {
+        clearTimeout(t);
+        resolve(v);
+      },
+      (e) => {
+        clearTimeout(t);
+        reject(e);
+      }
+    );
   });
-};
+}
+
+type SearchResponse = Audio[] | { message: string };
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<Audio[]>
+  res: NextApiResponse<SearchResponse>
 ) {
-  try {
-    console.log("you sent =>" + req.body.string);
-    const data = await searchAudio(
-      req.body.string as string,
-      req.body.quantity as number
-    );
+  if (req.method !== "POST") {
+    return res.status(405).json({ message: "Method not allowed" });
+  }
 
-    res.status(200).json(data as Audio[]);
+  const validation = validateSearchRequest(req.body ?? {});
+  if (!validation.ok) {
+    return res.status(400).json({ message: validation.error });
+  }
+  const { string, quantity } = validation.value;
+  const key = makeCacheKey(string, quantity);
+
+  const cached = cache.get(key);
+  if (cached) {
+    return res.status(200).json(cached);
+  }
+
+  try {
+    const data: any = await withTimeout(search(string), SEARCH_TIMEOUT_MS);
+    const results = data?.results ?? [];
+    const audios = formatVideos(results, quantity);
+    if (audios.length === 0) {
+      return res.status(404).json({ message: "No results found" });
+    }
+    cache.set(key, audios);
+    return res.status(200).json(audios);
   } catch (error) {
-    const errorAsError = error as Error;
-    res.status(404).json({ message: errorAsError.message } as any);
+    const message = (error as Error).message;
+    if (message === "timeout") {
+      return res.status(504).json({ message: "Search timed out, try again" });
+    }
+    console.error("Search error:", message);
+    return res.status(502).json({ message: "Search is temporarily unavailable" });
   }
 }
