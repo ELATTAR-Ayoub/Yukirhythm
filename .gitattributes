@@ -1,0 +1,17 @@
+# Normalize all text files to LF in the repo, regardless of contributor OS.
+# Keeps Prettier's format:check deterministic across Windows/macOS/Linux.
+* text=auto eol=lf
+
+# Binary assets — never touch line endings.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.mp3 binary
+*.mp4 binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
