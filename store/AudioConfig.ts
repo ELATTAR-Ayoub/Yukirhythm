@@ -42,22 +42,31 @@ export const AudioConfig = createSlice({
   reducers: {
     // Action to set the audio status
     setAudioConfig(state, action) {
-      if (Array.isArray(action.payload)) {
-        state.audioState = [...action.payload];
-      } else {
-        state.audioState = [action.payload];
+      const payload = Array.isArray(action.payload)
+        ? action.payload
+        : [action.payload];
+      const deduped: typeof state.audioState = [];
+      for (const item of payload) {
+        if (item && !deduped.some((a) => a.ID === item.ID)) {
+          deduped.push(item);
+        }
       }
-      saveToLocalStorage(state); // Save to localStorage
+      state.audioState = deduped;
+      saveToLocalStorage(state);
     },
 
     DELETE_ARR(state) {
       state.audioState = [];
-      saveToLocalStorage(state); // Save empty array to localStorage
+      saveToLocalStorage(state);
     },
 
     ADD_ITEM(state, action) {
-      state.audioState = [...state.audioState, action.payload];
-      saveToLocalStorage(state); // Save updated array to localStorage
+      const item = action.payload;
+      if (!item || state.audioState.some((a) => a.ID === item.ID)) {
+        return; // ignore empty payloads and duplicates
+      }
+      state.audioState = [...state.audioState, item];
+      saveToLocalStorage(state);
     },
 
     DELETE_ITEM(state, action) {

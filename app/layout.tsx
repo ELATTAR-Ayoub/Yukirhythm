@@ -1,53 +1,35 @@
-"use client";
-
-import { ThemeProvider } from "next-themes";
-import { useRouter, usePathname } from "next/navigation";
+import type { Metadata, Viewport } from "next";
 
 // styles
 import "./globals.css";
 import styles from "@/styles/index";
 
-// components
-import Header from "@/components/Header";
-import CursorFollower from "@/components/CursorFollower";
-import Footer from "@/components/Footer";
-import SideBar from "@/components/SideBar";
+// providers (client)
+import Providers from "./providers";
 
-// Firebase
-import { AuthContextProvider } from "@/context/AuthContext";
+export const metadata: Metadata = {
+  title: "Yukirhythm",
+  description:
+    "Yukirhythm — a music and podcast player that finds and plays content from YouTube based on your searches.",
+  icons: { icon: "/icon" },
+};
 
-// redux
-import { store_0001 } from "../store/store";
-import { Provider } from "react-redux";
-import { useEffect } from "react";
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+};
 
 export default function RootLayout({
   children,
-  ...rest
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
-
   return (
     <html lang="en">
-      <head />
       <body
         className={` ${styles.flexStart} flex-col relative bg-background h-screen overflow-x-hidden`}
       >
-        <Provider store={store_0001}>
-          <AuthContextProvider>
-            <ThemeProvider attribute="class">
-              {/* <CursorFollower /> */}
-              <Header />
-              <main className={` relative w-full min-h-screen `}>
-                {/* <SideBar /> */}
-                {children}
-              </main>
-              {/* <Footer /> */}
-            </ThemeProvider>
-          </AuthContextProvider>
-        </Provider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

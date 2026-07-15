@@ -87,16 +87,21 @@ const Hero = () => {
           "Content-Type": "application/json",
         },
       })
-        .then((res) => res.json())
-        .then((data: Audio[]) => {
-          console.log("data", data);
+        .then(async (res) => {
+          const body = await res.json();
+          if (!res.ok) {
+            throw new Error(body?.message || "Search failed");
+          }
+          return body as Audio[];
+        })
+        .then((data) => {
           setSearchedAudios(data);
-          // dispatch(ADD_ITEM(data));
           setLoading(false);
         })
         .catch((error) => {
-          console.log(error);
+          setSearchedAudios([]);
           setLoading(false);
+          toast((error as Error).message || "Search failed");
         });
     }
     //
@@ -358,9 +363,15 @@ const Hero = () => {
                         <Button
                           variant={"stylized"}
                           onClick={() => {
+                            const already = audioConfig.some(
+                              (a: Audio) => a.ID === audio.ID
+                            );
                             dispatch(ADD_ITEM(audio));
-
-                            toast("Audio add to player successfully", {});
+                            toast(
+                              already
+                                ? "Already in your player"
+                                : "Added to player"
+                            );
                           }}
                           size="icon"
                         >
