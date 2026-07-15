@@ -8,8 +8,6 @@ const { search } = require("@fabricio-191/youtube").setDefaultOptions({
   requestsOptions: {},
 });
 
-var Data: Audio[] = [];
-
 const searchAudio = (string: string, quantity: number) => {
   return new Promise((resolve, reject) => {
     search(string)
@@ -66,10 +64,8 @@ export default async function handler(
     );
 
     res.status(200).json(data as Audio[]);
-    Data = [];
   } catch (error) {
     const errorAsError = error as Error;
     res.status(404).json({ message: errorAsError.message } as any);
-    Data = [];
   }
 }

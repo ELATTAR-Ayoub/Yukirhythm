@@ -1,4 +1,4 @@
-import { createContext, use, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import {
   onAuthStateChanged,
   createUserWithEmailAndPassword,
@@ -22,7 +22,6 @@ import {
   getDoc,
 } from "firebase/firestore";
 import { auth, firestore } from "@/config/firebase";
-import { async } from "@firebase/util";
 
 // components
 import Loader from "@/components/Loader";
