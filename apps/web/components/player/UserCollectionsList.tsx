@@ -278,16 +278,6 @@ export function UserCollectionList({ id }: { id: string }) {
               >
                 {collection.title || ""}
               </p>
-
-              {/* {collection.tags && (
-                <div className={`${styles.flexStart} flex-wrap gap-1`}>
-                  {collection.tags.map((tg, index) => (
-                    <Badge size={"sm"} key={index} variant="secondary">
-                      {tg.trim()}
-                    </Badge>
-                  ))}
-                </div>
-              )} */}
             </div>
 
             {/* Controls */}

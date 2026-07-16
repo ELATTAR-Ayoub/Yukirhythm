@@ -85,7 +85,6 @@ export function SignupForm() {
       setLoading(true);
       await signupPopup("google");
     } catch (err) {
-      console.log(err);
       const errorMessage = (err as Error).message; // Assert err as Error to access message
       setErr(true);
       setErrMsg(errorMessage);
@@ -101,7 +100,6 @@ export function SignupForm() {
     try {
       await signupPopup("facebook");
     } catch (err) {
-      console.log(err);
       const errorMessage = (err as Error).message; // Assert err as Error to access message
       setErr(true);
       setErrMsg(errorMessage);

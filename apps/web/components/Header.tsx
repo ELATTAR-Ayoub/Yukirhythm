@@ -107,12 +107,6 @@ const Header = () => {
           </DropdownMenuContent>
         </DropdownMenu>
       </nav>
-
-      {/* <div
-        className={` w-full bg-primary ${styles.Xsmall} text-center text-secondary py-1`}
-      >
-        © {new Date().getFullYear()} Yukirhythm.
-      </div> */}
     </header>
   );
 };

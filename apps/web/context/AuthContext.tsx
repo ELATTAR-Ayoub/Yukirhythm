@@ -203,8 +203,6 @@ export const AuthContextProvider = ({
   };
 
   const signin = (email: string, password: string) => {
-    console.log("signInWithEmailAndPassword");
-
     return signInWithEmailAndPassword(auth, email, password)
       .then((userCredential) => {
         // Signed in
@@ -215,7 +213,6 @@ export const AuthContextProvider = ({
       .catch((error) => {
         const errorCode = error.code;
         const errorMessage = error.message;
-        console.log(errorCode, errorMessage);
         throw new Error(errorCode); // Return the error code to the frontend
       });
   };
@@ -281,8 +278,6 @@ export const AuthContextProvider = ({
       .catch((error) => {
         console.log(error);
       });
-
-    console.log("logout");
   };
 
   const likeAudio = async (audio: Audio) => {
@@ -356,7 +351,6 @@ export const AuthContextProvider = ({
     } catch (error: any) {
       const errorCode = error.code;
       const errorMessage = error.message;
-      console.log(errorCode, errorMessage);
       throw new Error(errorCode); // Return the error code to the frontend
     }
   }
@@ -382,17 +376,14 @@ export const AuthContextProvider = ({
         collectionLengthSec: collection_0001.collectionLengthSec,
       };
       if (collectionData.title) {
-        console.log(collectionData);
         try {
           const docRef = await addDoc(collection(firestore, "collections"), {
             collectionData,
           });
-          console.log("Document written with ID: ", docRef.id);
           router.push(`/collections/${user.ID}`);
         } catch (error: any) {
           const errorCode = error.code;
           const errorMessage = error.message;
-          console.log(errorCode, errorMessage);
           throw new Error(errorCode); // Return the error code to the frontend
         }
       }

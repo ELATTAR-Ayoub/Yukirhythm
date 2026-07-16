@@ -237,17 +237,6 @@ const Controls = ({ videoId }: { videoId: string }) => {
         } flex-col w-full gap-1 time_slider pt-4`}
       >
         <div className={`AudioSeekBar ${styles.flexCenter}`}>
-          {/* <input
-            aria-label="Seek bar"
-            className="w-full SeekBar"
-            id="AudioSeekBar"
-            type="range"
-            min={0}
-            max={duration}
-            value={currentTime}
-            onChange={(e) => handleJumpTo(parseFloat(e.target.value))}
-          /> */}
-
           <Slider
             value={[currentTime]}
             defaultValue={[0]}

@@ -26,7 +26,6 @@ const Logo: React.FC<LoaderProps> = ({ mode = "dark" }) => {
         src={"/svgs/logo.svg"}
         fit={true}
       />
-      {/* {<Image className={` ${mode == 'dark' ? ' ' : 'grayscale' } w-5 md:w-7 aspect-square`} width={28} height={28} src={'/svgs/logo.svg'} alt={'Logo'}></Image>} */}
     </Link>
   );
 };

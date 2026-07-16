@@ -114,7 +114,6 @@ export function ListDrawer() {
     dispatch(DELETE_ITEM(audio.ID));
 
     if (current > index) {
-      console.log("current > index");
       dispatch(SKIP_PREV(1));
       return;
     }
@@ -123,15 +122,11 @@ export function ListDrawer() {
       audio.ID === audioConfig[current].ID &&
       audioConfig.length - 1 === index
     ) {
-      console.log("audio.ID === audioConfig[current].ID - mmm");
-
       dispatch(SKIP_PREV(1));
       return;
     }
 
     if (audio.ID === audioConfig[current].ID && index === 0) {
-      console.log("audio.ID === audioConfig[current].ID && index === 0");
-
       dispatch(SKIP_NEXT(0));
       return;
     }

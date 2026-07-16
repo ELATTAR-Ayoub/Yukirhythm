@@ -59,8 +59,6 @@ export function LoginForm() {
 
   // 2. Define a submit handler.
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log("sdd");
-
     // Do something with the form values.
     // ✅ This will be type-safe and validated.
     setLoading(true);
