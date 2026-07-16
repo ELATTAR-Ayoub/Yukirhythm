@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.firebase import init_firebase
-from app.routers import health
+from app.routers import health, me
 
 
 def create_app() -> FastAPI:
@@ -17,6 +17,7 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
     app.include_router(health.router, prefix="/v1")
+    app.include_router(me.router, prefix="/v1")
     return app
 
 
