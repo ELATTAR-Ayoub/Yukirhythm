@@ -39,6 +39,12 @@ export default function DesignSystemLayout({
               Typography
             </Link>
             <Link
+              href="/design-system/colors"
+              className="px-3 py-1.5 rounded-md hover:bg-secondary transition-colors duration-fast"
+            >
+              Colors
+            </Link>
+            <Link
               href="/design-system/components"
               className="px-3 py-1.5 rounded-md hover:bg-secondary transition-colors duration-fast"
             >
