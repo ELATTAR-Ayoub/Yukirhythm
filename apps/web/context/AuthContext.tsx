@@ -4,7 +4,6 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
-  updateProfile,
   GoogleAuthProvider,
   FacebookAuthProvider,
   signInWithPopup,
@@ -33,10 +32,10 @@ import { ensureUserDoc } from "@/lib/user/ensureUserDoc";
 import Loader from "@/components/Loader";
 
 // route
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 // constants
-import { Owner, Audio, Collection, User } from "@/constants/interfaces";
+import { Audio, Collection, User } from "@/constants/interfaces";
 
 const AuthContext = createContext<any>({});
 
@@ -55,8 +54,6 @@ export const AuthContextProvider = ({
   children: React.ReactNode;
 }) => {
   const router = useRouter();
-  const AuthRequired = ["/collections/create", "/update-profile"];
-  const pathname = usePathname();
 
   const [user, setUser] = useState<User>({
     ID: "",
@@ -113,8 +110,7 @@ export const AuthContextProvider = ({
     email: string,
     password: string,
     avatar: string,
-    name: string,
-    marketingEmails: Boolean
+    name: string
   ) => {
     return createUserWithEmailAndPassword(auth, email, password)
       .then(async (userCredential) => {

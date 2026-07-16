@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 
 // form
@@ -22,12 +22,7 @@ import { Input } from "@/components/ui/input";
 // auth
 import { useAuth } from "@/context/AuthContext";
 import styles from "@/styles";
-import {
-  EnvelopeOpenIcon,
-  FaceIcon,
-  GitHubLogoIcon,
-} from "@radix-ui/react-icons";
-import router from "next/router";
+import { EnvelopeOpenIcon } from "@radix-ui/react-icons";
 import Link from "next/link";
 import Loader from "../Loader";
 
@@ -41,7 +36,7 @@ const formSchema = z.object({
 });
 
 export function LoginForm() {
-  const { user, signin, signinPopup } = useAuth();
+  const { signin, signinPopup } = useAuth();
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState(false);
   const [errMsg, setErrMsg] = useState("");

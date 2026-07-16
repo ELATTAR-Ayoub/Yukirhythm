@@ -1,15 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
-import Image from "next/image";
 
 // styles
 import styles from "@/styles/index";
 
 // constant
-import { headerLinks, socialLinks } from "@/constants/index";
+import { socialLinks } from "@/constants/index";
 
 // components
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";

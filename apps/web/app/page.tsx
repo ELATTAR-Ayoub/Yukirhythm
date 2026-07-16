@@ -1,10 +1,5 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
-import Image from "next/image";
-
 // Sections
 import { Hero } from "@/sections";
 

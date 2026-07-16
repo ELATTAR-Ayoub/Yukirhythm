@@ -1,12 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
-import Image from "next/image";
-
-// Sections
-import { Hero } from "@/sections";
+import { useState, useEffect } from "react";
 
 // styles
 import styles from "@/styles/index";
@@ -15,32 +9,24 @@ import styles from "@/styles/index";
 import { useAuth } from "@/context/AuthContext";
 
 // components
-import Logo from "@/components/Logo";
-import SolidSvg from "@/components/SolidSVG";
 import { UserAudioList } from "@/components/player/UserAudioList";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UserCollectionList } from "@/components/player/UserCollectionsList";
 
 // redux
-import { selectMenuToggle, setMenuToggle } from "@/store/UIConfig";
-import { useDispatch, useSelector } from "react-redux";
 import { User } from "@/constants/interfaces";
 
 const Page = ({ params }: any) => {
   // auth
-  const { user, logout, getProfileUser } = useAuth();
+  const { getProfileUser } = useAuth();
 
   //   profileUser
   const [profileUser, setProfileUser] = useState<User>({
@@ -57,12 +43,8 @@ const Page = ({ params }: any) => {
     following: [],
   });
 
-  // call redux states
-  const menuToggle = useSelector(selectMenuToggle);
-  const dispatch = useDispatch();
-
   // values
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {

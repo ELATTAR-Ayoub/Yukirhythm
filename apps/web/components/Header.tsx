@@ -1,9 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
-import Image from "next/image";
 
 // styles
 import styles from "../styles/index";
@@ -15,7 +12,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/context/AuthContext";
 
 // constant
-import { headerLinks, footerLinks } from "@/constants/index";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,19 +21,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-// constants
-import { Owner, Audio, Collection, User } from "@/constants/interfaces";
-
-import { selectMenuToggle, setMenuToggle } from "@/store/UIConfig";
-import { useDispatch, useSelector } from "react-redux";
-import { DropdownMenuIcon, HamburgerMenuIcon } from "@radix-ui/react-icons";
+import { HamburgerMenuIcon } from "@radix-ui/react-icons";
 
 const Header = () => {
-  const pathname = usePathname();
-  // call redux states
-  const menuToggle = useSelector(selectMenuToggle);
-  const dispatch = useDispatch();
-
   // auth
   const { user, logout } = useAuth();
 

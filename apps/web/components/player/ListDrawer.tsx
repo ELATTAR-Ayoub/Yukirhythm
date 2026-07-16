@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -7,10 +7,8 @@ import {
   HeartFilledIcon,
   HeartIcon,
   ListBulletIcon,
-  MinusIcon,
   PauseIcon,
   PlayIcon,
-  PlusIcon,
   TrashIcon,
 } from "@radix-ui/react-icons";
 
@@ -35,7 +33,7 @@ import { toast } from "sonner";
 import { AddCollectionForm } from "@/components/forms/addCollection";
 
 // constants
-import { Owner, Audio, User } from "@/constants/interfaces";
+import { Audio } from "@/constants/interfaces";
 
 // auth
 import { useAuth } from "@/context/AuthContext";
@@ -45,58 +43,13 @@ import {
   selectAudioConfig,
   selectCurrentAudio,
   selectAudioPlaying,
-  selectAudioLoading,
-  selectAudioVolume,
   SKIP_NEXT,
   SKIP_PREV,
-  SET_LOADING,
   SET_PLAYING,
   SET_CURRENT,
   DELETE_ITEM,
 } from "@/store/AudioConfig";
 import { useDispatch, useSelector } from "react-redux";
-
-const data = [
-  {
-    goal: 400,
-  },
-  {
-    goal: 300,
-  },
-  {
-    goal: 200,
-  },
-  {
-    goal: 300,
-  },
-  {
-    goal: 200,
-  },
-  {
-    goal: 278,
-  },
-  {
-    goal: 189,
-  },
-  {
-    goal: 239,
-  },
-  {
-    goal: 300,
-  },
-  {
-    goal: 200,
-  },
-  {
-    goal: 278,
-  },
-  {
-    goal: 189,
-  },
-  {
-    goal: 349,
-  },
-];
 
 export function ListDrawer() {
   // auth
@@ -106,8 +59,6 @@ export function ListDrawer() {
   const audioConfig = useSelector(selectAudioConfig);
   const current = useSelector(selectCurrentAudio);
   const playing = useSelector(selectAudioPlaying);
-  const AudioLoading = useSelector(selectAudioLoading);
-  const volume = useSelector(selectAudioVolume);
   const dispatch = useDispatch();
 
   const handleDelete = (audio: Audio, index: number) => {
@@ -130,10 +81,6 @@ export function ListDrawer() {
       dispatch(SKIP_NEXT(0));
       return;
     }
-  };
-
-  const handlePlayPause = () => {
-    dispatch(SET_PLAYING(!playing));
   };
 
   const handleLikeAudio = async (audio: Audio) => {

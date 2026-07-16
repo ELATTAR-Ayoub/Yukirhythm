@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from "react";
-import Image from "next/image";
+import React, { useState } from "react";
 
 // form
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -33,11 +32,6 @@ import { Badge } from "@/components/ui/badge";
 // auth
 import { useAuth } from "@/context/AuthContext";
 import styles from "@/styles";
-import {
-  EnvelopeOpenIcon,
-  FaceIcon,
-  GitHubLogoIcon,
-} from "@radix-ui/react-icons";
 import Loader from "../Loader";
 import { Collection, Audio } from "@/constants/interfaces";
 

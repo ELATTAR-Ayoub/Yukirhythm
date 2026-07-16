@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { redirect, useRouter } from "next/navigation";
 import Image from "next/image";
 
 // styles
@@ -11,7 +10,7 @@ import "@/styles/hero.css";
 import "@/styles/player.css";
 
 // constants
-import { Owner, Audio } from "@/constants/interfaces";
+import { Audio } from "@/constants/interfaces";
 
 // Icons
 import {
@@ -21,11 +20,9 @@ import {
 } from "@radix-ui/react-icons";
 
 // components
-import SolidSvg from "@/components/SolidSVG";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Controls from "@/components/player/controls";
-import { ListDrawer } from "@/components/player/ListDrawer";
 import {
   Card,
   CardContent,
@@ -42,11 +39,7 @@ import {
   selectAudioConfig,
   selectCurrentAudio,
   selectAudioPlaying,
-  selectAudioLoading,
-  selectAudioVolume,
-  SET_PLAYING,
   ADD_ITEM,
-  SET_VOLUME,
 } from "@/store/AudioConfig";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -54,9 +47,7 @@ const Hero = () => {
   // call redux states
   const audioConfig = useSelector(selectAudioConfig);
   const current = useSelector(selectCurrentAudio);
-  const volume = useSelector(selectAudioVolume);
   const audioPlaying = useSelector(selectAudioPlaying);
-  const audioLoading = useSelector(selectAudioLoading);
   const playing = useSelector(selectAudioPlaying);
   const dispatch = useDispatch();
 

@@ -16,7 +16,7 @@ export interface EnsureResult {
 // Creates the user doc keyed by uid only if it does not already exist.
 export async function ensureUserDoc(
   ops: UserDocOps,
-  uid: string,
+  _uid: string,
   userData: Record<string, unknown>
 ): Promise<EnsureResult> {
   const snap = await ops.getDoc(ops.ref);

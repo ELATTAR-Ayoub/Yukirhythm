@@ -8,12 +8,10 @@ import styles from "@/styles/index";
 import "@/styles/player.css";
 
 // constants
-import { Owner, Audio, User } from "@/constants/interfaces";
+import { Audio, User } from "@/constants/interfaces";
 
 // components
-import SolidSvg from "@/components/SolidSVG";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import {
@@ -33,9 +31,6 @@ import {
   selectAudioConfig,
   selectCurrentAudio,
   selectAudioPlaying,
-  SET_PLAYING,
-  SET_CURRENT,
-  DELETE_ITEM,
   ADD_ITEM,
 } from "@/store/AudioConfig";
 import { useDispatch, useSelector } from "react-redux";
@@ -44,7 +39,6 @@ import {
   HeartIcon,
   PauseIcon,
   PlayIcon,
-  TrashIcon,
 } from "@radix-ui/react-icons";
 import { useAuth } from "@/context/AuthContext";
 
@@ -75,7 +69,7 @@ export function UserAudioList({ id }: { id: string }) {
   });
 
   // values
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {

@@ -1,7 +1,3 @@
-// styles
-import styles from "../styles";
-import stylescss from "../styles/page.module.css";
-
 interface SolidSvgProps {
   width: number;
   height: number;

@@ -1,9 +1,6 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import Link from "next/link";
-import { redirect, useRouter } from "next/navigation";
-import Image from "next/image";
 import ReactPlayer from "react-player";
 import { toast } from "sonner";
 
@@ -13,7 +10,6 @@ import "@/styles/player.css";
 
 // Icons
 import {
-  ListBulletIcon,
   LoopIcon,
   PauseIcon,
   PlayIcon,
@@ -21,13 +17,8 @@ import {
   TrackPreviousIcon,
 } from "@radix-ui/react-icons";
 
-// constants
-import { Owner, Audio } from "@/constants/interfaces";
-
 // components
-import SolidSvg from "@/components/SolidSVG";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { ListDrawer } from "./ListDrawer";
 
 // redux
@@ -56,7 +47,6 @@ const Controls = ({ videoId }: { videoId: string }) => {
 
   // player config
   const [looping, setLooping] = useState(false);
-  const [shuffling, setShuffling] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
 
@@ -81,14 +71,6 @@ const Controls = ({ videoId }: { videoId: string }) => {
     }
 
     skipAudio(1);
-  }
-
-  function seektoBegining() {
-    setDuration(0);
-    dispatch(SET_PLAYING(false));
-    setTimeout(() => {
-      dispatch(SET_PLAYING(true));
-    }, 1000);
   }
 
   function skipAudio(change: number) {

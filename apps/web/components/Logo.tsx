@@ -1,7 +1,6 @@
 import Link from "next/link";
 // styles
 import styles from "../styles";
-import stylescss from "../styles/page.module.css";
 
 // components
 import SolidSvg from "./SolidSVG";

@@ -1,11 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
+import React from "react";
 
 // styles
 import styles from "@/styles";
-import stylescss from "@/styles/page.module.css";
 
 // components
 import { LoginForm } from "@/components/forms/login";
