@@ -18,7 +18,7 @@ Bring every dependency to a current, supported version, so the app is maintainab
 | `next` | 14.0.1 | **16.x** | 2 majors |
 | `react` / `react-dom` | 18.2.0 | **19.x** | 1 major |
 | `typescript` | 5.2 | ~~7.x~~ → **5.9** | ⚠️ **TS 7 BLOCKED — see below** |
-| `eslint` | 8.57 | **10.x** | 2 majors — *flat config* |
+| `eslint` | 8.57 | **10.x** | ⚠️ **moved to 4B — coupled to Next** |
 | `tailwindcss` | 3.2 | **4.x** | 1 major — *CSS-first config* |
 | `vitest` / `vite` | 2.1 / 5.4 | **4.x / 7.x** | 2 majors |
 | `firebase` | 10.5 | **12.x** | 2 majors |
@@ -59,6 +59,16 @@ That is not an acceptable net for a phase this risky. So **4A strengthens the ne
 ## Sub-phases
 
 Each is independently shippable and CI-gated. Order is deliberate: net first, then the isolated changes, then the framework.
+
+### ⚠️ FINDING (2026-07-17): ESLint cannot be upgraded independently of Next — moved to 4B
+
+4A assumed ESLint was independent tooling. **It isn't.** `eslint-config-next@14` declares `eslint: "^7.23.0 || ^8.0.0"` as a **required** peer on every 14.x release, and ships **no flat config** (old-style eslintrc modules only, no `exports` field). So ESLint 9 *and* 10 are both excluded until `eslint-config-next` moves — and that moves with Next.
+
+**The dangerous part:** `npm install eslint@10` *appears* to succeed — no `ERESOLVE`. npm resolves it by installing ESLint 10 at the root while **nesting ESLint 8.57.1 under `eslint-config-next`'s subtree** to satisfy the peer. Two ESLint instances in one process; the classic symptom is not a crash but **rules silently not applying** — the exact invisible coverage regression Phase 0 was created to fix. A green lint run would have meant nothing.
+
+Note "upgrade to the latest 8.x instead" is a **no-op**: `8.57.1` is already the final ESLint 8 release.
+
+**Resolution: ESLint 8 → 10 + the flat-config migration move into 4B**, bundled with `eslint-config-next` → 16, which is where they belong. `eslint.dirs` in `next.config.js` and Phase 0's lint-coverage fix must be preserved through that migration — verify coverage explicitly, don't assume.
 
 ### 4A — Strengthen the net, then upgrade tooling
 1. **Add component smoke tests** (the important part): render `Header`, `Hero`, `controls`, `ListDrawer`, and the three forms with mocked Firebase/store, asserting they mount without crashing and show key elements. These become the tripwire for 4B.
