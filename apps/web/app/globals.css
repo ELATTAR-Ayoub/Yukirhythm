@@ -26,7 +26,7 @@ a {
 
 body {
   min-height: 100vh;
-  font-family: var(--font-ui), var(--font-jp), "Nunito", sans-serif;
+  font-family: var(--font-sans), var(--font-jp), "Nunito", sans-serif;
   font-weight: 400;
   scroll-behavior: smooth;
   transition: scroll-behavior 1s ease-in-out;

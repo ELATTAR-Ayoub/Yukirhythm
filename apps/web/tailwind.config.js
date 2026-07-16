@@ -90,11 +90,12 @@ module.exports = {
       },
       fontFamily: {
         PIXELADE: ["PIXELADE", "sans-serif"],
-        // Studio type roles
-        display: ["var(--font-display)", "var(--font-jp)", "sans-serif"],
-        ui: ["var(--font-ui)", "var(--font-jp)", "sans-serif"],
-        label: ["var(--font-label)", "monospace"],
-        data: ["var(--font-data)", "monospace"],
+        // Studio type roles — Satoshi (display/ui) + OffBit (pixel/data)
+        display: ["var(--font-sans)", "var(--font-jp)", "sans-serif"],
+        ui: ["var(--font-sans)", "var(--font-jp)", "sans-serif"],
+        label: ["var(--font-pixel)", "monospace"],
+        data: ["var(--font-pixel-dot)", "var(--font-pixel)", "monospace"],
+        pixel: ["var(--font-pixel)", "monospace"],
       },
       boxShadow: {
         e1: "var(--shadow-e1)",
