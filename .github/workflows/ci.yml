@@ -5,7 +5,7 @@ on:
   pull_request:
 
 jobs:
-  verify:
+  web:
     runs-on: ubuntu-latest
     env:
       # Placeholder values so `next build` (which inlines NEXT_PUBLIC_* at
