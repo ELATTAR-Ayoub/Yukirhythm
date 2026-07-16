@@ -38,34 +38,28 @@ import { Audio } from "@/constants/interfaces";
 // auth
 import { useAuth } from "@/context/AuthContext";
 
-// redux
-import {
-  selectAudioConfig,
-  selectCurrentAudio,
-  selectAudioPlaying,
-  SKIP_NEXT,
-  SKIP_PREV,
-  SET_PLAYING,
-  SET_CURRENT,
-  DELETE_ITEM,
-} from "@/store/AudioConfig";
-import { useDispatch, useSelector } from "react-redux";
+// player store
+import { usePlayerStore } from "@/store/player";
 
 export function ListDrawer() {
   // auth
   const { user, dislikeAudio, likeAudio } = useAuth();
 
-  // redux
-  const audioConfig = useSelector(selectAudioConfig);
-  const current = useSelector(selectCurrentAudio);
-  const playing = useSelector(selectAudioPlaying);
-  const dispatch = useDispatch();
+  // player store
+  const audioConfig = usePlayerStore((s) => s.audioState);
+  const current = usePlayerStore((s) => s.currentAudio);
+  const playing = usePlayerStore((s) => s.audioPlaying);
+  const deleteItem = usePlayerStore((s) => s.deleteItem);
+  const skipNext = usePlayerStore((s) => s.skipNext);
+  const skipPrev = usePlayerStore((s) => s.skipPrev);
+  const setCurrent = usePlayerStore((s) => s.setCurrent);
+  const setPlaying = usePlayerStore((s) => s.setPlaying);
 
   const handleDelete = (audio: Audio, index: number) => {
-    dispatch(DELETE_ITEM(audio.ID));
+    deleteItem(audio.ID);
 
     if (current > index) {
-      dispatch(SKIP_PREV(1));
+      skipPrev(1);
       return;
     }
 
@@ -73,12 +67,12 @@ export function ListDrawer() {
       audio.ID === audioConfig[current].ID &&
       audioConfig.length - 1 === index
     ) {
-      dispatch(SKIP_PREV(1));
+      skipPrev(1);
       return;
     }
 
     if (audio.ID === audioConfig[current].ID && index === 0) {
-      dispatch(SKIP_NEXT(0));
+      skipNext(0);
       return;
     }
   };
@@ -242,9 +236,9 @@ export function ListDrawer() {
                       <Button
                         variant={"stylized"}
                         onClick={() => {
-                          dispatch(SET_CURRENT(index));
+                          setCurrent(index);
                           if (current === index) {
-                            dispatch(SET_PLAYING(!playing));
+                            setPlaying(!playing);
                           }
                         }}
                         size="icon"
