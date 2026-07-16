@@ -21,29 +21,21 @@ import {
 import { Button } from "@/components/ui/button";
 import { ListDrawer } from "./ListDrawer";
 
-// redux
-import {
-  selectAudioConfig,
-  selectCurrentAudio,
-  selectAudioPlaying,
-  selectAudioLoading,
-  selectAudioVolume,
-  SKIP_NEXT,
-  SKIP_PREV,
-  SET_LOADING,
-  SET_PLAYING,
-} from "@/store/AudioConfig";
-import { useDispatch, useSelector } from "react-redux";
+// store
+import { usePlayerStore } from "@/store/player";
 import { Slider } from "../ui/slider";
 
 const Controls = ({ videoId }: { videoId: string }) => {
-  // redux
-  const audioConfig = useSelector(selectAudioConfig);
-  const current = useSelector(selectCurrentAudio);
-  const playing = useSelector(selectAudioPlaying);
-  const AudioLoading = useSelector(selectAudioLoading);
-  const volume = useSelector(selectAudioVolume);
-  const dispatch = useDispatch();
+  // store
+  const audioConfig = usePlayerStore((s) => s.audioState);
+  const current = usePlayerStore((s) => s.currentAudio);
+  const playing = usePlayerStore((s) => s.audioPlaying);
+  const AudioLoading = usePlayerStore((s) => s.audioLoading);
+  const volume = usePlayerStore((s) => s.audioVolume);
+  const skipNext = usePlayerStore((s) => s.skipNext);
+  const skipPrev = usePlayerStore((s) => s.skipPrev);
+  const setLoading = usePlayerStore((s) => s.setLoading);
+  const setPlaying = usePlayerStore((s) => s.setPlaying);
 
   // player config
   const [looping, setLooping] = useState(false);
@@ -61,12 +53,12 @@ const Controls = ({ videoId }: { videoId: string }) => {
 
   function handleOnEnded() {
     if (audioConfig.length === current || current + 1 === audioConfig.length) {
-      dispatch(SET_PLAYING(false));
+      setPlaying(false);
       return;
     }
 
     if (looping === true) {
-      dispatch(SET_PLAYING(true));
+      setPlaying(true);
       return;
     }
 
@@ -75,38 +67,38 @@ const Controls = ({ videoId }: { videoId: string }) => {
 
   function skipAudio(change: number) {
     if (change === 0) {
-      dispatch(SKIP_PREV(1));
+      skipPrev(1);
       setDuration(0);
     } else {
-      dispatch(SKIP_NEXT(1));
+      skipNext(1);
       setDuration(0);
     }
   }
 
   const handleBufferStart = () => {
-    dispatch(SET_LOADING(true));
+    setLoading(true);
   };
 
   const handleBufferEnd = () => {
-    dispatch(SET_LOADING(false));
+    setLoading(false);
   };
 
   const handleReady = () => {
-    dispatch(SET_LOADING(false));
+    setLoading(false);
   };
 
   const handleError = () => {
-    dispatch(SET_LOADING(false));
+    setLoading(false);
     toast("This video can't be played here — skipping.");
     if (current + 1 < audioConfig.length) {
       skipAudio(1);
     } else {
-      dispatch(SET_PLAYING(false));
+      setPlaying(false);
     }
   };
 
   const handlePlayPause = () => {
-    dispatch(SET_PLAYING(!playing));
+    setPlaying(!playing);
   };
 
   const youtubeUrl = `https://www.youtube.com/watch?v=${videoId}`;
@@ -147,8 +139,8 @@ const Controls = ({ videoId }: { videoId: string }) => {
             onBuffer={handleBufferStart}
             onBufferEnd={handleBufferEnd}
             onError={handleError}
-            onPlay={() => dispatch(SET_PLAYING(true))}
-            onPause={() => dispatch(SET_PLAYING(false))}
+            onPlay={() => setPlaying(true)}
+            onPause={() => setPlaying(false)}
             onEnded={() => handleOnEnded()}
             onProgress={({ playedSeconds }) => setCurrentTime(playedSeconds)}
             onDuration={(duration) => setDuration(duration)}
