@@ -296,7 +296,7 @@ export default function ComponentsPage() {
                   <AvatarFallback className="font-pixel">YR</AvatarFallback>
                 </Avatar>
                 <Avatar>
-                  <AvatarFallback className="bg-cobalt text-paper font-pixel">
+                  <AvatarFallback className="bg-cobalt text-snow font-pixel">
                     MJ
                   </AvatarFallback>
                 </Avatar>

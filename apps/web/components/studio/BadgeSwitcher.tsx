@@ -41,8 +41,8 @@ export default function BadgeSwitcher({
               "px-4 py-1.5 rounded-full font-ui text-sm font-medium border transition-all duration-fast",
               "active:scale-95",
               isActive
-                ? "bg-ink text-paper border-ink dark:bg-paper dark:text-ink dark:border-paper shadow-e1"
-                : "bg-card text-foreground border-border hover:border-ink/40 dark:hover:border-paper/40"
+                ? "bg-ink text-snow border-ink dark:bg-snow dark:text-ink dark:border-snow shadow-e1"
+                : "bg-card text-foreground border-border hover:border-ink/40 dark:hover:border-snow/40"
             )}
           >
             {option}

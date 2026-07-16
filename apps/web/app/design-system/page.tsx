@@ -76,9 +76,9 @@ export default function DesignSystemPage() {
           />
           <TokenSwatch name="Mint" value="#7DF08A" swatchClassName="bg-mint" />
           <TokenSwatch
-            name="Paper"
+            name="Snow"
             value="#F7F6F3"
-            swatchClassName="bg-paper"
+            swatchClassName="bg-snow"
           />
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
@@ -104,7 +104,7 @@ export default function DesignSystemPage() {
           />
         </div>
         <p className="text-sm text-muted-foreground mt-6 max-w-xl">
-          Ratio rule: ~60% paper, ~30% ink, ~10% cobalt + mint. Tints are alpha
+          Ratio rule: ~60% snow, ~30% ink, ~10% cobalt + mint. Tints are alpha
           variants of the four bases — no new hues.
         </p>
       </DsSection>
@@ -216,7 +216,7 @@ export default function DesignSystemPage() {
             <div className="w-14 h-14 bg-cobalt rounded-lg transition-all duration-slow hover:scale-110 hover:rotate-45 cursor-pointer" />
           </DemoCell>
           <DemoCell label="press" sub="squish on active">
-            <div className="w-14 h-14 bg-ink dark:bg-paper rounded-lg transition-transform duration-fast active:scale-90 cursor-pointer" />
+            <div className="w-14 h-14 bg-ink dark:bg-snow rounded-lg transition-transform duration-fast active:scale-90 cursor-pointer" />
           </DemoCell>
         </div>
         <p className="text-sm text-muted-foreground mt-6 max-w-xl">

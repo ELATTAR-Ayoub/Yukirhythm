@@ -173,7 +173,7 @@ export default function TypographyPage() {
               <span className="font-ui italic">Italic</span>
             </div>
           </div>
-          <div className="rounded-lg border border-border bg-ink text-paper p-8">
+          <div className="rounded-lg border border-border bg-ink text-snow p-8">
             <div className="type-label text-mint mb-6">
               OFFBIT — THE MACHINE
             </div>

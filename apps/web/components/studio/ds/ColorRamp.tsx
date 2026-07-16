@@ -46,7 +46,7 @@ export default function ColorRamp({ name, steps, anchors = {} }: ColorRampProps)
               <span
                 className={cn(
                   "type-data-sm opacity-0 group-hover:opacity-100 transition-opacity duration-fast",
-                  light ? "text-ink" : "text-paper"
+                  light ? "text-ink" : "text-snow"
                 )}
               >
                 {copied === step ? "COPIED" : "COPY"}

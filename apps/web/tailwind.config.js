@@ -27,7 +27,7 @@ module.exports = {
         popover: "#262626",
         "dark-shade-85": "#D9D9D9",
         // Studio palette — brand anchors + full scales (see /design-system/colors)
-        paper: "#F7F6F3",
+        snow: "#F7F6F3",
         ink: {
           DEFAULT: "#191919",
           50: "hsl(45 20% 96%)",
@@ -42,8 +42,16 @@ module.exports = {
           900: "hsl(0 0% 14%)",
           950: "hsl(0 0% 10%)",
         },
-        cobalt: "#1450F0",
-        mint: "#7DF08A",
+        cobalt: {
+          DEFAULT: "#1450F0",
+          soft: "hsl(224 96% 93%)",
+          deep: "hsl(227 78% 34%)",
+        },
+        mint: {
+          DEFAULT: "#7DF08A",
+          soft: "hsl(127 68% 90%)",
+          deep: "hsl(129 52% 35%)",
+        },
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         card: {

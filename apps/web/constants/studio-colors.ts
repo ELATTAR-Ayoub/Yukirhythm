@@ -1,7 +1,8 @@
-// Studio color system — deliberately small:
-//   · ONE scale: ink (paper #F7F6F3 at 50 → ink #191919 at 950) — the base of the app
-//   · TWO accents: cobalt #1450F0 (action) and mint #7DF08A (life) — single values, no shades
-//   · ONE red: destructive — single value, errors and deletes only
+// Studio color system:
+//   · ink — the base scale (snow #F7F6F3 at 50 → ink #191919 at 950)
+//   · cobalt — action color, 3 shades (soft / default / deep)
+//   · mint — life color, 3 shades (soft / default / deep)
+//   · destructive — one red, warnings and deletes ONLY
 
 export interface RampStep {
   step: number;
@@ -10,7 +11,7 @@ export interface RampStep {
 
 /** The base scale. Every surface, border and text tone lives here. */
 export const INK_RAMP: RampStep[] = [
-  { step: 50, hsl: "hsl(45 20% 96%)" }, // = paper #F7F6F3
+  { step: 50, hsl: "hsl(45 20% 96%)" }, // = snow #F7F6F3
   { step: 100, hsl: "hsl(45 14% 91%)" },
   { step: 200, hsl: "hsl(45 10% 84%)" },
   { step: 300, hsl: "hsl(45 8% 74%)" },
@@ -23,39 +24,70 @@ export const INK_RAMP: RampStep[] = [
   { step: 950, hsl: "hsl(0 0% 10%)" }, // = ink #191919
 ];
 
-/** The three non-neutral colors. Single values — no scales. */
-export const ROLE_COLORS = [
+export interface Shade {
+  name: string;
+  tw: string;
+  hsl: string;
+  hex: string;
+  use: string;
+  textClass: string;
+}
+
+/** Cobalt — the action color. */
+export const COBALT_SHADES: Shade[] = [
+  {
+    name: "Soft",
+    tw: "cobalt-soft",
+    hsl: "hsl(224 96% 93%)",
+    hex: "#DCE5FD",
+    use: "washes, selected rows, focus halos",
+    textClass: "text-ink",
+  },
   {
     name: "Cobalt",
-    hex: "#1450F0",
+    tw: "cobalt",
     hsl: "hsl(224 88% 51%)",
-    darkNote: "dark mode lifts to hsl(224 88% 58%)",
-    role: "Action",
-    do: ["primary buttons", "links", "focus rings", "active nav"],
-    dont: ["backgrounds", "long text", "decorations"],
-    chipClass: "bg-cobalt text-paper",
+    hex: "#1450F0",
+    use: "buttons, links, active nav — THE action color",
+    textClass: "text-snow",
+  },
+  {
+    name: "Deep",
+    tw: "cobalt-deep",
+    hsl: "hsl(227 78% 34%)",
+    hex: "#132A9A",
+    use: "pressed states, dark-mode surfaces",
+    textClass: "text-snow",
+  },
+];
+
+/** Mint — the life color. */
+export const MINT_SHADES: Shade[] = [
+  {
+    name: "Soft",
+    tw: "mint-soft",
+    hsl: "hsl(127 68% 90%)",
+    hex: "#D4F7DA",
+    use: "success washes, playing-row background",
+    textClass: "text-ink",
   },
   {
     name: "Mint",
-    hex: "#7DF08A",
+    tw: "mint",
     hsl: "hsl(127 79% 72%)",
-    darkNote: "same value in both themes",
-    role: "Life",
-    do: ["now playing", "success", "positive stats", "EQ bars"],
-    dont: ["buttons", "text on paper", "warnings"],
-    chipClass: "bg-mint text-ink",
+    hex: "#7DF08A",
+    use: "EQ bars, now-playing marks, positive stats",
+    textClass: "text-ink",
   },
   {
-    name: "Destructive",
-    hex: "#EF4444",
-    hsl: "hsl(0 84% 60%)",
-    darkNote: "dark mode deepens to hsl(0 72% 51%)",
-    role: "Danger",
-    do: ["delete actions", "errors", "irreversible warnings"],
-    dont: ["emphasis", "badges for fun", "anything not dangerous"],
-    chipClass: "bg-destructive text-paper",
+    name: "Deep",
+    tw: "mint-deep",
+    hsl: "hsl(129 52% 35%)",
+    hex: "#2B883D",
+    use: "success text on light surfaces",
+    textClass: "text-snow",
   },
-] as const;
+];
 
 /** Semantic tokens → what they resolve to, per theme. */
 export const SEMANTIC_MAP: {
@@ -72,5 +104,5 @@ export const SEMANTIC_MAP: {
   { token: "border", usage: "hairlines, inputs", light: "hsl(45 6% 84%)", dark: "hsl(0 0% 19%)" },
   { token: "primary", usage: "actions, links, focus", light: "hsl(224 88% 51%)", dark: "hsl(224 88% 58%)" },
   { token: "accent", usage: "success, now playing", light: "hsl(127 79% 72%)", dark: "hsl(127 79% 72%)" },
-  { token: "destructive", usage: "delete, errors", light: "hsl(0 84% 60%)", dark: "hsl(0 72% 51%)" },
+  { token: "destructive", usage: "delete, errors — only", light: "hsl(0 84% 60%)", dark: "hsl(0 72% 51%)" },
 ];

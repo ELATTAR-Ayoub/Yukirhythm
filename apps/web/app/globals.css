@@ -232,10 +232,10 @@ body {
     --ink: #191919;
     --cobalt: #1450f0;
     --mint: #7df08a;
-    --paper: #f7f6f3;
+    --snow: #f7f6f3;
 
     /* shadcn tokens mapped to Studio (HSL triplets) */
-    --background: 45 20% 96%; /* paper */
+    --background: 45 20% 96%; /* snow */
     --foreground: 0 0% 10%; /* ink */
     --card: 40 20% 98%;
     --card-foreground: 0 0% 10%;
@@ -278,7 +278,7 @@ body {
   }
   .dark {
     --background: 0 0% 10%; /* ink */
-    --foreground: 45 20% 96%; /* paper */
+    --foreground: 45 20% 96%; /* snow */
     --card: 0 0% 13%;
     --card-foreground: 45 20% 96%;
     --popover: 0 0% 13%;
