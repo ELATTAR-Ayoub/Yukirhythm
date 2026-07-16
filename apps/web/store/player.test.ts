@@ -24,13 +24,17 @@ describe("player store — queue", () => {
 
   it("adds a new audio", () => {
     usePlayerStore.getState().addItem(makeAudio("a"));
-    expect(usePlayerStore.getState().audioState.map((x) => x.ID)).toEqual(["a"]);
+    expect(usePlayerStore.getState().audioState.map((x) => x.ID)).toEqual([
+      "a",
+    ]);
   });
 
   it("does not add a duplicate ID", () => {
     usePlayerStore.getState().addItem(makeAudio("a"));
     usePlayerStore.getState().addItem(makeAudio("a"));
-    expect(usePlayerStore.getState().audioState.map((x) => x.ID)).toEqual(["a"]);
+    expect(usePlayerStore.getState().audioState.map((x) => x.ID)).toEqual([
+      "a",
+    ]);
   });
 
   it("ignores an empty payload", () => {
@@ -50,13 +54,17 @@ describe("player store — queue", () => {
 
   it("wraps a single object passed to setQueue", () => {
     usePlayerStore.getState().setQueue(makeAudio("a"));
-    expect(usePlayerStore.getState().audioState.map((x) => x.ID)).toEqual(["a"]);
+    expect(usePlayerStore.getState().audioState.map((x) => x.ID)).toEqual([
+      "a",
+    ]);
   });
 
   it("deletes by ID and clears the queue", () => {
     usePlayerStore.getState().setQueue([makeAudio("a"), makeAudio("b")]);
     usePlayerStore.getState().deleteItem("a");
-    expect(usePlayerStore.getState().audioState.map((x) => x.ID)).toEqual(["b"]);
+    expect(usePlayerStore.getState().audioState.map((x) => x.ID)).toEqual([
+      "b",
+    ]);
     usePlayerStore.getState().clearQueue();
     expect(usePlayerStore.getState().audioState).toEqual([]);
   });
@@ -80,9 +88,12 @@ describe("player store — transport", () => {
     usePlayerStore.getState().setVolume(0.9);
     usePlayerStore.getState().setCurrent(3);
     const s = usePlayerStore.getState();
-    expect([s.audioPlaying, s.audioLoading, s.audioVolume, s.currentAudio]).toEqual(
-      [true, true, 0.9, 3]
-    );
+    expect([
+      s.audioPlaying,
+      s.audioLoading,
+      s.audioVolume,
+      s.currentAudio,
+    ]).toEqual([true, true, 0.9, 3]);
   });
 });
 
@@ -122,7 +133,9 @@ describe("importLegacyQueue", () => {
   });
 
   it("survives malformed legacy JSON without throwing", () => {
-    expect(importLegacyQueue(fakeStorage({ audioState: "{not json" }))).toBeNull();
+    expect(
+      importLegacyQueue(fakeStorage({ audioState: "{not json" }))
+    ).toBeNull();
   });
 
   it("ignores legacy data that is not an array", () => {
