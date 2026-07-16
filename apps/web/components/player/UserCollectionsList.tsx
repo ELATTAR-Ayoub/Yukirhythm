@@ -47,7 +47,6 @@ import {
   TrashIcon,
 } from "@radix-ui/react-icons";
 import { useAuth } from "@/context/AuthContext";
-import { Badge } from "../ui/badge";
 
 export function UserCollectionList({ id }: { id: string }) {
   // auth

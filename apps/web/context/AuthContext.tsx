@@ -212,7 +212,6 @@ export const AuthContextProvider = ({
       })
       .catch((error) => {
         const errorCode = error.code;
-        const errorMessage = error.message;
         throw new Error(errorCode); // Return the error code to the frontend
       });
   };
@@ -276,7 +275,7 @@ export const AuthContextProvider = ({
         router.push(`/`);
       })
       .catch((error) => {
-        console.log(error);
+        console.error(error);
       });
   };
 
@@ -350,7 +349,6 @@ export const AuthContextProvider = ({
       return collectionsData;
     } catch (error: any) {
       const errorCode = error.code;
-      const errorMessage = error.message;
       throw new Error(errorCode); // Return the error code to the frontend
     }
   }
@@ -377,13 +375,12 @@ export const AuthContextProvider = ({
       };
       if (collectionData.title) {
         try {
-          const docRef = await addDoc(collection(firestore, "collections"), {
+          await addDoc(collection(firestore, "collections"), {
             collectionData,
           });
           router.push(`/collections/${user.ID}`);
         } catch (error: any) {
           const errorCode = error.code;
-          const errorMessage = error.message;
           throw new Error(errorCode); // Return the error code to the frontend
         }
       }
