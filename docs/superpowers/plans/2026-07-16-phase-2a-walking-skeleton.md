@@ -1,4 +1,17 @@
-# Phase 2A — Walking Skeleton Implementation Plan
+# Phase 2A — Walking Skeleton Implementation Plan — ⚠️ PARTIALLY SUPERSEDED
+
+> **Status (2026-07-16):** this plan was fully executed, then the standalone-backend
+> approach it serves was **abandoned** — see the SUPERSEDED banner on
+> `docs/superpowers/specs/2026-07-16-phase-2-backend-separation-design.md`.
+>
+> **Still in effect:** Task 1 (monorepo: `apps/web` + npm workspaces), Task 5's CI
+> restructure, and Task 6 (`packages/shared`).
+>
+> **Reverted:** Tasks 2–4 (the Python FastAPI service) — `apps/api` was removed
+> from the tree; it lives on in git history and is the seed for the future Python
+> agent service. Its CI job was removed too.
+>
+> Retained as a record of what was built and why.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 

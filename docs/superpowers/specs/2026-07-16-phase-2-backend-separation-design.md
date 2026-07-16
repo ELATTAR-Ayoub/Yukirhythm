@@ -1,4 +1,24 @@
-# Phase 2 — Backend Separation (Design)
+# Phase 2 — Backend Separation (Design) — ⚠️ SUPERSEDED
+
+> **SUPERSEDED on 2026-07-16 — this approach was NOT adopted.**
+>
+> After Phase 2A (the walking skeleton) was built, we re-examined whether a
+> standalone Python backend was actually worth it. It wasn't: the agentic flow
+> can be its own small Python service later; Flutter has first-class Firebase
+> SDKs; the hardware story is users' own local files; and the one genuine win —
+> **locking down Firestore rules** — is achievable entirely inside Next.js with
+> Route Handlers + Firebase Admin. The cost (two services, two languages, two
+> deploys, CORS, token plumbing, a proxy hop) wasn't justified for a solo dev.
+>
+> **Decision: keep the API in Next.js; add a small Python agent service later,
+> when the agent is actually built.** `apps/api` was removed from the tree (it
+> remains in git history on `v2_2026`, and is the seed for that agent service).
+>
+> Kept from 2A: the monorepo layout (`apps/web`, `packages/shared`), the CI
+> fixes, the lockfile fix, and the formatting fix.
+>
+> This document is retained as a decision record. See the revised Phase 2 spec
+> for the approach actually taken.
 
 **Date:** 2026-07-16
 **Project:** Yukirhythm
