@@ -15,15 +15,6 @@ export interface Audio {
   message?: string;
 }
 
-// Type for our state
-export interface AudioConfigType {
-  audioState: Audio[];
-  currentAudio: number;
-  audioLoading: boolean;
-  audioPlaying: boolean;
-  audioVolume: number;
-}
-
 export interface CollectionOwner {
   name: string;
   ID: string;
