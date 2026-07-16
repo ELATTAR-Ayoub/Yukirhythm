@@ -332,7 +332,7 @@ export default function ComponentsPage() {
                   size="lg"
                   title="Music of the Week"
                   artist="Curated by Yuki"
-                  texture="dither-aurora"
+                  texture="tx-k2-horizon"
                 />
               </div>
             ),
@@ -358,7 +358,7 @@ export default function ComponentsPage() {
                   size="lg"
                   title="Music of the Week"
                   artist="Curated by Yuki"
-                  texture="dither-aurora"
+                  texture="tx-k2-horizon"
                   playing
                 />
               </div>
@@ -385,7 +385,7 @@ export default function ComponentsPage() {
                   size="lg"
                   title="夜盲症"
                   artist="蔡健雅 Tanya Chua"
-                  texture="tx-a-silk"
+                  texture="tx-k-silk"
                   duration="4:31"
                 />
               </div>
@@ -432,7 +432,7 @@ export default function ComponentsPage() {
                 <MediaCard size="sm" title="literal world" artist="Kisidakyoudan" texture="tx-k-ripple" />
                 <MediaCard size="sm" title="Nightglow" artist="Tanya Chua" texture="tx-k2-topo" playing />
                 <MediaCard size="sm" title="Static Garden" artist="Yuki Weekly" texture="tx-k2-static" />
-                <MediaCard size="sm" title="Marble Sea" artist="Aurora Set" texture="tx-a-marble2" />
+                <MediaCard size="sm" title="Marble Sea" artist="Aurora Set" texture="tx-k2-marble-dense" />
                 <MediaCard size="sm" title="Checker Club" artist="Soft Club" texture="tx-k2-checker" />
                 <MediaCard size="sm" title="Vinyl Ripple" artist="Deep Cuts" texture="tx-k2-vinyl" />
               </RailShelf>

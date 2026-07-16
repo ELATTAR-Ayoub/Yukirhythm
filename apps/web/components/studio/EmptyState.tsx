@@ -13,7 +13,7 @@ interface EmptyStateProps {
 export default function EmptyState({
   title,
   hint,
-  texture = "ascii-dark",
+  texture = "tx-k-ascii-ripple",
   action,
   className,
 }: EmptyStateProps) {

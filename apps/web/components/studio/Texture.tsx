@@ -2,16 +2,6 @@ import { cn } from "@/lib/utils";
 
 // Dithered/ASCII texture assets shipped in public/textures (owner branding pack).
 export const TEXTURE_NAMES = [
-  "art-aurora",
-  "art-marble-aurora",
-  "art-sunset",
-  "ascii-dark",
-  "ascii-wave",
-  "dither-aurora",
-  "dither-sunset",
-  "tx-a-marble2",
-  "tx-a-ripple",
-  "tx-a-silk",
   "tx-k-ascii-ripple",
   "tx-k-glitch",
   "tx-k-marble",

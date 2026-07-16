@@ -39,6 +39,8 @@ declare global {
       > & {
         state?: YukiAgentState;
         speed?: number | string;
+        /** Custom elements need the literal class attribute — className is NOT mapped */
+        class?: string;
       };
     }
   }
@@ -102,7 +104,7 @@ export default function YukiAgent({
     <yuki-agent
       state={state}
       speed={speed}
-      className={className}
+      class={className}
       role="img"
       aria-label={`Yuki agent — ${state}`}
     />

@@ -333,3 +333,10 @@ body {
   animation: eq-bounce 0.9s ease-in-out infinite;
   transform-origin: bottom;
 }
+
+/* yuki-agent must escape the legacy global `canvas { fixed; z-[-1] }`
+   rule in styles/loader.css (kept for the Spline background). */
+yuki-agent canvas {
+  position: static !important;
+  z-index: auto !important;
+}
