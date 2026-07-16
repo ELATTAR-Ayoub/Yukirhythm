@@ -34,22 +34,16 @@ import {
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 
-// redux
-import {
-  selectAudioConfig,
-  selectCurrentAudio,
-  selectAudioPlaying,
-  ADD_ITEM,
-} from "@/store/AudioConfig";
-import { useDispatch, useSelector } from "react-redux";
+// player store
+import { usePlayerStore } from "@/store/player";
 
 const Hero = () => {
-  // call redux states
-  const audioConfig = useSelector(selectAudioConfig);
-  const current = useSelector(selectCurrentAudio);
-  const audioPlaying = useSelector(selectAudioPlaying);
-  const playing = useSelector(selectAudioPlaying);
-  const dispatch = useDispatch();
+  // call player store state
+  const audioConfig = usePlayerStore((s) => s.audioState);
+  const current = usePlayerStore((s) => s.currentAudio);
+  const audioPlaying = usePlayerStore((s) => s.audioPlaying);
+  const playing = usePlayerStore((s) => s.audioPlaying);
+  const addItem = usePlayerStore((s) => s.addItem);
 
   // value
   const [inputValue, setInputValue] = useState("");
@@ -357,7 +351,7 @@ const Hero = () => {
                             const already = audioConfig.some(
                               (a: Audio) => a.ID === audio.ID
                             );
-                            dispatch(ADD_ITEM(audio));
+                            addItem(audio);
                             toast(
                               already
                                 ? "Already in your player"
