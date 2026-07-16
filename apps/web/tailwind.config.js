@@ -26,6 +26,11 @@ module.exports = {
       colors: {
         popover: "#262626",
         "dark-shade-85": "#D9D9D9",
+        // Studio palette — raw brand colors
+        ink: "#191919",
+        cobalt: "#1450F0",
+        mint: "#7DF08A",
+        paper: "#F7F6F3",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         card: {
@@ -85,6 +90,22 @@ module.exports = {
       },
       fontFamily: {
         PIXELADE: ["PIXELADE", "sans-serif"],
+        // Studio type roles
+        display: ["var(--font-display)", "var(--font-jp)", "sans-serif"],
+        ui: ["var(--font-ui)", "var(--font-jp)", "sans-serif"],
+        label: ["var(--font-label)", "monospace"],
+        data: ["var(--font-data)", "monospace"],
+      },
+      boxShadow: {
+        e1: "var(--shadow-e1)",
+        e2: "var(--shadow-e2)",
+        e3: "var(--shadow-e3)",
+        e4: "var(--shadow-e4)",
+      },
+      transitionDuration: {
+        fast: "150ms",
+        base: "250ms",
+        slow: "400ms",
       },
       borderRadius: {
         lg: "var(--radius)",
