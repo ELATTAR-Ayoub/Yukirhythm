@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import type { Ramp } from "@/constants/studio-colors";
+import type { RampStep } from "@/constants/studio-colors";
 
 /** Perceived-light check for label contrast on a swatch. */
 function isLight(hsl: string): boolean {
@@ -10,8 +10,15 @@ function isLight(hsl: string): boolean {
   return m ? parseFloat(m[1]) > 55 : false;
 }
 
-/** One shadcn-style color scale row: 50→950 swatches, click to copy HSL. */
-export default function ColorRamp({ ramp }: { ramp: Ramp }) {
+interface ColorRampProps {
+  name: string;
+  steps: RampStep[];
+  /** step → short label, rendered under the anchor swatches */
+  anchors?: Record<number, string>;
+}
+
+/** A shadcn-style color scale row — click any swatch to copy its HSL. */
+export default function ColorRamp({ name, steps, anchors = {} }: ColorRampProps) {
   const [copied, setCopied] = useState<number | null>(null);
 
   const copy = (step: number, hsl: string) => {
@@ -21,56 +28,44 @@ export default function ColorRamp({ ramp }: { ramp: Ramp }) {
   };
 
   return (
-    <div className="mb-10 last:mb-0">
-      <div className="flex flex-wrap items-baseline justify-between gap-2 mb-1">
-        <h3 className="type-h4">{ramp.name}</h3>
-        {ramp.anchor ? (
-          <span className="type-label text-muted-foreground">
-            anchor: {ramp.name}-{ramp.anchor.step} · {ramp.anchor.label}
-          </span>
-        ) : null}
-      </div>
-      <p className="type-muted mb-4 max-w-2xl">{ramp.description}</p>
-      <div className="grid grid-cols-3 sm:grid-cols-6 lg:grid-cols-11 gap-2">
-        {ramp.steps.map(({ step, hsl }) => {
-          const light = isLight(hsl);
-          const isAnchor = ramp.anchor?.step === step;
-          return (
-            <button
-              key={step}
-              onClick={() => copy(step, hsl)}
-              title={`Copy ${hsl}`}
-              className={cn(
-                "group text-left rounded-md overflow-hidden border transition-transform duration-fast active:scale-95",
-                isAnchor ? "border-foreground/60 ring-1 ring-foreground/30" : "border-border"
-              )}
-            >
-              <div
-                className="h-16 flex items-end p-1.5"
-                style={{ backgroundColor: hsl }}
+    <div className="grid grid-cols-3 sm:grid-cols-6 lg:grid-cols-11 gap-2">
+      {steps.map(({ step, hsl }) => {
+        const light = isLight(hsl);
+        const anchor = anchors[step];
+        return (
+          <button
+            key={step}
+            onClick={() => copy(step, hsl)}
+            title={`Copy ${hsl}`}
+            className={cn(
+              "group text-left rounded-md overflow-hidden border transition-transform duration-fast active:scale-95",
+              anchor ? "border-foreground/60 ring-1 ring-foreground/30" : "border-border"
+            )}
+          >
+            <div className="h-16 flex items-end p-1.5" style={{ backgroundColor: hsl }}>
+              <span
+                className={cn(
+                  "type-data-sm opacity-0 group-hover:opacity-100 transition-opacity duration-fast",
+                  light ? "text-ink" : "text-paper"
+                )}
               >
-                <span
-                  className={cn(
-                    "type-data-sm opacity-0 group-hover:opacity-100 transition-opacity duration-fast",
-                    light ? "text-ink" : "text-paper"
-                  )}
-                >
-                  {copied === step ? "COPIED" : "COPY"}
-                </span>
+                {copied === step ? "COPIED" : "COPY"}
+              </span>
+            </div>
+            <div className="px-1.5 py-1.5 bg-card">
+              <div className="type-label">
+                {name}-{step}
               </div>
-              <div className="px-1.5 py-1.5 bg-card">
-                <div className="type-label">
-                  {ramp.name}-{step}
-                  {isAnchor ? " ●" : ""}
-                </div>
-                <div className="type-data-sm text-muted-foreground truncate">
-                  {hsl.replace("hsl(", "").replace(")", "")}
-                </div>
+              <div className="type-data-sm text-muted-foreground truncate">
+                {hsl.replace("hsl(", "").replace(")", "")}
               </div>
-            </button>
-          );
-        })}
-      </div>
+              {anchor ? (
+                <div className="type-label text-primary mt-0.5 truncate">{anchor}</div>
+              ) : null}
+            </div>
+          </button>
+        );
+      })}
     </div>
   );
 }
