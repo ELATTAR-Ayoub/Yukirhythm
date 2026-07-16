@@ -340,3 +340,60 @@ yuki-agent canvas {
   position: static !important;
   z-index: auto !important;
 }
+
+/* ── Studio typography system ─────────────────────────────────
+   Two fonts, hard rule: Satoshi (voice) + OffBit (machine).
+   Every text in the app uses one of these named styles. */
+@layer components {
+  /* Satoshi — the voice */
+  .type-display {
+    @apply font-ui font-black text-5xl md:text-6xl tracking-tight leading-[0.95];
+  }
+  .type-h1 {
+    @apply font-ui font-bold text-4xl tracking-tight scroll-m-20;
+  }
+  .type-h2 {
+    @apply font-ui font-bold text-3xl tracking-tight scroll-m-20;
+  }
+  .type-h3 {
+    @apply font-ui font-bold text-2xl tracking-tight scroll-m-20;
+  }
+  .type-h4 {
+    @apply font-ui font-bold text-xl tracking-tight scroll-m-20;
+  }
+  .type-lead {
+    @apply font-ui font-normal text-xl text-muted-foreground leading-relaxed;
+  }
+  .type-p {
+    @apply font-ui font-normal text-base leading-7;
+  }
+  .type-large {
+    @apply font-ui font-bold text-lg;
+  }
+  .type-small {
+    @apply font-ui font-medium text-sm leading-none;
+  }
+  .type-muted {
+    @apply font-ui font-normal text-sm text-muted-foreground;
+  }
+  .type-blockquote {
+    @apply font-ui font-medium text-lg italic border-l-2 border-cobalt pl-6;
+  }
+
+  /* OffBit — the machine */
+  .type-label {
+    @apply font-pixel text-[11px] uppercase tracking-[0.18em];
+  }
+  .type-pixel-title {
+    @apply font-pixel text-2xl tracking-tight;
+  }
+  .type-code {
+    @apply font-pixel text-sm bg-muted rounded-sm px-1.5 py-0.5;
+  }
+  .type-data {
+    @apply font-data tracking-wide;
+  }
+  .type-data-lg {
+    @apply font-data text-3xl tracking-wide;
+  }
+}
