@@ -12,11 +12,7 @@ import { AuthContextProvider } from "@/context/AuthContext";
 import { store_0001 } from "../store/store";
 import { Provider } from "react-redux";
 
-export default function Providers({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function Providers({ children }: { children: React.ReactNode }) {
   return (
     <Provider store={store_0001}>
       <AuthContextProvider>

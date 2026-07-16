@@ -3,7 +3,9 @@ import { validateSearchRequest, formatVideos } from "@/lib/search/format";
 
 describe("validateSearchRequest", () => {
   it("rejects empty query", () => {
-    expect(validateSearchRequest({ string: "  ", quantity: 10 }).ok).toBe(false);
+    expect(validateSearchRequest({ string: "  ", quantity: 10 }).ok).toBe(
+      false
+    );
   });
   it("accepts a valid query and clamps quantity", () => {
     const r = validateSearchRequest({ string: "lofi", quantity: 999 });
@@ -23,7 +25,20 @@ describe("validateSearchRequest", () => {
 describe("formatVideos", () => {
   it("maps raw results to Audio and skips incomplete entries", () => {
     const raw = [
-      { type: "video", ID: "1", URL: "u1", title: "t1", thumbnails: [{ url: "a" }, { url: "b" }], owner: { name: "o", ID: "oid", canonicalURL: "c", thumbnails: [{ url: "p" }] }, duration: { number: 100 } },
+      {
+        type: "video",
+        ID: "1",
+        URL: "u1",
+        title: "t1",
+        thumbnails: [{ url: "a" }, { url: "b" }],
+        owner: {
+          name: "o",
+          ID: "oid",
+          canonicalURL: "c",
+          thumbnails: [{ url: "p" }],
+        },
+        duration: { number: 100 },
+      },
       { type: "video", ID: "", URL: "", title: "" },
       { type: "channel", ID: "2" },
     ];
@@ -36,7 +51,15 @@ describe("formatVideos", () => {
     const raw = [
       { type: "video", ID: "", URL: "", title: "" },
       { type: "video", ID: "", URL: "", title: "" },
-      { type: "video", ID: "9", URL: "u9", title: "t9", thumbnails: [{ url: "a" }], owner: { name: "o", ID: "o", canonicalURL: "c" }, duration: { number: 42 } },
+      {
+        type: "video",
+        ID: "9",
+        URL: "u9",
+        title: "t9",
+        thumbnails: [{ url: "a" }],
+        owner: { name: "o", ID: "o", canonicalURL: "c" },
+        duration: { number: 42 },
+      },
     ];
     const out = formatVideos(raw as any, 2);
     expect(out.map((v) => v.ID)).toEqual(["9"]);

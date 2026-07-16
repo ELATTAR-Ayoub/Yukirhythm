@@ -33,7 +33,10 @@ export function formatVideos(results: any[], quantity: number): Audio[] {
       ID: el.ID,
       URL: el.URL,
       title: el.title,
-      thumbnails: [el.thumbnails?.[0]?.url || "", el.thumbnails?.[1]?.url || ""],
+      thumbnails: [
+        el.thumbnails?.[0]?.url || "",
+        el.thumbnails?.[1]?.url || "",
+      ],
       owner: {
         name: el.owner?.name || "Unknown",
         ID: el.owner?.ID || "",

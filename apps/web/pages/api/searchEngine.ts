@@ -85,6 +85,8 @@ export default async function handler(
       return res.status(504).json({ message: "Search timed out, try again" });
     }
     console.error("Search error:", message);
-    return res.status(502).json({ message: "Search is temporarily unavailable" });
+    return res
+      .status(502)
+      .json({ message: "Search is temporarily unavailable" });
   }
 }
