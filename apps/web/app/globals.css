@@ -382,16 +382,22 @@ yuki-agent canvas {
 
   /* OffBit — the machine */
   .type-label {
-    @apply font-pixel text-[11px] uppercase tracking-[0.18em];
+    @apply font-pixel font-bold text-[11px] uppercase tracking-[0.18em];
   }
   .type-pixel-title {
-    @apply font-pixel text-2xl tracking-tight;
+    @apply font-pixel font-bold text-2xl tracking-tight;
   }
   .type-code {
-    @apply font-pixel text-sm bg-muted rounded-sm px-1.5 py-0.5;
+    @apply font-pixel font-bold text-sm bg-muted rounded-sm px-1.5 py-0.5;
+  }
+  .type-data-sm {
+    @apply font-data text-xs tracking-wide;
   }
   .type-data {
     @apply font-data tracking-wide;
+  }
+  .type-data-md {
+    @apply font-data text-xl tracking-wide;
   }
   .type-data-lg {
     @apply font-data text-3xl tracking-wide;

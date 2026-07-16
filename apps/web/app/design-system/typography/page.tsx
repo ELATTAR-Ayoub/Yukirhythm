@@ -87,7 +87,7 @@ const SCALE: {
   },
   {
     cls: "type-label",
-    font: "OffBit Regular",
+    font: "OffBit Bold",
     css: "11px · uppercase · tracking +0.18em",
     usage: "Section labels, catalogue tags, nav groups",
     sample: "01 — LIKED AUDIO",
@@ -101,10 +101,17 @@ const SCALE: {
   },
   {
     cls: "type-code",
-    font: "OffBit Regular",
+    font: "OffBit Bold",
     css: "14px · muted chip background",
     usage: "Keyboard hints, technical values",
     sample: "Ctrl + K",
+  },
+  {
+    cls: "type-data-sm",
+    font: "OffBit Dot",
+    css: "12px · tracking +0.025em",
+    usage: "Tiny meta: row durations, badge counts",
+    sample: "3:59",
   },
   {
     cls: "type-data",
@@ -112,6 +119,13 @@ const SCALE: {
     css: "1em · tracking +0.025em",
     usage: "Every number: timestamps, BPM, counters",
     sample: "02:07 / 03:59",
+  },
+  {
+    cls: "type-data-md",
+    font: "OffBit Dot",
+    css: "20px · tracking +0.025em",
+    usage: "Player time, stat rows",
+    sample: "132 BPM",
   },
   {
     cls: "type-data-lg",
