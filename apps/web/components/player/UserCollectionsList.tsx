@@ -26,14 +26,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-// redux
-import {
-  selectAudioConfig,
-  selectCurrentAudio,
-  selectAudioPlaying,
-  ADD_ITEM,
-} from "@/store/AudioConfig";
-import { useDispatch, useSelector } from "react-redux";
+// player store
+import { usePlayerStore } from "@/store/player";
 import {
   HeartFilledIcon,
   HeartIcon,
@@ -52,11 +46,11 @@ export function UserCollectionList({ id }: { id: string }) {
     getUserCollections,
   } = useAuth();
 
-  // redux
-  const audioConfig = useSelector(selectAudioConfig);
-  const current = useSelector(selectCurrentAudio);
-  const playing = useSelector(selectAudioPlaying);
-  const dispatch = useDispatch();
+  // player store
+  const audioConfig = usePlayerStore((s) => s.audioState);
+  const current = usePlayerStore((s) => s.currentAudio);
+  const playing = usePlayerStore((s) => s.audioPlaying);
+  const addItem = usePlayerStore((s) => s.addItem);
   const router = useRouter();
 
   //   profileUser
@@ -120,7 +114,7 @@ export function UserCollectionList({ id }: { id: string }) {
           const item = data[0];
           if (item) {
             const already = audioConfig.some((a: Audio) => a.ID === item.ID);
-            dispatch(ADD_ITEM(item));
+            addItem(item);
             toast(already ? "Already in your player" : "Added to player");
           }
           setLoading(false);
