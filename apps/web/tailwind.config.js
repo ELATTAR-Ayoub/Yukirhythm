@@ -108,6 +108,7 @@ module.exports = {
       },
       transitionTimingFunction: {
         "out-flex": "cubic-bezier(0.05, 0.6, 0.4, 0.9)",
+        spring: "cubic-bezier(0.34, 1.56, 0.64, 1)",
       },
       fontFamily: {
         PIXELADE: ["PIXELADE", "sans-serif"],
@@ -123,8 +124,12 @@ module.exports = {
         e2: "var(--shadow-e2)",
         e3: "var(--shadow-e3)",
         e4: "var(--shadow-e4)",
+        key: "var(--shadow-key)",
+        "key-down": "var(--shadow-key-down)",
+        pressed: "var(--shadow-pressed)",
       },
       transitionDuration: {
+        tick: "80ms",
         fast: "150ms",
         base: "250ms",
         slow: "400ms",

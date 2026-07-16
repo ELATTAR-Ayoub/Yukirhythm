@@ -1,11 +1,6 @@
+import Link from "next/link";
 import Texture, { TEXTURE_NAMES } from "@/components/studio/Texture";
-import DataText from "@/components/studio/DataText";
-import {
-  DsSection,
-  TokenSwatch,
-  SpecimenBlock,
-  DemoCell,
-} from "@/components/studio/ds/blocks";
+import { DsSection } from "@/components/studio/ds/blocks";
 import AgentGallery from "@/components/studio/ds/AgentGallery";
 
 const ICONS = [
@@ -22,6 +17,61 @@ const ICONS = [
   "github",
   "google",
 ] as const;
+
+const CHAPTERS = [
+  {
+    href: "/design-system/typography",
+    title: "Typography",
+    desc: "Two fonts, hard rule — Satoshi speaks, OffBit computes. 18 named styles.",
+    sample: (
+      <div className="flex items-baseline gap-3">
+        <span className="type-h3">Aa</span>
+        <span className="font-pixel font-bold text-2xl">Aa</span>
+        <span className="type-data-md text-primary">01:24</span>
+      </div>
+    ),
+  },
+  {
+    href: "/design-system/colors",
+    title: "Colors",
+    desc: "Ink is the base. Cobalt acts. Mint lives. Red only warns.",
+    sample: (
+      <div className="flex gap-2">
+        <span className="w-8 h-8 rounded-md bg-snow border border-border" />
+        <span className="w-8 h-8 rounded-md bg-ink" />
+        <span className="w-8 h-8 rounded-md bg-cobalt" />
+        <span className="w-8 h-8 rounded-md bg-mint" />
+      </div>
+    ),
+  },
+  {
+    href: "/design-system/space",
+    title: "Space & Motion",
+    desc: "The 4px grid, realistic machine shadows, springy + mechanical motion.",
+    sample: (
+      <div className="flex items-center gap-3">
+        <span className="w-8 h-8 rounded-md bg-card shadow-e3" />
+        <span className="w-8 h-8 rounded-md bg-card shadow-key" />
+        <span className="w-8 h-8 rounded-full bg-mint anim-jelly" />
+      </div>
+    ),
+  },
+  {
+    href: "/design-system/components",
+    title: "Components",
+    desc: "The living inventory — every component, every state, every signal.",
+    sample: (
+      <div className="flex items-center gap-2">
+        <span className="px-3 py-1.5 rounded-full bg-primary text-primary-foreground type-small">
+          Play now
+        </span>
+        <span className="px-3 py-1.5 rounded-full border border-border type-small">
+          Follow
+        </span>
+      </div>
+    ),
+  },
+];
 
 /** Pixel-cluster decoration recreated from the brand card (checker diamonds). */
 function PixelCluster({ flip = false }: { flip?: boolean }) {
@@ -47,186 +97,48 @@ function PixelCluster({ flip = false }: { flip?: boolean }) {
 export default function DesignSystemPage() {
   return (
     <div>
-      {/* ── Brand hero — the wordmark card vibe ─────────────────── */}
-      <section className="relative mb-16 rounded-lg border border-border bg-background overflow-hidden">
+      {/* ── Brand hero — the wordmark card ──────────────────────── */}
+      <section className="relative mb-14 rounded-lg border border-border bg-background overflow-hidden">
         <div className="absolute top-5 left-5">
           <PixelCluster />
         </div>
         <div className="absolute bottom-5 right-5">
           <PixelCluster flip />
         </div>
-        <div className="py-28 sm:py-36 flex flex-col items-center justify-center text-center px-6">
-          <h1 className="font-pixel text-4xl sm:text-6xl tracking-tight">
+        <div className="py-24 sm:py-32 flex flex-col items-center justify-center text-center px-6">
+          <h1 className="font-pixel font-bold text-4xl sm:text-6xl tracking-tight">
             Yuki Rhythm
           </h1>
-          <p className="mt-4 font-label text-[11px] uppercase tracking-[0.25em] text-muted-foreground">
-            Studio palette · 191919 / 1450F0 / 7DF08A / F7F6F3
+          <p className="mt-4 type-label text-muted-foreground tracking-[0.25em]">
+            STUDIO SYSTEM · 191919 / 1450F0 / 7DF08A / F7F6F3
           </p>
         </div>
       </section>
 
-      {/* ── 01 Color ─────────────────────────────────────────────── */}
-      <DsSection index="01" title="Color">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-8">
-          <TokenSwatch name="Ink" value="#191919" swatchClassName="bg-ink" />
-          <TokenSwatch
-            name="Cobalt"
-            value="#1450F0"
-            swatchClassName="bg-cobalt"
-          />
-          <TokenSwatch name="Mint" value="#7DF08A" swatchClassName="bg-mint" />
-          <TokenSwatch
-            name="Snow"
-            value="#F7F6F3"
-            swatchClassName="bg-snow"
-          />
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-          <TokenSwatch
-            name="Primary"
-            value="actions · links · focus"
-            swatchClassName="bg-primary"
-          />
-          <TokenSwatch
-            name="Accent"
-            value="success · now playing"
-            swatchClassName="bg-accent"
-          />
-          <TokenSwatch
-            name="Muted"
-            value="dividers · quiet fills"
-            swatchClassName="bg-muted"
-          />
-          <TokenSwatch
-            name="Destructive"
-            value="delete · errors"
-            swatchClassName="bg-destructive"
-          />
-        </div>
-        <p className="text-sm text-muted-foreground mt-6 max-w-xl">
-          Ratio rule: ~60% snow, ~30% ink, ~10% cobalt + mint. Tints are alpha
-          variants of the four bases — no new hues.
-        </p>
-      </DsSection>
-
-      {/* ── 02 Typography ────────────────────────────────────────── */}
-      <DsSection index="02" title="Typography">
-        <SpecimenBlock
-          role="Display"
-          font="Satoshi Bold / Black"
-          usage="Page titles, track titles, hero cards."
-        >
-          <div className="font-display font-bold text-4xl sm:text-5xl tracking-tight leading-none">
-            Music becomes weather
-          </div>
-        </SpecimenBlock>
-        <SpecimenBlock
-          role="Interface"
-          font="Satoshi Regular / Medium"
-          usage="Buttons, navigation, body text, settings."
-        >
-          <p className="font-ui text-base max-w-lg">
-            Search your rhythm, build playlists that matter, and let the agent
-            find what you did not know you loved.
-          </p>
-        </SpecimenBlock>
-        <SpecimenBlock
-          role="Pixel label"
-          font="OffBit Regular / Bold"
-          usage="Wordmark, section labels, catalogue tags."
-        >
-          <div className="font-pixel text-2xl">
-            LIKED AUDIO · NEW RELEASES · YUKI RHYTHM
-          </div>
-        </SpecimenBlock>
-        <SpecimenBlock
-          role="Data"
-          font="OffBit Dot"
-          usage="Timestamps, BPM, counters — every number in the app."
-        >
-          <DataText className="text-3xl">
-            01:24 / 03:45 · 132 BPM · 4,209 PLAYS
-          </DataText>
-        </SpecimenBlock>
-        <SpecimenBlock
-          role="CJK fallback"
-          font="Noto Sans JP"
-          usage="The library is full of JP/CN titles — always in the stack."
-        >
-          <div className="font-display font-medium text-2xl">
-            岸田教団 — literal world · 蔡健雅 — 夜盲症
-          </div>
-        </SpecimenBlock>
-      </DsSection>
-
-      {/* ── 03 Spacing & Radius ──────────────────────────────────── */}
-      <DsSection index="03" title="Spacing & Radius">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-          <DemoCell label="Base unit" sub="4px scale · 4/8/12/16/24/32/48/64">
-            <div className="flex items-end gap-1.5">
-              {[4, 8, 12, 16, 24, 32].map((s) => (
-                <div
-                  key={s}
-                  className="bg-cobalt/80 w-4 rounded-sm"
-                  style={{ height: s }}
-                />
-              ))}
-            </div>
-          </DemoCell>
-          <DemoCell label="radius-sm" sub="12px — chips, inputs">
-            <div className="w-20 h-14 bg-secondary rounded-sm border border-border" />
-          </DemoCell>
-          <DemoCell label="radius-md" sub="14px — buttons, rows">
-            <div className="w-20 h-14 bg-secondary rounded-md border border-border" />
-          </DemoCell>
-          <DemoCell label="radius-lg" sub="16px — cards, panels">
-            <div className="w-20 h-14 bg-secondary rounded-lg border border-border" />
-          </DemoCell>
+      {/* ── 01 The chapters ─────────────────────────────────────── */}
+      <DsSection index="01" title="The system">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {CHAPTERS.map((c) => (
+            <Link
+              key={c.href}
+              href={c.href}
+              className="group rounded-lg border border-border bg-card p-6 hover:shadow-e3 hover:-translate-y-0.5 transition-all duration-base"
+            >
+              <div className="h-12 flex items-center">{c.sample}</div>
+              <div className="flex items-center justify-between mt-4">
+                <span className="type-h3">{c.title}</span>
+                <span className="type-label text-primary opacity-0 group-hover:opacity-100 transition-opacity duration-fast">
+                  OPEN →
+                </span>
+              </div>
+              <p className="type-muted mt-1.5">{c.desc}</p>
+            </Link>
+          ))}
         </div>
       </DsSection>
 
-      {/* ── 04 Elevation ─────────────────────────────────────────── */}
-      <DsSection index="04" title="Elevation">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-          <DemoCell label="e1" sub="flat — rows, chips">
-            <div className="w-20 h-14 bg-card rounded-lg shadow-e1" />
-          </DemoCell>
-          <DemoCell label="e2" sub="raised — cards">
-            <div className="w-20 h-14 bg-card rounded-lg shadow-e2" />
-          </DemoCell>
-          <DemoCell label="e3" sub="floating — player bar, popovers">
-            <div className="w-20 h-14 bg-card rounded-lg shadow-e3" />
-          </DemoCell>
-          <DemoCell label="e4" sub="modal — dialogs, agent panel">
-            <div className="w-20 h-14 bg-card rounded-lg shadow-e4" />
-          </DemoCell>
-        </div>
-      </DsSection>
-
-      {/* ── 05 Motion ────────────────────────────────────────────── */}
-      <DsSection index="05" title="Motion">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-          <DemoCell label="fast · 150ms" sub="hover, focus — ease-out">
-            <div className="w-14 h-14 bg-cobalt rounded-lg transition-transform duration-fast hover:-translate-y-1.5 cursor-pointer" />
-          </DemoCell>
-          <DemoCell label="base · 250ms" sub="cards, chips — ease-out">
-            <div className="w-14 h-14 bg-cobalt rounded-lg transition-all duration-base hover:rounded-[28px] hover:bg-mint cursor-pointer" />
-          </DemoCell>
-          <DemoCell label="slow · 400ms" sub="panels, page moods">
-            <div className="w-14 h-14 bg-cobalt rounded-lg transition-all duration-slow hover:scale-110 hover:rotate-45 cursor-pointer" />
-          </DemoCell>
-          <DemoCell label="press" sub="squish on active">
-            <div className="w-14 h-14 bg-ink dark:bg-snow rounded-lg transition-transform duration-fast active:scale-90 cursor-pointer" />
-          </DemoCell>
-        </div>
-        <p className="text-sm text-muted-foreground mt-6 max-w-xl">
-          Hover the boxes. Rule: motion communicates state, never decorates.
-          One property per transition where possible.
-        </p>
-      </DsSection>
-
-      {/* ── 06 Iconography ───────────────────────────────────────── */}
-      <DsSection index="06" title="Iconography">
+      {/* ── 02 Iconography ──────────────────────────────────────── */}
+      <DsSection index="02" title="Iconography">
         <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-12 gap-4">
           {ICONS.map((icon) => (
             <div key={icon} className="flex flex-col items-center gap-2">
@@ -234,7 +146,7 @@ export default function DesignSystemPage() {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={`/svgs/${icon}.svg`} alt={icon} className="w-5 h-5" />
               </div>
-              <div className="font-label text-[9px] text-muted-foreground">
+              <div className="type-label text-muted-foreground text-[9px]">
                 {icon}
               </div>
             </div>
@@ -242,11 +154,11 @@ export default function DesignSystemPage() {
         </div>
       </DsSection>
 
-      {/* ── 07 Textures ──────────────────────────────────────────── */}
-      <DsSection index="07" title="Textures">
-        <p className="text-sm text-muted-foreground mb-6 max-w-xl">
-          The dithered branding pack — placeholder artwork, page backdrops,
-          empty states, pixel clusters. Rendered pixelated, never smoothed.
+      {/* ── 03 Textures ─────────────────────────────────────────── */}
+      <DsSection index="03" title="Textures">
+        <p className="type-p mb-6 max-w-2xl">
+          The dithered branding pack — placeholder artwork, backdrops, empty
+          states, pixel clusters. Rendered pixelated, never smoothed.
         </p>
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
           {TEXTURE_NAMES.map((name) => (
@@ -255,7 +167,7 @@ export default function DesignSystemPage() {
                 name={name}
                 className="aspect-square rounded-md border border-border"
               />
-              <div className="font-label text-[9px] text-muted-foreground truncate">
+              <div className="type-label text-muted-foreground text-[9px] truncate">
                 {name}
               </div>
             </div>
@@ -263,12 +175,11 @@ export default function DesignSystemPage() {
         </div>
       </DsSection>
 
-      {/* ── 08 Agent ─────────────────────────────────────────────── */}
-      <DsSection index="08" title="Agent states">
-        <p className="text-sm text-muted-foreground mb-6 max-w-xl">
-          The Yuki agent — a dithered canvas companion. It reflects app state
-          everywhere: searching, downloading, playing, recommending. Live
-          below.
+      {/* ── 04 Agent ────────────────────────────────────────────── */}
+      <DsSection index="04" title="Agent states">
+        <p className="type-p mb-6 max-w-2xl">
+          The Yuki agent — a dithered canvas companion that reflects app state
+          everywhere: searching, downloading, playing, recommending.
         </p>
         <AgentGallery />
       </DsSection>

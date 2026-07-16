@@ -45,6 +45,12 @@ export default function DesignSystemLayout({
               Colors
             </Link>
             <Link
+              href="/design-system/space"
+              className="px-3 py-1.5 rounded-md hover:bg-secondary transition-colors duration-fast"
+            >
+              Space &amp; Motion
+            </Link>
+            <Link
               href="/design-system/components"
               className="px-3 py-1.5 rounded-md hover:bg-secondary transition-colors duration-fast"
             >
