@@ -382,7 +382,7 @@ yuki-agent canvas {
 
   /* OffBit — the machine */
   .type-label {
-    @apply font-pixel font-bold text-[11px] uppercase tracking-[0.18em];
+    @apply font-ui font-bold text-[11px] uppercase tracking-[0.18em];
   }
   .type-pixel-title {
     @apply font-pixel font-bold text-2xl tracking-tight;

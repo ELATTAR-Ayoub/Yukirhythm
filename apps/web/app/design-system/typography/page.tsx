@@ -87,7 +87,7 @@ const SCALE: {
   },
   {
     cls: "type-label",
-    font: "OffBit Bold",
+    font: "Satoshi Bold 700",
     css: "11px · uppercase · tracking +0.18em",
     usage: "Section labels, catalogue tags, nav groups",
     sample: "01 — LIKED AUDIO",

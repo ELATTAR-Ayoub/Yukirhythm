@@ -93,7 +93,7 @@ module.exports = {
         // Studio type roles — Satoshi (display/ui) + OffBit (pixel/data)
         display: ["var(--font-sans)", "var(--font-jp)", "sans-serif"],
         ui: ["var(--font-sans)", "var(--font-jp)", "sans-serif"],
-        label: ["var(--font-pixel)", "monospace"],
+        label: ["var(--font-sans)", "var(--font-jp)", "sans-serif"],
         data: ["var(--font-pixel-dot)", "var(--font-pixel)", "monospace"],
         pixel: ["var(--font-pixel)", "monospace"],
       },
