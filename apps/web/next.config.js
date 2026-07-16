@@ -12,7 +12,6 @@ const nextConfig = {
       "constants",
       "sections",
       "store",
-      "utils",
       "__tests__",
     ],
   },
