@@ -17,7 +17,7 @@ Bring every dependency to a current, supported version, so the app is maintainab
 |---|---|---|---|
 | `next` | 14.0.1 | **16.x** | 2 majors |
 | `react` / `react-dom` | 18.2.0 | **19.x** | 1 major |
-| `typescript` | 5.2 | **7.x** | 2 majors — *native rewrite* |
+| `typescript` | 5.2 | ~~7.x~~ → **5.9** | ⚠️ **TS 7 BLOCKED — see below** |
 | `eslint` | 8.57 | **10.x** | 2 majors — *flat config* |
 | `tailwindcss` | 3.2 | **4.x** | 1 major — *CSS-first config* |
 | `vitest` / `vite` | 2.1 / 5.4 | **4.x / 7.x** | 2 majors |
@@ -28,6 +28,23 @@ Bring every dependency to a current, supported version, so the app is maintainab
 | `@types/node` · `@types/react` | 18 · 18 | 22 · 19 | — |
 
 **Phase 2 already shrank this materially:** the planned NextUI→HeroUI and framer-motion→`motion` migrations are gone — both libraries were unused and were deleted.
+
+### ⚠️ FINDING (2026-07-17): TypeScript 7 is not adoptable — and not because of Next
+
+Attempted in 4A and **deliberately reverted to TypeScript 5.9.3**. The reason is more fundamental than a version bound, and it changes the guidance:
+
+**`typescript@7.0.2` on npm is a CLI-only shim.** Verified directly:
+```
+require("typescript") → export count: 2
+keys: ["version", "versionMajorMinor"]
+sys / readConfigFile / parseJsonConfigFileContent → undefined
+main: undefined, bin: { tsc }
+```
+The real compiler is a native Go binary; **the JavaScript compiler API is gone**. So `tsc --noEmit` (a CLI) works fine, while *every tool that reads the TS API breaks*. Next calls `ts.readConfigFile`/`ts.parseJsonConfigFileContent` to load `paths`; under TS 7 those are `undefined`, Next swallows the error, `paths` comes back empty, `JsConfigPathsPlugin` bails, and **every `@/*` import fails to resolve** — surfacing as misleading "Module not found" webpack errors that say nothing about TypeScript.
+
+**This is NOT "retry after Next 16."** It affects any TS-API consumer (Next, ESLint's TS tooling, ts-node, IDE integrations). TS 7 is blocked until the npm package ships a JS API or the tooling ecosystem adapts. Re-evaluate by re-running the check above — not by assuming a newer Next fixes it.
+
+**What was kept (valuable regardless):** `moduleResolution: "node"` → **`"bundler"`** and `baseUrl` removed — the config Next recommends, and what Next 16 will want anyway. Phase 0 deliberately deferred this ("revisited later"); it's now done. This surfaced `TS2882` on plain `.css` side-effect imports (Next only declares `*.module.css`); fixed with `apps/web/types/css.d.ts` → `declare module "*.css" {}` (empty body — no `any`). Confirmed *not* a TS 7 artifact by reproducing the same errors on TS 5.9.
 
 ---
 
