@@ -1,0 +1,580 @@
+import {
+  LoopIcon,
+  PauseIcon,
+  PlayIcon,
+  TrackNextIcon,
+  TrackPreviousIcon,
+  ListBulletIcon,
+} from "@radix-ui/react-icons";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Slider } from "@/components/ui/slider";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+import { DsSection } from "@/components/studio/ds/blocks";
+import StatePanel from "@/components/studio/ds/StatePanel";
+import SectionLabel from "@/components/studio/SectionLabel";
+import DataText from "@/components/studio/DataText";
+import MediaCard from "@/components/studio/MediaCard";
+import TrackRow from "@/components/studio/TrackRow";
+import EqIndicator from "@/components/studio/EqIndicator";
+import BadgeSwitcher from "@/components/studio/BadgeSwitcher";
+import RailShelf from "@/components/studio/RailShelf";
+import EmptyState from "@/components/studio/EmptyState";
+import { SkeletonCard, SkeletonRow } from "@/components/studio/Skeletons";
+import YukiAgent from "@/components/agent/YukiAgent";
+
+/** The owner's transport cluster, exactly as built in player/controls.tsx. */
+function TransportCluster({
+  playing = false,
+  loading = false,
+  disabled = false,
+  looping = false,
+}: {
+  playing?: boolean;
+  loading?: boolean;
+  disabled?: boolean;
+  looping?: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <Button size="icon" variant={looping ? "default" : "outline"} disabled={disabled}>
+        <span className="icon_clothes">
+          <LoopIcon className="h-3 w-3" />
+        </span>
+      </Button>
+      <Button size="icon" variant="stylized" disabled={disabled}>
+        <span className="icon_clothes">
+          <TrackPreviousIcon className="h-3 w-3" />
+        </span>
+      </Button>
+      <Button size="icon" variant="stylized" disabled={disabled}>
+        <span className="icon_clothes">
+          {loading ? (
+            <LoopIcon className="h-3 w-3 animate-spin" />
+          ) : playing ? (
+            <PauseIcon className="h-3 w-3" />
+          ) : (
+            <PlayIcon className="h-3 w-3" />
+          )}
+        </span>
+      </Button>
+      <Button size="icon" variant="stylized" disabled={disabled}>
+        <span className="icon_clothes">
+          <TrackNextIcon className="h-3 w-3" />
+        </span>
+      </Button>
+      <Button size="icon" variant="outline" disabled={disabled}>
+        <span className="icon_clothes">
+          <ListBulletIcon className="h-3 w-3" />
+        </span>
+      </Button>
+    </div>
+  );
+}
+
+export default function ComponentsPage() {
+  return (
+    <div>
+      <div className="mb-12">
+        <h1 className="font-display font-bold text-3xl tracking-tight">
+          Components
+        </h1>
+        <p className="text-sm text-muted-foreground mt-2 max-w-xl">
+          The living inventory. Name top-left, states top-right — click a state
+          chip to flip the component through its lives. Each panel notes the
+          data signal it emits for the recommendation engine.
+        </p>
+      </div>
+
+      {/* ── 01 Your buttons ─────────────────────────────────────── */}
+      <DsSection index="01" title="Buttons (yours)">
+        <StatePanel
+          name="Button — all variants"
+          signal="varies by action"
+          views={{
+            default: (
+              <div className="flex flex-wrap items-center gap-3">
+                <Button>Play now</Button>
+                <Button variant="stylized">Stylized</Button>
+                <Button variant="secondary">Add to playlist</Button>
+                <Button variant="outline">Follow</Button>
+                <Button variant="ghost">Skip</Button>
+                <Button variant="link">See all</Button>
+                <Button variant="destructive">Delete</Button>
+              </div>
+            ),
+            disabled: (
+              <div className="flex flex-wrap items-center gap-3">
+                <Button disabled>Play now</Button>
+                <Button variant="stylized" disabled>
+                  Stylized
+                </Button>
+                <Button variant="secondary" disabled>
+                  Add to playlist
+                </Button>
+                <Button variant="outline" disabled>
+                  Follow
+                </Button>
+                <Button variant="ghost" disabled>
+                  Skip
+                </Button>
+                <Button variant="link" disabled>
+                  See all
+                </Button>
+                <Button variant="destructive" disabled>
+                  Delete
+                </Button>
+              </div>
+            ),
+            sizes: (
+              <div className="flex flex-wrap items-center gap-3">
+                <Button size="lg">Large</Button>
+                <Button size="default">Default</Button>
+                <Button size="sm">Small</Button>
+                <Button size="icon" variant="stylized">
+                  <span className="icon_clothes">
+                    <PlayIcon className="h-3 w-3" />
+                  </span>
+                </Button>
+                <Button size="smallIcon" variant="outline">
+                  <span className="icon_clothes">
+                    <PlayIcon className="h-2.5 w-2.5" />
+                  </span>
+                </Button>
+              </div>
+            ),
+          }}
+        />
+
+        <StatePanel
+          name="Transport cluster — your player buttons"
+          signal="play, pause, skip, loop, queue_open"
+          views={{
+            paused: <TransportCluster />,
+            playing: <TransportCluster playing />,
+            loading: <TransportCluster loading />,
+            looping: <TransportCluster looping />,
+            disabled: <TransportCluster disabled />,
+          }}
+        />
+
+        <StatePanel
+          name="Surface treatments — your shadow system"
+          views={{
+            default: (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+                {[
+                  ["main_shadow", "buttons, chips"],
+                  ["AudioCard", "audio tiles"],
+                  ["player_shadow", "player shell"],
+                  ["disc_shadow", "vinyl disc"],
+                ].map(([cls, use]) => (
+                  <div key={cls} className="flex flex-col items-center gap-3">
+                    <div
+                      className={`${cls} w-24 h-24 rounded-2xl ${
+                        cls === "disc_shadow" ? "rounded-full" : ""
+                      }`}
+                    />
+                    <div className="text-center">
+                      <div className="font-label text-[10px]">{cls}</div>
+                      <div className="text-[11px] text-muted-foreground">
+                        {use}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ),
+          }}
+        />
+      </DsSection>
+
+      {/* ── 02 Primitives ───────────────────────────────────────── */}
+      <DsSection index="02" title="Primitives">
+        <StatePanel
+          name="Input"
+          signal="search_query"
+          views={{
+            default: (
+              <div className="max-w-sm">
+                <Input placeholder="Search your rhythm…" />
+              </div>
+            ),
+            filled: (
+              <div className="max-w-sm">
+                <Input defaultValue="kisidakyoudan literal world" />
+              </div>
+            ),
+            disabled: (
+              <div className="max-w-sm">
+                <Input placeholder="Disabled" disabled />
+              </div>
+            ),
+          }}
+        />
+
+        <StatePanel
+          name="Badge"
+          views={{
+            default: (
+              <div className="flex flex-wrap gap-2">
+                <Badge>New release</Badge>
+                <Badge variant="secondary">Podcast</Badge>
+                <Badge variant="outline">Weekly pick</Badge>
+                <Badge variant="destructive">Removed</Badge>
+              </div>
+            ),
+          }}
+        />
+
+        <StatePanel
+          name="Tabs"
+          signal="tab_switch"
+          views={{
+            default: (
+              <Tabs defaultValue="liked" className="max-w-md">
+                <TabsList>
+                  <TabsTrigger value="liked">Liked</TabsTrigger>
+                  <TabsTrigger value="playlists">Playlists</TabsTrigger>
+                  <TabsTrigger value="history">History</TabsTrigger>
+                </TabsList>
+                <TabsContent
+                  value="liked"
+                  className="text-sm text-muted-foreground pt-3"
+                >
+                  Liked music lives here.
+                </TabsContent>
+                <TabsContent
+                  value="playlists"
+                  className="text-sm text-muted-foreground pt-3"
+                >
+                  Playlists live here.
+                </TabsContent>
+                <TabsContent
+                  value="history"
+                  className="text-sm text-muted-foreground pt-3"
+                >
+                  History lives here.
+                </TabsContent>
+              </Tabs>
+            ),
+          }}
+        />
+
+        <StatePanel
+          name="Slider — seek / volume"
+          signal="seek, volume_change"
+          views={{
+            default: (
+              <div className="max-w-sm">
+                <Slider defaultValue={[62]} max={100} step={1} />
+              </div>
+            ),
+            empty: (
+              <div className="max-w-sm">
+                <Slider defaultValue={[0]} max={100} step={1} />
+              </div>
+            ),
+            full: (
+              <div className="max-w-sm">
+                <Slider defaultValue={[100]} max={100} step={1} />
+              </div>
+            ),
+          }}
+        />
+
+        <StatePanel
+          name="Avatar"
+          views={{
+            default: (
+              <div className="flex gap-3">
+                <Avatar>
+                  <AvatarFallback className="font-pixel">YR</AvatarFallback>
+                </Avatar>
+                <Avatar>
+                  <AvatarFallback className="bg-cobalt text-paper font-pixel">
+                    MJ
+                  </AvatarFallback>
+                </Avatar>
+              </div>
+            ),
+          }}
+        />
+      </DsSection>
+
+      {/* ── 03 Card system ──────────────────────────────────────── */}
+      <DsSection index="03" title="Card system">
+        <StatePanel
+          name="MediaCard — boxy"
+          signal="card_play, card_open"
+          views={{
+            default: (
+              <div className="flex flex-wrap items-end gap-5">
+                <MediaCard
+                  size="sm"
+                  title="literal world"
+                  artist="Kisidakyoudan"
+                  texture="tx-k-ripple"
+                  duration="3:59"
+                />
+                <MediaCard
+                  size="md"
+                  title="Nightglow"
+                  artist="Tanya Chua"
+                  texture="tx-k2-horizon"
+                  duration="4:12"
+                />
+                <MediaCard
+                  size="lg"
+                  title="Music of the Week"
+                  artist="Curated by Yuki"
+                  texture="dither-aurora"
+                />
+              </div>
+            ),
+            playing: (
+              <div className="flex flex-wrap items-end gap-5">
+                <MediaCard
+                  size="sm"
+                  title="literal world"
+                  artist="Kisidakyoudan"
+                  texture="tx-k-ripple"
+                  duration="3:59"
+                  playing
+                />
+                <MediaCard
+                  size="md"
+                  title="Nightglow"
+                  artist="Tanya Chua"
+                  texture="tx-k2-horizon"
+                  duration="4:12"
+                  playing
+                />
+                <MediaCard
+                  size="lg"
+                  title="Music of the Week"
+                  artist="Curated by Yuki"
+                  texture="dither-aurora"
+                  playing
+                />
+              </div>
+            ),
+          }}
+        />
+
+        <StatePanel
+          name="MediaCard — extended"
+          signal="card_play"
+          views={{
+            default: (
+              <div className="grid gap-3">
+                <MediaCard
+                  variant="extended"
+                  size="md"
+                  title="A.D. Police: To Protect and Serve"
+                  artist="Kisidakyoudan"
+                  texture="tx-k-glitch"
+                  duration="2:47"
+                />
+                <MediaCard
+                  variant="extended"
+                  size="lg"
+                  title="夜盲症"
+                  artist="蔡健雅 Tanya Chua"
+                  texture="tx-a-silk"
+                  duration="4:31"
+                />
+              </div>
+            ),
+            playing: (
+              <div className="grid gap-3">
+                <MediaCard
+                  variant="extended"
+                  size="md"
+                  title="A.D. Police: To Protect and Serve"
+                  artist="Kisidakyoudan"
+                  texture="tx-k-glitch"
+                  duration="2:47"
+                  playing
+                />
+              </div>
+            ),
+          }}
+        />
+      </DsSection>
+
+      {/* ── 04 Content patterns ─────────────────────────────────── */}
+      <DsSection index="04" title="Content patterns">
+        <StatePanel
+          name="BadgeSwitcher"
+          signal="badge_switch"
+          views={{
+            default: (
+              <BadgeSwitcher options={["All", "Music", "Podcasts", "Live"]} />
+            ),
+          }}
+        />
+
+        <StatePanel
+          name="RailShelf"
+          signal="shelf_scroll, shelf_see_all"
+          views={{
+            default: (
+              <RailShelf
+                label="01 — For you"
+                title="Recently played"
+                seeAllHref="#"
+              >
+                <MediaCard size="sm" title="literal world" artist="Kisidakyoudan" texture="tx-k-ripple" />
+                <MediaCard size="sm" title="Nightglow" artist="Tanya Chua" texture="tx-k2-topo" playing />
+                <MediaCard size="sm" title="Static Garden" artist="Yuki Weekly" texture="tx-k2-static" />
+                <MediaCard size="sm" title="Marble Sea" artist="Aurora Set" texture="tx-a-marble2" />
+                <MediaCard size="sm" title="Checker Club" artist="Soft Club" texture="tx-k2-checker" />
+                <MediaCard size="sm" title="Vinyl Ripple" artist="Deep Cuts" texture="tx-k2-vinyl" />
+              </RailShelf>
+            ),
+            loading: (
+              <div className="flex gap-4">
+                <SkeletonCard className="w-36" />
+                <SkeletonCard className="w-36" />
+                <SkeletonCard className="w-36" />
+                <SkeletonCard className="w-36" />
+              </div>
+            ),
+          }}
+        />
+
+        <StatePanel
+          name="TrackRow"
+          signal="row_play, row_queue"
+          views={{
+            default: (
+              <div className="max-w-2xl">
+                <TrackRow index={1} title="literal world" artist="Kisidakyoudan" texture="tx-k-ripple" duration="3:59" />
+                <TrackRow index={2} title="Nightglow (骗坏3印象曲)" artist="蔡健雅 Tanya Chua" texture="tx-k2-horizon" duration="4:12" />
+                <TrackRow index={3} title="A.D. Police Opening" artist="Kisidakyoudan" texture="tx-k-glitch" duration="2:47" />
+              </div>
+            ),
+            playing: (
+              <div className="max-w-2xl">
+                <TrackRow index={1} title="literal world" artist="Kisidakyoudan" texture="tx-k-ripple" duration="3:59" />
+                <TrackRow index={2} title="Nightglow (骗坏3印象曲)" artist="蔡健雅 Tanya Chua" texture="tx-k2-horizon" duration="4:12" playing />
+                <TrackRow index={3} title="A.D. Police Opening" artist="Kisidakyoudan" texture="tx-k-glitch" duration="2:47" />
+              </div>
+            ),
+            selected: (
+              <div className="max-w-2xl">
+                <TrackRow index={1} title="literal world" artist="Kisidakyoudan" texture="tx-k-ripple" duration="3:59" selected />
+                <TrackRow index={2} title="Nightglow (骗坏3印象曲)" artist="蔡健雅 Tanya Chua" texture="tx-k2-horizon" duration="4:12" />
+                <TrackRow index={3} title="A.D. Police Opening" artist="Kisidakyoudan" texture="tx-k-glitch" duration="2:47" />
+              </div>
+            ),
+            loading: (
+              <div className="max-w-2xl">
+                <SkeletonRow />
+                <SkeletonRow />
+                <SkeletonRow />
+              </div>
+            ),
+          }}
+        />
+
+        <StatePanel
+          name="EqIndicator"
+          views={{
+            playing: <EqIndicator />,
+            paused: <EqIndicator playing={false} />,
+            recolored: (
+              <span className="text-cobalt">
+                <EqIndicator className="text-cobalt" />
+              </span>
+            ),
+          }}
+        />
+      </DsSection>
+
+      {/* ── 05 Feedback ─────────────────────────────────────────── */}
+      <DsSection index="05" title="Feedback">
+        <StatePanel
+          name="EmptyState"
+          views={{
+            library: (
+              <EmptyState
+                title="NO MORE LIKED AUDIO"
+                hint="Everything you like lands here. Go find something worth keeping."
+                action={<Button>Explore music</Button>}
+              />
+            ),
+            search: (
+              <EmptyState
+                title="NOTHING FOUND"
+                texture="tx-k2-static"
+                hint="Try another spelling — or ask the agent, it digs deeper."
+              />
+            ),
+          }}
+        />
+
+        <StatePanel
+          name="Data displays"
+          views={{
+            default: (
+              <div className="flex flex-wrap items-baseline gap-x-8 gap-y-3">
+                <DataText className="text-4xl">02:07 / 03:59</DataText>
+                <DataText className="text-2xl text-primary">132 BPM</DataText>
+                <DataText className="text-2xl text-mint bg-ink rounded-sm px-2 py-0.5">
+                  4,209 PLAYS
+                </DataText>
+                <SectionLabel>EST. 2026 — A LISTENING ROOM</SectionLabel>
+              </div>
+            ),
+          }}
+        />
+      </DsSection>
+
+      {/* ── 06 Agent ────────────────────────────────────────────── */}
+      <DsSection index="06" title="Agent (companion preview)">
+        <StatePanel
+          name="Agent orb"
+          signal="agent_open, agent_query"
+          views={{
+            idle: (
+              <div className="w-16 h-16 rounded-full overflow-hidden border border-border shadow-e2 bg-ink">
+                <YukiAgent state="idle" className="w-full h-full" />
+              </div>
+            ),
+            searching: (
+              <div className="w-16 h-16 rounded-full overflow-hidden border border-border shadow-e2 bg-ink">
+                <YukiAgent state="searching" className="w-full h-full" />
+              </div>
+            ),
+            playing: (
+              <div className="w-16 h-16 rounded-full overflow-hidden border border-border shadow-e2 bg-ink">
+                <YukiAgent state="playing" className="w-full h-full" />
+              </div>
+            ),
+            asking: (
+              <div className="w-16 h-16 rounded-full overflow-hidden border border-border shadow-e2 bg-ink">
+                <YukiAgent state="asking" className="w-full h-full" />
+              </div>
+            ),
+            success: (
+              <div className="w-16 h-16 rounded-full overflow-hidden border border-border shadow-e2 bg-ink">
+                <YukiAgent state="success" className="w-full h-full" />
+              </div>
+            ),
+            error: (
+              <div className="w-16 h-16 rounded-full overflow-hidden border border-border shadow-e2 bg-ink">
+                <YukiAgent state="error" className="w-full h-full" />
+              </div>
+            ),
+          }}
+        />
+      </DsSection>
+    </div>
+  );
+}

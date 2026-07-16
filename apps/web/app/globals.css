@@ -318,3 +318,18 @@ body {
     @apply bg-background text-foreground;
   }
 } */
+
+/* ── Studio: equalizer indicator ─────────────────────────────── */
+@keyframes eq-bounce {
+  0%,
+  100% {
+    transform: scaleY(0.3);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+.eq-bar {
+  animation: eq-bounce 0.9s ease-in-out infinite;
+  transform-origin: bottom;
+}
