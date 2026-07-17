@@ -1,7 +1,10 @@
+import { PlayIcon } from "@radix-ui/react-icons";
+
 import { cn } from "@/lib/utils";
 import Texture, { TextureName } from "@/components/studio/Texture";
 import DataText from "@/components/studio/DataText";
 import EqIndicator from "@/components/studio/EqIndicator";
+import { PlayerButton } from "@/components/studio/PlayerButton";
 
 interface TrackRowProps {
   index?: number;
@@ -38,14 +41,27 @@ export default function TrackRow({
       )}
       data-signal="row_play"
     >
-      <div className="w-6 flex justify-center shrink-0">
-        {playing ? (
-          <EqIndicator />
-        ) : (
-          <DataText className="text-sm text-muted-foreground">
-            {index != null ? String(index).padStart(2, "0") : "--"}
-          </DataText>
-        )}
+      <div className="relative w-8 h-8 flex items-center justify-center shrink-0">
+        {/* index / eq gives way to OUR PlayerButton on hover */}
+        <span className="group-hover:opacity-0 transition-opacity duration-fast">
+          {playing ? (
+            <EqIndicator />
+          ) : (
+            <DataText className="text-sm text-muted-foreground">
+              {index != null ? String(index).padStart(2, "0") : "--"}
+            </DataText>
+          )}
+        </span>
+        <span className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-fast">
+          <PlayerButton
+            variant="ghost"
+            size="sm"
+            aria-label="Play"
+            data-signal="row_play"
+          >
+            <PlayIcon />
+          </PlayerButton>
+        </span>
       </div>
       <div className="relative w-9 h-9 rounded-sm overflow-hidden shrink-0">
         {artUrl ? (

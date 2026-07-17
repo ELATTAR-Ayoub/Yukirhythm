@@ -1,7 +1,10 @@
+import { PlayIcon } from "@radix-ui/react-icons";
+
 import { cn } from "@/lib/utils";
 import Texture, { TextureName } from "@/components/studio/Texture";
 import DataText from "@/components/studio/DataText";
 import EqIndicator from "@/components/studio/EqIndicator";
+import { PlayerButton } from "@/components/studio/PlayerButton";
 
 export type MediaCardSize = "sm" | "md" | "lg";
 export type MediaCardVariant = "boxy" | "extended";
@@ -60,9 +63,11 @@ function PlayOverlay() {
         "group-hover:opacity-100 group-hover:bg-ink/30 transition-all duration-base"
       )}
     >
-      <span className="w-11 h-11 rounded-full bg-cobalt shadow-e3 flex items-center justify-center translate-y-1 group-hover:translate-y-0 transition-transform duration-base">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/svgs/play.svg" alt="" className="w-4 h-4 invert" />
+      {/* composed from OUR PlayerButton — never a hand-rolled circle */}
+      <span className="translate-y-1 group-hover:translate-y-0 transition-transform duration-base">
+        <PlayerButton variant="primary" size="lg" aria-label="Play" data-signal="card_play">
+          <PlayIcon />
+        </PlayerButton>
       </span>
     </span>
   );
