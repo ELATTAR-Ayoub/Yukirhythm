@@ -9,7 +9,7 @@ import type { DeckTrack, DeckPhase } from "@/components/studio/DiscDeck";
 
 /* ── constants ─────────────────────────────────────────────────── */
 const DISC_R = 1.5;
-const SPIN_SPEED = 2.4; // rad/s
+const SPIN_SPEED = 3.1; // rad/s
 
 type Slot = "center" | "left" | "right" | "hidden";
 
@@ -74,14 +74,16 @@ function Disc({
   const root = useRef<THREE.Group>(null!); // slot position / tilt / scale
   const spinner = useRef<THREE.Group>(null!); // rotation about the face axis
   const speed = useRef(0);
+  const vy = useRef(0); // vertical spring velocity — the seat bounce
   const wasInstalling = useRef(false);
 
   useEffect(() => {
     // incoming disc drops in from above the row, then settles — smooth
     if (installing && slot === "center" && !wasInstalling.current) {
       if (root.current) {
-        root.current.position.y = 2.6;
-        root.current.position.z = 0.6;
+        root.current.position.y = 3.1;
+        root.current.position.z = 0.7;
+        vy.current = 0; // dropped, not thrown
       }
     }
     wasInstalling.current = installing && slot === "center";
@@ -91,16 +93,21 @@ function Disc({
     const t = SLOTS[slot];
     const g = root.current;
     if (!g) return;
-    g.position.x = THREE.MathUtils.damp(g.position.x, t.pos[0], 4.5, dt);
-    g.position.y = THREE.MathUtils.damp(g.position.y, t.pos[1], 4.5, dt);
-    g.position.z = THREE.MathUtils.damp(g.position.z, t.pos[2], 4.5, dt);
-    g.rotation.y = THREE.MathUtils.damp(g.rotation.y, t.rotY, 4.5, dt);
-    const s = THREE.MathUtils.damp(g.scale.x, t.scale, 4.5, dt);
+    g.position.x = THREE.MathUtils.damp(g.position.x, t.pos[0], 7, dt);
+    g.position.z = THREE.MathUtils.damp(g.position.z, t.pos[2], 7, dt);
+    g.rotation.y = THREE.MathUtils.damp(g.rotation.y, t.rotY, 7, dt);
+    const s = THREE.MathUtils.damp(g.scale.x, t.scale, 8, dt);
     g.scale.setScalar(s);
 
-    // spin with inertia — winds up, winds down
+    // vertical = a real underdamped spring: the disc SEATS with a bounce
+    const step = Math.min(dt, 1 / 30);
+    const dy = g.position.y - t.pos[1];
+    vy.current += (-90 * dy - 9 * vy.current) * step;
+    g.position.y += vy.current * step;
+
+    // spin with inertia — motor grabs, winds up, winds down
     const target = spinning && slot === "center" ? SPIN_SPEED : 0;
-    speed.current = THREE.MathUtils.damp(speed.current, target, 1.4, dt);
+    speed.current = THREE.MathUtils.damp(speed.current, target, 2.4, dt);
     spinner.current.rotation.y += speed.current * dt;
   });
 
@@ -113,22 +120,27 @@ function Disc({
           <mesh>
             <cylinderGeometry args={[DISC_R, DISC_R, 0.05, 96]} />
             <meshPhysicalMaterial
-              color="#161615"
+              color="#1b1b1a"
               roughness={0.4}
               metalness={0.05}
               clearcoat={0.9}
               clearcoatRoughness={0.3}
               bumpMap={grooves}
-              bumpScale={0.01}
+              bumpScale={0.02}
             />
           </mesh>
-          {/* label */}
-          <mesh position={[0, -0.027, 0]} rotation={[Math.PI / 2, 0, 0]}>
+          {/* label — on the face looking at the viewer */}
+          <mesh position={[0, 0.027, 0]} rotation={[-Math.PI / 2, 0, 0]}>
             <circleGeometry args={[DISC_R * 0.37, 48]} />
             <meshStandardMaterial map={labelMap} roughness={0.85} />
           </mesh>
+          {/* off-center marker dot — rotation is readable even at a glance */}
+          <mesh position={[DISC_R * 0.72, 0.027, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <circleGeometry args={[0.055, 20]} />
+            <meshStandardMaterial color="#7df08a" roughness={0.5} />
+          </mesh>
           {/* spindle hole */}
-          <mesh position={[0, -0.028, 0]} rotation={[Math.PI / 2, 0, 0]}>
+          <mesh position={[0, 0.028, 0]} rotation={[-Math.PI / 2, 0, 0]}>
             <circleGeometry args={[0.05, 24]} />
             <meshStandardMaterial color="#f7f6f3" roughness={0.7} />
           </mesh>
@@ -147,8 +159,8 @@ function StickFinger({ down }: { down: boolean }) {
     // down: tip rests on the disc face · rest: swung up-right, lifted off
     const targetZrot = down ? -0.52 : -0.12;
     const targetZ = down ? 0.28 : 1.1;
-    g.rotation.z = THREE.MathUtils.damp(g.rotation.z, targetZrot, 3.4, dt);
-    g.position.z = THREE.MathUtils.damp(g.position.z, targetZ, 3.4, dt);
+    g.rotation.z = THREE.MathUtils.damp(g.rotation.z, targetZrot, 5.5, dt);
+    g.position.z = THREE.MathUtils.damp(g.position.z, targetZ, 5.5, dt);
   });
 
   return (
@@ -219,9 +231,10 @@ function Deck({
       <StickFinger down={phase === "playing"} />
 
       {/* bright neutral studio light — the page itself is the stage */}
-      <ambientLight intensity={1.1} />
-      <directionalLight position={[3, 5, 6]} intensity={1.6} />
-      <directionalLight position={[-4, -2, 4]} intensity={0.5} />
+      <ambientLight intensity={1.15} />
+      <directionalLight position={[4, 6, 5]} intensity={2.1} />
+      <directionalLight position={[0, 1, 8]} intensity={0.9} />
+      <directionalLight position={[-5, -2, 3]} intensity={0.45} />
     </>
   );
 }
