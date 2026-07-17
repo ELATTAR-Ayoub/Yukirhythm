@@ -38,8 +38,7 @@ export default function BadgeSwitcher({
               onChange?.(option);
             }}
             className={cn(
-              "px-4 py-1.5 rounded-full font-ui text-sm font-medium border transition-all duration-fast",
-              "active:scale-95",
+              "click-spring px-4 py-1.5 rounded-full font-ui text-sm font-medium border",
               isActive
                 ? "bg-ink text-snow border-ink shadow-chip dark:bg-snow dark:text-ink dark:border-snow"
                 : "bg-card text-foreground border-border hover:border-foreground/40"

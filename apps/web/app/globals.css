@@ -528,6 +528,35 @@ yuki-agent canvas {
   transition-duration: 40ms;
 }
 
+/* GLOBAL click feel — slap on anything clickable (avatars, chips, badges).
+   Instant squish on press, springy jelly return on release. */
+.click-spring {
+  transition: transform 0.25s var(--ease-spring);
+}
+.click-spring:active {
+  transform: scale(0.9);
+  transition-duration: 40ms;
+}
+
+/* slider thumb — springs while interacting, lingers 0.5s before hiding */
+.slider-thumb-fade {
+  opacity: 0;
+  transition:
+    transform 0.25s var(--ease-spring),
+    opacity 0.2s ease 0.5s; /* the linger */
+}
+.group:hover .slider-thumb-fade,
+.slider-thumb-fade:active,
+.slider-thumb-fade:focus-visible {
+  opacity: 1;
+  transition:
+    transform 0.25s var(--ease-spring),
+    opacity 0.15s ease 0s; /* appear instantly */
+}
+.slider-thumb-fade:active {
+  transition-duration: 40ms, 0.15s;
+}
+
 /* ── Studio motion: machine — mechanical, stepped, physical ──── */
 /* physical key: travels down into its socket, no easing frills */
 .press-key {

@@ -478,12 +478,9 @@ export default function ComponentsPage() {
               </RailShelf>
             ),
             loading: (
-              <div className="flex gap-4">
-                <SkeletonCard className="w-36" />
-                <SkeletonCard className="w-36" />
-                <SkeletonCard className="w-36" />
-                <SkeletonCard className="w-36" />
-              </div>
+              <RailShelf label="" title="" seeAllHref="#" loading>
+                {null}
+              </RailShelf>
             ),
           }}
         />

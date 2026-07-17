@@ -76,6 +76,16 @@ export default function MotionLab() {
             <span className={cn(box, "anim-jelly rounded-full bg-mint")} />
           </ReplayTile>
           <ReplayTile
+            name="Click spring (global)"
+            recipe=".click-spring"
+            usage="THE default click feel — slap it on anything clickable: avatars, chips, badges, tiles."
+            clickHint="PRESS & HOLD"
+          >
+            <span className="click-spring inline-flex items-center justify-center w-16 h-16 rounded-full bg-secondary main_shadow cursor-pointer">
+              <span className="type-data-md">42</span>
+            </span>
+          </ReplayTile>
+          <ReplayTile
             name="Spring press"
             recipe=".press-spring"
             usage="Press: instant squish (40ms), release springs back in 220ms."
