@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "node": ">=20 <23"
+    "node": ">=20.9"
   },
   "scripts": {
     "dev": "next dev",
@@ -33,7 +33,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "firebase": "^10.5.2",
-    "next": "^15.5.20",
+    "next": "^16.2.10",
     "next-themes": "^0.2.1",
     "react": "18.2.0",
     "react-dom": "18.2.0",
@@ -47,8 +47,6 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.3.6",
-    "@eslint/js": "^9.39.5",
     "@opentelemetry/api": "^1.9.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
@@ -59,7 +57,7 @@
     "@vitest/coverage-v8": "^4.1.10",
     "autoprefixer": "^10.4.13",
     "eslint": "^9.39.5",
-    "eslint-config-next": "^15.5.20",
+    "eslint-config-next": "^16.2.10",
     "eslint-config-prettier": "^10.1.8",
     "firebase-admin": "^14.1.0",
     "jsdom": "^29.1.1",

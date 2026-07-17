@@ -3,7 +3,7 @@
   "private": true,
   "workspaces": ["apps/web", "packages/*"],
   "engines": {
-    "node": ">=20 <23"
+    "node": ">=20.9"
   },
   "scripts": {
     "web": "npm run --workspace apps/web",

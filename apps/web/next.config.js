@@ -1,19 +1,7 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {
-  eslint: {
-    dirs: [
-      "app",
-      "pages",
-      "components",
-      "lib",
-      "context",
-      "config",
-      "constants",
-      "sections",
-      "store",
-      "__tests__",
-    ],
-  },
-};
+// The `eslint.dirs` block was removed in Next 16: `next lint` is gone and Next
+// rejects the `eslint` key outright. Linting runs via `eslint .` (see
+// eslint.config.mjs), which covers the whole workspace.
+const nextConfig = {};
 
 module.exports = nextConfig;
