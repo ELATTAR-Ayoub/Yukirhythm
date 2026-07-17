@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 interface IconSwapProps {
   /** Key of the icon currently shown */
   active: string;
+  /** Icons in their strip order — first key sits at the top of the wheel */
   icons: Record<string, React.ReactNode>;
   className?: string;
 }
@@ -13,10 +14,15 @@ interface IconSwapProps {
  * RULE — every control that alternates between icons (play/pause, mute/unmute,
  * like/unlike, expand/collapse…) swaps them through IconSwap. No exceptions.
  *
- * Vertical carousel: the leaving icon rolls up and out of the button; the
- * entering icon then drops down from above into the center.
+ * A true vertical carousel: icons form a strip in their given order. Each icon
+ * holds its position at (index − activeIndex) steps from center, so advancing
+ * rolls the strip UP (old exits top, next rises from below) and going back
+ * rolls it DOWN (old exits bottom, previous descends from above).
  */
 export default function IconSwap({ active, icons, className }: IconSwapProps) {
+  const keys = Object.keys(icons);
+  const activeIdx = Math.max(0, keys.indexOf(active));
+
   return (
     <span
       className={cn(
@@ -24,20 +30,19 @@ export default function IconSwap({ active, icons, className }: IconSwapProps) {
         className
       )}
     >
-      {Object.entries(icons).map(([key, node]) => {
-        const isActive = key === active;
+      {keys.map((key, i) => {
+        const offset = i - activeIdx; // strip position relative to center
         return (
           <span
             key={key}
-            aria-hidden={!isActive}
+            aria-hidden={offset !== 0}
             className={cn(
               "col-start-1 row-start-1 inline-flex items-center justify-center transition-all ease-spring duration-base",
-              isActive
-                ? "translate-y-0 opacity-100 delay-100" // …then the new one comes down
-                : "-translate-y-[160%] opacity-0 delay-0" // the old one goes up first
+              offset === 0 ? "opacity-100" : "opacity-0"
             )}
+            style={{ transform: `translateY(${offset * 160}%)` }}
           >
-            {node}
+            {icons[key]}
           </span>
         );
       })}
