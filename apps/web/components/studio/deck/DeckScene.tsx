@@ -1,7 +1,7 @@
 "use client";
 
 import * as THREE from "three";
-import { Suspense, useEffect, useMemo, useRef } from "react";
+import React, { Suspense, useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { ContactShadows, RoundedBox, useTexture } from "@react-three/drei";
 
@@ -338,16 +338,52 @@ export interface DeckSceneProps {
   spinning: boolean;
 }
 
+/** Detects WebGL availability so a blocked GPU shows a message, not a void. */
+function webglAvailable(): boolean {
+  try {
+    const c = document.createElement("canvas");
+    return !!(c.getContext("webgl2") || c.getContext("webgl"));
+  } catch {
+    return false;
+  }
+}
+
 export default function DeckScene(props: DeckSceneProps) {
+  const [glOk] = React.useState(webglAvailable);
+
+  if (!glOk) {
+    return (
+      <div className="h-full w-full flex items-center justify-center bg-ink rounded-lg">
+        <span className="type-label text-destructive">
+          WEBGL UNAVAILABLE — THE DECK NEEDS A GPU
+        </span>
+      </div>
+    );
+  }
+
   return (
     <Canvas
       shadows
       dpr={[1, 2]}
       gl={{ antialias: true, preserveDrawingBuffer: true }}
       camera={{ position: [0, 3.7, 6.6], fov: 38 }}
-      onCreated={({ camera }) => camera.lookAt(0, 0.35, 0)}
+      style={{ width: "100%", height: "100%" }}
+      onCreated={({ camera, gl }) => {
+        camera.lookAt(0, 0.35, 0);
+        // beacon: proves the renderer exists in any environment
+        // eslint-disable-next-line no-console
+        console.info(
+          "[DeckScene] renderer ready",
+          gl.domElement.width,
+          "x",
+          gl.domElement.height
+        );
+      }}
       className="!touch-none"
     >
+      {/* solid stage — a live canvas can never masquerade as empty page */}
+      <color attach="background" args={["#111114"]} />
+      <fog attach="fog" args={["#111114", 12, 22]} />
       <Suspense fallback={null}>
         <Deck {...props} />
       </Suspense>
