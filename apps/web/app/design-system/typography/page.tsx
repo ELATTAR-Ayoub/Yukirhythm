@@ -96,14 +96,14 @@ const SCALE: {
     cls: "type-pixel-title",
     font: "OffBit Bold",
     css: "24px · tracking -0.025em",
-    usage: "Wordmark, pixel moments, empty states",
+    usage: "The wordmark. The ONLY worded pixel exception.",
     sample: "Yuki Rhythm",
   },
   {
     cls: "type-code",
-    font: "OffBit Bold",
-    css: "14px · muted chip background",
-    usage: "Keyboard hints, technical values",
+    font: "Satoshi Medium 500",
+    css: "13px · muted chip background",
+    usage: "Token names, keyboard hints, technical words",
     sample: "Ctrl + K",
   },
   {
@@ -143,10 +143,35 @@ export default function TypographyPage() {
         <h1 className="type-h1">Typography</h1>
         <p className="type-lead mt-3 max-w-2xl">
           Two fonts. Hard rule. <b className="text-foreground">Satoshi</b> is
-          the voice — everything human reads in it.{" "}
-          <b className="text-foreground">OffBit</b> is the machine — labels,
-          numbers, and the wordmark. Nothing else gets in.
+          the voice — every word in the app.{" "}
+          <b className="text-foreground">OffBit</b> is the machine — numbers
+          only, plus the wordmark. Nothing else gets in.
         </p>
+      </div>
+
+      {/* ── THE PIXEL RULE ───────────────────────────────────────── */}
+      <div className="mb-14 rounded-lg border-2 border-ink dark:border-snow bg-card p-6 max-w-2xl">
+        <div className="type-label text-destructive mb-2">HARD RULE</div>
+        <div className="type-h3">
+          OffBit renders numbers. Never words.
+        </div>
+        <p className="type-p mt-3">
+          Timestamps, durations, BPM, counters, stats — pixel. Anything with
+          letters — token names, labels, buttons, titles — is Satoshi. The one
+          exception in the entire app: the{" "}
+          <span className="type-pixel-title text-[1em]">Yuki Rhythm</span>{" "}
+          wordmark itself.
+        </p>
+        <div className="flex flex-wrap items-baseline gap-x-8 gap-y-2 mt-4 pt-4 border-t border-border">
+          <span>
+            <span className="type-label text-primary mr-2">YES</span>
+            <span className="type-data-md">02:07 / 03:59</span>
+          </span>
+          <span>
+            <span className="type-label text-destructive mr-2">NO</span>
+            <span className="font-data text-xl line-through opacity-60">radius-sm</span>
+          </span>
+        </div>
       </div>
 
       {/* ── 01 The two typefaces ────────────────────────────────── */}

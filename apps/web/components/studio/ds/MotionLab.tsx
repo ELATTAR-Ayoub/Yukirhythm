@@ -124,7 +124,7 @@ export default function MotionLab() {
             usage="Panels and screens turning on — old CRT power-up, stepped opacity."
           >
             <span className="anim-flicker-on inline-flex w-24 h-16 rounded-md bg-ink items-center justify-center">
-              <span className="type-data text-mint">ON AIR</span>
+              <span className="type-label text-mint">ON AIR</span>
             </span>
           </ReplayTile>
           <ReplayTile

@@ -403,7 +403,7 @@ yuki-agent canvas {
     @apply font-pixel font-bold text-2xl tracking-tight;
   }
   .type-code {
-    @apply font-pixel font-bold text-sm bg-muted rounded-sm px-1.5 py-0.5;
+    @apply font-ui font-medium text-[13px] bg-muted rounded-sm px-1.5 py-0.5;
   }
   .type-data-sm {
     @apply font-data text-xs tracking-wide;

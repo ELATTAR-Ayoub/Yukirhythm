@@ -28,7 +28,7 @@ export default function EmptyState({
         name={texture}
         className="w-24 h-24 rounded-lg border border-border mb-5"
       />
-      <div className="font-pixel text-lg">{title}</div>
+      <div className="type-large uppercase tracking-wider">{title}</div>
       {hint ? (
         <p className="text-sm text-muted-foreground mt-1.5 max-w-xs">{hint}</p>
       ) : null}

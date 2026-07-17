@@ -293,10 +293,10 @@ export default function ComponentsPage() {
             default: (
               <div className="flex gap-3">
                 <Avatar>
-                  <AvatarFallback className="font-pixel">YR</AvatarFallback>
+                  <AvatarFallback className="font-ui font-bold">YR</AvatarFallback>
                 </Avatar>
                 <Avatar>
-                  <AvatarFallback className="bg-cobalt text-snow font-pixel">
+                  <AvatarFallback className="bg-cobalt text-snow font-ui font-bold">
                     MJ
                   </AvatarFallback>
                 </Avatar>
