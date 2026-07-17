@@ -127,6 +127,10 @@ module.exports = {
         key: "var(--shadow-key)",
         "key-down": "var(--shadow-key-down)",
         pressed: "var(--shadow-pressed)",
+        btn: "var(--shadow-btn)",
+        "btn-primary": "var(--shadow-btn-primary)",
+        "btn-down": "var(--shadow-btn-down)",
+        chip: "var(--shadow-chip)",
       },
       transitionDuration: {
         tick: "80ms",

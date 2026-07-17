@@ -163,10 +163,8 @@ body {
 
 .main_shadow {
   @apply bg-secondary;
-  box-shadow:
-    0px 1px 9px 0px rgba(4, 5, 6, 0.15),
-    0px 3px 7.8px 0px rgba(253, 254, 254, 0.25) inset,
-    0px 5px 12.8px 0px rgba(182, 184, 195, 0.5) inset;
+  /* token-driven: crisp inner highlight + shade, tuned per theme */
+  box-shadow: var(--shadow-btn);
 }
 
 .icon_clothes {
@@ -277,6 +275,18 @@ body {
     --shadow-pressed: inset 0 2px 5px rgb(25 25 25 / 0.22),
       inset 0 1px 2px rgb(25 25 25 / 0.3);
 
+    /* control depth — inner highlight + inner shade + outer contact */
+    --shadow-btn: inset 0 1px 0 rgb(255 255 255 / 0.85),
+      inset 0 -2px 4px rgb(25 25 25 / 0.08), 0 1px 2px rgb(25 25 25 / 0.14),
+      0 3px 8px -2px rgb(25 25 25 / 0.12);
+    --shadow-btn-primary: inset 0 1px 0 rgb(255 255 255 / 0.35),
+      inset 0 -2px 5px rgb(0 0 0 / 0.28), 0 1px 2px rgb(20 80 240 / 0.35),
+      0 4px 10px -2px rgb(20 80 240 / 0.45);
+    --shadow-btn-down: inset 0 2px 4px rgb(25 25 25 / 0.18),
+      0 1px 1px rgb(25 25 25 / 0.08);
+    --shadow-chip: inset 0 1px 0 rgb(255 255 255 / 0.5),
+      inset 0 -1px 2px rgb(25 25 25 / 0.1), 0 1px 2px rgb(25 25 25 / 0.14);
+
     /* motion */
     --dur-tick: 80ms; /* machine actions */
     --dur-fast: 150ms;
@@ -322,6 +332,17 @@ body {
     --shadow-key-down: 0 1px 0 hsl(0 0% 5%), inset 0 2px 5px rgb(0 0 0 / 0.6);
     --shadow-pressed: inset 0 2px 5px rgb(0 0 0 / 0.6),
       inset 0 1px 2px rgb(0 0 0 / 0.7);
+
+    --shadow-btn: inset 0 1px 0 rgb(255 255 255 / 0.14),
+      inset 0 -2px 4px rgb(0 0 0 / 0.5), 0 1px 2px rgb(0 0 0 / 0.5),
+      0 3px 8px -2px rgb(0 0 0 / 0.5);
+    --shadow-btn-primary: inset 0 1px 0 rgb(255 255 255 / 0.28),
+      inset 0 -2px 5px rgb(0 0 0 / 0.45), 0 1px 2px rgb(0 0 0 / 0.5),
+      0 4px 10px -2px rgb(20 80 240 / 0.55);
+    --shadow-btn-down: inset 0 2px 4px rgb(0 0 0 / 0.6),
+      0 1px 1px rgb(0 0 0 / 0.3);
+    --shadow-chip: inset 0 1px 0 rgb(255 255 255 / 0.12),
+      inset 0 -1px 2px rgb(0 0 0 / 0.45), 0 1px 2px rgb(0 0 0 / 0.45);
   }
 }
 /* 

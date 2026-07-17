@@ -26,8 +26,25 @@ import RailShelf from "@/components/studio/RailShelf";
 import EmptyState from "@/components/studio/EmptyState";
 import { SkeletonCard, SkeletonRow } from "@/components/studio/Skeletons";
 import YukiAgent from "@/components/agent/YukiAgent";
+import { PlayerButton } from "@/components/studio/PlayerButton";
 
-/** The owner's transport cluster, exactly as built in player/controls.tsx. */
+/** Labeled demo cell — the thing on top, its name written under it. */
+function Labeled({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <div className="flex items-center min-h-[44px]">{children}</div>
+      <span className="type-label text-muted-foreground">{label}</span>
+    </div>
+  );
+}
+
+/** The transport cluster, rebuilt on the PlayerButton component. */
 function TransportCluster({
   playing = false,
   loading = false,
@@ -41,37 +58,26 @@ function TransportCluster({
 }) {
   return (
     <div className="flex items-center gap-3">
-      <Button size="icon" variant={looping ? "default" : "outline"} disabled={disabled}>
-        <span className="icon_clothes">
-          <LoopIcon className="h-3 w-3" />
-        </span>
-      </Button>
-      <Button size="icon" variant="stylized" disabled={disabled}>
-        <span className="icon_clothes">
-          <TrackPreviousIcon className="h-3 w-3" />
-        </span>
-      </Button>
-      <Button size="icon" variant="stylized" disabled={disabled}>
-        <span className="icon_clothes">
-          {loading ? (
-            <LoopIcon className="h-3 w-3 animate-spin" />
-          ) : playing ? (
-            <PauseIcon className="h-3 w-3" />
-          ) : (
-            <PlayIcon className="h-3 w-3" />
-          )}
-        </span>
-      </Button>
-      <Button size="icon" variant="stylized" disabled={disabled}>
-        <span className="icon_clothes">
-          <TrackNextIcon className="h-3 w-3" />
-        </span>
-      </Button>
-      <Button size="icon" variant="outline" disabled={disabled}>
-        <span className="icon_clothes">
-          <ListBulletIcon className="h-3 w-3" />
-        </span>
-      </Button>
+      <PlayerButton variant="outline" active={looping} disabled={disabled}>
+        <LoopIcon />
+      </PlayerButton>
+      <PlayerButton disabled={disabled}>
+        <TrackPreviousIcon />
+      </PlayerButton>
+      <PlayerButton
+        variant="primary"
+        size="lg"
+        loading={loading}
+        disabled={disabled}
+      >
+        {playing ? <PauseIcon /> : <PlayIcon />}
+      </PlayerButton>
+      <PlayerButton disabled={disabled}>
+        <TrackNextIcon />
+      </PlayerButton>
+      <PlayerButton variant="ghost" disabled={disabled}>
+        <ListBulletIcon />
+      </PlayerButton>
     </div>
   );
 }
@@ -97,54 +103,65 @@ export default function ComponentsPage() {
           signal="varies by action"
           views={{
             default: (
-              <div className="flex flex-wrap items-center gap-3">
-                <Button>Play now</Button>
-                <Button variant="stylized">Stylized</Button>
-                <Button variant="secondary">Add to playlist</Button>
-                <Button variant="outline">Follow</Button>
-                <Button variant="ghost">Skip</Button>
-                <Button variant="link">See all</Button>
-                <Button variant="destructive">Delete</Button>
+              <div className="flex flex-wrap items-start gap-x-6 gap-y-5">
+                <Labeled label="default"><Button>Play now</Button></Labeled>
+                <Labeled label="stylized"><Button variant="stylized">Stylized</Button></Labeled>
+                <Labeled label="secondary"><Button variant="secondary">Add to playlist</Button></Labeled>
+                <Labeled label="outline"><Button variant="outline">Follow</Button></Labeled>
+                <Labeled label="ghost"><Button variant="ghost">Skip</Button></Labeled>
+                <Labeled label="link"><Button variant="link">See all</Button></Labeled>
+                <Labeled label="destructive"><Button variant="destructive">Delete</Button></Labeled>
               </div>
             ),
             disabled: (
-              <div className="flex flex-wrap items-center gap-3">
-                <Button disabled>Play now</Button>
-                <Button variant="stylized" disabled>
-                  Stylized
-                </Button>
-                <Button variant="secondary" disabled>
-                  Add to playlist
-                </Button>
-                <Button variant="outline" disabled>
-                  Follow
-                </Button>
-                <Button variant="ghost" disabled>
-                  Skip
-                </Button>
-                <Button variant="link" disabled>
-                  See all
-                </Button>
-                <Button variant="destructive" disabled>
-                  Delete
-                </Button>
+              <div className="flex flex-wrap items-start gap-x-6 gap-y-5">
+                <Labeled label="default"><Button disabled>Play now</Button></Labeled>
+                <Labeled label="stylized"><Button variant="stylized" disabled>Stylized</Button></Labeled>
+                <Labeled label="secondary"><Button variant="secondary" disabled>Add to playlist</Button></Labeled>
+                <Labeled label="outline"><Button variant="outline" disabled>Follow</Button></Labeled>
+                <Labeled label="ghost"><Button variant="ghost" disabled>Skip</Button></Labeled>
+                <Labeled label="link"><Button variant="link" disabled>See all</Button></Labeled>
+                <Labeled label="destructive"><Button variant="destructive" disabled>Delete</Button></Labeled>
               </div>
             ),
             sizes: (
-              <div className="flex flex-wrap items-center gap-3">
-                <Button size="lg">Large</Button>
-                <Button size="default">Default</Button>
-                <Button size="sm">Small</Button>
-                <Button size="icon" variant="stylized">
-                  <span className="icon_clothes">
-                    <PlayIcon className="h-3 w-3" />
-                  </span>
-                </Button>
-                <Button size="smallIcon" variant="outline">
-                  <span className="icon_clothes">
-                    <PlayIcon className="h-2.5 w-2.5" />
-                  </span>
-                </Button>
+              <div className="flex flex-wrap items-start gap-x-6 gap-y-5">
+                <Labeled label="lg"><Button size="lg">Large</Button></Labeled>
+                <Labeled label="default"><Button size="default">Default</Button></Labeled>
+                <Labeled label="sm"><Button size="sm">Small</Button></Labeled>
+                <Labeled label="icon"><Button size="icon" variant="stylized"><span className="icon_clothes"><PlayIcon className="h-3 w-3" /></span></Button></Labeled>
+                <Labeled label="smallIcon"><Button size="smallIcon" variant="outline"><span className="icon_clothes"><PlayIcon className="h-2.5 w-2.5" /></span></Button></Labeled>
+              </div>
+            ),
+          }}
+        />
+
+        <StatePanel
+          name="PlayerButton — transport control"
+          signal="play, pause, skip, loop"
+          views={{
+            variants: (
+              <div className="flex flex-wrap items-start gap-x-6 gap-y-5">
+                <Labeled label="primary"><PlayerButton variant="primary" size="lg"><PlayIcon /></PlayerButton></Labeled>
+                <Labeled label="stylized"><PlayerButton><TrackNextIcon /></PlayerButton></Labeled>
+                <Labeled label="outline"><PlayerButton variant="outline"><LoopIcon /></PlayerButton></Labeled>
+                <Labeled label="ghost"><PlayerButton variant="ghost"><ListBulletIcon /></PlayerButton></Labeled>
+              </div>
+            ),
+            sizes: (
+              <div className="flex flex-wrap items-start gap-x-6 gap-y-5">
+                <Labeled label="sm"><PlayerButton size="sm"><PlayIcon /></PlayerButton></Labeled>
+                <Labeled label="base"><PlayerButton size="base"><PlayIcon /></PlayerButton></Labeled>
+                <Labeled label="lg"><PlayerButton size="lg"><PlayIcon /></PlayerButton></Labeled>
+                <Labeled label="xl"><PlayerButton variant="primary" size="xl"><PlayIcon /></PlayerButton></Labeled>
+              </div>
+            ),
+            states: (
+              <div className="flex flex-wrap items-start gap-x-6 gap-y-5">
+                <Labeled label="default"><PlayerButton><PlayIcon /></PlayerButton></Labeled>
+                <Labeled label="loading"><PlayerButton loading><PlayIcon /></PlayerButton></Labeled>
+                <Labeled label="active"><PlayerButton variant="outline" active><LoopIcon /></PlayerButton></Labeled>
+                <Labeled label="disabled"><PlayerButton disabled><PlayIcon /></PlayerButton></Labeled>
               </div>
             ),
           }}
