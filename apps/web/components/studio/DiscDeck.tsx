@@ -89,7 +89,10 @@ export default function DiscDeck({ tracks, className }: DiscDeckProps) {
       data-signal="disc_next, disc_prev"
     >
       {/* ── the deck (WebGL) ── */}
-      <div className="relative w-full max-w-2xl h-[380px] rounded-lg overflow-hidden">
+      <div
+        data-deck-stage
+        className="relative w-full max-w-2xl h-[380px] rounded-lg overflow-hidden"
+      >
         <DeckScene
           tracks={tracks}
           current={current}
