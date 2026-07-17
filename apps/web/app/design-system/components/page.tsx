@@ -28,6 +28,8 @@ import { SkeletonCard, SkeletonRow } from "@/components/studio/Skeletons";
 import YukiAgent from "@/components/agent/YukiAgent";
 import { PlayerButton } from "@/components/studio/PlayerButton";
 import DiscDeck from "@/components/studio/DiscDeck";
+import IconSwap from "@/components/studio/IconSwap";
+import IconSwapDemo from "@/components/studio/ds/IconSwapDemo";
 
 /** Labeled demo cell — the thing on top, its name written under it. */
 function Labeled({
@@ -59,7 +61,11 @@ function TransportCluster({
 }) {
   return (
     <div className="flex items-center gap-3">
-      <PlayerButton variant="outline" active={looping} disabled={disabled}>
+      <PlayerButton
+        variant={looping ? "primary" : "outline"}
+        active={looping}
+        disabled={disabled}
+      >
         <LoopIcon />
       </PlayerButton>
       <PlayerButton disabled={disabled}>
@@ -71,12 +77,15 @@ function TransportCluster({
         loading={loading}
         disabled={disabled}
       >
-        {playing ? <PauseIcon /> : <PlayIcon />}
+        <IconSwap
+          active={playing ? "pause" : "play"}
+          icons={{ play: <PlayIcon />, pause: <PauseIcon /> }}
+        />
       </PlayerButton>
       <PlayerButton disabled={disabled}>
         <TrackNextIcon />
       </PlayerButton>
-      <PlayerButton variant="ghost" disabled={disabled}>
+      <PlayerButton variant="outline" disabled={disabled}>
         <ListBulletIcon />
       </PlayerButton>
     </div>
@@ -180,6 +189,24 @@ export default function ComponentsPage() {
                   { title: "Static Garden", artist: "YUKI WEEKLY", texture: "tx-k2-static" },
                 ]}
               />
+            ),
+          }}
+        />
+
+        <StatePanel
+          name="IconSwap — the multi-icon rule"
+          signal="follows the host control"
+          views={{
+            default: (
+              <div className="grid gap-5">
+                <IconSwapDemo />
+                <p className="type-muted max-w-xl">
+                  RULE: every control that alternates between icons — play/pause,
+                  mute, like, expand — swaps them through IconSwap. The old icon
+                  rolls up and out, the new one drops down into place. No
+                  crossfades, no instant swaps.
+                </p>
+              </div>
             ),
           }}
         />

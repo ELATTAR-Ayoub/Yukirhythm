@@ -12,6 +12,7 @@ import {
 import { cn } from "@/lib/utils";
 import type { TextureName } from "@/components/studio/Texture";
 import { PlayerButton } from "@/components/studio/PlayerButton";
+import IconSwap from "@/components/studio/IconSwap";
 
 export interface DeckTrack {
   title: string;
@@ -125,7 +126,10 @@ export default function DiscDeck({ tracks, className }: DiscDeckProps) {
           onClick={toggle}
           aria-label={spinning ? "Pause" : "Play"}
         >
-          {spinning ? <PauseIcon /> : <PlayIcon />}
+          <IconSwap
+            active={spinning ? "pause" : "play"}
+            icons={{ play: <PlayIcon />, pause: <PauseIcon /> }}
+          />
         </PlayerButton>
         <PlayerButton
           disabled={busy}
