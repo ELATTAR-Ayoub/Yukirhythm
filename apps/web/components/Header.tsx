@@ -84,7 +84,7 @@ const Header = () => {
 
                 <DropdownMenuItem
                   onClick={logout}
-                  className="bg-destructive text-destructive-foreground shadow-sm hover:!bg-destructive/90"
+                  className="bg-destructive text-destructive-foreground shadow-xs hover:!bg-destructive/90"
                 >
                   Log out
                 </DropdownMenuItem>
