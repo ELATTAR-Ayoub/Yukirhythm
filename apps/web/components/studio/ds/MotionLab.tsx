@@ -55,16 +55,16 @@ export default function MotionLab() {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           <ReplayTile
-            name="Pop in"
+            name="Jelly pop"
             recipe=".anim-pop-in"
-            usage="Cards, dialogs, agent replies appearing — the ba-bam."
+            usage="Cards, dialogs, agent replies — grows from 25%, lands with a jelly wobble."
           >
             <span className={cn(box, "anim-pop-in")} />
           </ReplayTile>
           <ReplayTile
             name="Spring up"
             recipe=".anim-spring-up"
-            usage="Toasts, the now-playing bar, anything entering from below."
+            usage="Toasts, the now-playing bar — a slow, soft rise that settles gently."
           >
             <span className={cn(box, "anim-spring-up")} />
           </ReplayTile>
@@ -78,7 +78,7 @@ export default function MotionLab() {
           <ReplayTile
             name="Spring press"
             recipe=".press-spring"
-            usage="Hold the box: squishes instantly, releases with overshoot."
+            usage="Press: instant squish (40ms), release springs back in 220ms."
             clickHint="PRESS & HOLD"
           >
             <span
@@ -98,7 +98,7 @@ export default function MotionLab() {
         <div className="type-label text-primary mb-4">
           MACHINE — STEPPED, PHYSICAL, NO IN-BETWEENS. FOR THE DEVICE FEEL.
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           <ReplayTile
             name="Key press"
             recipe=".press-key"
@@ -119,21 +119,12 @@ export default function MotionLab() {
             </span>
           </ReplayTile>
           <ReplayTile
-            name="Flicker on"
-            recipe=".anim-flicker-on"
-            usage="Panels and screens turning on — old CRT power-up, stepped opacity."
+            name="Sign on"
+            recipe=".anim-sign-on"
+            usage="Text turning on like a neon sign — buzzes, then holds a glow. Text only, never boxes."
           >
-            <span className="anim-flicker-on inline-flex w-24 h-16 rounded-md bg-ink items-center justify-center">
-              <span className="type-label text-mint">ON AIR</span>
-            </span>
-          </ReplayTile>
-          <ReplayTile
-            name="Slide chunk"
-            recipe=".anim-slide-chunk"
-            usage="List rows loading in — slides in 4 visible steps, like a cassette deck."
-          >
-            <span className="anim-slide-chunk inline-flex w-28 h-9 rounded-md bg-secondary border border-border items-center px-3">
-              <span className="type-label">TRACK 01</span>
+            <span className="inline-flex w-28 h-16 rounded-md bg-ink items-center justify-center">
+              <span className="anim-sign-on type-label text-mint">ON AIR</span>
             </span>
           </ReplayTile>
         </div>
