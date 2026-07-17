@@ -343,6 +343,7 @@ export default function DeckScene(props: DeckSceneProps) {
     <Canvas
       shadows
       dpr={[1, 2]}
+      gl={{ antialias: true, preserveDrawingBuffer: true }}
       camera={{ position: [0, 3.7, 6.6], fov: 38 }}
       onCreated={({ camera }) => camera.lookAt(0, 0.35, 0)}
       className="!touch-none"
