@@ -30,12 +30,15 @@ after the owner confirms the preview.
   a drop-in:
 
 ```ts
-interface DeckSceneProps {
-  tracks: { id: string; title: string; artist: string; labelUrl: string }[];
-  currentIndex: number;
-  playing: boolean;
-  onSwap?: (direction: "next" | "prev") => void; // side-disc clicks
+// Reuses the branch's existing DeckTrack type ({ title, artist, artUrl? })
+interface CarouselDeckProps {
+  tracks: DeckTrack[];
+  className?: string;
 }
+// The inner scene receives { tracks, current, playing, glitch } plus
+// handle-registration callbacks; swapping is driven by the choreography
+// hook, so store integration later only needs to render <CarouselDeck>
+// with real tracks and observe its callbacks.
 ```
 
 ## Scene & lighting — 80s anime retrotech
@@ -83,25 +86,38 @@ semantics handle this.
 
 ## Architecture
 
+New files live beside the existing prototype under
+`apps/web/components/studio/deck/` (the branch's established location).
+The prototype `DeckScene.tsx`/`DiscDeck.tsx` stay untouched so the
+design-system page keeps working; the carousel build is parallel.
+
 | File | Responsibility |
 | --- | --- |
-| `components/deck3d/DeckScene.tsx` | Canvas, camera rig, lights, parallax |
-| `components/deck3d/Disc.tsx` | Vinyl mesh, groove material, label texture |
-| `components/deck3d/Tonearm.tsx` | Tonearm model + pivot rig |
-| `components/deck3d/useDeckChoreography.ts` | GSAP timeline; exposes `swap(direction)` |
-| `components/deck3d/Effects.tsx` | Post-processing stack |
-| `app/deck-lab/page.tsx` | Mock data + DOM overlay UI |
+| `components/studio/deck/CarouselDeckScene.tsx` | Canvas, camera, lights, fog, parallax rig, WebGL fallback |
+| `components/studio/deck/Disc.tsx` | Vinyl mesh, groove material, label texture, spin inertia, hover |
+| `components/studio/deck/Tonearm.tsx` | Tonearm model + pivot rig (GSAP-driven, no self-animation) |
+| `components/studio/deck/slots.ts` | Slot transforms + pure slot-assignment math |
+| `components/studio/deck/choreography-math.ts` | Pure helpers: index wrap, seat-rotation target |
+| `components/studio/deck/useDeckChoreography.ts` | GSAP master timeline; exposes `swap(direction)`, `togglePlay` |
+| `components/studio/deck/Effects.tsx` | Post-processing stack |
+| `components/studio/deck/CarouselDeck.tsx` | State, disc-handle registry, DOM overlay UI |
+| `app/deck-lab/page.tsx` | Mock data + page shell |
 
 ## Dependencies
 
-- Bump `@react-three/fiber` → v9, `@react-three/drei` → v10 (v8 predates
-  React 19 — this is step zero), `three` → latest compatible.
-- Add `@react-three/postprocessing`, `gsap`.
+Correction (2026-07-17): this branch is on **Next 14 / React 18.2**, so
+fiber v8 + drei v9 are already the correct pairing — no framework bumps.
+
+- Keep `@react-three/fiber` ^8, `@react-three/drei` ^9, `three` ^0.170.
+- Add `@react-three/postprocessing` **^2** (the fiber-8-compatible line)
+  and `gsap` ^3.
 
 ## Error handling
 
 - WebGL unavailable → keep the prototype's DOM fallback message.
-- Label texture fails to load → plain colored label, no crash.
+- Label textures on the preview page are local, committed PNGs; a
+  network-thumbnail fallback (plain colored label) is an
+  integration-phase concern, out of scope here.
 
 ## Verification
 
