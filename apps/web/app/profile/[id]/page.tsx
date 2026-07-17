@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { use, useState, useEffect } from "react";
 
 // styles
 import styles from "@/styles/index";
@@ -24,7 +24,9 @@ import { UserCollectionList } from "@/components/player/UserCollectionsList";
 // redux
 import { User } from "@/constants/interfaces";
 
-const Page = ({ params }: any) => {
+const Page = ({ params }: { params: Promise<{ id: string }> }) => {
+  const { id } = use(params);
+
   // auth
   const { getProfileUser } = useAuth();
 
@@ -49,12 +51,12 @@ const Page = ({ params }: any) => {
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      const data = await getProfileUser(params.id);
+      const data = await getProfileUser(id);
       setProfileUser(data);
     };
     fetchData();
     setLoading(false);
-  }, [params.id]);
+  }, [id]);
 
   return (
     <section
@@ -99,7 +101,7 @@ const Page = ({ params }: any) => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
-              <UserAudioList id={params.id} />
+              <UserAudioList id={id} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -113,7 +115,7 @@ const Page = ({ params }: any) => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
-              <UserCollectionList id={params.id} />
+              <UserCollectionList id={id} />
             </CardContent>
           </Card>
         </TabsContent>
