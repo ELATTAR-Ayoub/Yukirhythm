@@ -1,3 +1,5 @@
+@reference "../app/globals.css";
+
 .floating-word {
   position: absolute;
   cursor: grab;

@@ -1,3 +1,5 @@
+@reference "../app/globals.css";
+
 .AudioSeekBar .rangeSlider {
   height: 5px;
   -webkit-appearance: none;
