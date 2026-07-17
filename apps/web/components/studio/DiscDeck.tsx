@@ -11,7 +11,7 @@ import {
 
 import { cn } from "@/lib/utils";
 import type { TextureName } from "@/components/studio/Texture";
-import { PlayerButton } from "@/components/studio/PlayerButton";
+import { PlayerButton, CircleSpinner } from "@/components/studio/PlayerButton";
 import IconSwap from "@/components/studio/IconSwap";
 
 export interface DeckTrack {
@@ -122,13 +122,17 @@ export default function DiscDeck({ tracks, className }: DiscDeckProps) {
         <PlayerButton
           variant="primary"
           size="lg"
-          loading={busy}
+          disabled={busy}
           onClick={toggle}
-          aria-label={spinning ? "Pause" : "Play"}
+          aria-label={busy ? "Working" : spinning ? "Pause" : "Play"}
         >
           <IconSwap
-            active={spinning ? "pause" : "play"}
-            icons={{ play: <PlayIcon />, pause: <PauseIcon /> }}
+            active={busy ? "wait" : spinning ? "pause" : "play"}
+            icons={{
+              play: <PlayIcon />,
+              pause: <PauseIcon />,
+              wait: <CircleSpinner />,
+            }}
           />
         </PlayerButton>
         <PlayerButton

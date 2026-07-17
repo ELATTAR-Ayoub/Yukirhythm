@@ -2,8 +2,8 @@ import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
-/** Circular loading ring — sized by the size variant's svg rules. */
-function CircleSpinner() {
+/** Circular loading ring — sized by the host button's svg rules. */
+export function CircleSpinner() {
   return (
     <svg className="animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden>
       <circle

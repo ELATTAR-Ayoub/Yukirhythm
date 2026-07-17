@@ -26,7 +26,7 @@ import RailShelf from "@/components/studio/RailShelf";
 import EmptyState from "@/components/studio/EmptyState";
 import { SkeletonCard, SkeletonRow } from "@/components/studio/Skeletons";
 import YukiAgent from "@/components/agent/YukiAgent";
-import { PlayerButton } from "@/components/studio/PlayerButton";
+import { PlayerButton, CircleSpinner } from "@/components/studio/PlayerButton";
 import DiscDeck from "@/components/studio/DiscDeck";
 import IconSwap from "@/components/studio/IconSwap";
 import IconSwapDemo from "@/components/studio/ds/IconSwapDemo";
@@ -74,12 +74,15 @@ function TransportCluster({
       <PlayerButton
         variant="primary"
         size="lg"
-        loading={loading}
-        disabled={disabled}
+        disabled={disabled || loading}
       >
         <IconSwap
-          active={playing ? "pause" : "play"}
-          icons={{ play: <PlayIcon />, pause: <PauseIcon /> }}
+          active={loading ? "wait" : playing ? "pause" : "play"}
+          icons={{
+            play: <PlayIcon />,
+            pause: <PauseIcon />,
+            wait: <CircleSpinner />,
+          }}
         />
       </PlayerButton>
       <PlayerButton disabled={disabled}>
