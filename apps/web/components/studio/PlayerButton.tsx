@@ -1,8 +1,28 @@
 import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { LoopIcon } from "@radix-ui/react-icons";
-
 import { cn } from "@/lib/utils";
+
+/** Circular loading ring — sized by the size variant's svg rules. */
+function CircleSpinner() {
+  return (
+    <svg className="animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle
+        cx="12"
+        cy="12"
+        r="9"
+        stroke="currentColor"
+        strokeOpacity="0.25"
+        strokeWidth="3"
+      />
+      <path
+        d="M21 12a9 9 0 0 0-9-9"
+        stroke="currentColor"
+        strokeWidth="3"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
 
 // Transport control — a machine key in a round shell.
 // Press: travels down instantly (80ms). Release: springs back (250ms overshoot).
@@ -13,7 +33,7 @@ const playerButtonVariants = cva(
       variant: {
         primary:
           "bg-primary text-primary-foreground shadow-btn-primary hover:bg-primary/90 active:shadow-btn-down",
-        stylized:
+        secondary:
           "main_shadow bg-secondary text-secondary-foreground active:shadow-btn-down",
         outline:
           "bg-card border border-input shadow-btn hover:bg-secondary active:shadow-btn-down",
@@ -27,7 +47,7 @@ const playerButtonVariants = cva(
       },
     },
     defaultVariants: {
-      variant: "stylized",
+      variant: "secondary",
       size: "base",
     },
   }
@@ -61,7 +81,7 @@ const PlayerButton = React.forwardRef<HTMLButtonElement, PlayerButtonProps>(
         {...props}
       >
         <span className="icon_clothes">
-          {loading ? <LoopIcon className="animate-spin" /> : children}
+          {loading ? <CircleSpinner /> : children}
         </span>
       </button>
     );

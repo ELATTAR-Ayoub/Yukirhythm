@@ -190,7 +190,7 @@ const Controls = ({ videoId }: { videoId: string }) => {
           onClick={() => skipAudio(0)}
           disabled={current === 0}
           size="icon"
-          variant={"stylized"}
+          variant={"secondary"}
         >
           <span className={` icon_clothes`}>
             <TrackPreviousIcon className="h-3 w-3 " />
@@ -201,7 +201,7 @@ const Controls = ({ videoId }: { videoId: string }) => {
           onClick={handlePlayPause}
           size="icon"
           disabled={audioConfig.length == 0}
-          variant={"stylized"}
+          variant={"secondary"}
         >
           <span className={` icon_clothes`}>
             {AudioLoading ? (
@@ -216,7 +216,7 @@ const Controls = ({ videoId }: { videoId: string }) => {
 
         <Button
           onClick={() => skipAudio(1)}
-          variant={"stylized"}
+          variant={"secondary"}
           disabled={
             audioConfig.length - 1 === current || audioConfig.length == 0
           }

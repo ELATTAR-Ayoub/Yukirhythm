@@ -11,7 +11,7 @@ module.exports = {
     "./sections/**/*.{js,ts,jsx,tsx}",
     "./styles/**/*.{js,ts,jsx,tsx}",
   ],
-  darkMode: ["class", "class"],
+  darkMode: ["class"],
   theme: {
     letterSpacing: {
       tightest: "-12px",

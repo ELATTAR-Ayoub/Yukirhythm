@@ -262,7 +262,7 @@ export function UserAudioList({ id }: { id: string }) {
               {/* Controls */}
               <div className={`${styles.flexStart} flex-row-reverse gap-2`}>
                 <Button
-                  variant={"stylized"}
+                  variant={"secondary"}
                   onClick={() => {
                     handlePlayPause(audio);
                   }}
@@ -279,7 +279,7 @@ export function UserAudioList({ id }: { id: string }) {
                 {user.ID == profileUser.ID && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant={"stylized"} size={"icon"}>
+                      <Button variant={"secondary"} size={"icon"}>
                         {!user.lovedSongs.some(
                           (lovedSong: any) => lovedSong.ID === audio.ID
                         ) ? (

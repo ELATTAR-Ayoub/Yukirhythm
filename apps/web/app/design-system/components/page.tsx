@@ -105,7 +105,6 @@ export default function ComponentsPage() {
             default: (
               <div className="flex flex-wrap items-start gap-x-6 gap-y-5">
                 <Labeled label="default"><Button>Play now</Button></Labeled>
-                <Labeled label="stylized"><Button variant="stylized">Stylized</Button></Labeled>
                 <Labeled label="secondary"><Button variant="secondary">Add to playlist</Button></Labeled>
                 <Labeled label="outline"><Button variant="outline">Follow</Button></Labeled>
                 <Labeled label="ghost"><Button variant="ghost">Skip</Button></Labeled>
@@ -116,7 +115,6 @@ export default function ComponentsPage() {
             disabled: (
               <div className="flex flex-wrap items-start gap-x-6 gap-y-5">
                 <Labeled label="default"><Button disabled>Play now</Button></Labeled>
-                <Labeled label="stylized"><Button variant="stylized" disabled>Stylized</Button></Labeled>
                 <Labeled label="secondary"><Button variant="secondary" disabled>Add to playlist</Button></Labeled>
                 <Labeled label="outline"><Button variant="outline" disabled>Follow</Button></Labeled>
                 <Labeled label="ghost"><Button variant="ghost" disabled>Skip</Button></Labeled>
@@ -129,7 +127,7 @@ export default function ComponentsPage() {
                 <Labeled label="lg"><Button size="lg">Large</Button></Labeled>
                 <Labeled label="default"><Button size="default">Default</Button></Labeled>
                 <Labeled label="sm"><Button size="sm">Small</Button></Labeled>
-                <Labeled label="icon"><Button size="icon" variant="stylized"><span className="icon_clothes"><PlayIcon className="h-3 w-3" /></span></Button></Labeled>
+                <Labeled label="icon"><Button size="icon" variant="secondary"><span className="icon_clothes"><PlayIcon className="h-3 w-3" /></span></Button></Labeled>
                 <Labeled label="smallIcon"><Button size="smallIcon" variant="outline"><span className="icon_clothes"><PlayIcon className="h-2.5 w-2.5" /></span></Button></Labeled>
               </div>
             ),
@@ -143,7 +141,7 @@ export default function ComponentsPage() {
             variants: (
               <div className="flex flex-wrap items-start gap-x-6 gap-y-5">
                 <Labeled label="primary"><PlayerButton variant="primary" size="lg"><PlayIcon /></PlayerButton></Labeled>
-                <Labeled label="stylized"><PlayerButton><TrackNextIcon /></PlayerButton></Labeled>
+                <Labeled label="secondary"><PlayerButton><TrackNextIcon /></PlayerButton></Labeled>
                 <Labeled label="outline"><PlayerButton variant="outline"><LoopIcon /></PlayerButton></Labeled>
                 <Labeled label="ghost"><PlayerButton variant="ghost"><ListBulletIcon /></PlayerButton></Labeled>
               </div>
@@ -330,27 +328,42 @@ export default function ComponentsPage() {
           signal="card_play, card_open"
           views={{
             default: (
-              <div className="flex flex-wrap items-end gap-5">
-                <MediaCard
-                  size="sm"
-                  title="literal world"
-                  artist="Kisidakyoudan"
-                  texture="tx-k-ripple"
-                  duration="3:59"
-                />
-                <MediaCard
-                  size="md"
-                  title="Nightglow"
-                  artist="Tanya Chua"
-                  texture="tx-k2-horizon"
-                  duration="4:12"
-                />
-                <MediaCard
-                  size="lg"
-                  title="Music of the Week"
-                  artist="Curated by Yuki"
-                  texture="tx-k2-horizon"
-                />
+              <div className="flex flex-wrap items-start gap-6">
+                <div>
+                  <MediaCard
+                    size="sm"
+                    title="literal world"
+                    artist="Kisidakyoudan"
+                    texture="tx-k-ripple"
+                    duration="3:59"
+                  />
+                  <div className="type-label text-muted-foreground mt-2 max-w-[144px]">
+                    sm — dense rails (recently played)
+                  </div>
+                </div>
+                <div>
+                  <MediaCard
+                    size="md"
+                    title="Nightglow"
+                    artist="Tanya Chua"
+                    texture="tx-k2-horizon"
+                    duration="4:12"
+                  />
+                  <div className="type-label text-muted-foreground mt-2 max-w-[192px]">
+                    md — standard grids (library, search)
+                  </div>
+                </div>
+                <div>
+                  <MediaCard
+                    size="lg"
+                    title="Music of the Week"
+                    artist="Curated by Yuki"
+                    texture="tx-k2-horizon"
+                  />
+                  <div className="type-label text-muted-foreground mt-2 max-w-[256px]">
+                    lg — feature spots (weekly picks, moods)
+                  </div>
+                </div>
               </div>
             ),
             playing: (
@@ -388,23 +401,33 @@ export default function ComponentsPage() {
           signal="card_play"
           views={{
             default: (
-              <div className="grid gap-3">
-                <MediaCard
-                  variant="extended"
-                  size="md"
-                  title="A.D. Police: To Protect and Serve"
-                  artist="Kisidakyoudan"
-                  texture="tx-k-glitch"
-                  duration="2:47"
-                />
-                <MediaCard
-                  variant="extended"
-                  size="lg"
-                  title="夜盲症"
-                  artist="蔡健雅 Tanya Chua"
-                  texture="tx-k-silk"
-                  duration="4:31"
-                />
+              <div className="grid gap-6">
+                <div>
+                  <MediaCard
+                    variant="extended"
+                    size="md"
+                    title="A.D. Police: To Protect and Serve"
+                    artist="Kisidakyoudan"
+                    texture="tx-k-glitch"
+                    duration="2:47"
+                  />
+                  <div className="type-label text-muted-foreground mt-2">
+                    md — queue rows, search results
+                  </div>
+                </div>
+                <div>
+                  <MediaCard
+                    variant="extended"
+                    size="lg"
+                    title="夜盲症"
+                    artist="蔡健雅 Tanya Chua"
+                    texture="tx-k-silk"
+                    duration="4:31"
+                  />
+                  <div className="type-label text-muted-foreground mt-2">
+                    lg — hero rows, continue-listening banner
+                  </div>
+                </div>
               </div>
             ),
             playing: (

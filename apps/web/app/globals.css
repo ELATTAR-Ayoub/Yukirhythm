@@ -172,10 +172,8 @@ body {
 }
 
 .disc_shadow {
-  box-shadow:
-    0px 1px 16.8px 0px rgba(4, 5, 6, 0.4),
-    0px 0px 75px 0px rgba(4, 5, 6, 0.5),
-    0px 5px 12.8px 0px rgba(182, 184, 195, 0.25) inset;
+  /* theme-aware: soft realistic puck in light, deep glow in dark */
+  box-shadow: var(--shadow-disc);
 }
 
 .AudioCard {
@@ -286,6 +284,10 @@ body {
       0 1px 1px rgb(25 25 25 / 0.08);
     --shadow-chip: inset 0 1px 0 rgb(255 255 255 / 0.5),
       inset 0 -1px 2px rgb(25 25 25 / 0.1), 0 1px 2px rgb(25 25 25 / 0.14);
+    --shadow-disc: 0 1px 2px rgb(25 25 25 / 0.18),
+      0 12px 26px -8px rgb(25 25 25 / 0.32),
+      inset 0 2px 4px rgb(255 255 255 / 0.7),
+      inset 0 -3px 6px rgb(25 25 25 / 0.1);
 
     /* motion */
     --dur-tick: 80ms; /* machine actions */
@@ -343,6 +345,9 @@ body {
       0 1px 1px rgb(0 0 0 / 0.3);
     --shadow-chip: inset 0 1px 0 rgb(255 255 255 / 0.12),
       inset 0 -1px 2px rgb(0 0 0 / 0.45), 0 1px 2px rgb(0 0 0 / 0.45);
+    --shadow-disc: 0px 1px 16.8px 0px rgba(4, 5, 6, 0.4),
+      0px 0px 75px 0px rgba(4, 5, 6, 0.5),
+      0px 5px 12.8px 0px rgba(182, 184, 195, 0.25) inset;
   }
 }
 /* 
