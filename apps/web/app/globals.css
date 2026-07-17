@@ -623,3 +623,22 @@ yuki-agent canvas {
   animation: sign-on 0.9s steps(1, end) both;
 }
 
+
+/* disc drops onto the platter — held above, then seated */
+@keyframes disc-install {
+  0% {
+    transform: translateY(-28px) scale(1.18);
+  }
+  55% {
+    transform: translateY(0) scale(0.96);
+  }
+  80% {
+    transform: scale(1.03);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.anim-disc-install {
+  animation: disc-install 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}

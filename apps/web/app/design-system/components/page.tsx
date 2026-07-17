@@ -27,6 +27,7 @@ import EmptyState from "@/components/studio/EmptyState";
 import { SkeletonCard, SkeletonRow } from "@/components/studio/Skeletons";
 import YukiAgent from "@/components/agent/YukiAgent";
 import { PlayerButton } from "@/components/studio/PlayerButton";
+import DiscDeck from "@/components/studio/DiscDeck";
 
 /** Labeled demo cell — the thing on top, its name written under it. */
 function Labeled({
@@ -161,6 +162,24 @@ export default function ComponentsPage() {
                 <Labeled label="active"><PlayerButton variant="outline" active><LoopIcon /></PlayerButton></Labeled>
                 <Labeled label="disabled"><PlayerButton disabled><PlayIcon /></PlayerButton></Labeled>
               </div>
+            ),
+          }}
+        />
+
+        <StatePanel
+          name="DiscDeck — 3D turntable carousel"
+          signal="disc_next, disc_prev, play, pause"
+          views={{
+            default: (
+              <DiscDeck
+                tracks={[
+                  { title: "literal world", artist: "KISIDAKYOUDAN", texture: "tx-k-ripple" },
+                  { title: "Nightglow", artist: "TANYA CHUA", texture: "tx-k2-horizon" },
+                  { title: "夜盲症", artist: "蔡健雅 TANYA CHUA", texture: "tx-k-silk" },
+                  { title: "A.D. Police Opening", artist: "KISIDAKYOUDAN", texture: "tx-k-glitch" },
+                  { title: "Static Garden", artist: "YUKI WEEKLY", texture: "tx-k2-static" },
+                ]}
+              />
             ),
           }}
         />
