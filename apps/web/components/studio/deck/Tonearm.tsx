@@ -2,7 +2,7 @@
 "use client";
 
 import * as THREE from "three";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 
 export interface TonearmHandle {
   pivot: THREE.Group;
@@ -19,6 +19,7 @@ export type ArmPose = keyof typeof ARM_POSES;
 
 interface TonearmProps {
   register: (handle: TonearmHandle | null) => void;
+  /** Pose applied at mount only — later motion is GSAP-owned. */
   startPose?: ArmPose;
 }
 
@@ -30,7 +31,9 @@ export default function Tonearm({ register, startPose = "out" }: TonearmProps) {
     return () => register(null);
   }, [register]);
 
-  const p = ARM_POSES[startPose];
+  // Mount pose only — after this, the choreography owns the pivot.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const p = useMemo(() => ARM_POSES[startPose], []);
 
   return (
     // pivot sits off the top-right corner, like the sketch
