@@ -5,21 +5,20 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  " inline-flex items-center justify-center whitespace-nowrap rounded-full text-sm font-medium transition-colors transition-all hover:scale-105 focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
+  // spring physics: instant press (80ms squish), springy release (250ms overshoot)
+  "inline-flex items-center justify-center whitespace-nowrap rounded-full text-sm font-medium transition-all duration-base ease-spring active:duration-tick active:scale-95 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring/40 disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
         default:
-          " bg-primary text-primary-foreground shadow hover:bg-primary-white border border-primary-black",
-        stylized:
-          "main_shadow bg-secondary text-secondary-foreground shadow hover:bg-secondary-white border border-secondary-black",
+          "bg-primary text-primary-foreground shadow-btn-primary hover:bg-primary/90 active:shadow-btn-down",
         destructive:
-          "bg-destructive text-destructive-foreground shadow-xs hover:bg-destructive/90",
+          "bg-destructive text-destructive-foreground shadow-btn hover:bg-destructive/90 active:shadow-btn-down",
         outline:
-          "border border-input bg-background shadow-xs hover:bg-accent hover:text-accent-foreground",
+          "border border-input bg-card shadow-btn hover:bg-secondary active:shadow-btn-down",
         secondary:
-          "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
+          "main_shadow bg-secondary text-secondary-foreground active:shadow-btn-down",
+        ghost: "hover:bg-secondary active:bg-muted",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {

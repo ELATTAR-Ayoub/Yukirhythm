@@ -245,7 +245,7 @@ const Hero = () => {
               required
               // placeholder="Search"
             />
-            <Button variant={"stylized"} className=" flex-none" size="icon">
+            <Button variant={"secondary"} className=" flex-none" size="icon">
               <span className={` icon_clothes`}>
                 {loading ? (
                   <UpdateIcon className="h-3 w-3 animate-spin" />
@@ -346,7 +346,7 @@ const Hero = () => {
                       {/* Controls */}
                       <div className={`${styles.flexStart}  gap-2`}>
                         <Button
-                          variant={"stylized"}
+                          variant={"secondary"}
                           onClick={() => {
                             const already = audioConfig.some(
                               (a: Audio) => a.ID === audio.ID

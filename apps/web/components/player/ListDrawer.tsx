@@ -140,7 +140,7 @@ export function ListDrawer() {
       <Toaster />
 
       <DrawerTrigger asChild>
-        <Button variant={"stylized"} size="icon">
+        <Button variant={"secondary"} size="icon">
           <span className={` icon_clothes`}>
             <ListBulletIcon className="h-3 w-3 " />
           </span>
@@ -233,7 +233,7 @@ export function ListDrawer() {
                       className={`${styles.flexStart} flex-row-reverse  gap-2`}
                     >
                       <Button
-                        variant={"stylized"}
+                        variant={"secondary"}
                         onClick={() => {
                           setCurrent(index);
                           if (current === index) {
@@ -253,7 +253,7 @@ export function ListDrawer() {
 
                       {user.ID && (
                         <Button
-                          variant={"stylized"}
+                          variant={"secondary"}
                           onClick={() => handleInteractionWithLike(audio)}
                           size="icon"
                         >
@@ -270,7 +270,7 @@ export function ListDrawer() {
                       )}
 
                       <Button
-                        variant={"stylized"}
+                        variant={"secondary"}
                         onClick={() => handleDelete(audio, index)}
                         size="icon"
                       >

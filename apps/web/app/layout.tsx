@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 // styles
 import "./globals.css";
 import styles from "@/styles/index";
+import { fontVariables } from "./fonts";
 
 // providers (client)
 import Providers from "./providers";
@@ -25,7 +26,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={fontVariables}>
       <body
         className={` ${styles.flexStart} flex-col relative bg-background h-screen overflow-x-hidden`}
       >

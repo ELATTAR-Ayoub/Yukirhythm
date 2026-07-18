@@ -44,13 +44,111 @@
   --tracking-widest: 0.25em;
 
   --font-PIXELADE: "PIXELADE", sans-serif;
+
+  /* ── Studio palette — brand anchors (see /design-system/colors) ────
+     Ported from tailwind.config theme.extend.colors. Brand values are
+     theme-independent, so they live as static @theme tokens (unlike the
+     shadcn semantic tokens above, which flip per light/dark). */
+  --color-snow: #f7f6f3;
+  --color-ink: #191919;
+  --color-ink-50: hsl(45 20% 96%);
+  --color-ink-100: hsl(45 14% 91%);
+  --color-ink-200: hsl(45 10% 84%);
+  --color-ink-300: hsl(45 8% 74%);
+  --color-ink-400: hsl(45 5% 60%);
+  --color-ink-500: hsl(45 3% 46%);
+  --color-ink-600: hsl(45 2% 36%);
+  --color-ink-700: hsl(0 0% 28%);
+  --color-ink-800: hsl(0 0% 20%);
+  --color-ink-900: hsl(0 0% 14%);
+  --color-ink-950: hsl(0 0% 10%);
+  --color-cobalt: #1450f0;
+  --color-cobalt-soft: hsl(224 96% 93%);
+  --color-cobalt-deep: hsl(227 78% 34%);
+  --color-mint: #7df08a;
+  --color-mint-soft: hsl(127 68% 90%);
+  --color-mint-deep: hsl(129 52% 35%);
+
+  /* ── Studio type roles — Satoshi (display/ui/label) + OffBit (data) ──
+     font-pixel is defined via @utility below to avoid colliding with the
+     next/font `--font-pixel` variable set on <html>. */
+  --font-display: var(--font-sans), var(--font-jp), sans-serif;
+  --font-ui: var(--font-sans), var(--font-jp), sans-serif;
+  --font-label: var(--font-sans), var(--font-jp), sans-serif;
+  --font-data: var(--font-pixel-dot), var(--font-pixel), monospace;
+
   --ease-out-flex: cubic-bezier(0.05, 0.6, 0.4, 0.9);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
 
   --animate-aurora: aurora 60s linear infinite;
+}
+
+/* ── font-pixel utility ──────────────────────────────────────────
+   Kept out of @theme --font-* to avoid a circular reference with the
+   next/font `--font-pixel` custom property. */
+@utility font-pixel {
+  font-family: var(--font-pixel), monospace;
+}
+
+/* ── Studio elevation / shadow tokens ────────────────────────────
+   Ported from tailwind.config theme.extend.boxShadow. Values are the
+   theme-aware runtime vars (--shadow-*) defined in :root / .dark below,
+   so these utilities flip with the colour scheme. Defined as @utility
+   (not @theme --shadow-*) so the class name never collides with the
+   runtime var name, and so variants like active:shadow-btn-down work. */
+@utility shadow-e1 {
+  box-shadow: var(--shadow-e1);
+}
+@utility shadow-e2 {
+  box-shadow: var(--shadow-e2);
+}
+@utility shadow-e3 {
+  box-shadow: var(--shadow-e3);
+}
+@utility shadow-e4 {
+  box-shadow: var(--shadow-e4);
+}
+@utility shadow-key {
+  box-shadow: var(--shadow-key);
+}
+@utility shadow-key-down {
+  box-shadow: var(--shadow-key-down);
+}
+@utility shadow-pressed {
+  box-shadow: var(--shadow-pressed);
+}
+@utility shadow-btn {
+  box-shadow: var(--shadow-btn);
+}
+@utility shadow-btn-primary {
+  box-shadow: var(--shadow-btn-primary);
+}
+@utility shadow-btn-down {
+  box-shadow: var(--shadow-btn-down);
+}
+@utility shadow-chip {
+  box-shadow: var(--shadow-chip);
+}
+
+/* ── Named transition durations ──────────────────────────────────
+   Tailwind 4 has no named `duration-*` theme namespace, so these are
+   plain utilities. Defined via @utility so variants (active:duration-tick)
+   still resolve. Values mirror tailwind.config transitionDuration. */
+@utility duration-tick {
+  transition-duration: 80ms;
+}
+@utility duration-fast {
+  transition-duration: 150ms;
+}
+@utility duration-base {
+  transition-duration: 250ms;
+}
+@utility duration-slow {
+  transition-duration: 400ms;
 }
 
 @keyframes aurora {
@@ -90,8 +188,8 @@ a {
 
 body {
   min-height: 100vh;
-  font-family: "Nunito", sans-serif;
-  font-weight: 300;
+  font-family: var(--font-sans), var(--font-jp), "Nunito", sans-serif;
+  font-weight: 400;
   scroll-behavior: smooth;
   transition: scroll-behavior 1s ease-in-out;
 }
@@ -227,10 +325,8 @@ body {
 
 .main_shadow {
   @apply bg-secondary;
-  box-shadow:
-    0px 1px 9px 0px rgba(4, 5, 6, 0.15),
-    0px 3px 7.8px 0px rgba(253, 254, 254, 0.25) inset,
-    0px 5px 12.8px 0px rgba(182, 184, 195, 0.5) inset;
+  /* token-driven: crisp inner highlight + shade, tuned per theme */
+  box-shadow: var(--shadow-btn);
 }
 
 .icon_clothes {
@@ -238,10 +334,8 @@ body {
 }
 
 .disc_shadow {
-  box-shadow:
-    0px 1px 16.8px 0px rgba(4, 5, 6, 0.4),
-    0px 0px 75px 0px rgba(4, 5, 6, 0.5),
-    0px 5px 12.8px 0px rgba(182, 184, 195, 0.25) inset;
+  /* theme-aware: soft realistic puck in light, deep glow in dark */
+  box-shadow: var(--shadow-disc);
 }
 
 .AudioCard {
@@ -292,38 +386,42 @@ body {
 
 @layer base {
   :root {
-    /* chadcn */
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 240 5.9% 10%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 10% 3.9%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
+    /* Studio palette — raw brand values (191919 / 1450F0 / 7DF08A / F7F6F3) */
+    --ink: #191919;
+    --cobalt: #1450f0;
+    --mint: #7df08a;
+    --snow: #f7f6f3;
 
-    /* Aurora palette — pinned Tailwind 3 values.
-       Previously generated by a custom `addVariablesForColors` plugin built on
-       tailwindcss/lib/util/flattenColorPalette, a deep internal import removed
-       in Tailwind 4. components/ui/aurora-background.tsx reads these by name.
-       Pinned rather than mapped to v4's --color-* natives because v4's default
-       palette is oklch and would shift these colours. */
+    /* shadcn tokens mapped to Studio (HSL triplets) */
+    --background: 45 20% 96%; /* snow */
+    --foreground: 0 0% 10%; /* ink */
+    --card: 40 20% 98%;
+    --card-foreground: 0 0% 10%;
+    --popover: 40 20% 98%;
+    --popover-foreground: 0 0% 10%;
+    --primary: 224 88% 51%; /* cobalt */
+    --primary-foreground: 45 20% 96%;
+    --secondary: 45 8% 89%;
+    --secondary-foreground: 0 0% 10%;
+    --muted: 45 8% 89%;
+    --muted-foreground: 0 0% 38%;
+    --accent: 127 79% 72%; /* mint */
+    --accent-foreground: 0 0% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 45 20% 96%;
+    --border: 45 6% 84%;
+    --input: 45 6% 84%;
+    --ring: 224 88% 51%;
+    --chart-1: 224 88% 51%;
+    --chart-2: 127 79% 60%;
+    --chart-3: 0 0% 10%;
+    --chart-4: 224 60% 70%;
+    --chart-5: 45 8% 60%;
+    --radius: 1rem;
+
+    /* Aurora palette — pinned Tailwind 3 values (union-carried from the
+       modern stack). components/ui/aurora-background.tsx reads these by
+       name; they were previously synthesised by a removed TW3 plugin. */
     --white: #fff;
     --black: #000;
     --transparent: transparent;
@@ -332,36 +430,101 @@ body {
     --blue-500: #3b82f6;
     --indigo-300: #a5b4fc;
     --violet-200: #ddd6fe;
-    --radius: 0.5rem;
+
+    /* elevation — realistic: tight contact shadow + soft ambient falloff */
+    --shadow-e1: 0 1px 1px rgb(25 25 25 / 0.09), 0 1px 3px rgb(25 25 25 / 0.07);
+    --shadow-e2: 0 1px 2px rgb(25 25 25 / 0.11),
+      0 4px 10px -2px rgb(25 25 25 / 0.11);
+    --shadow-e3: 0 2px 4px rgb(25 25 25 / 0.12),
+      0 14px 28px -8px rgb(25 25 25 / 0.18);
+    --shadow-e4: 0 4px 8px rgb(25 25 25 / 0.13),
+      0 28px 56px -14px rgb(25 25 25 / 0.28);
+
+    /* machine surfaces — physical key travel */
+    --shadow-key: 0 4px 0 hsl(45 6% 76%), 0 7px 12px rgb(25 25 25 / 0.2);
+    --shadow-key-down: 0 1px 0 hsl(45 6% 76%),
+      inset 0 2px 5px rgb(25 25 25 / 0.22);
+    --shadow-pressed: inset 0 2px 5px rgb(25 25 25 / 0.22),
+      inset 0 1px 2px rgb(25 25 25 / 0.3);
+
+    /* control depth — inner highlight + inner shade + outer contact */
+    --shadow-btn: inset 0 1px 0 rgb(255 255 255 / 0.85),
+      inset 0 -2px 4px rgb(25 25 25 / 0.08), 0 1px 2px rgb(25 25 25 / 0.14),
+      0 3px 8px -2px rgb(25 25 25 / 0.12);
+    --shadow-btn-primary: inset 0 1px 0 rgb(255 255 255 / 0.35),
+      inset 0 -2px 5px rgb(0 0 0 / 0.28), 0 1px 2px rgb(20 80 240 / 0.35),
+      0 4px 10px -2px rgb(20 80 240 / 0.45);
+    --shadow-btn-down: inset 0 2px 4px rgb(25 25 25 / 0.18),
+      0 1px 1px rgb(25 25 25 / 0.08);
+    --shadow-chip: inset 0 1px 0 rgb(255 255 255 / 0.5),
+      inset 0 -1px 2px rgb(25 25 25 / 0.1), 0 1px 2px rgb(25 25 25 / 0.14);
+    --shadow-disc: 0 1px 2px rgb(25 25 25 / 0.18),
+      0 12px 26px -8px rgb(25 25 25 / 0.32),
+      inset 0 2px 4px rgb(255 255 255 / 0.7),
+      inset 0 -3px 6px rgb(25 25 25 / 0.1);
+
+    /* motion */
+    --dur-tick: 80ms; /* machine actions */
+    --dur-fast: 150ms;
+    --dur-base: 250ms;
+    --dur-slow: 400ms;
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1); /* overshoot + settle */
   }
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+    --background: 0 0% 10%; /* ink */
+    --foreground: 45 20% 96%; /* snow */
+    --card: 0 0% 13%;
+    --card-foreground: 45 20% 96%;
+    --popover: 0 0% 13%;
+    --popover-foreground: 45 20% 96%;
+    --primary: 224 88% 58%; /* cobalt, lifted for dark */
+    --primary-foreground: 45 20% 96%;
+    --secondary: 0 0% 16%;
+    --secondary-foreground: 45 20% 96%;
+    --muted: 0 0% 16%;
+    --muted-foreground: 0 0% 62%;
+    --accent: 127 79% 72%; /* mint */
+    --accent-foreground: 0 0% 10%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 45 20% 96%;
+    --border: 0 0% 19%;
+    --input: 0 0% 19%;
+    --ring: 224 88% 58%;
+    --chart-1: 224 88% 58%;
+    --chart-2: 127 79% 72%;
+    --chart-3: 45 20% 96%;
+    --chart-4: 224 60% 40%;
+    --chart-5: 0 0% 45%;
+
+    --shadow-e1: 0 1px 1px rgb(0 0 0 / 0.5), 0 1px 3px rgb(0 0 0 / 0.35);
+    --shadow-e2: 0 1px 2px rgb(0 0 0 / 0.5), 0 4px 10px -2px rgb(0 0 0 / 0.45);
+    --shadow-e3: 0 2px 4px rgb(0 0 0 / 0.55),
+      0 14px 28px -8px rgb(0 0 0 / 0.6);
+    --shadow-e4: 0 4px 8px rgb(0 0 0 / 0.6), 0 28px 56px -14px rgb(0 0 0 / 0.75);
+
+    --shadow-key: 0 4px 0 hsl(0 0% 5%), 0 7px 12px rgb(0 0 0 / 0.6);
+    --shadow-key-down: 0 1px 0 hsl(0 0% 5%), inset 0 2px 5px rgb(0 0 0 / 0.6);
+    --shadow-pressed: inset 0 2px 5px rgb(0 0 0 / 0.6),
+      inset 0 1px 2px rgb(0 0 0 / 0.7);
+
+    --shadow-btn: inset 0 1px 0 rgb(255 255 255 / 0.14),
+      inset 0 -2px 4px rgb(0 0 0 / 0.5), 0 1px 2px rgb(0 0 0 / 0.5),
+      0 3px 8px -2px rgb(0 0 0 / 0.5);
+    --shadow-btn-primary: inset 0 1px 0 rgb(255 255 255 / 0.28),
+      inset 0 -2px 5px rgb(0 0 0 / 0.45), 0 1px 2px rgb(0 0 0 / 0.5),
+      0 4px 10px -2px rgb(20 80 240 / 0.55);
+    --shadow-btn-down: inset 0 2px 4px rgb(0 0 0 / 0.6),
+      0 1px 1px rgb(0 0 0 / 0.3);
+    --shadow-chip: inset 0 1px 0 rgb(255 255 255 / 0.12),
+      inset 0 -1px 2px rgb(0 0 0 / 0.45), 0 1px 2px rgb(0 0 0 / 0.45);
+    --shadow-disc: 0px 1px 16.8px 0px rgba(4, 5, 6, 0.4),
+      0px 0px 75px 0px rgba(4, 5, 6, 0.5),
+      0px 5px 12.8px 0px rgba(182, 184, 195, 0.25) inset;
   }
 }
-/* 
+/*
 @layer base {
   * {
     @apply border-border;
@@ -370,3 +533,310 @@ body {
     @apply bg-background text-foreground;
   }
 } */
+
+/* ── Studio: equalizer indicator ─────────────────────────────── */
+@keyframes eq-bounce {
+  0%,
+  100% {
+    transform: scaleY(0.3);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+.eq-bar {
+  animation: eq-bounce 0.9s ease-in-out infinite;
+  transform-origin: bottom;
+}
+
+/* yuki-agent must escape the legacy global `canvas { fixed; z-[-1] }`
+   rule in styles/loader.css (kept for the Spline background). */
+yuki-agent canvas,
+[data-deck-stage] canvas {
+  position: static !important;
+  z-index: auto !important;
+}
+
+/* ── Studio typography system ─────────────────────────────────
+   Two fonts, hard rule: Satoshi (voice) + OffBit (machine).
+   Every text in the app uses one of these named styles. */
+@layer components {
+  /* Satoshi — the voice */
+  .type-display {
+    @apply font-ui font-black text-5xl md:text-6xl tracking-tight leading-[0.95];
+  }
+  .type-h1 {
+    @apply font-ui font-bold text-4xl tracking-tight scroll-m-20;
+  }
+  .type-h2 {
+    @apply font-ui font-bold text-3xl tracking-tight scroll-m-20;
+  }
+  .type-h3 {
+    @apply font-ui font-bold text-2xl tracking-tight scroll-m-20;
+  }
+  .type-h4 {
+    @apply font-ui font-bold text-xl tracking-tight scroll-m-20;
+  }
+  .type-lead {
+    @apply font-ui font-normal text-xl text-muted-foreground leading-relaxed;
+  }
+  .type-p {
+    @apply font-ui font-normal text-base leading-7;
+  }
+  .type-large {
+    @apply font-ui font-bold text-lg;
+  }
+  .type-small {
+    @apply font-ui font-medium text-sm leading-none;
+  }
+  .type-muted {
+    @apply font-ui font-normal text-sm text-muted-foreground;
+  }
+  .type-blockquote {
+    @apply font-ui font-medium text-lg italic border-l-2 border-cobalt pl-6;
+  }
+
+  /* OffBit — the machine */
+  .type-label {
+    @apply font-ui font-bold text-[11px] uppercase tracking-[0.18em];
+  }
+  .type-pixel-title {
+    @apply font-pixel font-bold text-2xl tracking-tight;
+  }
+  .type-code {
+    @apply font-ui font-medium text-[13px] bg-muted rounded-sm px-1.5 py-0.5;
+  }
+  .type-data-sm {
+    @apply font-data text-xs tracking-wide;
+  }
+  .type-data {
+    @apply font-data tracking-wide;
+  }
+  .type-data-md {
+    @apply font-data text-xl tracking-wide;
+  }
+  .type-data-lg {
+    @apply font-data text-3xl tracking-wide;
+  }
+}
+
+/* ── Studio motion: springy — elastic, overshoots, settles ───── */
+@keyframes pop-in {
+  0% {
+    opacity: 0;
+    transform: scale3d(0.25, 0.25, 1); /* floor: 25%, never 0 */
+  }
+  50% {
+    opacity: 1;
+    transform: scale3d(1.14, 0.9, 1);
+  }
+  65% {
+    transform: scale3d(0.92, 1.08, 1);
+  }
+  80% {
+    transform: scale3d(1.04, 0.97, 1);
+  }
+  92% {
+    transform: scale3d(0.99, 1.01, 1);
+  }
+  100% {
+    transform: scale3d(1, 1, 1);
+  }
+}
+.anim-pop-in {
+  animation: pop-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes jelly {
+  0% {
+    transform: scale3d(1, 1, 1);
+  }
+  30% {
+    transform: scale3d(1.18, 0.82, 1);
+  }
+  45% {
+    transform: scale3d(0.88, 1.12, 1);
+  }
+  60% {
+    transform: scale3d(1.06, 0.94, 1);
+  }
+  78% {
+    transform: scale3d(0.98, 1.02, 1);
+  }
+  100% {
+    transform: scale3d(1, 1, 1);
+  }
+}
+.anim-jelly {
+  animation: jelly 0.6s ease-out both;
+}
+
+@keyframes spring-up {
+  0% {
+    opacity: 0;
+    transform: translateY(32px);
+  }
+  55% {
+    opacity: 1;
+    transform: translateY(-4px);
+  }
+  76% {
+    transform: translateY(1.5px);
+  }
+  90% {
+    transform: translateY(-0.5px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+.anim-spring-up {
+  animation: spring-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* springy press — instant squish, quick spring return */
+.press-spring {
+  transition: transform 0.22s var(--ease-spring);
+}
+.press-spring:active {
+  transform: scale(0.92);
+  transition-duration: 40ms;
+}
+
+/* GLOBAL click feel — slap on anything clickable (avatars, chips, badges).
+   Instant squish on press, springy jelly return on release. */
+.click-spring {
+  transition: transform 0.25s var(--ease-spring);
+}
+.click-spring:active {
+  transform: scale(0.9);
+  transition-duration: 40ms;
+}
+
+/* slider thumb — springs while interacting, lingers 0.5s before hiding */
+.slider-thumb-fade {
+  opacity: 0;
+  transition:
+    transform 0.25s var(--ease-spring),
+    opacity 0.2s ease 0.5s; /* the linger */
+}
+.group:hover .slider-thumb-fade,
+.slider-thumb-fade:active,
+.slider-thumb-fade:focus-visible {
+  opacity: 1;
+  transition:
+    transform 0.25s var(--ease-spring),
+    opacity 0.15s ease 0s; /* appear instantly */
+}
+.slider-thumb-fade:active {
+  transition-duration: 40ms, 0.15s;
+}
+
+/* ── Studio motion: machine — mechanical, stepped, physical ──── */
+/* physical key: travels down into its socket, no easing frills */
+.press-key {
+  box-shadow: var(--shadow-key);
+  transition:
+    transform var(--dur-tick) linear,
+    box-shadow var(--dur-tick) linear;
+}
+.press-key:active {
+  transform: translateY(3px);
+  box-shadow: var(--shadow-key-down);
+}
+
+@keyframes ratchet {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.anim-ratchet {
+  animation: ratchet 1.4s steps(8) infinite;
+}
+
+/* neon sign power-up — apply to TEXT, not boxes */
+@keyframes sign-on {
+  0% {
+    opacity: 0.12;
+    text-shadow: none;
+    filter: brightness(0.5);
+  }
+  16% {
+    opacity: 1;
+    text-shadow:
+      0 0 8px currentColor,
+      0 0 22px currentColor;
+    filter: brightness(1.35);
+  }
+  28% {
+    opacity: 0.2;
+    text-shadow: none;
+    filter: brightness(0.6);
+  }
+  44% {
+    opacity: 1;
+    text-shadow:
+      0 0 8px currentColor,
+      0 0 22px currentColor;
+    filter: brightness(1.3);
+  }
+  56% {
+    opacity: 0.35;
+    text-shadow: 0 0 4px currentColor;
+    filter: brightness(0.75);
+  }
+  70%,
+  100% {
+    opacity: 1;
+    text-shadow:
+      0 0 6px currentColor,
+      0 0 18px currentColor;
+    filter: brightness(1.15);
+  }
+}
+.anim-sign-on {
+  animation: sign-on 0.9s steps(1, end) both;
+}
+
+
+/* disc drops onto the platter — held above, then seated */
+@keyframes disc-install {
+  0% {
+    transform: translateY(-28px) scale(1.18);
+  }
+  55% {
+    transform: translateY(0) scale(0.96);
+  }
+  80% {
+    transform: scale(1.03);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.anim-disc-install {
+  animation: disc-install 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ── Screens IA: jelly motion ─────────────────────────────── */
+@keyframes jelly-in {
+  0% { opacity: 0; transform: scale(0.92) translateY(24px); }
+  60% { opacity: 1; transform: scale(1.02) translateY(-4px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+.anim-jelly-in {
+  animation: jelly-in 420ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes screens-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.anim-fade-in {
+  animation: screens-fade-in 200ms ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .anim-jelly-in,
+  .anim-fade-in {
+    animation: screens-fade-in 150ms ease-out both;
+  }
+}

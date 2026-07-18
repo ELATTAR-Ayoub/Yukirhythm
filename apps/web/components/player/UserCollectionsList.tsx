@@ -270,7 +270,7 @@ export function UserCollectionList({ id }: { id: string }) {
             {/* Controls */}
             <div className={`${styles.flexStart}  gap-2 flex-row-reverse`}>
               <Button
-                variant={"stylized"}
+                variant={"secondary"}
                 onClick={() => {
                   handlePlayPause(collection.audio);
                 }}
@@ -288,7 +288,7 @@ export function UserCollectionList({ id }: { id: string }) {
                 (user.lovedCollections.includes(collection.ID) ? (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant={"stylized"} size={"icon"}>
+                      <Button variant={"secondary"} size={"icon"}>
                         <HeartFilledIcon className="h-3 w-3 " />
                       </Button>
                     </AlertDialogTrigger>
@@ -314,7 +314,7 @@ export function UserCollectionList({ id }: { id: string }) {
                 ) : (
                   <Button
                     onClick={() => handleInteractionWithLike(collection)}
-                    variant={"stylized"}
+                    variant={"secondary"}
                     size={"icon"}
                   >
                     <HeartIcon className="h-3 w-3 " />
