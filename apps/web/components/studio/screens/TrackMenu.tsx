@@ -30,13 +30,13 @@ export default function TrackMenu({ trackTitle }: TrackMenuProps) {
         </PlayerButton>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => toast(`Link for "${trackTitle}" copied`)}>
+        <DropdownMenuItem onClick={() => toast(`Link for “${trackTitle}” copied`)}>
           <Share1Icon className="mr-2 h-3.5 w-3.5" /> Share
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => toast(`"${trackTitle}" added to a playlist`)}>
+        <DropdownMenuItem onClick={() => toast(`“${trackTitle}” added to a playlist`)}>
           <PlusIcon className="mr-2 h-3.5 w-3.5" /> Add to playlist
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => toast(`"${trackTitle}" added to Liked Songs`)}>
+        <DropdownMenuItem onClick={() => toast(`“${trackTitle}” added to Liked Songs`)}>
           <HeartIcon className="mr-2 h-3.5 w-3.5" /> Like
         </DropdownMenuItem>
       </DropdownMenuContent>
