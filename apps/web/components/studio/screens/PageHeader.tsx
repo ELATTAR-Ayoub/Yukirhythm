@@ -34,7 +34,7 @@ export default function PageHeader({ title, actions }: PageHeaderProps) {
             </AvatarFallback>
           </Avatar>
         </Link>
-        <h1 className="type-h1 truncate">{title}</h1>
+        <h1 className="type-h2 truncate">{title}</h1>
       </div>
       <div className="flex items-center gap-1 shrink-0">{actions}</div>
     </header>

@@ -17,7 +17,7 @@ export default function MiniPlayerBar({ onExpand }: MiniPlayerBarProps) {
   if (!nowPlaying) return null;
 
   return (
-    <div className="fixed inset-x-0 bottom-[4.25rem] md:bottom-4 z-30 flex justify-center px-4 pb-2 md:pb-0 pointer-events-none">
+    <div className="fixed inset-x-0 bottom-12 md:bottom-4 z-30 flex justify-center px-4 pb-2 md:pb-0 pointer-events-none">
       <div className="pointer-events-auto w-full max-w-3xl rounded-lg border border-border bg-card shadow-e3 px-4 py-3 flex items-center gap-4">
         <button
           type="button"

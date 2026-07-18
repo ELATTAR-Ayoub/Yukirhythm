@@ -15,6 +15,8 @@ interface NavTabsProps {
   items: NavTabItem[];
   /** href of the active item (already matched against the pathname). */
   activeHref: string | null;
+  /** Icons-only compact strip — labels become aria-labels. */
+  iconsOnly?: boolean;
   className?: string;
 }
 
@@ -24,7 +26,12 @@ interface NavTabsProps {
  * lands with a jelly squash. Same mechanics as components/ui/tabs.tsx, but for
  * navigation Links instead of Radix tab triggers.
  */
-export default function NavTabs({ items, activeHref, className }: NavTabsProps) {
+export default function NavTabs({
+  items,
+  activeHref,
+  iconsOnly = false,
+  className,
+}: NavTabsProps) {
   const listRef = useRef<HTMLDivElement>(null);
   const indicatorRef = useRef<HTMLSpanElement>(null);
   const jellyRef = useRef<HTMLSpanElement>(null);
@@ -93,16 +100,18 @@ export default function NavTabs({ items, activeHref, className }: NavTabsProps) 
             key={href}
             href={href}
             aria-current={active ? "page" : undefined}
+            aria-label={iconsOnly ? label : undefined}
             data-active={active || undefined}
             className={cn(
-              "relative z-10 flex-1 flex flex-col items-center gap-1 rounded-md px-3 py-2",
+              "relative z-10 flex-1 flex flex-col items-center gap-1 rounded-md",
+              iconsOnly ? "px-3 py-1.5" : "px-3 py-2",
               "font-label text-[10px] uppercase tracking-wider transition-colors duration-base",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background",
               active ? "text-foreground" : "hover:text-foreground/80"
             )}
           >
             <Icon className="w-5 h-5" />
-            <span>{label}</span>
+            {iconsOnly ? null : <span>{label}</span>}
           </Link>
         );
       })}

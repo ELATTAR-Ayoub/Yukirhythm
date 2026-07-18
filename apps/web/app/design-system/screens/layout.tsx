@@ -8,7 +8,8 @@ export default function ScreensLayout({
 }) {
   return (
     <MockStudioProvider>
-      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-6">
+      {/* top spacing always equals edge spacing — 8px on small screens */}
+      <div className="relative max-w-6xl mx-auto p-2 sm:p-6">
         {children}
       </div>
       <Toaster />
