@@ -164,17 +164,19 @@
   }
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  scroll-behavior: smooth;
-  scroll-padding-top: 20rem;
-  /* cursor: none !important; */
-}
+/* Base element styles live in the base layer so Tailwind utilities keep
+   precedence — un-layered rules would silently beat every margin/padding
+   utility under Tailwind 4's cascade layers. Preflight already zeroes
+   margins/paddings and sets border-box. */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 20rem;
+  }
 
-a {
-  cursor: pointer;
+  a {
+    cursor: pointer;
+  }
 }
 
 /* @font-face {
@@ -186,12 +188,12 @@ a {
   font-style: normal;
 } */
 
-body {
-  min-height: 100vh;
-  font-family: var(--font-sans), var(--font-jp), "Nunito", sans-serif;
-  font-weight: 400;
-  scroll-behavior: smooth;
-  transition: scroll-behavior 1s ease-in-out;
+@layer base {
+  body {
+    min-height: 100vh;
+    font-family: var(--font-sans), var(--font-jp), "Nunito", sans-serif;
+    font-weight: 400;
+  }
 }
 
 /* Selections  */
