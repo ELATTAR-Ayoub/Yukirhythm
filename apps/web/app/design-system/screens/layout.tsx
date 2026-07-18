@@ -1,5 +1,5 @@
 import MockStudioProvider from "@/components/studio/screens/MockStudioProvider";
-import PreviewChrome from "@/components/studio/screens/PreviewChrome";
+import { Toaster } from "@/components/ui/sonner";
 
 export default function ScreensLayout({
   children,
@@ -8,8 +8,8 @@ export default function ScreensLayout({
 }) {
   return (
     <MockStudioProvider>
-      <div className="relative pb-28">{children}</div>
-      <PreviewChrome />
+      <div className="relative">{children}</div>
+      <Toaster />
     </MockStudioProvider>
   );
 }
