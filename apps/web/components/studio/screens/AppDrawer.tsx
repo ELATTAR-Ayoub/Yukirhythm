@@ -10,7 +10,10 @@ interface AppDrawerProps {
   children: React.ReactNode;
 }
 
-/** The one drawer surface every screens flow uses — 90/95vh, spring by vaul. */
+/**
+ * The one drawer surface every screens flow uses — 90/95vh, spring by vaul.
+ * Children must include a <DrawerTitle> (visually-hidden is fine) for a11y.
+ */
 export default function AppDrawer({
   open,
   onOpenChange,
