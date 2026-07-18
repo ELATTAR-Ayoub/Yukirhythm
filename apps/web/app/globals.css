@@ -185,6 +185,15 @@
   }
 }
 
+/* Floating surfaces (menus, dialogs, drawers) NEVER draw a focus outline —
+   browsers can mark their programmatic focus :focus-visible, which bypasses
+   the keyboard-only rule above. Focus inside them is conveyed by item
+   highlights and component rings instead. Un-layered + !important on purpose. */
+[data-radix-popper-content-wrapper] :is(:focus, :focus-visible),
+:is([role="menu"], [role="dialog"], [role="alertdialog"]):is(:focus, :focus-visible) {
+  outline: none !important;
+}
+
 /* @font-face {
   font-family: "PIXELADE";
   src: url("/fonts/pixelade/PIXELADE.TTF") format("truetype"),

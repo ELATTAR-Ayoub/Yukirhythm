@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ChevronLeftIcon,
   DiscIcon,
@@ -8,6 +8,7 @@ import {
   ShuffleIcon,
 } from "@radix-ui/react-icons";
 
+import { cn } from "@/lib/utils";
 import { DrawerClose, DrawerTitle } from "@/components/ui/drawer";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import DataText from "@/components/studio/DataText";
@@ -31,6 +32,53 @@ import {
 interface PlaylistDrawerProps {
   collection: MockCollection | null;
   onOpenChange: (open: boolean) => void;
+}
+
+/** Track count (vinyl icon) · description — desc clamps to 3 lines, See more expands. */
+function CollectionDesc({ count, desc }: { count: number; desc: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const [overflows, setOverflows] = useState(false);
+  const textRef = useRef<HTMLParagraphElement>(null);
+
+  useEffect(() => {
+    const el = textRef.current;
+    if (!el) return;
+    const measure = () => setOverflows(el.scrollHeight > el.clientHeight + 1);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [desc, expanded]);
+
+  return (
+    <div className="mt-2">
+      <p
+        ref={textRef}
+        className={cn("type-muted", !expanded && "line-clamp-3")}
+      >
+        <span
+          aria-label={`${count} tracks`}
+          className="inline-flex items-center gap-1 mr-1.5 align-middle text-muted-foreground"
+        >
+          <DataText className="text-sm">{count}</DataText>
+          <DiscIcon aria-hidden className="h-3.5 w-3.5" />
+        </span>
+        <span aria-hidden className="mr-1.5">
+          ·
+        </span>
+        {desc}
+      </p>
+      {overflows || expanded ? (
+        <button
+          type="button"
+          onClick={() => setExpanded(!expanded)}
+          className="type-muted text-primary hover:underline mt-0.5"
+        >
+          {expanded ? "See less" : "See more"}
+        </button>
+      ) : null}
+    </div>
+  );
 }
 
 /** One-line horizontal strip — scrollbar hidden (Radix viewport), drag to pan. */
@@ -106,16 +154,13 @@ export default function PlaylistDrawer({
             <DrawerTitle className="type-h2 truncate">
               {collection.title}
             </DrawerTitle>
-            <span
-              aria-label={`${tracks.length} tracks`}
-              className="ml-auto shrink-0 flex items-center gap-1.5 text-muted-foreground"
-            >
-              <DataText className="text-sm">{tracks.length}</DataText>
-              <DiscIcon aria-hidden className="h-4 w-4" />
-            </span>
           </div>
 
-          <p className="type-muted mt-2">{collection.desc}</p>
+          <CollectionDesc
+            key={collection.id}
+            count={tracks.length}
+            desc={collection.desc}
+          />
 
           <div className="flex items-center gap-3 mt-4">
             <DragScrollRow>

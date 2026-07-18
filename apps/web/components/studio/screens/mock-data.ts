@@ -65,7 +65,7 @@ export const MOCK_TRACKS: MockTrack[] = [
 
 export const MOCK_COLLECTIONS: MockCollection[] = [
   { id: "c1", title: "Late Study Lo-Fi", desc: "Quiet loops for deep focus.", texture: "tx-k2-topo", trackIds: ["t1", "t4", "t10", "t5"], likes: 1284, tags: ["lofi", "focus"], kind: "music", pinned: false },
-  { id: "c2", title: "Cobalt After Hours", desc: "Neon-lit night drive.", texture: "tx-k-marble", trackIds: ["t2", "t6", "t8"], likes: 842, tags: ["chill", "night", "drive", "neon", "synth", "city", "cruise", "late", "focus", "retro"], kind: "music", pinned: false },
+  { id: "c2", title: "Cobalt After Hours", desc: "Neon-lit night drive. Synth pads, wet asphalt and vending-machine glow — a slow cruise through the sleeping city after everyone else has gone home. Windows down, volume up, nowhere in particular to be until sunrise puts the streetlights to bed.", texture: "tx-k-marble", trackIds: ["t2", "t6", "t8"], likes: 842, tags: ["chill", "night", "drive", "neon", "synth", "city", "cruise", "late", "focus", "retro"], kind: "music", pinned: false },
   { id: "c3", title: "Pixel Podcasts", desc: "Long-form talks, dithered.", texture: "tx-k2-static", trackIds: ["t3", "t12"], likes: 511, tags: ["podcast"], kind: "podcast", pinned: false },
   { id: "c4", title: "Mint Mornings", desc: "Bright starts, soft beats.", texture: "tx-k-silk", trackIds: ["t7", "t9", "t11"], likes: 967, tags: ["morning", "chill"], kind: "music", pinned: false },
   { id: "c5", title: "Static & Snow", desc: "Ambient textures.", texture: "tx-k2-marble-dense", trackIds: ["t5", "t10", "t3", "t1"], likes: 388, tags: ["ambient"], kind: "music", pinned: false },
