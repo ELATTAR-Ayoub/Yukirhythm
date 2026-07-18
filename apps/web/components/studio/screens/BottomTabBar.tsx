@@ -27,8 +27,13 @@ export default function BottomTabBar() {
       aria-label="Primary"
       className="fixed inset-x-0 bottom-0 z-40 md:hidden backdrop-blur-md"
     >
-      <div className="p-1.5">
-        <NavTabs items={TABS} activeHref={activeHref} iconsOnly />
+      <div className="p-2">
+        <NavTabs
+          items={TABS}
+          activeHref={activeHref}
+          iconsOnly
+          className="bg-muted/15"
+        />
       </div>
     </nav>
   );

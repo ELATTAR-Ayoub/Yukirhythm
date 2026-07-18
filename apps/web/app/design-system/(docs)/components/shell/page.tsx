@@ -44,7 +44,11 @@ function NavTabsDemo() {
         }
       }}
     >
-      <NavTabs items={NAV_TABS_DEMO_ITEMS} activeHref={active} />
+      <NavTabs
+        items={NAV_TABS_DEMO_ITEMS}
+        activeHref={active}
+        className="bg-muted"
+      />
     </div>
   );
 }

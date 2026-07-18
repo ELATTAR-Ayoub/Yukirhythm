@@ -79,7 +79,9 @@ export default function NavTabs({
     <div
       ref={listRef}
       className={cn(
-        "relative flex items-stretch rounded-lg bg-muted p-1 text-muted-foreground",
+        // consumers supply the track bg (e.g. bg-muted, bg-muted/15)
+        "relative flex items-stretch rounded-lg p-1 text-muted-foreground",
+        iconsOnly && "p-1.5",
         className
       )}
     >
@@ -103,8 +105,8 @@ export default function NavTabs({
             aria-label={iconsOnly ? label : undefined}
             data-active={active || undefined}
             className={cn(
-              "relative z-10 flex-1 flex flex-col items-center gap-1 rounded-md",
-              iconsOnly ? "px-3 py-1.5" : "px-3 py-2",
+              "relative z-10 flex-1 flex flex-col items-center justify-center gap-1 rounded-md",
+              iconsOnly ? "px-3 py-6" : "px-3 py-2",
               "font-label text-[10px] uppercase tracking-wider transition-colors duration-base",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background",
               active ? "text-foreground" : "hover:text-foreground/80"
