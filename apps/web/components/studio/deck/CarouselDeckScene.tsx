@@ -120,6 +120,7 @@ function webglAvailable(): boolean {
   }
 }
 
+// NOTE: must be imported with next/dynamic { ssr: false } — webglAvailable() touches document.
 export default function CarouselDeckScene({
   glitch,
   ...deck
