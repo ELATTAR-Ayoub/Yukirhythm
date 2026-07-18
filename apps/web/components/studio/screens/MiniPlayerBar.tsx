@@ -23,7 +23,7 @@ export default function MiniPlayerBar({ onExpand }: MiniPlayerBarProps) {
           type="button"
           aria-label="Expand player"
           onClick={onExpand}
-          className="flex items-center gap-4 min-w-0 flex-1 text-left outline-none"
+          className="flex items-center gap-4 min-w-0 flex-1 text-left rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
         >
           <span className="relative w-11 h-11 rounded-md overflow-hidden shrink-0">
             <Texture
