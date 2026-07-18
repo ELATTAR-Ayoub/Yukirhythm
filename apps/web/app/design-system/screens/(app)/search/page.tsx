@@ -152,7 +152,7 @@ export default function SearchScreen() {
           />
         </div>
       ) : (
-        <div className="space-y-8">
+        <div className="space-y-8" aria-live="polite" aria-busy={searching}>
           {searching ? (
             <div className="space-y-1">
               {Array.from({ length: 6 }, (_, i) => (

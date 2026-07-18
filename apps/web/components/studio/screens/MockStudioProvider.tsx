@@ -206,6 +206,7 @@ export default function MockStudioProvider({
   }, []);
 
   const clearSearch = useCallback(() => {
+    if (searchTimer.current) clearTimeout(searchTimer.current);
     setSearchResults([]);
     setSearching(false);
     setHasSearched(false);
