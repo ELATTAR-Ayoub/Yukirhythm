@@ -56,8 +56,8 @@ describe("Hero", () => {
     expect(
       form?.querySelector('button[type="submit"], button:not([type])')
     ).not.toBeNull();
-    // Controls (pulled in via Hero) renders ReactPlayer — confirms the
-    // player subtree mounted too.
-    expect(screen.getByTestId("react-player")).toBeInTheDocument();
+    // Controls (pulled in via Hero) mounts ReactPlayer only once a track is
+    // loaded — with an empty queue the player subtree stays unmounted.
+    expect(screen.queryByTestId("react-player")).not.toBeInTheDocument();
   });
 });

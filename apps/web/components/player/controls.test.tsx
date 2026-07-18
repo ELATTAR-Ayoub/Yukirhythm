@@ -57,12 +57,16 @@ describe("player controls", () => {
 
   it("renders without crashing when the queue is empty", () => {
     render(<Controls videoId="" />);
-    expect(screen.getByTestId("react-player")).toBeInTheDocument();
+    // No video → the player stays unmounted (avoids a bogus empty-src
+    // <video>); the transport chrome still renders.
+    expect(screen.queryByTestId("react-player")).not.toBeInTheDocument();
+    expect(screen.getAllByRole("button").length).toBeGreaterThan(0);
   });
 
   it("renders transport controls with a queued track", () => {
     usePlayerStore.setState({ audioState: [makeAudio("a")] });
     render(<Controls videoId="a" />);
+    expect(screen.getByTestId("react-player")).toBeInTheDocument();
     expect(screen.getAllByRole("button").length).toBeGreaterThan(0);
   });
 

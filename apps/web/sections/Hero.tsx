@@ -148,13 +148,13 @@ const Hero = () => {
                 : " discRotation animation-state-pause"
             } Disk_img transition-all duration-700 h-full aspect-video z-[-1] pointer-events-none`}
           >
-            <img
-              className={` w-full h-full object-cover relative `}
-              src={
-                audioConfig[current] ? audioConfig[current].thumbnails[0] : ""
-              }
-              alt="audio_thumbnails"
-            />
+            {audioConfig[current]?.thumbnails?.[0] ? (
+              <img
+                className={` w-full h-full object-cover relative `}
+                src={audioConfig[current].thumbnails[0]}
+                alt="audio_thumbnails"
+              />
+            ) : null}
           </div>
 
           <div
@@ -306,11 +306,13 @@ const Hero = () => {
                         <div
                           className={`  Disk_img transition-all duration-700 h-full aspect-video z-[-1] pointer-events-none`}
                         >
-                          <img
-                            className={` w-full h-full object-cover relative `}
-                            src={audio ? audio.thumbnails[0] : ""}
-                            alt="audio_thumbnails"
-                          />
+                          {audio?.thumbnails?.[0] ? (
+                            <img
+                              className={` w-full h-full object-cover relative `}
+                              src={audio.thumbnails[0]}
+                              alt="audio_thumbnails"
+                            />
+                          ) : null}
                         </div>
                       </div>
 

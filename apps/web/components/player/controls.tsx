@@ -107,8 +107,10 @@ const Controls = ({ videoId }: { videoId: string }) => {
     <div className={`relative w-full ${styles.flexCenter} flex-col gap-0`}>
       {/* main buttons */}
       <div className={`${styles.flexStart} gap-3`}>
-        {/* player */}
+        {/* player — mounted only with a real video, else react-player falls
+            back to a file <video> with a bogus src and log-spams the console */}
         <div className=" hidden">
+          {videoId ? (
           <ReactPlayer
             ref={playerRef}
             url={youtubeUrl}
@@ -145,6 +147,7 @@ const Controls = ({ videoId }: { videoId: string }) => {
             onProgress={({ playedSeconds }) => setCurrentTime(playedSeconds)}
             onDuration={(duration) => setDuration(duration)}
           />
+          ) : null}
         </div>
 
         <Button

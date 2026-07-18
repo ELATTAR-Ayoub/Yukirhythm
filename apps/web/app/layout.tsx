@@ -26,7 +26,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={fontVariables}>
+    <html lang="en" className={fontVariables} suppressHydrationWarning>
+      <head>
+        {/* No-FOUC theme init — same `theme` storage key next-themes used.
+            Server-rendered raw script: executes from the HTML stream and,
+            unlike a client-rendered script element, draws no React warning. */}
+        <script
+          id="theme-init"
+          dangerouslySetInnerHTML={{
+            __html: `try{var t=localStorage.getItem("theme"),d=t==="dark"||((t===null||t==="system")&&matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",d);document.documentElement.style.colorScheme=d?"dark":"light"}catch(e){}`,
+          }}
+        />
+      </head>
       <body
         className={` ${styles.flexStart} flex-col relative bg-background h-screen overflow-x-hidden`}
       >

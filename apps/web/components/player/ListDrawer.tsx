@@ -196,15 +196,13 @@ export function ListDrawer() {
                       <div
                         className={`  Disk_img transition-all duration-700 h-full aspect-video z-[-1] pointer-events-none`}
                       >
-                        <img
-                          className={` w-full h-full object-cover relative `}
-                          src={
-                            audioConfig[index]
-                              ? audioConfig[index].thumbnails[0]
-                              : ""
-                          }
-                          alt="audio_thumbnails"
-                        />
+                        {audioConfig[index]?.thumbnails?.[0] ? (
+                          <img
+                            className={` w-full h-full object-cover relative `}
+                            src={audioConfig[index].thumbnails[0]}
+                            alt="audio_thumbnails"
+                          />
+                        ) : null}
                       </div>
                     </div>
 

@@ -42,7 +42,7 @@ const Header = () => {
               </div>
             ) : (
               <Avatar className=" border">
-                <AvatarImage src={user.avatar} />
+                {user.avatar ? <AvatarImage src={user.avatar} /> : null}
                 <AvatarFallback>{user.userName.slice(0.2)}</AvatarFallback>
               </Avatar>
             )}
