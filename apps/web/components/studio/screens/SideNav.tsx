@@ -32,29 +32,31 @@ export default function SideNav() {
           src="/svgs/logo_light.svg"
           width={20}
           height={20}
-          alt="Yukirhythm"
+          alt=""
           className="h-5 w-auto object-contain"
         />
         <span className="font-display font-bold tracking-tight">Yukirhythm</span>
       </Link>
-      {ITEMS.map(({ href, label, icon: Icon }) => {
-        const active = pathname?.startsWith(href) ?? false;
-        return (
-          <Link
-            key={href}
-            href={href}
-            aria-current={active ? "page" : undefined}
-            className={cn(
-              "flex items-center gap-3 px-3 py-2 rounded-md font-ui text-sm",
-              "transition-colors duration-fast hover:bg-secondary",
-              active ? "bg-secondary text-primary font-medium" : "text-muted-foreground"
-            )}
-          >
-            <Icon className="w-4 h-4" />
-            {label}
-          </Link>
-        );
-      })}
+      <nav aria-label="Primary" className="flex flex-col gap-1">
+        {ITEMS.map(({ href, label, icon: Icon }) => {
+          const active = pathname?.startsWith(href) ?? false;
+          return (
+            <Link
+              key={href}
+              href={href}
+              aria-current={active ? "page" : undefined}
+              className={cn(
+                "flex items-center gap-3 px-3 py-2 rounded-md font-ui text-sm",
+                "transition-colors duration-fast hover:bg-secondary",
+                active ? "bg-secondary text-primary font-medium" : "text-muted-foreground"
+              )}
+            >
+              <Icon className="w-4 h-4" />
+              {label}
+            </Link>
+          );
+        })}
+      </nav>
       <Link
         href={user ? `${BASE}/profile` : `${BASE}/auth`}
         className="mt-auto flex items-center gap-3 px-3 py-2 rounded-md hover:bg-secondary transition-colors duration-fast"
