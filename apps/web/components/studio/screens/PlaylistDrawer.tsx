@@ -118,14 +118,11 @@ export default function PlaylistDrawer({
           <p className="type-muted mt-2">{collection.desc}</p>
 
           <div className="flex items-center gap-3 mt-4">
-            <PlayerButton
-              variant="primary"
-              size="xl"
-              aria-label="Play collection"
-              onClick={() => tracks[0] && play(tracks[0])}
-            >
-              <PlayIcon />
-            </PlayerButton>
+            <DragScrollRow>
+              {collection.tags.map((tag) => (
+                <TagChip key={tag} label={tag} />
+              ))}
+            </DragScrollRow>
             <PlayerButton
               variant="outline"
               aria-label="Shuffle collection"
@@ -136,11 +133,14 @@ export default function PlaylistDrawer({
             >
               <ShuffleIcon />
             </PlayerButton>
-            <DragScrollRow>
-              {collection.tags.map((tag) => (
-                <TagChip key={tag} label={tag} />
-              ))}
-            </DragScrollRow>
+            <PlayerButton
+              variant="primary"
+              size="xl"
+              aria-label="Play collection"
+              onClick={() => tracks[0] && play(tracks[0])}
+            >
+              <PlayIcon />
+            </PlayerButton>
           </div>
 
           <div className="flex items-center justify-between gap-3 mt-6 mb-2">
