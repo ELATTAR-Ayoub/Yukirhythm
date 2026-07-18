@@ -183,6 +183,17 @@
   :focus:not(:focus-visible) {
     outline: none;
   }
+
+  /* Tailwind 4 defaults bare `border` to currentColor (ink — reads black);
+     v3 defaulted to the light theme gray this design was built on. Restore
+     the v3 behavior so unqualified borders use the theme border color. */
+  *,
+  ::before,
+  ::after,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-border, currentColor);
+  }
 }
 
 /* Floating surfaces (menus, dialogs, drawers) NEVER draw a focus outline —
