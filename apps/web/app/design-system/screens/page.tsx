@@ -49,6 +49,12 @@ const SCREENS: {
 export default function ScreensIndex() {
   return (
     <div>
+      <Link
+        href="/design-system"
+        className="inline-block mb-4 font-label text-[10px] uppercase tracking-wider text-muted-foreground hover:text-primary transition-colors duration-fast"
+      >
+        ← Design System
+      </Link>
       <SectionLabel>Living previews</SectionLabel>
       <h1 className="type-h1 mt-1">Screens</h1>
       <p className="type-p text-muted-foreground mt-2 max-w-2xl">
