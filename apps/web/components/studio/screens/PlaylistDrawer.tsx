@@ -47,6 +47,15 @@ export default function PlaylistDrawer({
     ? sortTracks(getCollectionTracks(collection), sort)
     : [];
 
+  /** Enter/Space activation for non-button click targets. */
+  const playKeyHandler =
+    (track: (typeof tracks)[number]) => (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        play(track);
+      }
+    };
+
   return (
     <AppDrawer open={collection !== null} onOpenChange={onOpenChange} height="95vh">
       {collection ? (
@@ -118,8 +127,12 @@ export default function PlaylistDrawer({
               {tracks.map((track, i) => (
                 <div key={track.id} className="flex items-center gap-1">
                   <div
-                    className="flex-1 min-w-0"
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Play ${track.title}`}
+                    className="flex-1 min-w-0 cursor-pointer"
                     onClick={() => play(track)}
+                    onKeyDown={playKeyHandler(track)}
                   >
                     <TrackRow
                       index={i + 1}
@@ -137,11 +150,14 @@ export default function PlaylistDrawer({
           ) : (
             <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
               {tracks.map((track) => (
-                <button
+                <div
                   key={track.id}
-                  type="button"
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Play ${track.title}`}
+                  className="text-left cursor-pointer"
                   onClick={() => play(track)}
-                  className="text-left"
+                  onKeyDown={playKeyHandler(track)}
                 >
                   <MediaCard
                     title={track.title}
@@ -151,7 +167,7 @@ export default function PlaylistDrawer({
                     playing={nowPlaying?.id === track.id && isPlaying}
                     className="w-full"
                   />
-                </button>
+                </div>
               ))}
             </div>
           )}
