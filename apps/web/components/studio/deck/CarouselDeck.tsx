@@ -97,7 +97,10 @@ export default function CarouselDeck({ tracks, className }: CarouselDeckProps) {
   return (
     <div className={cn("w-full flex flex-col items-center gap-4", className)}>
       {/* ── the deck (WebGL) ── */}
-      <div className="relative w-full max-w-3xl h-[460px] rounded-lg overflow-hidden">
+      <div
+        data-deck-stage
+        className="relative w-full max-w-3xl h-[460px] rounded-lg overflow-hidden"
+      >
         <CarouselDeckScene
           tracks={tracks}
           current={current}
