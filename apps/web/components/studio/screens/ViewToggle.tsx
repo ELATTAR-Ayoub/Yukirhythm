@@ -2,7 +2,8 @@
 
 import { RowsIcon, GridIcon } from "@radix-ui/react-icons";
 
-import { PlayerButton } from "@/components/studio/PlayerButton";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 export type TrackView = "rows" | "grid";
 
@@ -11,26 +12,29 @@ interface ViewToggleProps {
   onChange: (view: TrackView) => void;
 }
 
-/** Rows ↔ grid switch for playlist track lists. */
+/** Rows ↔ grid switch — one secondary button, both icons, active one lit. */
 export default function ViewToggle({ view, onChange }: ViewToggleProps) {
+  const next: TrackView = view === "rows" ? "grid" : "rows";
   return (
-    <div className="flex items-center gap-1">
-      <PlayerButton
-        variant={view === "rows" ? "primary" : "ghost"}
-        size="sm"
-        aria-label="Rows view"
-        onClick={() => onChange("rows")}
-      >
-        <RowsIcon />
-      </PlayerButton>
-      <PlayerButton
-        variant={view === "grid" ? "primary" : "ghost"}
-        size="sm"
-        aria-label="Grid view"
-        onClick={() => onChange("grid")}
-      >
-        <GridIcon />
-      </PlayerButton>
-    </div>
+    <Button
+      variant="secondary"
+      size="sm"
+      aria-label={`Switch to ${next} view`}
+      onClick={() => onChange(next)}
+      className="gap-2"
+    >
+      <RowsIcon
+        className={cn(
+          "h-3.5 w-3.5 transition-colors duration-fast",
+          view === "rows" ? "text-primary" : "text-muted-foreground"
+        )}
+      />
+      <GridIcon
+        className={cn(
+          "h-3.5 w-3.5 transition-colors duration-fast",
+          view === "grid" ? "text-primary" : "text-muted-foreground"
+        )}
+      />
+    </Button>
   );
 }

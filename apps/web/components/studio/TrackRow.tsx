@@ -41,28 +41,6 @@ export default function TrackRow({
       )}
       data-signal="row_play"
     >
-      <div className="relative w-8 h-8 flex items-center justify-center shrink-0">
-        {/* index / eq gives way to OUR PlayerButton on hover */}
-        <span className="group-hover:opacity-0 transition-opacity duration-fast">
-          {playing ? (
-            <EqIndicator />
-          ) : (
-            <DataText className="text-sm text-muted-foreground">
-              {index != null ? String(index).padStart(2, "0") : "--"}
-            </DataText>
-          )}
-        </span>
-        <span className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-fast">
-          <PlayerButton
-            variant="ghost"
-            size="sm"
-            aria-label="Play"
-            data-signal="row_play"
-          >
-            <PlayIcon />
-          </PlayerButton>
-        </span>
-      </div>
       <div className="relative w-9 h-9 rounded-sm overflow-hidden shrink-0">
         {artUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -77,6 +55,23 @@ export default function TrackRow({
             className="absolute inset-0 w-full h-full"
           />
         )}
+        {/* eq / hover play sit over the artwork now that the index lives inline */}
+        {playing ? (
+          <span className="absolute inset-0 flex items-center justify-center bg-ink/40 group-hover:opacity-0 transition-opacity duration-fast">
+            <EqIndicator />
+          </span>
+        ) : null}
+        <span className="absolute inset-0 flex items-center justify-center bg-ink/40 opacity-0 group-hover:opacity-100 transition-opacity duration-fast">
+          <PlayerButton
+            variant="ghost"
+            size="sm"
+            aria-label="Play"
+            data-signal="row_play"
+            className="text-snow"
+          >
+            <PlayIcon />
+          </PlayerButton>
+        </span>
       </div>
       <div className="min-w-0 flex-1">
         <div
@@ -87,9 +82,21 @@ export default function TrackRow({
         >
           {title}
         </div>
-        {artist ? (
-          <div className="font-label text-[10px] uppercase tracking-wider text-muted-foreground truncate">
-            {artist}
+        {index != null || artist ? (
+          <div className="flex items-center gap-1.5 min-w-0">
+            {index != null ? (
+              <DataText className="text-[10px] text-muted-foreground shrink-0">
+                {String(index).padStart(2, "0")}
+              </DataText>
+            ) : null}
+            {index != null && artist ? (
+              <span className="text-muted-foreground text-[10px] shrink-0">·</span>
+            ) : null}
+            {artist ? (
+              <span className="font-label text-[10px] uppercase tracking-wider text-muted-foreground truncate">
+                {artist}
+              </span>
+            ) : null}
           </div>
         ) : null}
       </div>

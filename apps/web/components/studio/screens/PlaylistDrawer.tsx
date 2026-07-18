@@ -1,16 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   ChevronLeftIcon,
+  DiscIcon,
   PlayIcon,
-  PlusIcon,
   ShuffleIcon,
 } from "@radix-ui/react-icons";
-import { toast } from "sonner";
 
 import { DrawerClose, DrawerTitle } from "@/components/ui/drawer";
-import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import DataText from "@/components/studio/DataText";
 import MediaCard from "@/components/studio/MediaCard";
 import TrackRow from "@/components/studio/TrackRow";
@@ -32,6 +31,44 @@ import {
 interface PlaylistDrawerProps {
   collection: MockCollection | null;
   onOpenChange: (open: boolean) => void;
+}
+
+/** One-line horizontal strip — scrollbar hidden (Radix viewport), drag to pan. */
+function DragScrollRow({ children }: { children: React.ReactNode }) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const drag = useRef<{ startX: number; startLeft: number } | null>(null);
+
+  const viewport = () =>
+    rootRef.current?.querySelector<HTMLElement>(
+      "[data-radix-scroll-area-viewport]"
+    ) ?? null;
+
+  return (
+    <ScrollArea
+      ref={rootRef}
+      className="min-w-0 flex-1 cursor-grab active:cursor-grabbing"
+      onPointerDown={(e) => {
+        const vp = viewport();
+        if (!vp) return;
+        drag.current = { startX: e.clientX, startLeft: vp.scrollLeft };
+        e.currentTarget.setPointerCapture(e.pointerId);
+      }}
+      onPointerMove={(e) => {
+        const vp = viewport();
+        if (!vp || !drag.current) return;
+        vp.scrollLeft =
+          drag.current.startLeft - (e.clientX - drag.current.startX);
+      }}
+      onPointerUp={() => {
+        drag.current = null;
+      }}
+      onPointerCancel={() => {
+        drag.current = null;
+      }}
+    >
+      <div className="flex flex-nowrap items-center gap-1.5">{children}</div>
+    </ScrollArea>
+  );
 }
 
 /** 95vh playlist detail — play, shuffle, tags, view/sort, tracks with menus. */
@@ -69,9 +106,13 @@ export default function PlaylistDrawer({
             <DrawerTitle className="type-h2 truncate">
               {collection.title}
             </DrawerTitle>
-            <DataText className="text-sm text-muted-foreground ml-auto shrink-0">
-              {tracks.length} tracks
-            </DataText>
+            <span
+              aria-label={`${tracks.length} tracks`}
+              className="ml-auto shrink-0 flex items-center gap-1.5 text-muted-foreground"
+            >
+              <DataText className="text-sm">{tracks.length}</DataText>
+              <DiscIcon aria-hidden className="h-4 w-4" />
+            </span>
           </div>
 
           <p className="type-muted mt-2">{collection.desc}</p>
@@ -79,7 +120,7 @@ export default function PlaylistDrawer({
           <div className="flex items-center gap-3 mt-4">
             <PlayerButton
               variant="primary"
-              size="lg"
+              size="xl"
               aria-label="Play collection"
               onClick={() => tracks[0] && play(tracks[0])}
             >
@@ -95,31 +136,22 @@ export default function PlaylistDrawer({
             >
               <ShuffleIcon />
             </PlayerButton>
-            <div className="flex flex-wrap gap-1.5 ml-2">
+            <DragScrollRow>
               {collection.tags.map((tag) => (
                 <TagChip key={tag} label={tag} />
               ))}
-            </div>
+            </DragScrollRow>
           </div>
 
           <div className="flex items-center justify-between gap-3 mt-6 mb-2">
-            <div className="flex items-center gap-2">
-              <ViewToggle view={view} onChange={setView} />
-              <SortControl sort={sort} onChange={setSort} />
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => toast(`Pick tracks to add to “${collection.title}”`)}
-            >
-              <PlusIcon className="mr-1.5 h-3.5 w-3.5" /> Add to this playlist
-            </Button>
+            <SortControl sort={sort} onChange={setSort} />
+            <ViewToggle view={view} onChange={setView} />
           </div>
 
           {tracks.length === 0 ? (
             <EmptyState
               title="Nothing in here yet"
-              hint="Add tracks with the button above."
+              hint="Tracks you add will show up here."
               texture="tx-k2-static"
             />
           ) : view === "rows" ? (
