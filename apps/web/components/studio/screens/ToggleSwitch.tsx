@@ -23,7 +23,7 @@ export default function ToggleSwitch({
       onClick={() => onCheckedChange(!checked)}
       className={cn(
         "relative inline-flex h-6 w-10 shrink-0 items-center rounded-full border border-border",
-        "transition-colors duration-base outline-none",
+        "transition-colors duration-base outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
         checked ? "bg-primary" : "bg-muted"
       )}
     >
