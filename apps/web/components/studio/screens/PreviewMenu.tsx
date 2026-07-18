@@ -58,7 +58,7 @@ export default function PreviewMenu() {
               <DropdownMenuItem>Profile</DropdownMenuItem>
             </Link>
           ) : (
-            <Link href={`${BASE}/login`}>
+            <Link href={`${BASE}/auth`}>
               <DropdownMenuItem>Login</DropdownMenuItem>
             </Link>
           )}
