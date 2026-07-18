@@ -56,6 +56,12 @@ export default function DesignSystemLayout({
             >
               Components
             </Link>
+            <Link
+              href="/design-system/screens"
+              className="px-3 py-1.5 rounded-md hover:bg-secondary transition-colors duration-fast"
+            >
+              Screens
+            </Link>
             <div className="ml-2">
               <ThemeFlip />
             </div>
