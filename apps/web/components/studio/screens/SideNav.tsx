@@ -26,7 +26,7 @@ export default function SideNav() {
   const pathname = usePathname();
   const { user } = useMockStudio();
   return (
-    <aside className="hidden md:flex sticky top-24 self-start w-52 shrink-0 flex-col gap-1 h-[calc(100vh-12rem)] min-h-[24rem]">
+    <aside className="hidden md:flex sticky top-6 self-start w-52 shrink-0 flex-col gap-1 h-[calc(100vh-3rem)] min-h-[24rem]">
       <Link href={`${BASE}/home`} className="flex items-center gap-2 px-3 py-2 mb-3">
         <Image
           src="/svgs/logo_light.svg"
