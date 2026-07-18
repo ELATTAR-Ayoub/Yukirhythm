@@ -11,26 +11,32 @@ const SCREENS: {
   {
     href: "home",
     title: "Home",
-    mirrors: "The player — device card, disc, transport, search + results.",
+    mirrors: "Jump back in + new releases, global player.",
     texture: "tx-k2-vinyl",
+  },
+  {
+    href: "search",
+    title: "Search",
+    mirrors: "Live results, you-might-like, explore tiles.",
+    texture: "tx-k2-static",
+  },
+  {
+    href: "library",
+    title: "Library",
+    mirrors: "Type chips, pinned Liked Songs, playlist drawers.",
+    texture: "tx-k-marble",
   },
   {
     href: "profile",
     title: "Profile",
-    mirrors: "Tabs: favorite audio and collections, signed-in vs signed-out.",
-    texture: "tx-k-marble",
-  },
-  {
-    href: "login",
-    title: "Login",
-    mirrors: "Aurora sign-in — social buttons + email form.",
-    texture: "tx-k2-horizon",
-  },
-  {
-    href: "signup",
-    title: "Sign up",
-    mirrors: "Aurora account creation.",
+    mirrors: "Hub → view, stats, recents, settings, privacy.",
     texture: "tx-k-silk",
+  },
+  {
+    href: "auth",
+    title: "Auth",
+    mirrors: "One aurora door — Google or Facebook, no forms.",
+    texture: "tx-k2-horizon",
   },
   {
     href: "credits",
