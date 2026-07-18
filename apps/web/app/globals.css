@@ -177,6 +177,12 @@
   a {
     cursor: pointer;
   }
+
+  /* Outlines are keyboard-only: pointer focus (clicking tabs, menus…) draws
+     nothing, while :focus-visible keeps the ring for keyboard/AT users. */
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
 }
 
 /* @font-face {
