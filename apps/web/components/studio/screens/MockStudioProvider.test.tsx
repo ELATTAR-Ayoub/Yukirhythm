@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { act, renderHook } from "@testing-library/react";
 
 import MockStudioProvider, { useMockStudio } from "./MockStudioProvider";
-import { MOCK_TRACKS, MOCK_USER } from "./mock-data";
+import { LIKED_SONGS, MOCK_TRACKS, MOCK_USER } from "./mock-data";
 
 function wrapper({ children }: { children: React.ReactNode }) {
   return <MockStudioProvider>{children}</MockStudioProvider>;
@@ -64,5 +64,41 @@ describe("MockStudioProvider", () => {
     act(() => result.current.clearSearch());
     expect(result.current.searchResults).toHaveLength(0);
     expect(result.current.hasSearched).toBe(false);
+  });
+
+  it("manages the library: pin, filter, create", () => {
+    const { result } = renderHook(() => useMockStudio(), { wrapper });
+
+    expect(result.current.collections[0].id).toBe(LIKED_SONGS.id);
+    expect(result.current.libraryFilter).toBe("playlists");
+
+    act(() => result.current.togglePin("c1"));
+    expect(result.current.collections.find((c) => c.id === "c1")?.pinned).toBe(true);
+
+    act(() => result.current.setLibraryFilter("podcasts"));
+    expect(result.current.libraryFilter).toBe("podcasts");
+
+    const before = result.current.collections.length;
+    act(() =>
+      result.current.createCollection({
+        title: "Rainy Tapes",
+        desc: "Tape loops for rain.",
+        tags: ["rain"],
+        kind: "music",
+      })
+    );
+    expect(result.current.collections).toHaveLength(before + 1);
+    expect(result.current.collections.at(-1)?.title).toBe("Rainy Tapes");
+    expect(result.current.collections.at(-1)?.pinned).toBe(false);
+  });
+
+  it("expands and collapses the player", () => {
+    const { result } = renderHook(() => useMockStudio(), { wrapper });
+
+    expect(result.current.playerExpanded).toBe(false);
+    act(() => result.current.setPlayerExpanded(true));
+    expect(result.current.playerExpanded).toBe(true);
+    act(() => result.current.setPlayerExpanded(false));
+    expect(result.current.playerExpanded).toBe(false);
   });
 });

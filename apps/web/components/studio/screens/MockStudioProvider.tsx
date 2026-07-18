@@ -9,12 +9,17 @@ import {
   useState,
 } from "react";
 import {
+  LIKED_SONGS,
+  MOCK_COLLECTIONS,
   MOCK_TRACKS,
   MOCK_USER,
   searchMockTracks,
+  type CollectionKind,
+  type MockCollection,
   type MockTrack,
   type MockUser,
 } from "./mock-data";
+import type { LibraryFilter } from "./library-utils";
 
 /**
  * Scoped fake studio state for the /design-system/screens previews:
@@ -44,6 +49,20 @@ interface MockStudioValue {
   hasSearched: boolean;
   search: (query: string) => void;
   clearSearch: () => void;
+  // library
+  collections: MockCollection[];
+  libraryFilter: LibraryFilter;
+  setLibraryFilter: (filter: LibraryFilter) => void;
+  togglePin: (id: string) => void;
+  createCollection: (input: {
+    title: string;
+    desc: string;
+    tags: string[];
+    kind: CollectionKind;
+  }) => void;
+  // player surface
+  playerExpanded: boolean;
+  setPlayerExpanded: (open: boolean) => void;
 }
 
 const MockStudioContext = createContext<MockStudioValue | null>(null);
@@ -75,6 +94,39 @@ export default function MockStudioProvider({
   const [searching, setSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [collections, setCollections] = useState<MockCollection[]>([
+    LIKED_SONGS,
+    ...MOCK_COLLECTIONS,
+  ]);
+  const [libraryFilter, setLibraryFilter] = useState<LibraryFilter>("playlists");
+  const [playerExpanded, setPlayerExpanded] = useState(false);
+
+  const togglePin = useCallback((id: string) => {
+    setCollections((cs) =>
+      cs.map((c) => (c.id === id ? { ...c, pinned: !c.pinned } : c))
+    );
+  }, []);
+
+  const createCollection = useCallback(
+    (input: { title: string; desc: string; tags: string[]; kind: CollectionKind }) => {
+      setCollections((cs) => [
+        ...cs,
+        {
+          id: `local-${cs.length + 1}`,
+          title: input.title,
+          desc: input.desc,
+          texture: "tx-k-silk",
+          trackIds: [],
+          likes: 0,
+          tags: input.tags,
+          kind: input.kind,
+          pinned: false,
+        },
+      ]);
+    },
+    []
+  );
 
   const nowPlaying = currentIndex >= 0 ? QUEUE[currentIndex] : null;
 
@@ -178,6 +230,13 @@ export default function MockStudioProvider({
     hasSearched,
     search,
     clearSearch,
+    collections,
+    libraryFilter,
+    setLibraryFilter,
+    togglePin,
+    createCollection,
+    playerExpanded,
+    setPlayerExpanded,
   };
 
   return (
