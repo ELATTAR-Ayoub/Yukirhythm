@@ -17,7 +17,7 @@ export default function ViewToggle({ view, onChange }: ViewToggleProps) {
   const next: TrackView = view === "rows" ? "grid" : "rows";
   return (
     <Button
-      variant="secondary"
+      variant="ghost"
       size="icon"
       aria-label={`Switch to ${next} view`}
       onClick={() => onChange(next)}
