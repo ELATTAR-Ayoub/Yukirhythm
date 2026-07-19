@@ -71,6 +71,11 @@ interface MockStudioValue {
   // player surface
   playerExpanded: boolean;
   setPlayerExpanded: (open: boolean) => void;
+  /** The one queue drawer for the whole shell — every surface with a queue
+   *  control (DevicePlayer, NowPlayingRail, PlaybackBar) drives this instead
+   *  of mounting its own. */
+  queueOpen: boolean;
+  setQueueOpen: (open: boolean) => void;
 }
 
 const MockStudioContext = createContext<MockStudioValue | null>(null);
@@ -110,6 +115,7 @@ export default function MockStudioProvider({
   ]);
   const [libraryFilter, setLibraryFilter] = useState<LibraryFilter>("playlists");
   const [playerExpanded, setPlayerExpanded] = useState(false);
+  const [queueOpen, setQueueOpen] = useState(false);
   const [playingCollection, setPlayingCollection] =
     useState<MockCollection | null>(null);
   const [navDirection, setNavDirection] = useState<"next" | "prev" | null>(null);
@@ -284,6 +290,8 @@ export default function MockStudioProvider({
     createCollection,
     playerExpanded,
     setPlayerExpanded,
+    queueOpen,
+    setQueueOpen,
   };
 
   return (

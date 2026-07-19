@@ -101,4 +101,14 @@ describe("MockStudioProvider", () => {
     act(() => result.current.setPlayerExpanded(false));
     expect(result.current.playerExpanded).toBe(false);
   });
+
+  it("opens and closes the shared queue drawer", () => {
+    const { result } = renderHook(() => useMockStudio(), { wrapper });
+
+    expect(result.current.queueOpen).toBe(false);
+    act(() => result.current.setQueueOpen(true));
+    expect(result.current.queueOpen).toBe(true);
+    act(() => result.current.setQueueOpen(false));
+    expect(result.current.queueOpen).toBe(false);
+  });
 });

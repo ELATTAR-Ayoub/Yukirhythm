@@ -31,6 +31,15 @@ function NowPlayingProbe() {
   return <div data-testid="now-playing">{nowPlaying?.title ?? "none"}</div>;
 }
 
+/** Surfaces the shared queueOpen flag — the drawer itself now lives in
+ *  GlobalPlayer (Part A), so a NowPlayingRail-only render has no drawer body
+ *  to assert on; this is the closest observable proxy for "did the control
+ *  ask the shared drawer to open". */
+function QueueOpenProbe() {
+  const { queueOpen } = useMockStudio();
+  return <div data-testid="queue-open">{String(queueOpen)}</div>;
+}
+
 describe("NowPlayingRail", () => {
   beforeEach(() => {
     nav.pathname = "/design-system/screens/home";
@@ -142,27 +151,24 @@ describe("NowPlayingRail", () => {
       expect(screen.queryByText("Queue is empty")).toBeNull();
     });
 
-    it("opens the queue drawer from the Open queue control", () => {
-      // Seeded from a named collection on purpose: with nothing playing the
-      // drawer's heading would be the synthetic "Up next", which collides
-      // with the rail's own section label and would pass without clicking.
+    it("opens the shared queue drawer state from the Open queue control", () => {
+      // The queue drawer itself is lifted into the provider and mounted once
+      // by GlobalPlayer (Part A) — a NowPlayingRail-only render has no drawer
+      // body to assert on, so this checks the shared queueOpen flag instead.
       render(
         <MockStudioProvider>
           <Seed track="t2" source={LIKED_SONGS} />
+          <QueueOpenProbe />
           <NowPlayingRail />
         </MockStudioProvider>
       );
 
       fireEvent.click(screen.getByText("seed"));
-
-      // The drawer is closed, so its heading is nowhere on the page yet.
-      expect(screen.queryByText("Liked Songs")).toBeNull();
-      expect(screen.queryByLabelText("Close queue")).toBeNull();
+      expect(screen.getByTestId("queue-open").textContent).toBe("false");
 
       fireEvent.click(screen.getByLabelText("Open queue"));
 
-      expect(screen.getByText("Liked Songs")).toBeTruthy();
-      expect(screen.getByLabelText("Close queue")).toBeTruthy();
+      expect(screen.getByTestId("queue-open").textContent).toBe("true");
     });
 
     it("starts a track when its up-next row is clicked", () => {

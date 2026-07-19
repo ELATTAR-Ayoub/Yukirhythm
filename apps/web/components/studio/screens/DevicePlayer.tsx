@@ -9,7 +9,6 @@ import { PlayerButton } from "@/components/studio/PlayerButton";
 import { Slider } from "@/components/ui/slider";
 import Transport from "./Transport";
 import VinylDisc from "./VinylDisc";
-import QueueDrawer from "./QueueDrawer";
 import PlayerSearchDrawer from "./PlayerSearchDrawer";
 import { useMockStudio } from "./MockStudioProvider";
 import { formatDuration } from "./mock-data";
@@ -26,10 +25,9 @@ interface DevicePlayerProps {
 
 /** The full device player — the app's signature surface, now a component. */
 export default function DevicePlayer({ onCollapse, docked = false }: DevicePlayerProps) {
-  const { nowPlaying, isPlaying, progressSec, seek, navDirection } =
+  const { nowPlaying, isPlaying, progressSec, seek, navDirection, setQueueOpen } =
     useMockStudio();
   const [discExpanded, setDiscExpanded] = useState(false);
-  const [queueOpen, setQueueOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
   return (
@@ -160,7 +158,6 @@ export default function DevicePlayer({ onCollapse, docked = false }: DevicePlaye
         <div aria-hidden className="w-full pb-8" />
       </section>
 
-      <QueueDrawer open={queueOpen} onOpenChange={setQueueOpen} />
       <PlayerSearchDrawer open={searchOpen} onOpenChange={setSearchOpen} />
     </div>
   );

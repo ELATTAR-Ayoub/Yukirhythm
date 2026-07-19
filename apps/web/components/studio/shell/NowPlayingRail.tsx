@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { ListBulletIcon } from "@radix-ui/react-icons";
 
@@ -9,7 +9,6 @@ import TrackRow from "@/components/studio/TrackRow";
 import EmptyState from "@/components/studio/EmptyState";
 import { PlayerButton } from "@/components/studio/PlayerButton";
 import DevicePlayer from "@/components/studio/screens/DevicePlayer";
-import QueueDrawer from "@/components/studio/screens/QueueDrawer";
 import AddMusicPanel from "@/components/studio/screens/AddMusicPanel";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
 import useQueueCollection from "@/components/studio/screens/useQueueCollection";
@@ -52,9 +51,8 @@ function PlayerSection() {
  * the existing QueueDrawer for the full list.
  */
 function UpNextSection() {
-  const { nowPlaying, playingCollection, play } = useMockStudio();
+  const { nowPlaying, playingCollection, play, setQueueOpen } = useMockStudio();
   const collection = useQueueCollection();
-  const [queueOpen, setQueueOpen] = useState(false);
 
   const tracks = useMemo(() => getCollectionTracks(collection), [collection]);
   const currentIndex = nowPlaying
@@ -121,8 +119,6 @@ function UpNextSection() {
           ))}
         </div>
       )}
-
-      <QueueDrawer open={queueOpen} onOpenChange={setQueueOpen} />
     </div>
   );
 }

@@ -3,15 +3,32 @@
 import { useEffect, useRef } from "react";
 
 import { useMockStudio } from "./MockStudioProvider";
+import { useIsDesktop } from "../shell/useBreakpoint";
+import PlaybackBar from "../shell/PlaybackBar";
 import DevicePlayer from "./DevicePlayer";
 import MiniPlayerBar from "./MiniPlayerBar";
+import QueueDrawer from "./QueueDrawer";
 
 /**
  * The one player surface for the whole app shell.
- * Compressed: MiniPlayerBar. Expanded: DevicePlayer centered over the page.
+ * Compressed: MiniPlayerBar below md, PlaybackBar at md (768px) and up.
+ * Expanded: DevicePlayer centered over the page.
+ *
+ * This is also the single mount point for QueueDrawer (Part A of task 11):
+ * DevicePlayer (docked in NowPlayingRail or expanded here) and the compact
+ * bars all open the queue by calling the provider's setQueueOpen(true)
+ * rather than mounting their own drawer, so exactly one portal tree ever
+ * backs the queue sheet.
  */
 export default function GlobalPlayer() {
-  const { nowPlaying, playerExpanded, setPlayerExpanded } = useMockStudio();
+  const {
+    nowPlaying,
+    playerExpanded,
+    setPlayerExpanded,
+    queueOpen,
+    setQueueOpen,
+  } = useMockStudio();
+  const isDesktop = useIsDesktop();
   const dialogRef = useRef<HTMLDivElement>(null);
   const restoreRef = useRef<HTMLElement | null>(null);
 
@@ -53,27 +70,32 @@ export default function GlobalPlayer() {
 
   if (!nowPlaying) return null;
 
-  if (playerExpanded) {
-    return (
-      <div
-        ref={dialogRef}
-        className="fixed inset-0 z-50"
-        role="dialog"
-        aria-label="Now playing"
-      >
+  return (
+    <>
+      {playerExpanded ? (
         <div
-          className="absolute inset-0 bg-ink/50 backdrop-blur-sm anim-fade-in"
-          onClick={() => setPlayerExpanded(false)}
-          aria-hidden
-        />
-        <div className="absolute inset-0 flex items-center justify-center p-4 pointer-events-none">
-          <div className="pointer-events-auto anim-jelly-in w-full flex justify-center">
-            <DevicePlayer onCollapse={() => setPlayerExpanded(false)} />
+          ref={dialogRef}
+          className="fixed inset-0 z-50"
+          role="dialog"
+          aria-label="Now playing"
+        >
+          <div
+            className="absolute inset-0 bg-ink/50 backdrop-blur-sm anim-fade-in"
+            onClick={() => setPlayerExpanded(false)}
+            aria-hidden
+          />
+          <div className="absolute inset-0 flex items-center justify-center p-4 pointer-events-none">
+            <div className="pointer-events-auto anim-jelly-in w-full flex justify-center">
+              <DevicePlayer onCollapse={() => setPlayerExpanded(false)} />
+            </div>
           </div>
         </div>
-      </div>
-    );
-  }
-
-  return <MiniPlayerBar onExpand={() => setPlayerExpanded(true)} />;
+      ) : isDesktop ? (
+        <PlaybackBar onExpand={() => setPlayerExpanded(true)} />
+      ) : (
+        <MiniPlayerBar onExpand={() => setPlayerExpanded(true)} />
+      )}
+      <QueueDrawer open={queueOpen} onOpenChange={setQueueOpen} />
+    </>
+  );
 }
