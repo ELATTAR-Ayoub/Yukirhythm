@@ -36,7 +36,9 @@ export default function LibraryRail() {
   if (!user) {
     return (
       <div className="p-4">
-        <h2 className="type-h3 mb-3">Your Library</h2>
+        <h2 id="library-rail-heading" className="type-h3 mb-3">
+          Your Library
+        </h2>
         <SignInPrompt hint="Playlists, podcasts and Liked Songs live here." />
       </div>
     );
@@ -47,7 +49,9 @@ export default function LibraryRail() {
   return (
     <div className="flex flex-col h-full min-h-0">
       <div className="flex items-center justify-between gap-2 px-4 pt-4 pb-3 shrink-0">
-        <h2 className="type-h3">Your Library</h2>
+        <h2 id="library-rail-heading" className="type-h3">
+          Your Library
+        </h2>
         <PlayerButton
           variant="ghost"
           aria-label="Create playlist"

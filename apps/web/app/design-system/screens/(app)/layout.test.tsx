@@ -41,7 +41,7 @@ describe("AppShellLayout", () => {
     renderShell(HOME);
 
     expect(
-      screen.getByRole("complementary", { name: "Your library" })
+      screen.getByRole("complementary", { name: "Your Library" })
     ).toBeTruthy();
     expect(
       screen.getByRole("complementary", { name: "Now playing" })
@@ -53,7 +53,7 @@ describe("AppShellLayout", () => {
     renderShell(`${PROFILE}/settings`);
 
     expect(
-      screen.queryByRole("complementary", { name: "Your library" })
+      screen.queryByRole("complementary", { name: "Your Library" })
     ).toBeNull();
     expect(
       screen.queryByRole("complementary", { name: "Now playing" })
@@ -65,7 +65,7 @@ describe("AppShellLayout", () => {
     renderShell(CREDITS);
 
     expect(
-      screen.queryByRole("complementary", { name: "Your library" })
+      screen.queryByRole("complementary", { name: "Your Library" })
     ).toBeNull();
     expect(
       screen.queryByRole("complementary", { name: "Now playing" })
@@ -80,7 +80,7 @@ describe("AppShellLayout", () => {
     renderShell(`${SCREENS}/terminal`);
 
     expect(
-      screen.getByRole("complementary", { name: "Your library" })
+      screen.getByRole("complementary", { name: "Your Library" })
     ).toBeTruthy();
     expect(
       screen.getByRole("complementary", { name: "Now playing" })

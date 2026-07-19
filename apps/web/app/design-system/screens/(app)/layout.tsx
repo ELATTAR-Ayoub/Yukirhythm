@@ -46,7 +46,7 @@ export default function AppShellLayout({
       <div className="md:flex md:flex-1 md:min-h-0 md:gap-2">
         {system ? null : (
           <aside
-            aria-label="Your library"
+            aria-labelledby="library-rail-heading"
             className="hidden md:block md:min-h-0 w-[var(--shell-rail-w)] shrink-0 rounded-2xl border border-border bg-card overflow-hidden"
           >
             <LibraryRail />
