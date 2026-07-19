@@ -118,6 +118,53 @@ describe("NowPlayingRail", () => {
       expect(screen.queryByText("Topographic Heart")).toBeNull();
     });
 
+    it("previews the head of the library queue before anything has played", () => {
+      // Cold session: no playback, so playingCollection is null and
+      // useQueueCollection synthesises "Up next" over the whole library
+      // (MOCK_TRACKS, t1..t12). This is the first thing a user ever sees.
+      render(
+        <MockStudioProvider>
+          <NowPlayingProbe />
+          <NowPlayingRail />
+        </MockStudioProvider>
+      );
+
+      expect(screen.getByTestId("now-playing").textContent).toBe("none");
+
+      // The first five of the library queue, t1..t5.
+      expect(screen.getByText("Midnight Snowfall")).toBeTruthy();
+      expect(screen.getByText("Cobalt Dreams")).toBeTruthy();
+      expect(screen.getByText("Static Bloom")).toBeTruthy();
+      expect(screen.getByText("Paper Lanterns")).toBeTruthy();
+      expect(screen.getByText("Topographic Heart")).toBeTruthy();
+      // t6 is the 6th track — the cap must stop the preview before it.
+      expect(screen.queryByText("Ripple Theory")).toBeNull();
+      expect(screen.queryByText("Queue is empty")).toBeNull();
+    });
+
+    it("opens the queue drawer from the Open queue control", () => {
+      // Seeded from a named collection on purpose: with nothing playing the
+      // drawer's heading would be the synthetic "Up next", which collides
+      // with the rail's own section label and would pass without clicking.
+      render(
+        <MockStudioProvider>
+          <Seed track="t2" source={LIKED_SONGS} />
+          <NowPlayingRail />
+        </MockStudioProvider>
+      );
+
+      fireEvent.click(screen.getByText("seed"));
+
+      // The drawer is closed, so its heading is nowhere on the page yet.
+      expect(screen.queryByText("Liked Songs")).toBeNull();
+      expect(screen.queryByLabelText("Close queue")).toBeNull();
+
+      fireEvent.click(screen.getByLabelText("Open queue"));
+
+      expect(screen.getByText("Liked Songs")).toBeTruthy();
+      expect(screen.getByLabelText("Close queue")).toBeTruthy();
+    });
+
     it("starts a track when its up-next row is clicked", () => {
       const source = LIKED_SONGS; // trackIds: t2, t5, t7, t10, t8
       render(
