@@ -10,6 +10,7 @@ import { PlayerButton } from "@/components/studio/PlayerButton";
 import PageHeader from "@/components/studio/screens/PageHeader";
 import PlaylistDrawer from "@/components/studio/screens/PlaylistDrawer";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
+import { useIsDesktop } from "@/components/studio/shell/useBreakpoint";
 import {
   MOCK_HISTORY,
   NEW_RELEASE_IDS,
@@ -24,6 +25,15 @@ export default function HomeScreen() {
   const [openCollection, setOpenCollection] = useState<MockCollection | null>(
     null
   );
+  const isDesktop = useIsDesktop();
+  /**
+   * MediaCard is a fixed-width scroller card (`BOXY_WIDTHS`) by default. The
+   * shelves below opt into RailShelf's grid, which only actually activates
+   * once `isDesktop` is true — mirror that same condition here so the card
+   * fills its grid cell (matching CollectionDetail's grid view) exactly when,
+   * and only when, the shelf itself is actually in grid shape.
+   */
+  const shelfCardClassName = isDesktop ? "w-full" : undefined;
 
   const recents = recentCollections(MOCK_HISTORY, collections);
 
@@ -52,7 +62,7 @@ export default function HomeScreen() {
 
       <div className="space-y-10">
         {user && recents.length > 0 ? (
-          <RailShelf label="Recently played" title="Jump back in">
+          <RailShelf label="Recently played" title="Jump back in" grid>
             {recents.map((c) => (
               <div
                 key={c.id}
@@ -68,13 +78,14 @@ export default function HomeScreen() {
                   artist={`${c.trackIds.length} tracks`}
                   texture={c.texture}
                   size="sm"
+                  className={shelfCardClassName}
                 />
               </div>
             ))}
           </RailShelf>
         ) : null}
 
-        <RailShelf label="Fresh drops" title="New releases">
+        <RailShelf label="Fresh drops" title="New releases" grid>
           {NEW_RELEASE_IDS.map((id) => {
             const track = getTrack(id);
             if (!track) return null;
@@ -95,6 +106,7 @@ export default function HomeScreen() {
                   duration={formatDuration(track.durationSec)}
                   size="md"
                   playing={nowPlaying?.id === track.id && isPlaying}
+                  className={shelfCardClassName}
                 />
               </div>
             );
