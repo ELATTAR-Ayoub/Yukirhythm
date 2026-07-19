@@ -11,6 +11,7 @@ import {
 
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import FadeScrollArea from "@/components/studio/FadeScrollArea";
 import MediaCard from "@/components/studio/MediaCard";
 import TrackRow from "@/components/studio/TrackRow";
 import EmptyState from "@/components/studio/EmptyState";
@@ -212,7 +213,7 @@ export default function CollectionDetail({
           texture="tx-k2-static"
         />
       ) : view === "rows" ? (
-        <div className="space-y-1">
+        <FadeScrollArea className="space-y-1 pr-0.5">
           {tracks.map((track, i) => (
             <div key={track.id} className="flex items-center gap-1">
               <div
@@ -235,9 +236,9 @@ export default function CollectionDetail({
               <TrackMenu trackTitle={track.title} />
             </div>
           ))}
-        </div>
+        </FadeScrollArea>
       ) : (
-        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+        <FadeScrollArea className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 pr-0.5">
           {tracks.map((track) => (
             <div
               key={track.id}
@@ -258,7 +259,7 @@ export default function CollectionDetail({
               />
             </div>
           ))}
-        </div>
+        </FadeScrollArea>
       )}
     </>
   );

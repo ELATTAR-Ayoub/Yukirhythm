@@ -17,7 +17,8 @@ export default function MiniPlayerBar({ onExpand }: MiniPlayerBarProps) {
   if (!nowPlaying) return null;
 
   return (
-    <div className="fixed inset-x-0 bottom-24 md:bottom-4 z-30 flex justify-center px-4 pb-2 md:pb-0 pointer-events-none">
+    // 12px above the bottom nav; md has no nav so it just clears the edge
+    <div className="fixed inset-x-0 bottom-[calc(var(--bottom-nav-h)+12px)] md:bottom-4 z-30 flex justify-center px-4 pointer-events-none">
       <div className="pointer-events-auto w-full max-w-3xl rounded-lg border border-border bg-card shadow-e3 px-4 py-3 flex items-center gap-4">
         <button
           type="button"

@@ -17,7 +17,11 @@ const TABS: NavTabItem[] = [
   { href: `${BASE}/library`, label: "Library", icon: StackIcon },
 ];
 
-/** Mobile-only bottom navigation — Profile lives behind the header avatar. */
+/**
+ * Mobile-only bottom navigation — Profile lives behind the header avatar.
+ * Its height is pinned to the --bottom-nav-h token so MiniPlayerBar can offset
+ * against it; change the token in globals.css, not the class here.
+ */
 export default function BottomTabBar() {
   const pathname = usePathname();
   const activeHref =
@@ -25,7 +29,7 @@ export default function BottomTabBar() {
   return (
     <nav
       aria-label="Primary"
-      className="fixed inset-x-0 bottom-0 z-40 md:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 md:hidden h-[var(--bottom-nav-h)]"
     >
       <div className="p-2">
         <NavTabs

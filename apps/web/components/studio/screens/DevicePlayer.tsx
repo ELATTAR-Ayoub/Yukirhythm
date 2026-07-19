@@ -1,14 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDownIcon } from "@radix-ui/react-icons";
+import { ChevronDownIcon, MagnifyingGlassIcon } from "@radix-ui/react-icons";
 
 import { cn } from "@/lib/utils";
 import DataText from "@/components/studio/DataText";
 import { PlayerButton } from "@/components/studio/PlayerButton";
+import { Slider } from "@/components/ui/slider";
 import Transport from "./Transport";
 import VinylDisc from "./VinylDisc";
 import QueueDrawer from "./QueueDrawer";
+import PlayerSearchDrawer from "./PlayerSearchDrawer";
 import { useMockStudio } from "./MockStudioProvider";
 import { formatDuration } from "./mock-data";
 
@@ -18,14 +20,16 @@ interface DevicePlayerProps {
 
 /** The full device player — the app's signature surface, now a component. */
 export default function DevicePlayer({ onCollapse }: DevicePlayerProps) {
-  const { nowPlaying, isPlaying, progressSec, navDirection } = useMockStudio();
+  const { nowPlaying, isPlaying, progressSec, seek, navDirection } =
+    useMockStudio();
   const [discExpanded, setDiscExpanded] = useState(false);
   const [queueOpen, setQueueOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   return (
     <section
       className={cn(
-        "player_shadow bg-card relative overflow-hidden w-full max-w-[320px]",
+        "player_shadow bg-card relative overflow-hidden w-full max-w-[340px]",
         "rounded-[42px] sm:rounded-[52px] flex flex-col items-center"
       )}
     >
@@ -64,30 +68,74 @@ export default function DevicePlayer({ onCollapse }: DevicePlayerProps) {
 
       <div
         className={cn(
-          "text-center w-full px-6 sm:px-8 transition-opacity duration-500",
+          "w-full px-7 transition-opacity duration-500",
           discExpanded && "opacity-0 pointer-events-none"
         )}
       >
-        <div className="font-label text-[11px] uppercase tracking-[0.2em] text-primary truncate">
-          {nowPlaying ? nowPlaying.artist : "Welcome!"}
+        <div className="text-center mt-2">
+          <div className="font-label text-[11px] uppercase tracking-[0.2em] text-primary truncate">
+            {nowPlaying ? nowPlaying.artist : "Welcome!"}
+          </div>
+          <div className="font-ui font-semibold text-lg truncate mt-1">
+            {nowPlaying ? nowPlaying.title : "Pick a track"}
+          </div>
         </div>
-        <div className="font-ui font-semibold truncate mt-0.5">
-          {nowPlaying ? nowPlaying.title : "Pick a track"}
-        </div>
+
+        {/* Scrub bar — drag to jump to any second in the track. */}
         {nowPlaying ? (
-          <DataText className="text-xs text-muted-foreground mt-1 inline-block">
-            {formatDuration(progressSec)} /{" "}
-            {formatDuration(nowPlaying.durationSec)}
-          </DataText>
+          <div className="mt-6">
+            <Slider
+              value={[Math.min(progressSec, nowPlaying.durationSec)]}
+              max={nowPlaying.durationSec}
+              step={1}
+              onValueChange={(v) => seek(v[0])}
+              aria-label="Seek"
+              data-signal="seek"
+            />
+            <div className="flex items-center justify-between mt-2">
+              <DataText className="text-xs text-muted-foreground">
+                {formatDuration(progressSec)}
+              </DataText>
+              <DataText className="text-xs text-muted-foreground">
+                {formatDuration(nowPlaying.durationSec)}
+              </DataText>
+            </div>
+          </div>
         ) : null}
       </div>
 
       {/* stays above the expanded disc so the controls never get covered */}
-      <div className="relative z-20 py-6 sm:py-8">
+      <div className="relative z-20 mt-7">
         <Transport size="lg" onQueue={() => setQueueOpen(true)} />
       </div>
 
+      <div
+        className={cn(
+          "w-full px-7 mt-7 mb-7 transition-opacity duration-500",
+          discExpanded && "opacity-0 pointer-events-none"
+        )}
+      >
+        <button
+          type="button"
+          onClick={() => setSearchOpen(true)}
+          aria-label="Search tracks"
+          data-signal="player_search_open"
+          className={cn(
+            "w-full flex items-center gap-2.5 rounded-lg border border-border bg-background/60",
+            "px-3.5 py-2.5 text-left text-muted-foreground",
+            "hover:text-foreground hover:border-primary/40 transition-colors duration-fast",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+          )}
+        >
+          <MagnifyingGlassIcon className="w-4 h-4 shrink-0" />
+          <span className="type-small font-normal truncate">
+            Search tracks, artists…
+          </span>
+        </button>
+      </div>
+
       <QueueDrawer open={queueOpen} onOpenChange={setQueueOpen} />
+      <PlayerSearchDrawer open={searchOpen} onOpenChange={setSearchOpen} />
     </section>
   );
 }
