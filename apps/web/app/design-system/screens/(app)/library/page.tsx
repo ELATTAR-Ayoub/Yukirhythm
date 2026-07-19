@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { DrawingPinFilledIcon, PlusIcon } from "@radix-ui/react-icons";
+import { PlusIcon } from "@radix-ui/react-icons";
 
-import MediaCard from "@/components/studio/MediaCard";
 import { PlayerButton } from "@/components/studio/PlayerButton";
 import PageHeader from "@/components/studio/screens/PageHeader";
 import SignInPrompt from "@/components/studio/screens/SignInPrompt";
@@ -15,6 +14,10 @@ import {
   filterLibrary,
 } from "@/components/studio/screens/library-utils";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
+import {
+  CreatePlaylistTile,
+  LibraryRowCard,
+} from "@/components/studio/screens/LibraryRow";
 import type { MockCollection } from "@/components/studio/screens/mock-data";
 
 export default function LibraryScreen() {
@@ -77,32 +80,11 @@ export default function LibraryScreen() {
             onKeyDown={openKeyHandler(c)}
             className="relative w-full text-left cursor-pointer"
           >
-            <MediaCard
-              title={c.title}
-              artist={`${c.trackIds.length} tracks · ${c.kind}`}
-              texture={c.texture}
-              variant="extended"
-              size="sm"
-            />
-            {c.pinned ? (
-              <DrawingPinFilledIcon
-                aria-label="Pinned"
-                className="absolute top-2.5 right-2.5 w-3.5 h-3.5 text-primary"
-              />
-            ) : null}
+            <LibraryRowCard collection={c} />
           </div>
         ))}
 
-        <button
-          type="button"
-          onClick={() => setCreating(true)}
-          className="w-full flex items-center gap-4 p-3 rounded-lg border border-dashed border-border text-muted-foreground hover:text-primary hover:border-primary transition-colors duration-fast"
-        >
-          <span className="flex items-center justify-center w-12 h-12 rounded-md bg-secondary shrink-0">
-            <PlusIcon className="w-5 h-5" />
-          </span>
-          <span className="font-ui font-medium text-sm">Create playlist</span>
-        </button>
+        <CreatePlaylistTile onClick={() => setCreating(true)} />
       </div>
 
       <PlaylistDrawer

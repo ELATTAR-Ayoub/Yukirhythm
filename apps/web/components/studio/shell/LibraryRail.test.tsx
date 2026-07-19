@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { useEffect } from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 
 import MockStudioProvider, {
   useMockStudio,
@@ -21,6 +21,16 @@ function SignOutOnMount() {
     signOut();
   }, [signOut]);
   return null;
+}
+
+/** Surfaces the context's playback state so tests can assert nothing started. */
+function PlaybackProbe() {
+  const { nowPlaying, isPlaying, isLoading } = useMockStudio();
+  return (
+    <div data-testid="playback">
+      {`${nowPlaying?.title ?? "none"}|${isPlaying}|${isLoading}`}
+    </div>
+  );
 }
 
 /** The seeded Liked Songs collection — confirmed against mock-data.ts. */
@@ -65,15 +75,63 @@ describe("LibraryRail", () => {
     expect(liked.getAttribute("aria-current")).toBe("page");
   });
 
-  it("does not start playback when a collection is opened", () => {
+  it("renders no play control inside the row anchors", () => {
     render(
       <MockStudioProvider>
         <LibraryRail />
       </MockStudioProvider>
     );
 
-    // A link navigates; nothing in the rail should invoke the player.
-    expect(screen.queryByLabelText(/^Play /)).toBeNull();
+    // MediaCard's hover overlay is a real <button aria-label="Play">. Nested
+    // in an anchor it is invalid HTML and a dead keyboard stop on every row.
+    expect(screen.queryAllByLabelText("Play")).toHaveLength(0);
+  });
+
+  it("does not start playback when a collection is opened", () => {
+    render(
+      <MockStudioProvider>
+        <PlaybackProbe />
+        <LibraryRail />
+      </MockStudioProvider>
+    );
+
+    const before = screen.getByTestId("playback").textContent;
+    expect(before).toBe("none|false|false");
+
+    fireEvent.click(screen.getByRole("link", { name: /liked songs/i }));
+
+    // Opening a collection navigates; it must never touch the player.
+    expect(screen.getByTestId("playback").textContent).toBe("none|false|false");
+  });
+
+  it("marks pinned collections with a pin indicator", () => {
+    render(
+      <MockStudioProvider>
+        <LibraryRail />
+      </MockStudioProvider>
+    );
+
+    // Liked Songs is the seeded pinned collection, and the only one.
+    const pins = screen.getAllByLabelText("Pinned");
+    expect(pins).toHaveLength(1);
+    const liked = screen.getByRole("link", { name: /liked songs/i });
+    expect(liked.contains(pins[0])).toBe(true);
+  });
+
+  it("narrows the list when a filter chip is picked", () => {
+    render(
+      <MockStudioProvider>
+        <LibraryRail />
+      </MockStudioProvider>
+    );
+
+    expect(screen.getByText("Cobalt After Hours")).toBeTruthy();
+    expect(screen.queryByText("Pixel Podcasts")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Podcasts" }));
+
+    expect(screen.getByText("Pixel Podcasts")).toBeTruthy();
+    expect(screen.queryByText("Cobalt After Hours")).toBeNull();
   });
 
   it("offers a create control", () => {

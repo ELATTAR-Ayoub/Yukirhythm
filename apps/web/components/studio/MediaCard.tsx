@@ -19,6 +19,13 @@ interface MediaCardProps {
   size?: MediaCardSize;
   variant?: MediaCardVariant;
   playing?: boolean;
+  /**
+   * The hover play overlay renders a real <button>. Callers that wrap the card
+   * in their own interactive element (an anchor, a row button) must opt out —
+   * a button nested inside interactive content is invalid HTML and leaves a
+   * dead keyboard stop on every card.
+   */
+  playable?: boolean;
   className?: string;
   /** Emitted signal (documented; wiring comes with the data layer): card_play, card_open */
 }
@@ -91,6 +98,7 @@ export default function MediaCard({
   size = "md",
   variant = "boxy",
   playing = false,
+  playable = true,
   className,
 }: MediaCardProps) {
   if (variant === "extended") {
@@ -115,7 +123,7 @@ export default function MediaCard({
             title={title}
             className="absolute inset-0 w-full h-full"
           />
-          <PlayOverlay playing={playing} />
+          {playable ? <PlayOverlay playing={playing} /> : null}
         </div>
         <div className="min-w-0 flex-1">
           <div
@@ -162,7 +170,7 @@ export default function MediaCard({
           title={title}
           className="absolute inset-0 w-full h-full"
         />
-        <PlayOverlay playing={playing} />
+        {playable ? <PlayOverlay playing={playing} /> : null}
         {playing ? (
           <span className="absolute bottom-2 right-2 bg-ink/70 rounded-sm px-1.5 py-1">
             <EqIndicator />
