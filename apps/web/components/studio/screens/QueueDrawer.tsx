@@ -1,44 +1,20 @@
 "use client";
 
-import { useMemo } from "react";
 import { ChevronDownIcon } from "@radix-ui/react-icons";
 
 import { DrawerClose, DrawerTitle } from "@/components/ui/drawer";
 import { PlayerButton } from "@/components/studio/PlayerButton";
 import AppDrawer from "./AppDrawer";
-import CollectionDetail from "./CollectionDetail";
-import { useMockStudio } from "./MockStudioProvider";
-import { type MockCollection } from "./mock-data";
+import QueuePanel, { useQueueCollection } from "./QueuePanel";
 
 interface QueueDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-/**
- * What's playing right now, as a full collection sheet. When playback was
- * launched from a collection this is that collection; when a track was played
- * straight from search or a rail there is no source, so the whole library
- * queue is presented under a synthetic "Up next" collection.
- */
+/** The queue as a full sheet — mobile presentation of QueuePanel. */
 export default function QueueDrawer({ open, onOpenChange }: QueueDrawerProps) {
-  const { playingCollection, queue } = useMockStudio();
-
-  const collection: MockCollection = useMemo(
-    () =>
-      playingCollection ?? {
-        id: "queue",
-        title: "Up next",
-        desc: "Everything queued from your library.",
-        texture: "tx-k-silk",
-        trackIds: queue.map((t) => t.id),
-        likes: 0,
-        tags: ["queue"],
-        kind: "music",
-        pinned: false,
-      },
-    [playingCollection, queue]
-  );
+  const collection = useQueueCollection();
 
   return (
     <AppDrawer open={open} onOpenChange={onOpenChange} height="full">
@@ -54,7 +30,7 @@ export default function QueueDrawer({ open, onOpenChange }: QueueDrawerProps) {
           </DrawerTitle>
         </div>
 
-        <CollectionDetail collection={collection} playFrom={playingCollection ?? undefined} />
+        <QueuePanel />
       </div>
     </AppDrawer>
   );
