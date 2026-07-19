@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 
-import { useBreakpointUp, DESKTOP_MIN, WIDE_MIN } from "./useIsDesktop";
+import { useBreakpointUp, DESKTOP_MIN, WIDE_MIN } from "./useBreakpoint";
 
 /** Minimal matchMedia double: we control `matches` and fire the listener. */
 function stubMatchMedia(initial: boolean) {

@@ -88,7 +88,12 @@
      3xl is the three-column threshold. It sits at 1440 rather than
      Tailwind's stock xl (1280) because two 340px rails leave only
      ~570px of page column at 1280 — too narrow for the playlist
-     track table. Below 3xl the right rail is dropped entirely. */
+     track table. Below 3xl the right rail is dropped entirely.
+
+     --breakpoint-3xl MUST stay in sync with WIDE_MIN in
+     components/studio/shell/useBreakpoint.ts. Tailwind 4 is CSS-first
+     with no config file to import from, so the value is duplicated by
+     necessity — change one and you must change the other. */
   --breakpoint-3xl: 1440px;
   --shell-header-h: 56px;
   --shell-bar-h: 88px;
