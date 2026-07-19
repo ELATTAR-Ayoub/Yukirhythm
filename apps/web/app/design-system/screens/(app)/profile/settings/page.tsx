@@ -1,10 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { GoogleIcon } from "@/components/studio/BrandIcons";
+import AppearanceSetting from "@/components/studio/screens/AppearanceSetting";
 import BackHeader from "@/components/studio/screens/BackHeader";
 import SignInPrompt from "@/components/studio/screens/SignInPrompt";
 import SectionLabel from "@/components/studio/SectionLabel";
@@ -39,7 +40,7 @@ export default function SettingsScreen() {
         <div className="mt-2 rounded-lg border border-border bg-card divide-y divide-border overflow-hidden">
           <SettingRow label="Audio quality" value="High" />
           <SettingRow label="Language" value="English" />
-          <SettingRow label="Appearance" value="System" />
+          <AppearanceSetting />
         </div>
       </section>
 
@@ -47,13 +48,7 @@ export default function SettingsScreen() {
         <SectionLabel>Account</SectionLabel>
         <div className="mt-2 rounded-lg border border-border bg-card divide-y divide-border overflow-hidden">
           <div className="flex items-center gap-3 px-4 py-3.5">
-            <Image
-              src="/svgs/google.svg"
-              width={16}
-              height={16}
-              alt=""
-              className="h-4 w-4"
-            />
+            <GoogleIcon className="h-4 w-4" />
             <span className="font-ui font-medium text-sm flex-1">
               Connected with Google
             </span>

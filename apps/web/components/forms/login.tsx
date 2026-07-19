@@ -8,6 +8,7 @@ import { z } from "zod";
 
 // components
 import { Button } from "@/components/ui/button";
+import { FacebookIcon, GoogleIcon } from "@/components/studio/BrandIcons";
 import {
   Form,
   FormControl,
@@ -128,23 +129,11 @@ export function LoginForm() {
         >
           <Button onClick={signupGoogleFunc} className={`w-full`}>
             {" "}
-            <Image
-              className="mr-2 h-4 w-4"
-              width={24}
-              height={24}
-              src={"/svgs/google.svg"}
-              alt={"disc"}
-            ></Image>
+            <GoogleIcon className="mr-2 h-4 w-4" />
             Login with Google
           </Button>
           <Button onClick={signupFacebookFunc} className={`w-full`} disabled>
-            <Image
-              className="mr-2 h-4 w-4"
-              width={24}
-              height={24}
-              src={"/svgs/facebook.svg"}
-              alt={"disc"}
-            ></Image>
+            <FacebookIcon className="mr-2 h-4 w-4" />
             Login with Facebook
           </Button>
         </div>

@@ -57,7 +57,7 @@ export default function MiniPlayerBar({ onExpand }: MiniPlayerBarProps) {
           </DataText>
         </div>
         <div className="shrink-0">
-          <Transport size="base" />
+          <Transport size="base" compact />
         </div>
       </div>
     </div>

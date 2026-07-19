@@ -34,7 +34,9 @@ export default function RootLayout({
         <script
           id="theme-init"
           dangerouslySetInnerHTML={{
-            __html: `try{var t=localStorage.getItem("theme"),d=t==="dark"||((t===null||t==="system")&&matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",d);document.documentElement.style.colorScheme=d?"dark":"light"}catch(e){}`,
+            // Dark is the product default; "system" only follows the OS when
+            // the user explicitly picks it in settings.
+            __html: `try{var t=localStorage.getItem("theme"),d=t===null||t==="dark"||(t==="system"&&matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",d);document.documentElement.style.colorScheme=d?"dark":"light"}catch(e){document.documentElement.classList.add("dark")}`,
           }}
         />
       </head>

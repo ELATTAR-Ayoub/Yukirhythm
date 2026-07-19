@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRightIcon } from "@radix-ui/react-icons";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import DragScroller from "@/components/studio/DragScroller";
 import SectionLabel from "@/components/studio/SectionLabel";
 import { SkeletonCard } from "@/components/studio/Skeletons";
 
@@ -61,9 +62,9 @@ export default function RailShelf({
           </Button>
         ) : null}
       </div>
-      <div className="flex gap-4 overflow-x-auto pb-3 -mx-1 px-1">
-        {children}
-      </div>
+      <DragScroller className="pb-3 -mx-1 px-1">
+        <div className="flex gap-4 w-max">{children}</div>
+      </DragScroller>
     </section>
   );
 }

@@ -25,14 +25,14 @@ export default function BottomTabBar() {
   return (
     <nav
       aria-label="Primary"
-      className="fixed inset-x-0 bottom-0 z-40 md:hidden backdrop-blur-md"
+      className="fixed inset-x-0 bottom-0 z-40 md:hidden"
     >
       <div className="p-2">
         <NavTabs
           items={TABS}
           activeHref={activeHref}
           iconsOnly
-          className="bg-muted/15"
+          className="bg-muted/15 backdrop-blur-md"
         />
       </div>
     </nav>

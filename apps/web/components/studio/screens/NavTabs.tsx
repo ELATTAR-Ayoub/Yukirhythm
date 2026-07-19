@@ -92,7 +92,7 @@ export default function NavTabs({
       >
         <span
           ref={jellyRef}
-          className="block h-full w-full rounded-md bg-background shadow-chip"
+          className="block h-full w-full rounded-md bg-background/40 shadow-chip"
         />
       </span>
       {items.map(({ href, label, icon: Icon }) => {
@@ -106,7 +106,7 @@ export default function NavTabs({
             data-active={active || undefined}
             className={cn(
               "relative z-10 flex-1 flex flex-col items-center justify-center gap-1 rounded-md",
-              iconsOnly ? "px-3 py-6" : "px-3 py-2",
+              iconsOnly ? "px-3 py-3.5" : "px-3 py-2",
               "font-label text-[10px] uppercase tracking-wider transition-colors duration-base",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background",
               active ? "text-foreground" : "hover:text-foreground/80"

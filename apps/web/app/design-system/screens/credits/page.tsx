@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { AuroraBackground } from "@/components/ui/aurora-background";
+import { TextureBackground } from "@/components/ui/texture-background";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { socialLinks } from "@/constants/index";
@@ -8,7 +8,7 @@ import { socialLinks } from "@/constants/index";
 export default function CreditsScreen() {
   return (
     <div className="rounded-lg overflow-hidden border border-border">
-      <AuroraBackground className="!w-full !h-[72vh] p-6">
+      <TextureBackground className="!w-full !h-[72vh] p-6">
         <section className="relative w-full max-w-md flex flex-col items-start gap-6 rounded-lg border border-border bg-card p-6 shadow-e3">
           <div className="flex items-center gap-3">
             <Avatar className="border border-border">
@@ -60,7 +60,7 @@ export default function CreditsScreen() {
             for their fantastic libraries.
           </p>
         </section>
-      </AuroraBackground>
+      </TextureBackground>
     </div>
   );
 }

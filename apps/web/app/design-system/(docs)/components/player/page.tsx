@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import MockStudioProvider, {
   useMockStudio,
 } from "@/components/studio/screens/MockStudioProvider";
@@ -7,6 +9,7 @@ import { DsSection } from "@/components/studio/ds/blocks";
 import StatePanel from "@/components/studio/ds/StatePanel";
 import DevicePlayer from "@/components/studio/screens/DevicePlayer";
 import MiniPlayerBar from "@/components/studio/screens/MiniPlayerBar";
+import QueueDrawer from "@/components/studio/screens/QueueDrawer";
 import { Button } from "@/components/ui/button";
 import { MOCK_TRACKS } from "@/components/studio/screens/mock-data";
 
@@ -59,7 +62,30 @@ export default function PlayerComponentsPage() {
             }}
           />
         </DsSection>
+
+        <DsSection index="03" title="QueueDrawer">
+          <StatePanel
+            name="QueueDrawer — what's playing now"
+            signal="queue_open"
+            views={{
+              default: <QueueDrawerDemo />,
+            }}
+          />
+        </DsSection>
       </div>
     </MockStudioProvider>
+  );
+}
+
+/** The queue sheet is a drawer, so the gallery drives it from a trigger. */
+function QueueDrawerDemo() {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="flex justify-center py-4">
+      <Button size="sm" onClick={() => setOpen(true)}>
+        Open queue
+      </Button>
+      <QueueDrawer open={open} onOpenChange={setOpen} />
+    </div>
   );
 }

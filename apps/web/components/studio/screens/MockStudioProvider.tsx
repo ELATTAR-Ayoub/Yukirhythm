@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -13,6 +14,7 @@ import {
   MOCK_COLLECTIONS,
   MOCK_TRACKS,
   MOCK_USER,
+  getCollectionTracks,
   searchMockTracks,
   type CollectionKind,
   type MockCollection,
@@ -30,11 +32,15 @@ import type { LibraryFilter } from "./library-utils";
 interface MockStudioValue {
   // player
   queue: MockTrack[];
+  /** The collection playback was launched from — null means the full library. */
+  playingCollection: MockCollection | null;
+  /** Which way the last track change went, so the disc knows how to arc. */
+  navDirection: "next" | "prev" | null;
   nowPlaying: MockTrack | null;
   isPlaying: boolean;
   isLoading: boolean;
   progressSec: number;
-  play: (track: MockTrack) => void;
+  play: (track: MockTrack, from?: MockCollection) => void;
   toggle: () => void;
   next: () => void;
   prev: () => void;
@@ -54,6 +60,8 @@ interface MockStudioValue {
   libraryFilter: LibraryFilter;
   setLibraryFilter: (filter: LibraryFilter) => void;
   togglePin: (id: string) => void;
+  /** Append a track to a collection; no-op if it's already in there. */
+  addTrackToCollection: (collectionId: string, trackId: string) => void;
   createCollection: (input: {
     title: string;
     desc: string;
@@ -75,7 +83,8 @@ export function useMockStudio(): MockStudioValue {
   return ctx;
 }
 
-const QUEUE = MOCK_TRACKS;
+/** Fallback queue when a track is played outside any collection. */
+const LIBRARY_QUEUE = MOCK_TRACKS;
 
 export default function MockStudioProvider({
   children,
@@ -101,12 +110,36 @@ export default function MockStudioProvider({
   ]);
   const [libraryFilter, setLibraryFilter] = useState<LibraryFilter>("playlists");
   const [playerExpanded, setPlayerExpanded] = useState(false);
+  const [playingCollection, setPlayingCollection] =
+    useState<MockCollection | null>(null);
+  const [navDirection, setNavDirection] = useState<"next" | "prev" | null>(null);
+
+  const queue = useMemo(
+    () =>
+      playingCollection
+        ? getCollectionTracks(playingCollection)
+        : LIBRARY_QUEUE,
+    [playingCollection]
+  );
 
   const togglePin = useCallback((id: string) => {
     setCollections((cs) =>
       cs.map((c) => (c.id === id ? { ...c, pinned: !c.pinned } : c))
     );
   }, []);
+
+  const addTrackToCollection = useCallback(
+    (collectionId: string, trackId: string) => {
+      setCollections((cs) =>
+        cs.map((c) =>
+          c.id === collectionId && !c.trackIds.includes(trackId)
+            ? { ...c, trackIds: [...c.trackIds, trackId] }
+            : c
+        )
+      );
+    },
+    []
+  );
 
   const createCollection = useCallback(
     (input: { title: string; desc: string; tags: string[]; kind: CollectionKind }) => {
@@ -128,7 +161,7 @@ export default function MockStudioProvider({
     []
   );
 
-  const nowPlaying = currentIndex >= 0 ? QUEUE[currentIndex] : null;
+  const nowPlaying = currentIndex >= 0 ? (queue[currentIndex] ?? null) : null;
 
   const startLoad = useCallback((index: number) => {
     setCurrentIndex(index);
@@ -144,8 +177,14 @@ export default function MockStudioProvider({
   }, []);
 
   const play = useCallback(
-    (track: MockTrack) => {
-      const idx = QUEUE.findIndex((t) => t.id === track.id);
+    (track: MockTrack, from?: MockCollection) => {
+      // The queue follows the collection the track was launched from, so the
+      // queue drawer and next/prev both reflect what the user actually opened.
+      const source = from ?? null;
+      const nextQueue = source ? getCollectionTracks(source) : LIBRARY_QUEUE;
+      const idx = nextQueue.findIndex((t) => t.id === track.id);
+      setPlayingCollection(source);
+      setNavDirection(null);
       startLoad(idx >= 0 ? idx : 0);
     },
     [startLoad]
@@ -156,16 +195,20 @@ export default function MockStudioProvider({
   }, [nowPlaying]);
 
   const next = useCallback(() => {
-    setCurrentIndex((i) => (i < 0 ? i : (i + 1) % QUEUE.length));
+    setCurrentIndex((i) => (i < 0 ? i : (i + 1) % queue.length));
+    setNavDirection("next");
     setProgressSec(0);
     setIsPlaying(true);
-  }, []);
+  }, [queue.length]);
 
   const prev = useCallback(() => {
-    setCurrentIndex((i) => (i < 0 ? i : (i - 1 + QUEUE.length) % QUEUE.length));
+    setCurrentIndex((i) =>
+      i < 0 ? i : (i - 1 + queue.length) % queue.length
+    );
+    setNavDirection("prev");
     setProgressSec(0);
     setIsPlaying(true);
-  }, []);
+  }, [queue.length]);
 
   const seek = useCallback((sec: number) => {
     setProgressSec(Math.max(0, Math.floor(sec)));
@@ -213,7 +256,9 @@ export default function MockStudioProvider({
   }, []);
 
   const value: MockStudioValue = {
-    queue: QUEUE,
+    queue,
+    playingCollection,
+    navDirection,
     nowPlaying,
     isPlaying,
     isLoading,
@@ -235,6 +280,7 @@ export default function MockStudioProvider({
     libraryFilter,
     setLibraryFilter,
     togglePin,
+    addTrackToCollection,
     createCollection,
     playerExpanded,
     setPlayerExpanded,

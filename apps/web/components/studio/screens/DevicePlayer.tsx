@@ -1,12 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import { ChevronDownIcon } from "@radix-ui/react-icons";
 
 import { cn } from "@/lib/utils";
-import Texture from "@/components/studio/Texture";
 import DataText from "@/components/studio/DataText";
 import { PlayerButton } from "@/components/studio/PlayerButton";
 import Transport from "./Transport";
+import VinylDisc from "./VinylDisc";
+import QueueDrawer from "./QueueDrawer";
 import { useMockStudio } from "./MockStudioProvider";
 import { formatDuration } from "./mock-data";
 
@@ -16,41 +18,56 @@ interface DevicePlayerProps {
 
 /** The full device player — the app's signature surface, now a component. */
 export default function DevicePlayer({ onCollapse }: DevicePlayerProps) {
-  const { nowPlaying, isPlaying, progressSec } = useMockStudio();
+  const { nowPlaying, isPlaying, progressSec, navDirection } = useMockStudio();
+  const [discExpanded, setDiscExpanded] = useState(false);
+  const [queueOpen, setQueueOpen] = useState(false);
 
   return (
-    <section className="player_shadow bg-card relative w-full max-w-[320px] rounded-[42px] sm:rounded-[52px] p-6 sm:p-8 flex flex-col items-center gap-6">
+    <section
+      className={cn(
+        "player_shadow bg-card relative overflow-hidden w-full max-w-[320px]",
+        "rounded-[42px] sm:rounded-[52px] flex flex-col items-center"
+      )}
+    >
       {onCollapse ? (
         <PlayerButton
           variant="ghost"
           size="sm"
           aria-label="Collapse player"
           onClick={onCollapse}
-          className="absolute top-4 right-4"
+          className="absolute top-4 right-4 z-30"
         >
           <ChevronDownIcon />
         </PlayerButton>
       ) : null}
 
-      <div className="relative w-52 h-52 flex items-center justify-center">
-        <div
-          className={cn(
-            "relative w-52 h-52 rounded-full overflow-hidden disc_shadow",
-            isPlaying && "animate-[spin_6s_linear_infinite]"
-          )}
+      {nowPlaying ? (
+        <VinylDisc
+          texture={nowPlaying.texture}
+          trackKey={nowPlaying.id}
+          direction={navDirection}
+          spinning={isPlaying}
+          expanded={discExpanded}
+          onToggle={() => setDiscExpanded((e) => !e)}
         >
-          <Texture name="tx-k2-vinyl" className="absolute inset-0 w-full h-full" />
-          <div className="absolute inset-0 m-auto w-16 h-16 rounded-full overflow-hidden border-4 border-card">
-            {nowPlaying ? (
-              <Texture name={nowPlaying.texture} className="w-full h-full" />
-            ) : (
-              <div className="w-full h-full bg-ink" />
-            )}
-          </div>
-        </div>
-      </div>
+          <span className="block font-label text-[11px] uppercase tracking-[0.2em] text-ink-50/80 truncate">
+            {nowPlaying.artist}
+          </span>
+          <span className="block font-ui font-semibold text-ink-50 truncate">
+            {nowPlaying.title}
+          </span>
+        </VinylDisc>
+      ) : null}
 
-      <div className="text-center w-full">
+      {/* reserves the disc's visible half — 112% card width, so 56% for half */}
+      <div aria-hidden className="w-full pt-[56%] shrink-0" />
+
+      <div
+        className={cn(
+          "text-center w-full px-6 sm:px-8 transition-opacity duration-500",
+          discExpanded && "opacity-0 pointer-events-none"
+        )}
+      >
         <div className="font-label text-[11px] uppercase tracking-[0.2em] text-primary truncate">
           {nowPlaying ? nowPlaying.artist : "Welcome!"}
         </div>
@@ -59,12 +76,18 @@ export default function DevicePlayer({ onCollapse }: DevicePlayerProps) {
         </div>
         {nowPlaying ? (
           <DataText className="text-xs text-muted-foreground mt-1 inline-block">
-            {formatDuration(progressSec)} / {formatDuration(nowPlaying.durationSec)}
+            {formatDuration(progressSec)} /{" "}
+            {formatDuration(nowPlaying.durationSec)}
           </DataText>
         ) : null}
       </div>
 
-      <Transport size="lg" />
+      {/* stays above the expanded disc so the controls never get covered */}
+      <div className="relative z-20 py-6 sm:py-8">
+        <Transport size="lg" onQueue={() => setQueueOpen(true)} />
+      </div>
+
+      <QueueDrawer open={queueOpen} onOpenChange={setQueueOpen} />
     </section>
   );
 }

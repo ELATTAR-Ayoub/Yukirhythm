@@ -9,7 +9,7 @@ import {
   TrackPreviousIcon,
   ListBulletIcon,
 } from "@radix-ui/react-icons";
-import { toast } from "sonner";
+
 
 import { PlayerButton, CircleSpinner } from "@/components/studio/PlayerButton";
 import IconSwap from "@/components/studio/IconSwap";
@@ -18,24 +18,36 @@ import { useMockStudio } from "./MockStudioProvider";
 /**
  * The transport cluster from the DS spec, wired to the mock player.
  * Left→right: loop · prev · play/pause/wait (3-face IconSwap) · next · queue.
+ * `compact` drops loop and queue — the compressed bar carries transport only.
  */
-export default function Transport({ size = "lg" }: { size?: "base" | "lg" }) {
-  const { queue, nowPlaying, isPlaying, isLoading, toggle, next, prev } =
+export default function Transport({
+  size = "lg",
+  compact = false,
+  onQueue,
+}: {
+  size?: "base" | "lg";
+  /** Compressed player — prev/play/next only, no loop or queue. */
+  compact?: boolean;
+  onQueue?: () => void;
+}) {
+  const { nowPlaying, isPlaying, isLoading, toggle, next, prev } =
     useMockStudio();
   const [looping, setLooping] = useState(false);
   const disabled = !nowPlaying;
 
   return (
     <div className="flex items-center gap-3">
-      <PlayerButton
-        variant={looping ? "primary" : "outline"}
-        active={looping}
-        onClick={() => setLooping((l) => !l)}
-        aria-label="Loop"
-        data-signal="loop"
-      >
-        <LoopIcon />
-      </PlayerButton>
+      {compact ? null : (
+        <PlayerButton
+          variant={looping ? "primary" : "outline"}
+          active={looping}
+          onClick={() => setLooping((l) => !l)}
+          aria-label="Loop"
+          data-signal="loop"
+        >
+          <LoopIcon />
+        </PlayerButton>
+      )}
       <PlayerButton
         onClick={prev}
         disabled={disabled}
@@ -69,14 +81,16 @@ export default function Transport({ size = "lg" }: { size?: "base" | "lg" }) {
       >
         <TrackNextIcon />
       </PlayerButton>
-      <PlayerButton
-        variant="outline"
-        onClick={() => toast(`Queue · ${queue.length} tracks`)}
-        aria-label="Queue"
-        data-signal="queue_open"
-      >
-        <ListBulletIcon />
-      </PlayerButton>
+      {compact ? null : (
+        <PlayerButton
+          variant="outline"
+          onClick={onQueue}
+          aria-label="Queue"
+          data-signal="queue_open"
+        >
+          <ListBulletIcon />
+        </PlayerButton>
+      )}
     </div>
   );
 }

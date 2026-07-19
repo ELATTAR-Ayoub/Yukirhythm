@@ -1,9 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { FacebookIcon, GoogleIcon } from "@/components/studio/BrandIcons";
 import { useMockStudio } from "./MockStudioProvider";
 
 interface SocialAuthButtonsProps {
@@ -24,13 +24,7 @@ export default function SocialAuthButtons({ onAuthed }: SocialAuthButtonsProps) 
   return (
     <div className="w-full flex flex-col gap-2">
       <Button className="w-full" onClick={() => continueWith("Google")}>
-        <Image
-          src="/svgs/google.svg"
-          width={16}
-          height={16}
-          alt=""
-          className="mr-2 h-4 w-4"
-        />
+        <GoogleIcon className="mr-2 h-4 w-4" />
         Continue with Google
       </Button>
       <Button
@@ -38,13 +32,7 @@ export default function SocialAuthButtons({ onAuthed }: SocialAuthButtonsProps) 
         className="w-full"
         onClick={() => continueWith("Facebook")}
       >
-        <Image
-          src="/svgs/facebook.svg"
-          width={16}
-          height={16}
-          alt=""
-          className="mr-2 h-4 w-4"
-        />
+        <FacebookIcon className="mr-2 h-4 w-4" />
         Continue with Facebook
       </Button>
     </div>

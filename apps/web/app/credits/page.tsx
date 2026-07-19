@@ -11,14 +11,14 @@ import { socialLinks } from "@/constants/index";
 // components
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { AuroraBackground } from "@/components/ui/aurora-background";
+import { TextureBackground } from "@/components/ui/texture-background";
 
 const Page = () => {
   return (
     <section
       className={`  relative ${styles.flexCenter} w-full h-screen ${styles.paddings} `}
     >
-      <AuroraBackground className=" p-4">
+      <TextureBackground className=" p-4">
         <section
           className={` relative w-full max-w-max ${styles.flexStart} flex-col gap-6 rounded-xl border bg-card text-card-foreground p-6 shadow-xl  `}
         >
@@ -71,7 +71,7 @@ const Page = () => {
             for there fantastic libraries.
           </p>
         </section>
-      </AuroraBackground>
+      </TextureBackground>
     </section>
   );
 };

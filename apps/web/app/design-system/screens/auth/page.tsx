@@ -1,9 +1,10 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { AuroraBackground } from "@/components/ui/aurora-background";
+import { TextureBackground } from "@/components/ui/texture-background";
 import SocialAuthButtons from "@/components/studio/screens/SocialAuthButtons";
 
 const BASE = "/design-system/screens";
@@ -14,7 +15,10 @@ export default function AuthScreen() {
 
   return (
     <div className="rounded-lg overflow-hidden border border-border">
-      <AuroraBackground className="!w-full !h-[72vh] p-6">
+      {/* Fills the viewport exactly: 100vh minus the screens layout's p-2/sm:p-6
+          edge offset and this wrapper's 2px border, so the card is centred on
+          the page without spilling into a scrollbar. */}
+      <TextureBackground className="!w-full !h-[calc(100vh-1rem-2px)] sm:!h-[calc(100vh-3rem-2px)] p-6">
         <div className="relative w-full sm:max-w-[400px] flex flex-col items-center gap-4">
           <Image
             src="/svgs/logo_light.svg"
@@ -23,21 +27,27 @@ export default function AuthScreen() {
             alt="Yukirhythm"
             className="h-6 w-auto object-contain"
           />
-          <h1 className="type-h2 text-center anim-sign-on">
+          <h1 className="type-h1 text-foreground text-center">
             Listen your way
           </h1>
           <p className="type-small text-center text-muted-foreground">
-            One account for everything — sign in or sign up in a single tap.
+            One account for everything. Sign in or sign up in a single tap.
           </p>
 
           <SocialAuthButtons onAuthed={() => router.push(`${BASE}/home`)} />
 
-          <p className="type-small text-muted-foreground text-center">
-            By continuing you agree to the mock Terms — nothing here touches the
-            network.
+          <p className="type-label normal-case tracking-normal font-normal text-muted-foreground text-center">
+            By continuing you agree to the mock{" "}
+            <Link
+              href={`${BASE}/terms`}
+              className="text-foreground underline underline-offset-2 hover:text-primary transition-colors duration-fast"
+            >
+              Terms
+            </Link>
+            . Nothing here touches the network.
           </p>
         </div>
-      </AuroraBackground>
+      </TextureBackground>
     </div>
   );
 }

@@ -5,10 +5,16 @@ import { Drawer, DrawerContent } from "@/components/ui/drawer";
 interface AppDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Tall sheet (playlist detail) vs slightly shorter (forms). */
-  height?: "95vh" | "90vh";
+  /** Full sheet (playlist detail) vs shorter (forms). */
+  height?: "full" | "95vh" | "90vh";
   children: React.ReactNode;
 }
+
+const HEIGHTS: Record<NonNullable<AppDrawerProps["height"]>, string> = {
+  full: "h-[calc(100vh-1.5rem)]",
+  "95vh": "h-[95vh]",
+  "90vh": "h-[90vh]",
+};
 
 /**
  * The one drawer surface every screens flow uses — 90/95vh, spring by vaul.
@@ -22,7 +28,7 @@ export default function AppDrawer({
 }: AppDrawerProps) {
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className={height === "95vh" ? "h-[95vh]" : "h-[90vh]"}>
+      <DrawerContent className={HEIGHTS[height]}>
         <div className="flex-1 overflow-y-auto px-4 sm:px-6 pb-10 pt-2">
           {children}
         </div>

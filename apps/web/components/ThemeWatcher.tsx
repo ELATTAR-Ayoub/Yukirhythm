@@ -17,8 +17,9 @@ export default function ThemeWatcher() {
       } catch {
         /* storage unavailable — follow the system */
       }
+      // Dark ships as the default; only an explicit "system" defers to the OS.
       const dark =
-        stored === "dark" || ((stored === null || stored === "system") && mq.matches);
+        stored === null || stored === "dark" || (stored === "system" && mq.matches);
       document.documentElement.classList.toggle("dark", dark);
       document.documentElement.style.colorScheme = dark ? "dark" : "light";
     };

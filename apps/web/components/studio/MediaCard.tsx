@@ -1,4 +1,4 @@
-import { PlayIcon } from "@radix-ui/react-icons";
+import { PauseIcon, PlayIcon } from "@radix-ui/react-icons";
 
 import { cn } from "@/lib/utils";
 import Texture, { TextureName } from "@/components/studio/Texture";
@@ -55,7 +55,7 @@ function Artwork({
   return <Texture name={texture ?? "tx-k-marble"} className={className} />;
 }
 
-function PlayOverlay() {
+function PlayOverlay({ playing }: { playing: boolean }) {
   return (
     <span
       className={cn(
@@ -65,8 +65,13 @@ function PlayOverlay() {
     >
       {/* composed from OUR PlayerButton — never a hand-rolled circle */}
       <span className="translate-y-1 group-hover:translate-y-0 transition-transform duration-base">
-        <PlayerButton variant="primary" size="lg" aria-label="Play" data-signal="card_play">
-          <PlayIcon />
+        <PlayerButton
+          variant="primary"
+          size="lg"
+          aria-label={playing ? "Pause" : "Play"}
+          data-signal="card_play"
+        >
+          {playing ? <PauseIcon /> : <PlayIcon />}
         </PlayerButton>
       </span>
     </span>
@@ -110,7 +115,7 @@ export default function MediaCard({
             title={title}
             className="absolute inset-0 w-full h-full"
           />
-          <PlayOverlay />
+          <PlayOverlay playing={playing} />
         </div>
         <div className="min-w-0 flex-1">
           <div
@@ -157,7 +162,7 @@ export default function MediaCard({
           title={title}
           className="absolute inset-0 w-full h-full"
         />
-        <PlayOverlay />
+        <PlayOverlay playing={playing} />
         {playing ? (
           <span className="absolute bottom-2 right-2 bg-ink/70 rounded-sm px-1.5 py-1">
             <EqIndicator />

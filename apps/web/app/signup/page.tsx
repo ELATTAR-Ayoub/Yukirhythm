@@ -5,16 +5,16 @@ import styles from "@/styles";
 
 // components
 import { SignupForm } from "@/components/forms/signup";
-import { AuroraBackground } from "@/components/ui/aurora-background";
+import { TextureBackground } from "@/components/ui/texture-background";
 
 export default function Page() {
   return (
     <section
       className={`  relative ${styles.flexCenter} flex-col gap-4 w-full h-screen `}
     >
-      <AuroraBackground className=" p-4">
+      <TextureBackground className=" p-4">
         <SignupForm />
-      </AuroraBackground>
+      </TextureBackground>
     </section>
   );
 }
