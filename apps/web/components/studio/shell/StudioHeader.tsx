@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { HomeIcon, MagnifyingGlassIcon } from "@radix-ui/react-icons";
 
 import { cn } from "@/lib/utils";
@@ -35,8 +35,25 @@ const MENU = [
  */
 export default function StudioHeader() {
   const router = useRouter();
+  const pathname = usePathname();
   const { user, signOut, search, clearSearch } = useMockStudio();
   const [q, setQ] = useState("");
+
+  // The field is local state but the results live in the studio context, so
+  // they can drift apart across navigation — stale results outliving the query
+  // that produced them. Leaving the search page abandons the search, which
+  // keeps the two in sync by construction.
+  useEffect(() => {
+    if (pathname !== SEARCH) {
+      // Genuinely an external-store sync: clearSearch() lives in the studio
+      // context and cannot be called during render. setQ must reset with it or
+      // the two drift again, and it bails out when q is already "" — so the
+      // extra render only happens when there really was a query to abandon.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setQ("");
+      clearSearch();
+    }
+  }, [pathname, clearSearch]);
 
   const onChange = (value: string) => {
     setQ(value);
@@ -48,10 +65,7 @@ export default function StudioHeader() {
   };
 
   return (
-    <header
-      className="h-[var(--shell-header-h)] shrink-0 flex items-center gap-3 px-3"
-      aria-label="Application"
-    >
+    <header className="h-[var(--shell-header-h)] shrink-0 flex items-center gap-3 px-3">
       <Link href={HOME} className="flex items-center gap-2 shrink-0 px-1">
         <Image
           src="/svgs/logo_light.svg"
@@ -85,7 +99,11 @@ export default function StudioHeader() {
             placeholder="What do you want to play?"
             className="pl-9 rounded-full"
             data-signal="shell_search"
-            onFocus={() => router.push(SEARCH)}
+            // Only route in — refocusing while already on /search (tabbing
+            // back in, focus returning after a dialog closes) must not push.
+            onFocus={() => {
+              if (pathname !== SEARCH) router.push(SEARCH);
+            }}
             onChange={(e) => onChange(e.target.value)}
           />
         </div>
