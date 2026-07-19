@@ -44,7 +44,7 @@ function PlayerSection() {
 }
 
 /**
- * A light preview of the queue — not QueuePanel/CollectionDetail, which
+ * A light preview of the queue — deliberately not CollectionDetail, which
  * carries a description block, tags, sort/view controls and its own
  * Add-music drawer. That's far too heavy for a 340px column and would
  * duplicate the rail's own Add music section below. Instead this renders a

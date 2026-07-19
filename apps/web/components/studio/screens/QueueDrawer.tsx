@@ -6,7 +6,7 @@ import { DrawerClose, DrawerTitle } from "@/components/ui/drawer";
 import { PlayerButton } from "@/components/studio/PlayerButton";
 import { useMockStudio } from "./MockStudioProvider";
 import AppDrawer from "./AppDrawer";
-import QueuePanel from "./QueuePanel";
+import CollectionDetail from "./CollectionDetail";
 import useQueueCollection from "./useQueueCollection";
 
 interface QueueDrawerProps {
@@ -14,7 +14,12 @@ interface QueueDrawerProps {
   onOpenChange: (open: boolean) => void;
 }
 
-/** The queue as a full sheet — mobile presentation of QueuePanel. */
+/**
+ * The queue as a full sheet. The desktop rail deliberately does not reuse this
+ * body — CollectionDetail's description block, tags, sort/view controls and
+ * add-music drawer are far too heavy for a 340px column, so NowPlayingRail
+ * renders its own light preview and opens this drawer for the full list.
+ */
 export default function QueueDrawer({ open, onOpenChange }: QueueDrawerProps) {
   const { playingCollection } = useMockStudio();
   const collection = useQueueCollection();
@@ -33,7 +38,7 @@ export default function QueueDrawer({ open, onOpenChange }: QueueDrawerProps) {
           </DrawerTitle>
         </div>
 
-        <QueuePanel
+        <CollectionDetail
           collection={collection}
           playFrom={playingCollection ?? undefined}
         />
