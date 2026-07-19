@@ -103,10 +103,16 @@ same content inline. CSS alone cannot do this swap: a vaul drawer either mounts 
 it does not, and rendering both would double-mount state (two seek sliders, two
 spinning vinyls).
 
-Resolution: a `useIsDesktop()` matchMedia hook plus a `<Surface>` wrapper that
-renders its children in an `AppDrawer` below the threshold and inline above it.
-Feature bodies are extracted from their drawer wrappers into plain presentational
-components, so each feature has exactly one definition.
+Resolution: feature bodies are extracted from their drawer wrappers into plain
+presentational components (`QueuePanel`, `AddMusicPanel`), so each feature has
+exactly one definition. The drawers become thin wrappers that mobile keeps using;
+the desktop rails render the same panels inline. Because the rails themselves are
+gated by a Tailwind `3xl:` class, no runtime breakpoint check is needed to choose
+between the two presentations.
+
+A `useIsDesktop()` matchMedia hook still exists, for the two places where the
+*shape* of a render differs rather than its styling: swapping `MiniPlayerBar` for
+`PlaybackBar`, and switching home shelves from drag-scroller to grid.
 
 `useIsDesktop()` must be SSR-safe: it returns `false` on the server and on the
 first client render, then updates in an effect. First paint is therefore the mobile
@@ -127,7 +133,7 @@ components/studio/shell/
   NowPlayingRail.tsx            right column
   PlaybackBar.tsx               full-width bottom bar
   useIsDesktop.ts               matchMedia hook, SSR-safe
-  Surface.tsx                   drawer below 3xl / inline above
+  routes.ts                     route constants + isSystemRoute predicate
 ```
 
 ### Extractions (behavior-preserving)
