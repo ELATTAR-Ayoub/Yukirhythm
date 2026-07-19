@@ -1,6 +1,6 @@
 "use client";
 
-import Texture from "@/components/studio/Texture";
+import SpinningDisc from "@/components/studio/SpinningDisc";
 import DataText from "@/components/studio/DataText";
 import { Slider } from "@/components/ui/slider";
 import Transport from "./Transport";
@@ -13,7 +13,7 @@ interface MiniPlayerBarProps {
 
 /** Compressed player — info left, controls right, tap to expand. */
 export default function MiniPlayerBar({ onExpand }: MiniPlayerBarProps) {
-  const { nowPlaying, progressSec, seek } = useMockStudio();
+  const { nowPlaying, isPlaying, progressSec, seek } = useMockStudio();
   if (!nowPlaying) return null;
 
   return (
@@ -26,12 +26,13 @@ export default function MiniPlayerBar({ onExpand }: MiniPlayerBarProps) {
           onClick={onExpand}
           className="flex items-center gap-4 min-w-0 flex-1 text-left rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
         >
-          <span className="relative w-11 h-11 rounded-md overflow-hidden shrink-0">
-            <Texture
-              name={nowPlaying.texture}
-              className="absolute inset-0 w-full h-full"
-            />
-          </span>
+          <SpinningDisc
+            texture={nowPlaying.texture}
+            labelTexture="tx-k2-vinyl"
+            spinning={isPlaying}
+            className="w-11 h-11 shrink-0 disc_shadow"
+            labelClassName="w-1/3 h-1/3 border-2 border-card"
+          />
           <span className="min-w-0">
             <span className="block font-ui font-medium text-sm truncate text-primary">
               {nowPlaying.title}

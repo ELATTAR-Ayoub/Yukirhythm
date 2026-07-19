@@ -186,7 +186,8 @@ export default function AnimatedTexture({
     };
 
     // Reduced motion: paint one frame and leave it there.
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    // matchMedia is missing under jsdom, so guard rather than assume it.
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
       draw(0);
       return;
     }

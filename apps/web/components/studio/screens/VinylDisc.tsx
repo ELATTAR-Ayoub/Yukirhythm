@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 import Texture, { type TextureName } from "@/components/studio/Texture";
+import SpinningDisc from "@/components/studio/SpinningDisc";
 
 const ARC_MS = 520;
 
@@ -40,29 +41,32 @@ function DiscFace({
   spinning: boolean;
   expanded: boolean;
 }) {
-  return (
-    <div
-      className={cn(
-        "absolute inset-0",
-        // Only the circle spins. Expanded it fills a rounded rect, where any
-        // rotation would swing the artwork's corners off the card.
-        !expanded && "discRotation",
-        // paused in place rather than unmounting the animation, so the disc
-        // resumes at the angle it stopped at instead of snapping back to 0
-        !spinning && "animation-state-pause"
-      )}
-    >
-      <Texture name={texture} className="absolute inset-0 w-full h-full" />
-      <div
-        className={cn(
-          "absolute inset-0 m-auto w-16 h-16 rounded-full overflow-hidden",
-          "border-4 border-card transition-opacity duration-500",
-          expanded && "opacity-0"
-        )}
-      >
-        <Texture name="tx-k2-vinyl" className="w-full h-full" />
+  // Expanded it fills a rounded rect, where any rotation would swing the
+  // artwork's corners off the card — so only the circle spins.
+  if (expanded) {
+    return (
+      <div className="absolute inset-0">
+        <Texture name={texture} className="absolute inset-0 w-full h-full" />
+        <div
+          className={cn(
+            "absolute inset-0 m-auto w-16 h-16 rounded-full overflow-hidden",
+            "border-4 border-card transition-opacity duration-500 opacity-0"
+          )}
+        >
+          <Texture name="tx-k2-vinyl" className="w-full h-full" />
+        </div>
       </div>
-    </div>
+    );
+  }
+
+  return (
+    <SpinningDisc
+      texture={texture}
+      labelTexture="tx-k2-vinyl"
+      spinning={spinning}
+      className="absolute inset-0"
+      labelClassName="w-16 h-16 border-4 border-card"
+    />
   );
 }
 

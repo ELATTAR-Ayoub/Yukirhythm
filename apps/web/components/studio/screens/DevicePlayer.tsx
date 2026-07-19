@@ -27,12 +27,52 @@ export default function DevicePlayer({ onCollapse }: DevicePlayerProps) {
   const [searchOpen, setSearchOpen] = useState(false);
 
   return (
-    <section
-      className={cn(
-        "player_shadow bg-card relative overflow-hidden w-full max-w-[340px]",
-        "rounded-[42px] sm:rounded-[52px] flex flex-col items-center"
-      )}
-    >
+    <div className="relative w-full max-w-[340px]">
+      {/*
+        The search tray. It sits behind the card and slides down out of it like
+        the keyboard on a slider phone: tucked under the card's bottom edge so
+        the two read as one chassis, with only the lower slab and its input
+        showing. z-0 keeps it under the card, which hides the tucked portion.
+      */}
+      <div
+        className={cn(
+          "absolute inset-x-4 top-full -mt-11 z-0 anim-tray-out",
+          "transition-opacity duration-500",
+          discExpanded && "opacity-0 pointer-events-none"
+        )}
+      >
+        <div
+          className={cn(
+            "rounded-b-[30px] border border-t-0 border-border bg-muted/60",
+            "shadow-e3 pt-14 pb-4 px-4"
+          )}
+        >
+          <button
+            type="button"
+            onClick={() => setSearchOpen(true)}
+            aria-label="Search tracks"
+            data-signal="player_search_open"
+            className={cn(
+              "w-full flex items-center gap-2.5 rounded-full border border-border bg-background/70",
+              "px-4 py-2.5 text-left text-muted-foreground",
+              "hover:text-foreground hover:border-primary/40 transition-colors duration-fast",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+            )}
+          >
+            <MagnifyingGlassIcon className="w-4 h-4 shrink-0" />
+            <span className="type-small font-normal truncate">
+              Search tracks, artists…
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <section
+        className={cn(
+          "player_shadow bg-card relative z-10 overflow-hidden w-full",
+          "rounded-[42px] sm:rounded-[52px] flex flex-col items-center"
+        )}
+      >
       {onCollapse ? (
         <PlayerButton
           variant="ghost"
@@ -109,33 +149,11 @@ export default function DevicePlayer({ onCollapse }: DevicePlayerProps) {
         <Transport size="lg" onQueue={() => setQueueOpen(true)} />
       </div>
 
-      <div
-        className={cn(
-          "w-full px-7 mt-7 mb-7 transition-opacity duration-500",
-          discExpanded && "opacity-0 pointer-events-none"
-        )}
-      >
-        <button
-          type="button"
-          onClick={() => setSearchOpen(true)}
-          aria-label="Search tracks"
-          data-signal="player_search_open"
-          className={cn(
-            "w-full flex items-center gap-2.5 rounded-lg border border-border bg-background/60",
-            "px-3.5 py-2.5 text-left text-muted-foreground",
-            "hover:text-foreground hover:border-primary/40 transition-colors duration-fast",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
-          )}
-        >
-          <MagnifyingGlassIcon className="w-4 h-4 shrink-0" />
-          <span className="type-small font-normal truncate">
-            Search tracks, artists…
-          </span>
-        </button>
-      </div>
+        <div aria-hidden className="w-full pb-8" />
+      </section>
 
       <QueueDrawer open={queueOpen} onOpenChange={setQueueOpen} />
       <PlayerSearchDrawer open={searchOpen} onOpenChange={setSearchOpen} />
-    </section>
+    </div>
   );
 }

@@ -393,6 +393,32 @@
   }
 }
 
+/* Search tray slides out from under the player like a slider phone's keyboard:
+   starts tucked fully behind the card, settles with a small overshoot. */
+@keyframes tray-slide-out {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.anim-tray-out {
+  animation: tray-slide-out 620ms cubic-bezier(0.22, 1.2, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-tray-out {
+    animation: none;
+  }
+}
+
 .disc-arc-out-left {
   animation: discArcOutLeft 520ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
