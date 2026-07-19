@@ -14,11 +14,12 @@ import QueueDrawer from "./QueueDrawer";
  * Compressed: MiniPlayerBar below md, PlaybackBar at md (768px) and up.
  * Expanded: DevicePlayer centered over the page.
  *
- * This is also the single mount point for QueueDrawer (Part A of task 11):
- * DevicePlayer (docked in NowPlayingRail or expanded here) and the compact
- * bars all open the queue by calling the provider's setQueueOpen(true)
- * rather than mounting their own drawer, so exactly one portal tree ever
- * backs the queue sheet.
+ * This is also the single mount point for QueueDrawer: DevicePlayer (docked
+ * in NowPlayingRail or expanded here) and the compact bars all open the queue
+ * by calling the provider's setQueueOpen(true) rather than mounting their
+ * own drawer, so exactly one portal tree ever backs the queue sheet. That
+ * drawer outlives the nowPlaying guard below — the queue is reachable before
+ * anything has ever played.
  */
 export default function GlobalPlayer() {
   const {
@@ -68,7 +69,17 @@ export default function GlobalPlayer() {
     };
   }, [playerExpanded, setPlayerExpanded]);
 
-  if (!nowPlaying) return null;
+  // The queue drawer mounts unconditionally, ABOVE the nowPlaying guard.
+  // Surfaces that open it — notably NowPlayingRail's "Open queue" — render
+  // whether or not anything has played, since useQueueCollection falls back
+  // to a synthetic "Up next" over the whole library. Mounting the drawer
+  // below the guard left those controls setting state against a drawer that
+  // did not exist, so on a cold session the queue was silently unreachable.
+  const queueDrawer = (
+    <QueueDrawer open={queueOpen} onOpenChange={setQueueOpen} />
+  );
+
+  if (!nowPlaying) return queueDrawer;
 
   return (
     <>
@@ -95,7 +106,7 @@ export default function GlobalPlayer() {
       ) : (
         <MiniPlayerBar onExpand={() => setPlayerExpanded(true)} />
       )}
-      <QueueDrawer open={queueOpen} onOpenChange={setQueueOpen} />
+      {queueDrawer}
     </>
   );
 }

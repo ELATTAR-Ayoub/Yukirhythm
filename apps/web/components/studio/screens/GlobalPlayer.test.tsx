@@ -137,5 +137,34 @@ describe("GlobalPlayer", () => {
       fireEvent.click(screen.getByLabelText("Queue"));
       expect(screen.queryAllByLabelText("Close queue")).toHaveLength(1);
     });
+
+    it("opens the queue on a cold session, with nothing ever played", () => {
+      // Regression guard. GlobalPlayer early-returns null when nothing is
+      // playing, but NowPlayingRail's "Open queue" control renders
+      // unconditionally — so when the drawer was mounted below that guard,
+      // this click set queueOpen against a drawer that did not exist and the
+      // control was silently dead. Every other queue test seeds a track
+      // first, which is exactly why that slipped through.
+      stubViewportWidth(500);
+      render(
+        <MockStudioProvider>
+          <NowPlayingRail />
+          <GlobalPlayer />
+        </MockStudioProvider>
+      );
+
+      expect(screen.queryByLabelText("Close queue")).toBeNull();
+
+      fireEvent.click(screen.getByLabelText("Open queue"));
+
+      // Real visible drawer content, not just the state flag: the close
+      // control, CollectionDetail's play button, and — the load-bearing one —
+      // a track the rail's own 5-row preview caps out before. "Ripple
+      // Theory" (t6) can only be on screen because the full queue list
+      // rendered, so this cannot pass on the rail's preview alone.
+      expect(screen.getByLabelText("Close queue")).toBeTruthy();
+      expect(screen.getByLabelText("Play collection")).toBeTruthy();
+      expect(screen.getByText("Ripple Theory")).toBeTruthy();
+    });
   });
 });
