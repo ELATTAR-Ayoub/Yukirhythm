@@ -94,24 +94,22 @@ export default function RailShelf({
         ) : null}
       </div>
       {asGrid ? (
-        // Stops at 4 columns, not a further `3xl:grid-cols-5` step. Measured
-        // live at 1600px (a two-rail width): the page column holds at ~838px
-        // from `lg` all the way through `3xl`+ (the right rail eats the
-        // space a wider viewport would otherwise hand to the column), so 4
-        // columns already lands at a natural ~198px card — a 5th column
-        // would only cram cards below their designed width. It also turns
-        // out `3xl:` (the shell's custom 1440px breakpoint) cannot safely
-        // combine with `lg:`/`xl:`/`2xl:` on the same property here: its
-        // generated media block is emitted earlier in the stylesheet than
-        // the standard breakpoints regardless of its 1440px value, so
-        // `lg:grid-cols-4` silently wins the cascade over `3xl:grid-cols-5`
-        // even past 1440px (confirmed by inspecting the built CSS, and it
-        // reproduces identically with the equivalent `min-[1440px]:`inline
-        // variant, since Tailwind canonicalises it back to the same
-        // breakpoint token). That's a pre-existing ordering issue in
-        // `--breakpoint-3xl` (app/globals.css) worth a fix of its own; not
-        // taken on here.
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 pb-3">
+        // `3xl:grid-cols-5` used to be silently beaten by `lg:grid-cols-4`
+        // above 1440px: Tailwind 4 emitted the shell's custom `3xl`
+        // breakpoint's media block earlier in the stylesheet than the
+        // built-in `lg`/`xl`/`2xl` blocks regardless of its 1440px value,
+        // so equal-specificity source order let `lg:` win even past 1440px.
+        // Fixed at the token level — `--breakpoint-3xl` in app/globals.css
+        // now redeclares the whole sm..3xl scale so every entry lands in
+        // the same theme-merge pass and keeps ascending source order. With
+        // that fixed, `3xl:grid-cols-5` genuinely applies above 1440px:
+        // measured live (three-column shell, both rails visible) at
+        // 1600px the page column is ~838px wide and lands 5 cards at
+        // ~155px each; at 1920px the column widens to ~1158px and cards
+        // grow to ~219px. Both comfortably clear the card's own minimum
+        // content width, so 5 columns is a genuine improvement over 4
+        // rather than a cramped step.
+        <div className="grid grid-cols-2 lg:grid-cols-4 3xl:grid-cols-5 gap-4 pb-3">
           {children}
         </div>
       ) : (
