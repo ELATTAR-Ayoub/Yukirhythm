@@ -9,7 +9,7 @@ const CATEGORIES: {
   texture: TextureName;
 }[] = [
   { href: "core", title: "Core", desc: "Buttons, inputs, cards, rows — the primitives.", texture: "tx-k2-vinyl" },
-  { href: "shell", title: "Shell & Navigation", desc: "PageHeader, BottomTabBar, SideNav.", texture: "tx-k2-topo" },
+  { href: "shell", title: "Shell & Navigation", desc: "PageHeader, BottomTabBar, LibraryRail.", texture: "tx-k2-topo" },
   { href: "player", title: "Player", desc: "DevicePlayer, MiniPlayerBar, GlobalPlayer states.", texture: "tx-k2-horizon" },
   { href: "content", title: "Content", desc: "Chips, view toggle, sort, track menu.", texture: "tx-k-marble" },
   { href: "drawers", title: "Drawers", desc: "AppDrawer, playlist detail, create playlist.", texture: "tx-k-silk" },

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Texture, { type TextureName } from "@/components/studio/Texture";
 import SectionLabel from "@/components/studio/SectionLabel";
+import ScreensFrame from "@/components/studio/screens/ScreensFrame";
 
 const SCREENS: {
   href: string;
@@ -48,7 +49,7 @@ const SCREENS: {
 
 export default function ScreensIndex() {
   return (
-    <div>
+    <ScreensFrame>
       <Link
         href="/design-system"
         className="inline-block mb-4 font-label text-[10px] uppercase tracking-wider text-muted-foreground hover:text-primary transition-colors duration-fast"
@@ -82,6 +83,6 @@ export default function ScreensIndex() {
           </Link>
         ))}
       </div>
-    </div>
+    </ScreensFrame>
   );
 }

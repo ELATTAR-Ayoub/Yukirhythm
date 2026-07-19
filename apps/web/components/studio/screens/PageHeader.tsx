@@ -15,7 +15,8 @@ interface PageHeaderProps {
 
 /**
  * Shared screen header — avatar + title left, ghost controls right.
- * The avatar is the mobile way into Profile (desktop uses the SideNav footer),
+ * The avatar is the mobile way into Profile (desktop uses the account menu
+ * in StudioHeader),
  * so it hides at md+.
  */
 export default function PageHeader({ title, actions }: PageHeaderProps) {

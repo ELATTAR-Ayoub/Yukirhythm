@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import BackHeader from "@/components/studio/screens/BackHeader";
 import SectionLabel from "@/components/studio/SectionLabel";
+import ScreensFrame from "@/components/studio/screens/ScreensFrame";
 
 const BASE = "/design-system/screens";
 
@@ -40,27 +41,29 @@ const SECTIONS = [
 
 export default function TermsScreen() {
   return (
-    <div className="max-w-xl space-y-8 pb-16">
-      <BackHeader title="Terms" backHref={`${BASE}/auth`} />
+    <ScreensFrame>
+      <div className="max-w-xl space-y-8 pb-16">
+        <BackHeader title="Terms" backHref={`${BASE}/auth`} />
 
-      <p className="type-small text-muted-foreground">
-        The short version: this is a prototype, the music is not real, and
-        nothing here touches the network.
-      </p>
+        <p className="type-small text-muted-foreground">
+          The short version: this is a prototype, the music is not real, and
+          nothing here touches the network.
+        </p>
 
-      <div className="space-y-7">
-        {SECTIONS.map(({ label, title, body }) => (
-          <section key={label}>
-            <SectionLabel>{label}</SectionLabel>
-            <h2 className="type-h4 mt-1">{title}</h2>
-            <p className="type-muted mt-2 leading-relaxed">{body}</p>
-          </section>
-        ))}
+        <div className="space-y-7">
+          {SECTIONS.map(({ label, title, body }) => (
+            <section key={label}>
+              <SectionLabel>{label}</SectionLabel>
+              <h2 className="type-h4 mt-1">{title}</h2>
+              <p className="type-muted mt-2 leading-relaxed">{body}</p>
+            </section>
+          ))}
+        </div>
+
+        <p className="type-label text-muted-foreground">
+          Mock document · no legal effect
+        </p>
       </div>
-
-      <p className="type-label text-muted-foreground">
-        Mock document · no legal effect
-      </p>
-    </div>
+    </ScreensFrame>
   );
 }

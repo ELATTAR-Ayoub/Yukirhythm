@@ -13,7 +13,7 @@ import { DsSection } from "@/components/studio/ds/blocks";
 import StatePanel from "@/components/studio/ds/StatePanel";
 import PageHeader from "@/components/studio/screens/PageHeader";
 import BottomTabBar from "@/components/studio/screens/BottomTabBar";
-import SideNav from "@/components/studio/screens/SideNav";
+import LibraryRail from "@/components/studio/shell/LibraryRail";
 import NavTabs, { type NavTabItem } from "@/components/studio/screens/NavTabs";
 import { PlayerButton } from "@/components/studio/PlayerButton";
 
@@ -93,14 +93,14 @@ export default function ShellComponentsPage() {
           />
         </DsSection>
 
-        <DsSection index="03" title="SideNav">
+        <DsSection index="03" title="LibraryRail">
           <StatePanel
-            name="SideNav (desktop)"
+            name="LibraryRail (desktop)"
             signal="nav_switch"
             views={{
               default: (
-                <div className="[&>aside]:static [&>aside]:h-auto [&>aside]:min-h-0 [&>aside]:flex">
-                  <SideNav />
+                <div className="h-96 rounded-lg border border-border overflow-hidden">
+                  <LibraryRail />
                 </div>
               ),
             }}
