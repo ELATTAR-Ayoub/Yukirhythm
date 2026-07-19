@@ -4,8 +4,10 @@ import { ChevronDownIcon } from "@radix-ui/react-icons";
 
 import { DrawerClose, DrawerTitle } from "@/components/ui/drawer";
 import { PlayerButton } from "@/components/studio/PlayerButton";
+import { useMockStudio } from "./MockStudioProvider";
 import AppDrawer from "./AppDrawer";
-import QueuePanel, { useQueueCollection } from "./QueuePanel";
+import QueuePanel from "./QueuePanel";
+import useQueueCollection from "./useQueueCollection";
 
 interface QueueDrawerProps {
   open: boolean;
@@ -14,6 +16,7 @@ interface QueueDrawerProps {
 
 /** The queue as a full sheet — mobile presentation of QueuePanel. */
 export default function QueueDrawer({ open, onOpenChange }: QueueDrawerProps) {
+  const { playingCollection } = useMockStudio();
   const collection = useQueueCollection();
 
   return (
@@ -30,7 +33,10 @@ export default function QueueDrawer({ open, onOpenChange }: QueueDrawerProps) {
           </DrawerTitle>
         </div>
 
-        <QueuePanel />
+        <QueuePanel
+          collection={collection}
+          playFrom={playingCollection ?? undefined}
+        />
       </div>
     </AppDrawer>
   );

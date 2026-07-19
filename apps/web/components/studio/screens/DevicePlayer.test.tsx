@@ -23,6 +23,15 @@ describe("DevicePlayer", () => {
     expect(screen.queryByLabelText("Collapse player")).toBeNull();
   });
 
+  it("has no collapse control when docked even if onCollapse is passed", () => {
+    render(
+      <MockStudioProvider>
+        <DevicePlayer docked onCollapse={() => {}} />
+      </MockStudioProvider>
+    );
+    expect(screen.queryByLabelText("Collapse player")).toBeNull();
+  });
+
   it("hides the search tray when docked", () => {
     render(
       <MockStudioProvider>
@@ -48,6 +57,9 @@ describe("DevicePlayer", () => {
       </MockStudioProvider>
     );
     const root = container.firstElementChild as HTMLElement;
+    // jsdom has no layout engine and no Tailwind stylesheet, so a width
+    // assertion would read 0 either way — the class is the only observable
+    // signal that the 340px cap was lifted.
     expect(root.className).not.toContain("max-w-[340px]");
   });
 });

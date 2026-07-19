@@ -81,7 +81,7 @@ export default function DevicePlayer({ onCollapse, docked = false }: DevicePlaye
           "rounded-[42px] sm:rounded-[52px] flex flex-col items-center"
         )}
       >
-      {onCollapse ? (
+      {!docked && onCollapse ? (
         <PlayerButton
           variant="ghost"
           size="sm"

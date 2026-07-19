@@ -23,7 +23,10 @@ export default function AddMusicDrawer({
         <DrawerTitle className="type-h2 truncate">Add music</DrawerTitle>
         <p className="type-muted mt-1 truncate">to {collection.title}</p>
 
-        <AddMusicPanel collection={collection} autoFocus />
+        {/* the gap under the title block belongs to this wrapper, not the body */}
+        <div className="mt-4">
+          <AddMusicPanel collection={collection} autoFocus />
+        </div>
       </div>
     </AppDrawer>
   );

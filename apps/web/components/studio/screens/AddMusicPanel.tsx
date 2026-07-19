@@ -37,7 +37,7 @@ export default function AddMusicPanel({
 
   return (
     <>
-      <div className="relative mt-4 mb-6">
+      <div className="relative mb-6">
         <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
           autoFocus={autoFocus}
