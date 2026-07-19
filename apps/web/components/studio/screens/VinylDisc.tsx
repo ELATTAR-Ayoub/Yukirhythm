@@ -6,8 +6,6 @@ import { cn } from "@/lib/utils";
 import Texture, { type TextureName } from "@/components/studio/Texture";
 import SpinningDisc from "@/components/studio/SpinningDisc";
 
-const ARC_MS = 520;
-
 /** The travelling element: a clipped disc that fills its wrapper. */
 const discShape = (expanded: boolean) =>
   cn(
@@ -87,27 +85,49 @@ export default function VinylDisc({
   onToggle,
   children,
 }: VinylDiscProps) {
-  // While swapping we hold the previous face on screen so both can animate.
-  const [outgoing, setOutgoing] = useState<{
-    key: string;
-    texture: TextureName;
-  } | null>(null);
-  const prev = useRef({ trackKey, texture });
+  /*
+    Two persistent layers that trade places, rather than mounting a fresh
+    "outgoing" copy each swap. Keying the discs on trackKey remounted
+    SpinningDisc, so the departing record snapped back to angle 0 the instant
+    it began moving — the jolt that made the swap read as broken.
+
+    Each layer keeps its animation class after the animation ends (the
+    keyframes hold their final frame), so the parked disc stays off-stage
+    until it is called back in.
+  */
+  const [layers, setLayers] = useState<
+    { texture: TextureName | null; cls: string }[]
+  >([
+    { texture, cls: "" },
+    { texture: null, cls: "" },
+  ]);
+  const [active, setActive] = useState(0);
+  const prev = useRef(trackKey);
 
   useEffect(() => {
-    if (prev.current.trackKey === trackKey) return;
-    const last = prev.current;
-    prev.current = { trackKey, texture };
-    if (!direction) return; // a fresh play(), not a next/prev — no arc
-    setOutgoing({ key: last.trackKey, texture: last.texture });
-    const id = setTimeout(() => setOutgoing(null), ARC_MS);
-    return () => clearTimeout(id);
-  }, [trackKey, texture, direction]);
+    if (prev.current === trackKey) return;
+    prev.current = trackKey;
 
-  const outClass =
-    direction === "prev" ? "disc-arc-out-right" : "disc-arc-out-left";
-  const inClass =
-    direction === "prev" ? "disc-arc-in-left" : "disc-arc-in-right";
+    // A fresh play() rather than next/prev: swap the face in place, no travel.
+    if (!direction) {
+      setLayers((l) =>
+        l.map((layer, i) => (i === active ? { ...layer, texture } : layer))
+      );
+      return;
+    }
+
+    const incoming = active === 0 ? 1 : 0;
+    const out =
+      direction === "prev" ? "disc-arc-out-right" : "disc-arc-out-left";
+    const into =
+      direction === "prev" ? "disc-arc-in-left" : "disc-arc-in-right";
+    setLayers((l) =>
+      l.map((layer, i) =>
+        i === incoming ? { texture, cls: into } : { ...layer, cls: out }
+      )
+    );
+    setActive(incoming);
+  }, [trackKey, texture, direction, active]);
 
   return (
     <button
@@ -129,22 +149,20 @@ export default function VinylDisc({
     >
       {/* Each disc is its own clipped circle so the ARC MOVES THE WHOLE DISC.
           Clipping on the wrapper instead would just slide the art inside a
-          stationary hole. */}
-      {outgoing ? (
-        <span key={outgoing.key} className={cn(discShape(expanded), outClass)}>
-          <DiscFace
-            texture={outgoing.texture}
-            spinning={spinning}
-            expanded={expanded}
-          />
-        </span>
-      ) : null}
-      <span
-        key={trackKey}
-        className={cn(discShape(expanded), outgoing && inClass)}
-      >
-        <DiscFace texture={texture} spinning={spinning} expanded={expanded} />
-      </span>
+          stationary hole. The keys are fixed slots, never the track id — that
+          is what keeps each SpinningDisc mounted across a swap. */}
+      {layers.map((layer, i) =>
+        layer.texture ? (
+          <span key={i} className={cn(discShape(expanded), layer.cls)}>
+            <DiscFace
+              texture={layer.texture}
+              // only the disc on stage keeps turning
+              spinning={spinning && i === active}
+              expanded={expanded}
+            />
+          </span>
+        ) : null
+      )}
 
       {/* scrim + overlay copy, only once expanded */}
       <span

@@ -34,7 +34,7 @@ export default function MiniPlayerBar({ onExpand }: MiniPlayerBarProps) {
             labelClassName="w-1/3 h-1/3 border-2 border-card"
           />
           <span className="min-w-0">
-            <span className="block font-ui font-medium text-sm truncate text-primary">
+            <span className="block font-ui font-medium text-sm truncate">
               {nowPlaying.title}
             </span>
             <span className="block font-label text-[10px] uppercase tracking-wider text-muted-foreground truncate">

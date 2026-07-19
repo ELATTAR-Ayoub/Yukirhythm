@@ -348,91 +348,62 @@
 }
 
 /* Track change: the outgoing disc arcs up and off one shoulder while the
-   incoming one swings in along the mirrored path. Next throws to the left. */
+   incoming one swings in along the mirrored path. Next throws to the left.
+   No opacity ramp — the card's overflow clips the disc as it leaves, so it
+   exits by travelling rather than by dissolving. Both animations hold their
+   final frame so the parked disc stays off-stage until it's called back. */
 @keyframes discArcOutLeft {
-  0% {
+  from {
     transform: translate(0, 0) rotate(0deg);
-    opacity: 1;
   }
-  100% {
-    transform: translate(-118%, -22%) rotate(-40deg);
-    opacity: 0;
+  to {
+    transform: translate(-130%, -12%) rotate(-18deg);
   }
 }
 
 @keyframes discArcInRight {
-  0% {
-    transform: translate(118%, -22%) rotate(40deg);
-    opacity: 0;
+  from {
+    transform: translate(130%, -12%) rotate(18deg);
   }
-  100% {
+  to {
     transform: translate(0, 0) rotate(0deg);
-    opacity: 1;
   }
 }
 
 @keyframes discArcOutRight {
-  0% {
+  from {
     transform: translate(0, 0) rotate(0deg);
-    opacity: 1;
   }
-  100% {
-    transform: translate(118%, -22%) rotate(40deg);
-    opacity: 0;
+  to {
+    transform: translate(130%, -12%) rotate(18deg);
   }
 }
 
 @keyframes discArcInLeft {
-  0% {
-    transform: translate(-118%, -22%) rotate(-40deg);
-    opacity: 0;
+  from {
+    transform: translate(-130%, -12%) rotate(-18deg);
   }
-  100% {
+  to {
     transform: translate(0, 0) rotate(0deg);
-    opacity: 1;
   }
 }
 
-/* Search tray slides out from under the player like a slider phone's keyboard:
-   starts tucked fully behind the card, settles with a small overshoot. */
-@keyframes tray-slide-out {
-  0% {
-    transform: translateY(-100%);
-    opacity: 0;
-  }
-  60% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-.anim-tray-out {
-  animation: tray-slide-out 620ms cubic-bezier(0.22, 1.2, 0.36, 1) both;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .anim-tray-out {
-    animation: none;
-  }
-}
-
+/* Leaving accelerates away; arriving decelerates into place. An overshoot on
+   the incoming disc read as a wobble, so it settles straight. */
 .disc-arc-out-left {
-  animation: discArcOutLeft 520ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: discArcOutLeft 480ms cubic-bezier(0.55, 0, 0.85, 0.35) forwards;
 }
 
 .disc-arc-in-right {
-  animation: discArcInRight 520ms cubic-bezier(0.16, 0.84, 0.44, 1) forwards;
+  animation: discArcInRight 480ms cubic-bezier(0.16, 0.7, 0.3, 1) forwards;
 }
 
 .disc-arc-out-right {
-  animation: discArcOutRight 520ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: discArcOutRight 480ms cubic-bezier(0.55, 0, 0.85, 0.35) forwards;
 }
 
 .disc-arc-in-left {
-  animation: discArcInLeft 520ms cubic-bezier(0.16, 0.84, 0.44, 1) forwards;
+  animation: discArcInLeft 480ms cubic-bezier(0.16, 0.7, 0.3, 1) forwards;
 }
 
 @media (prefers-reduced-motion: reduce) {
