@@ -5,6 +5,7 @@ import Texture, { TextureName } from "@/components/studio/Texture";
 import DataText from "@/components/studio/DataText";
 import EqIndicator from "@/components/studio/EqIndicator";
 import { PlayerButton } from "@/components/studio/PlayerButton";
+import IconSwap from "@/components/studio/IconSwap";
 
 export type MediaCardSize = "sm" | "md" | "lg";
 export type MediaCardVariant = "boxy" | "extended";
@@ -78,7 +79,10 @@ function PlayOverlay({ playing }: { playing: boolean }) {
           aria-label={playing ? "Pause" : "Play"}
           data-signal="card_play"
         >
-          {playing ? <PauseIcon /> : <PlayIcon />}
+          <IconSwap
+            active={playing ? "pause" : "play"}
+            icons={{ play: <PlayIcon />, pause: <PauseIcon /> }}
+          />
         </PlayerButton>
       </span>
     </span>

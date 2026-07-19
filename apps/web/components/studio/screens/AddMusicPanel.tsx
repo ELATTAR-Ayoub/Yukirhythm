@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import TrackRow from "@/components/studio/TrackRow";
 import EmptyState from "@/components/studio/EmptyState";
 import { PlayerButton } from "@/components/studio/PlayerButton";
+import IconSwap from "@/components/studio/IconSwap";
 import { useMockStudio } from "./MockStudioProvider";
 import {
   formatDuration,
@@ -89,7 +90,10 @@ export default function AddMusicPanel({
                   onClick={() => addTrackToCollection(collection.id, track.id)}
                   data-signal="add_music_confirm"
                 >
-                  {added ? <CheckIcon /> : <PlusIcon />}
+                  <IconSwap
+                    active={added ? "added" : "add"}
+                    icons={{ add: <PlusIcon />, added: <CheckIcon /> }}
+                  />
                 </PlayerButton>
               </div>
             );

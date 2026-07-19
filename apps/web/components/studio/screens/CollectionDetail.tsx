@@ -16,6 +16,7 @@ import MediaCard from "@/components/studio/MediaCard";
 import TrackRow from "@/components/studio/TrackRow";
 import EmptyState from "@/components/studio/EmptyState";
 import { PlayerButton } from "@/components/studio/PlayerButton";
+import IconSwap from "@/components/studio/IconSwap";
 import AddMusicDrawer from "./AddMusicDrawer";
 import TrackMenu from "./TrackMenu";
 import ViewToggle, { type TrackView } from "./ViewToggle";
@@ -180,7 +181,10 @@ export default function CollectionDetail({
             if (tracks[0]) play(tracks[0], source);
           }}
         >
-          {playingHere && isPlaying ? <PauseIcon /> : <PlayIcon />}
+          <IconSwap
+            active={playingHere && isPlaying ? "pause" : "play"}
+            icons={{ play: <PlayIcon />, pause: <PauseIcon /> }}
+          />
         </PlayerButton>
       </div>
 

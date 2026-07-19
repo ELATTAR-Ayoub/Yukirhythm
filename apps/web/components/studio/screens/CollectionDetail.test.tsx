@@ -1,9 +1,22 @@
-import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 
 import MockStudioProvider from "@/components/studio/screens/MockStudioProvider";
 import { LIKED_SONGS } from "@/components/studio/screens/mock-data";
 import CollectionDetail from "./CollectionDetail";
+
+/**
+ * IconSwap renders both icon faces as siblings (class `col-start-1`), the
+ * active one at opacity-100 and the other at opacity-0 + aria-hidden. A
+ * hard ternary swap would instead render a single icon with neither class,
+ * so asserting exactly two faces — one visible, one hidden — is what
+ * distinguishes the real component from a lookalike.
+ */
+function iconSwapFaces(button: HTMLElement): HTMLElement[] {
+  return Array.from(button.querySelectorAll<HTMLElement>("span")).filter(
+    (el) => el.className.includes("col-start-1")
+  );
+}
 
 describe("CollectionDetail", () => {
   it("does not nest a play button inside each row's role=button wrapper", () => {
@@ -34,5 +47,46 @@ describe("CollectionDetail", () => {
     // collection's title, not a fabricated per-track value (MockTrack has
     // no album field).
     expect(screen.getAllByText("Liked Songs").length).toBeGreaterThanOrEqual(5);
+  });
+
+  describe("play/pause icon", () => {
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+
+    it("renders the collection play/pause control through IconSwap, not a hard swap", () => {
+      render(
+        <MockStudioProvider>
+          <CollectionDetail collection={LIKED_SONGS} />
+        </MockStudioProvider>
+      );
+
+      const button = screen.getByRole("button", { name: "Play collection" });
+      const faces = iconSwapFaces(button);
+      expect(faces).toHaveLength(2);
+      expect(faces[0].className).toContain("opacity-100");
+      expect(faces[0].getAttribute("aria-hidden")).toBe("false");
+      expect(faces[1].className).toContain("opacity-0");
+      expect(faces[1].getAttribute("aria-hidden")).toBe("true");
+    });
+
+    it("rolls the strip to the pause face once playback starts on this collection", () => {
+      render(
+        <MockStudioProvider>
+          <CollectionDetail collection={LIKED_SONGS} />
+        </MockStudioProvider>
+      );
+
+      fireEvent.click(screen.getByRole("button", { name: "Play Cobalt Dreams" }));
+      act(() => vi.advanceTimersByTime(650));
+
+      const button = screen.getByRole("button", { name: "Pause collection" });
+      const faces = iconSwapFaces(button);
+      expect(faces).toHaveLength(2);
+      // play (index 0) is now off-center and hidden; pause (index 1) landed.
+      expect(faces[0].className).toContain("opacity-0");
+      expect(faces[0].getAttribute("aria-hidden")).toBe("true");
+      expect(faces[1].className).toContain("opacity-100");
+      expect(faces[1].getAttribute("aria-hidden")).toBe("false");
+    });
   });
 });
