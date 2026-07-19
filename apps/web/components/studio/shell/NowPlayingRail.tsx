@@ -108,12 +108,15 @@ function UpNextSection() {
               onClick={() => play(track, playingCollection ?? undefined)}
               onKeyDown={playKeyHandler(track)}
             >
+              {/* No play overlay: this row sits inside a role="button" div,
+                  and TrackRow's overlay would nest a button inside it. */}
               <TrackRow
                 index={i + 1}
                 title={track.title}
                 artist={track.artist}
                 duration={formatDuration(track.durationSec)}
                 texture={track.texture}
+                playable={false}
               />
             </div>
           ))}

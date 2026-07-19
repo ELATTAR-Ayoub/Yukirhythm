@@ -81,6 +81,8 @@ export default function PlayerSearchDrawer({
                   }
                 }}
               >
+                {/* No play overlay: this row sits inside a role="button" div,
+                    and TrackRow's overlay would nest a button inside it. */}
                 <TrackRow
                   index={i + 1}
                   title={track.title}
@@ -88,6 +90,7 @@ export default function PlayerSearchDrawer({
                   duration={formatDuration(track.durationSec)}
                   texture={track.texture}
                   playing={nowPlaying?.id === track.id && isPlaying}
+                  playable={false}
                 />
               </div>
             ))}

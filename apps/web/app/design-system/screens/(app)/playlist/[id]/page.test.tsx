@@ -23,7 +23,12 @@ describe("PlaylistScreen", () => {
       </MockStudioProvider>
     );
 
-    expect(screen.getByText("Liked Songs")).toBeTruthy();
+    // TrackRow's desktop album column (Task 13) now also prints the
+    // collection's title once per row, so the hero heading is no longer the
+    // only "Liked Songs" text on the page — scope to the heading itself.
+    expect(
+      screen.getByRole("heading", { name: "Liked Songs", level: 1 })
+    ).toBeTruthy();
     expect(screen.getByText(/Every track you've hearted/)).toBeTruthy();
   });
 

@@ -224,6 +224,8 @@ export default function CollectionDetail({
                 onClick={() => play(track, source)}
                 onKeyDown={playKeyHandler(track)}
               >
+                {/* No play overlay: this row sits inside a role="button" div,
+                    and TrackRow's overlay would nest a button inside it. */}
                 <TrackRow
                   index={i + 1}
                   title={track.title}
@@ -231,6 +233,9 @@ export default function CollectionDetail({
                   duration={formatDuration(track.durationSec)}
                   texture={track.texture}
                   playing={nowPlaying?.id === track.id && isPlaying}
+                  playable={false}
+                  desktop
+                  album={collection.title}
                 />
               </div>
               <TrackMenu trackTitle={track.title} />

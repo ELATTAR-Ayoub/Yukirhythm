@@ -15,6 +15,21 @@ interface TrackRowProps {
   artUrl?: string;
   playing?: boolean;
   selected?: boolean;
+  /**
+   * The hover overlay renders a real <button aria-label="Play">. Callers that
+   * wrap the row in their own interactive element (a role="button" div, an
+   * anchor) must opt out — a button nested inside interactive content is
+   * invalid HTML and leaves a dead, near-unlabelled keyboard stop on every
+   * row. Mirrors MediaCard's `playable` prop.
+   */
+  playable?: boolean;
+  /**
+   * Adds an album column for wide layouts (hidden below `lg`). There is no
+   * per-track album field in MockTrack, so callers pass the containing
+   * collection's title — never a fabricated per-track value.
+   */
+  desktop?: boolean;
+  album?: string;
   className?: string;
   /** Signal: row_play, row_queue */
 }
@@ -29,6 +44,9 @@ export default function TrackRow({
   artUrl,
   playing = false,
   selected = false,
+  playable = true,
+  desktop = false,
+  album,
   className,
 }: TrackRowProps) {
   return (
@@ -61,17 +79,19 @@ export default function TrackRow({
             <EqIndicator />
           </span>
         ) : null}
-        <span className="absolute inset-0 flex items-center justify-center bg-ink/40 opacity-0 group-hover:opacity-100 transition-opacity duration-fast">
-          <PlayerButton
-            variant="ghost"
-            size="sm"
-            aria-label="Play"
-            data-signal="row_play"
-            className="text-snow"
-          >
-            <PlayIcon />
-          </PlayerButton>
-        </span>
+        {playable ? (
+          <span className="absolute inset-0 flex items-center justify-center bg-ink/40 opacity-0 group-hover:opacity-100 transition-opacity duration-fast">
+            <PlayerButton
+              variant="ghost"
+              size="sm"
+              aria-label="Play"
+              data-signal="row_play"
+              className="text-snow"
+            >
+              <PlayIcon />
+            </PlayerButton>
+          </span>
+        ) : null}
       </div>
       <div className="min-w-0 flex-1">
         <div
@@ -100,6 +120,13 @@ export default function TrackRow({
           </div>
         ) : null}
       </div>
+      {desktop && album ? (
+        <div className="hidden lg:block min-w-0 flex-1">
+          <span className="font-ui text-sm text-muted-foreground truncate block">
+            {album}
+          </span>
+        </div>
+      ) : null}
       {duration ? (
         <DataText className="text-sm text-muted-foreground shrink-0">
           {duration}

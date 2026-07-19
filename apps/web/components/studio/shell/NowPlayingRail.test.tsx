@@ -171,6 +171,23 @@ describe("NowPlayingRail", () => {
       expect(screen.getByTestId("queue-open").textContent).toBe("true");
     });
 
+    it("does not nest a play button inside the row's role=button wrapper", () => {
+      // TrackRow's hover overlay is a real <button aria-label="Play">.
+      // Nested inside the row's role="button" wrapper it's invalid HTML and
+      // a dead, near-unlabelled keyboard stop — opted out via playable={false}.
+      render(
+        <MockStudioProvider>
+          <NowPlayingRail />
+        </MockStudioProvider>
+      );
+
+      expect(screen.queryAllByLabelText("Play")).toHaveLength(0);
+      // The wrapper's own accessible name must still be present.
+      expect(
+        screen.getByRole("button", { name: "Play Midnight Snowfall" })
+      ).toBeTruthy();
+    });
+
     it("starts a track when its up-next row is clicked", () => {
       const source = LIKED_SONGS; // trackIds: t2, t5, t7, t10, t8
       render(
