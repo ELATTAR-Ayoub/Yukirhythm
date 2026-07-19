@@ -58,8 +58,7 @@ export default function AppShellLayout({
             "min-w-0 flex-1 md:min-h-0",
             "pb-44 md:pb-0",
             "md:overflow-y-auto md:rounded-2xl md:border md:border-border md:bg-card",
-            "md:px-6 md:pt-6",
-            system && "md:mx-auto md:max-w-[880px] md:w-full"
+            "md:px-6 md:pt-6"
           )}
         >
           {children}

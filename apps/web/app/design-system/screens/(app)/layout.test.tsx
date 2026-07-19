@@ -86,4 +86,28 @@ describe("AppShellLayout", () => {
       screen.getByRole("complementary", { name: "Now playing" })
     ).toBeTruthy();
   });
+
+  it("lets the page column fill the row on a system route instead of capping at 880px", () => {
+    // Both rails are absent on a system route (asserted above), so `main` is
+    // the row's only flex child — it should size itself with `flex-1` alone.
+    // The old `md:mx-auto md:max-w-[880px] md:w-full` left ~500px of dead
+    // band on each side at wide viewports; jsdom has no layout engine, so the
+    // class list itself is the only observable proof the cap is gone.
+    renderShell(`${PROFILE}/settings`);
+
+    const main = screen.getByTestId("page-content").closest("main")!;
+    expect(main.className).not.toContain("max-w-[880px]");
+    expect(main.className).not.toContain("mx-auto");
+    expect(main.className).toContain("flex-1");
+  });
+
+  it("still gives the page column the same flex-1 sizing on a music route", () => {
+    // Regression guard: the fix must not special-case music routes — they
+    // never had the cap, and must keep behaving exactly as before.
+    renderShell(HOME);
+
+    const main = screen.getByTestId("page-content").closest("main")!;
+    expect(main.className).not.toContain("max-w-[880px]");
+    expect(main.className).toContain("flex-1");
+  });
 });
