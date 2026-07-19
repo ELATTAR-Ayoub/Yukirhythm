@@ -45,6 +45,29 @@ describe("NowPlayingRail", () => {
     nav.pathname = "/design-system/screens/home";
   });
 
+  it("keeps the docked player pinned outside the scrollable up-next/add-music section", () => {
+    // jsdom has no layout engine, so scroll position/bounding-rect can't be
+    // asserted here (see the live-measured proof in the task report instead).
+    // What jsdom CAN honestly assert is the structural fix: the player must
+    // not be a descendant of the element that scrolls, or scrolling that
+    // element would carry the player along with it — the exact bug this
+    // guards against.
+    const { container } = render(
+      <MockStudioProvider>
+        <NowPlayingRail />
+      </MockStudioProvider>
+    );
+
+    const scrollRegion = container.querySelector(".overflow-y-auto");
+    expect(scrollRegion).toBeTruthy();
+
+    const playerText = screen.getByText("Nothing playing yet.");
+    expect(scrollRegion!.contains(playerText)).toBe(false);
+
+    expect(scrollRegion!.contains(screen.getByText("Up next"))).toBe(true);
+    expect(scrollRegion!.contains(screen.getByText("Add music"))).toBe(true);
+  });
+
   describe("add music section", () => {
     it("shows an honest hint when the path is not a playlist route", () => {
       nav.pathname = "/design-system/screens/home";

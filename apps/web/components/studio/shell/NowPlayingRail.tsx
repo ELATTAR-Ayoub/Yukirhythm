@@ -160,15 +160,21 @@ function AddMusicSection() {
 
 /**
  * The right-hand 340px column: docked player, an Up next preview, and
- * Add music for whatever playlist the page column has open. Not wired into
- * a layout yet — that's a later task.
+ * Add music for whatever playlist the page column has open.
+ *
+ * The player is pinned (`shrink-0`, outside the scroll container) — same
+ * pattern as `LibraryRail`'s header — so scrolling down to Up next / Add
+ * music never pushes the docked player itself out of view. Only the
+ * sections below it scroll.
  */
 export default function NowPlayingRail() {
   return (
-    <div className="flex flex-col h-full min-h-0 overflow-y-auto no-scrollbar">
+    <div className="flex flex-col h-full min-h-0">
       <PlayerSection />
-      <UpNextSection />
-      <AddMusicSection />
+      <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar">
+        <UpNextSection />
+        <AddMusicSection />
+      </div>
     </div>
   );
 }
