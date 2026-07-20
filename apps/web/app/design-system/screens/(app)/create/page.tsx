@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 
 import BackHeader from "@/components/studio/screens/BackHeader";
 import CreatePlaylistFlow from "@/components/studio/screens/CreatePlaylistFlow";
+import PageTexture from "@/components/studio/screens/PageTexture";
 import { LIBRARY, playlistHref } from "@/components/studio/shell/routes";
 
 /**
@@ -19,7 +20,8 @@ export default function CreatePlaylistScreen() {
   const router = useRouter();
 
   return (
-    <div>
+    <div className="relative">
+      <PageTexture />
       <BackHeader title="Create playlist" backHref={LIBRARY} />
       <CreatePlaylistFlow
         onCreated={(collection) => router.push(playlistHref(collection.id))}

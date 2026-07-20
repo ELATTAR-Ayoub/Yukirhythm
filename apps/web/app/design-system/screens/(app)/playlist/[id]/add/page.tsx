@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import EmptyState from "@/components/studio/EmptyState";
 import BackHeader from "@/components/studio/screens/BackHeader";
 import AddMusicPanel from "@/components/studio/screens/AddMusicPanel";
+import PageTexture from "@/components/studio/screens/PageTexture";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
 import { playlistHref } from "@/components/studio/shell/routes";
 
@@ -39,7 +40,8 @@ export default function AddMusicScreen() {
   }
 
   return (
-    <div className="pb-8">
+    <div className="relative pb-8">
+      <PageTexture />
       <BackHeader title="Add music" backHref={playlistHref(collection.id)} />
       <p className="type-muted -mt-4 mb-4 truncate">to {collection.title}</p>
       <AddMusicPanel collection={collection} autoFocus />
