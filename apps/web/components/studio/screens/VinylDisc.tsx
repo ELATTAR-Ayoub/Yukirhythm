@@ -6,13 +6,53 @@ import { cn } from "@/lib/utils";
 import Texture, { type TextureName } from "@/components/studio/Texture";
 import SpinningDisc from "@/components/studio/SpinningDisc";
 
-/** The travelling element: a clipped disc that fills its wrapper. */
+/*
+  The expand is two phases, not one blend: the record travels to the middle of
+  the card, and only then grows to cover it. Collapsing runs the same beats in
+  reverse — shrink back to a circle first, then ride back up to the shoulder.
+
+  Both use --ease-out. The arc animations below already carry the note that an
+  overshooting curve on a moving disc "read as a wobble"; the expand used to
+  use --ease-spring (1.56 overshoot) on `transition-all`, so width, height,
+  top, translate and border-radius each overshot on their own schedule. That
+  was the vibration.
+*/
+const TRAVEL_MS = 300;
+const GROW_MS = 460;
+const SHRINK_MS = 320;
+
+const GROW_DELAY_MS = TRAVEL_MS - 40;
+
+const EXPAND_TRANSITION: React.CSSProperties = {
+  transition: [
+    `top ${TRAVEL_MS}ms var(--ease-out)`,
+    `scale ${GROW_MS}ms var(--ease-out) ${GROW_DELAY_MS}ms`,
+  ].join(", "),
+};
+
+const COLLAPSE_TRANSITION: React.CSSProperties = {
+  transition: [
+    `scale ${SHRINK_MS}ms var(--ease-out)`,
+    `top ${TRAVEL_MS + 60}ms var(--ease-out) ${SHRINK_MS - 60}ms`,
+  ].join(", "),
+};
+
+/**
+ * The travelling element: a clipped disc that fills its wrapper.
+ *
+ * Corner radii are pre-divided by the 1.2 expand scale so they *render* at the
+ * card's own 42/52px once grown — a radius on a scaled box is scaled with it.
+ * The morph runs on the grow phase's clock so the circle is still a circle
+ * while it travels.
+ */
 const discShape = (expanded: boolean) =>
   cn(
-    "absolute inset-0 overflow-hidden",
+    "absolute inset-0 overflow-hidden transition-[border-radius] ease-out",
+    // Literal classes on purpose — Tailwind scans source text, so an
+    // interpolated `duration-[${x}ms]` would never generate any CSS.
     expanded
-      ? "rounded-[42px] sm:rounded-[52px]"
-      : "rounded-full disc_shadow"
+      ? "rounded-[35px] sm:rounded-[43px] duration-[460ms] delay-[260ms]"
+      : "rounded-full disc_shadow duration-[320ms]"
   );
 
 interface VinylDiscProps {
@@ -136,15 +176,25 @@ export default function VinylDisc({
       aria-label={expanded ? "Shrink artwork" : "Expand artwork"}
       aria-expanded={expanded}
       data-signal="disc_toggle"
+      style={expanded ? EXPAND_TRANSITION : COLLAPSE_TRANSITION}
       className={cn(
-        "absolute z-10 transition-all duration-700 ease-spring",
+        "absolute z-10",
         "outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
         "motion-reduce:transition-none",
+        /*
+          Geometry is fixed: a card-width circle, always centred on `left` and
+          pinned by a constant `translate`. Only `top` and `scale` change, so
+          nothing interpolates width, height or position at the same time —
+          that simultaneous interpolation, on an overshooting curve, is what
+          made the old expand read as a vibration.
+        */
+        "left-1/2 w-[112%] aspect-square -translate-x-1/2 -translate-y-1/2",
         expanded
-          ? // fills the card as a rounded rect — the landing hover state
-            "inset-0 w-full h-full"
-          : // half of a card-width circle, the rest clipped by the card
-            "left-1/2 -translate-x-1/2 -translate-y-1/2 top-0 w-[112%] aspect-square"
+          ? // centred, then grown past the card's bounds — the card clips it,
+            // so the silhouette you see is the card's own rounded rect
+            "top-1/2 scale-[1.2]"
+          : // half off the top, the rest clipped by the card
+            "top-0 scale-100"
       )}
     >
       {/* Each disc is its own clipped circle so the ARC MOVES THE WHOLE DISC.
