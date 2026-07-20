@@ -1,0 +1,181 @@
+import type { Timestamp } from "firebase-admin/firestore";
+import type { TextureName } from "@/components/studio/Texture";
+
+/**
+ * Firestore document shapes. Naming rules (spec §4): no wrapper objects,
+ * camelCase, `Sec` for durations, `At` for timestamps, `Count` for counts,
+ * booleans read as assertions, never a field called `private`.
+ */
+
+export const SCHEMA_VERSION = 1;
+export const MAX_TRACKS_PER_COLLECTION = 5000;
+
+/** Reserved id for the virtual Liked Songs collection (spec D8). */
+export const LIKED_COLLECTION_ID = "liked";
+
+export type Image = { url: string; width: number; height: number };
+
+export type LabelSource =
+  | "youtube-category"
+  | "youtube-keywords"
+  | "provider-topic"
+  | "inferred"
+  | "user";
+
+export type TrackLabel = {
+  label: string;
+  kind: "genre" | "mood";
+  source: LabelSource;
+  confidence: number;
+};
+
+export type Track = {
+  trackId: string;
+  type: "track" | "episode";
+
+  title: string;
+  artists: { artistId: string; name: string }[];
+  album: { albumId: string; name: string } | null;
+  durationSec: number | null;
+  /** Provider thumbnails (spec D6). */
+  artwork: Image[];
+  /** Deterministic from trackId (spec D6, §5.11) — the design-system fallback. */
+  texture: TextureName;
+
+  source: {
+    provider: "youtube";
+    videoId: string;
+    url: string;
+    aliasVideoIds: string[];
+  };
+
+  isEmbeddable: boolean;
+  isLive: boolean;
+  isFamilySafe: boolean;
+
+  stats: { viewCount: number; likeCount: number; playCount: number };
+  publishedAt: Timestamp | null;
+
+  labels: TrackLabel[];
+  /** Flat mirror of labels[].label. array-contains cannot match nested fields. */
+  labelIds: string[];
+  keywords: string[];
+  episode?: { showId: string; number: number | null; publishedAt: Timestamp };
+
+  enrichedAt: Timestamp | null;
+  schemaVersion: number;
+};
+
+export type Artist = {
+  artistId: string;
+  name: string;
+  bio: string | null;
+  artwork: Image[];
+  subscriberCount: number | null;
+  relatedArtistIds: string[];
+  labels: TrackLabel[];
+  enrichedAt: Timestamp | null;
+};
+
+/** Membership carries its own timestamp so "Recently added" can sort (spec D7). */
+export type CollectionTrack = {
+  trackId: string;
+  addedAt: Timestamp;
+  addedBy: string;
+};
+
+export type Collection = {
+  collectionId: string;
+  ownerId: string;
+
+  /** Container role. There is no "liked" role — that collection is virtual (D8). */
+  role: "playlist" | "show";
+  /** Drives the Library filter chips (D9). */
+  contentType: "music" | "podcast";
+
+  title: string;
+  description: string;
+  tags: string[];
+
+  cover: "texture" | "mosaic" | "image";
+  texture: TextureName;
+  imageUrl: string | null;
+
+  tracks: CollectionTrack[];
+  visibility: "private" | "unlisted" | "public";
+
+  stats: {
+    trackCount: number;
+    totalDurationSec: number;
+    saveCount: number;
+    playCount: number;
+  };
+
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+};
+
+export type UserPrivacy = {
+  saveHistory: boolean;
+  personalization: boolean;
+  publicProfile: boolean;
+};
+
+export type UserSettings = {
+  audioQuality: "auto" | "low" | "high";
+  language: string;
+  theme: "system" | "light" | "dark";
+};
+
+export type User = {
+  userId: string;
+  displayName: string;
+  handle: string | null;
+  email: string;
+  avatarUrl: string | null;
+  bio: string | null;
+  authProvider: "google" | "facebook";
+  counts: {
+    followerCount: number;
+    followingCount: number;
+    collectionCount: number;
+  };
+  privacy: UserPrivacy;
+  settings: UserSettings;
+  createdAt: Timestamp;
+};
+
+export type TrackState = {
+  trackId: string;
+  isLiked: boolean;
+  likedAt: Timestamp | null;
+  playCount: number;
+  completedCount: number;
+  skipCount: number;
+  totalListenedSec: number;
+  lastPlayedAt: Timestamp | null;
+  resumeSec: number;
+  addedAt: Timestamp;
+};
+
+export type CollectionState = {
+  collectionId: string;
+  isPinned: boolean;
+  lastOpenedAt: Timestamp | null;
+};
+
+/**
+ * History and personalization default on because the product is built around
+ * them; public profile defaults off because it exposes the user to others.
+ */
+export const DEFAULT_PRIVACY: UserPrivacy = {
+  saveHistory: true,
+  personalization: true,
+  publicProfile: false,
+};
+
+export const DEFAULT_SETTINGS: UserSettings = {
+  audioQuality: "auto",
+  language: "en",
+  theme: "system",
+};
