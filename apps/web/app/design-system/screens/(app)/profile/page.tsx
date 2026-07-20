@@ -30,7 +30,7 @@ export default function ProfileHub() {
   return (
     <div>
       <PageHeader title="Profile" />
-      <div className="space-y-6 max-w-xl">
+      <div className="space-y-6">
         <ProfileBadge user={user} />
         <MenuList>
           <MenuRow

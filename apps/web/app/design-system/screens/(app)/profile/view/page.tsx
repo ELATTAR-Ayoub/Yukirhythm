@@ -14,7 +14,7 @@ export default function ViewProfileScreen() {
   if (!user) return <SignInPrompt />;
 
   return (
-    <div className="max-w-xl">
+    <div>
       <BackHeader title="Your profile" backHref={`${BASE}/profile`} />
       <div className="flex flex-col items-center gap-3 py-6">
         <Avatar className="w-24 h-24 border border-border">

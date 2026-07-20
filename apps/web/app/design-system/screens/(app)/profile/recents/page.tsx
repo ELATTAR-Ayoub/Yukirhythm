@@ -27,7 +27,7 @@ export default function RecentsScreen() {
   };
 
   return (
-    <div className="max-w-xl">
+    <div>
       <BackHeader title="Recents" backHref={`${BASE}/profile`} />
       {MOCK_HISTORY.length === 0 ? (
         <EmptyState

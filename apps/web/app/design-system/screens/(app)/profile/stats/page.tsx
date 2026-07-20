@@ -28,7 +28,7 @@ export default function StatsScreen() {
   };
 
   return (
-    <div className="max-w-xl space-y-10">
+    <div className="space-y-10">
       <div>
         <BackHeader title="Listening stats" backHref={`${BASE}/profile`} />
         <div className="grid grid-cols-2 gap-3">

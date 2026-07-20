@@ -32,7 +32,7 @@ export default function SettingsScreen() {
   if (!user) return <SignInPrompt />;
 
   return (
-    <div className="max-w-xl space-y-8">
+    <div className="space-y-8">
       <BackHeader title="Settings" backHref={`${BASE}/profile`} />
 
       <section>

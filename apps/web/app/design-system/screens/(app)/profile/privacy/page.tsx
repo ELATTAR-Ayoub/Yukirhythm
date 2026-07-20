@@ -45,7 +45,7 @@ export default function PrivacyScreen() {
   if (!user) return <SignInPrompt />;
 
   return (
-    <div className="max-w-xl space-y-6">
+    <div className="space-y-6">
       <BackHeader title="Privacy" backHref={`${BASE}/profile`} />
 
       <p className="type-small text-muted-foreground">
