@@ -170,51 +170,59 @@ export default function VinylDisc({
   }, [trackKey, texture, direction, active]);
 
   return (
-    <button
-      type="button"
-      onClick={onToggle}
-      aria-label={expanded ? "Shrink artwork" : "Expand artwork"}
-      aria-expanded={expanded}
-      data-signal="disc_toggle"
-      style={expanded ? EXPAND_TRANSITION : COLLAPSE_TRANSITION}
-      className={cn(
-        "absolute z-10",
-        "outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
-        "motion-reduce:transition-none",
-        /*
+    <>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-label={expanded ? "Shrink artwork" : "Expand artwork"}
+        aria-expanded={expanded}
+        data-signal="disc_toggle"
+        style={expanded ? EXPAND_TRANSITION : COLLAPSE_TRANSITION}
+        className={cn(
+          "absolute z-10",
+          "outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+          "motion-reduce:transition-none",
+          /*
           Geometry is fixed: a card-width circle, always centred on `left` and
           pinned by a constant `translate`. Only `top` and `scale` change, so
           nothing interpolates width, height or position at the same time —
           that simultaneous interpolation, on an overshooting curve, is what
           made the old expand read as a vibration.
         */
-        "left-1/2 w-[112%] aspect-square -translate-x-1/2 -translate-y-1/2",
-        expanded
-          ? // centred, then grown past the card's bounds — the card clips it,
-            // so the silhouette you see is the card's own rounded rect
-            "top-1/2 scale-[1.2]"
-          : // half off the top, the rest clipped by the card
-            "top-0 scale-100"
-      )}
-    >
-      {/* Each disc is its own clipped circle so the ARC MOVES THE WHOLE DISC.
+          "left-1/2 w-[112%] aspect-square -translate-x-1/2 -translate-y-1/2",
+          expanded
+            ? // centred, then grown past the card's bounds — the card clips it,
+              // so the silhouette you see is the card's own rounded rect
+              "top-1/2 scale-[1.2]"
+            : // half off the top, the rest clipped by the card
+              "top-0 scale-100"
+        )}
+      >
+        {/* Each disc is its own clipped circle so the ARC MOVES THE WHOLE DISC.
           Clipping on the wrapper instead would just slide the art inside a
           stationary hole. The keys are fixed slots, never the track id — that
           is what keeps each SpinningDisc mounted across a swap. */}
-      {layers.map((layer, i) =>
-        layer.texture ? (
-          <span key={i} className={cn(discShape(expanded), layer.cls)}>
-            <DiscFace
-              texture={layer.texture}
-              // only the disc on stage keeps turning
-              spinning={spinning && i === active}
-              expanded={expanded}
-            />
-          </span>
-        ) : null
-      )}
+        {layers.map((layer, i) =>
+          layer.texture ? (
+            <span key={i} className={cn(discShape(expanded), layer.cls)}>
+              <DiscFace
+                texture={layer.texture}
+                // only the disc on stage keeps turning
+                spinning={spinning && i === active}
+                expanded={expanded}
+              />
+            </span>
+          ) : null
+        )}
+      </button>
 
-      {/* scrim + overlay copy, only once expanded */}
+      {/*
+        Scrim + overlay copy, a SIBLING of the disc rather than a child.
+        Inside the button it inherited the 1.2 expand scale: the type grew
+        with the artwork and its left edge was clipped by the card, so the
+        artist read as a fragment and the title lost its first characters.
+        Out here it sits on the card's own box at 1:1 and stays put.
+      */}
       <span
         aria-hidden={!expanded}
         className={cn(
@@ -222,11 +230,15 @@ export default function VinylDisc({
           "absolute inset-0 z-10 flex flex-col justify-end px-6 pb-24 text-left",
           "bg-gradient-to-t from-ink/95 via-ink/65 to-transparent",
           "transition-opacity duration-500",
-          expanded ? "opacity-100" : "opacity-0 pointer-events-none"
+          // Never interactive: as a sibling it lies over the disc, so taking
+          // pointer events here would swallow the tap that shrinks it again.
+          "pointer-events-none",
+          // fades in as the disc finishes growing, not while it travels
+          expanded ? "opacity-100 delay-[260ms]" : "opacity-0"
         )}
       >
         {children}
       </span>
-    </button>
+    </>
   );
 }
