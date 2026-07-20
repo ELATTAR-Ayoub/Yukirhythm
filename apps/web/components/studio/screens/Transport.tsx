@@ -19,6 +19,12 @@ import { useMockStudio } from "./MockStudioProvider";
  * The transport cluster from the DS spec, wired to the mock player.
  * Left→right: loop · prev · play/pause/wait (3-face IconSwap) · next · queue.
  * `compact` drops loop and queue — the compressed bar carries transport only.
+ *
+ * With no track loaded the playback controls — prev, play/pause, next and
+ * Loop — are all disabled. The bars now render permanently in an idle
+ * state, so this cluster is on screen with nothing to act on, and a live
+ * Loop toggle there would be playback state for a track that doesn't
+ * exist. Queue stays live; see the note on it below.
  */
 export default function Transport({
   size = "lg",
@@ -42,6 +48,7 @@ export default function Transport({
           variant={looping ? "primary" : "outline"}
           active={looping}
           onClick={() => setLooping((l) => !l)}
+          disabled={disabled}
           aria-label="Loop"
           data-signal="loop"
         >
@@ -81,6 +88,10 @@ export default function Transport({
       >
         <TrackNextIcon />
       </PlayerButton>
+      {/* Queue is deliberately NOT disabled when idle: it is navigation to a
+          page that still has content (an unstarted queue is the whole
+          library), not a playback control, so nothing about it implies the
+          bar is playing something. */}
       {compact ? null : (
         <PlayerButton
           variant="outline"

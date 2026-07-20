@@ -41,14 +41,68 @@ describe("PlaybackBar", () => {
     push.mockClear();
   });
 
-  it("renders nothing when no track is playing", () => {
-    stubMatchMedia(false);
-    const { container } = render(
-      <MockStudioProvider>
-        <PlaybackBar onExpand={() => {}} />
-      </MockStudioProvider>
-    );
-    expect(container).toBeEmptyDOMElement();
+  /**
+   * The bar is permanent chrome now — it used to return null with no track,
+   * which is what left the app with no bottom bar on a cold session. These
+   * cover the idle presentation instead: present, but inert.
+   */
+  describe("with no track playing", () => {
+    it("still renders the bar, with an honest idle label and no metadata", () => {
+      stubMatchMedia(false);
+      render(
+        <MockStudioProvider>
+          <PlaybackBar onExpand={() => {}} />
+        </MockStudioProvider>
+      );
+
+      expect(screen.getByText("Nothing playing")).toBeTruthy();
+      // No track's title leaks into the idle bar.
+      expect(screen.queryByText(MOCK_TRACKS[0].title)).toBeNull();
+    });
+
+    it("disables every playback control and the seek", () => {
+      stubMatchMedia(false);
+      render(
+        <MockStudioProvider>
+          <PlaybackBar onExpand={() => {}} />
+        </MockStudioProvider>
+      );
+
+      for (const name of ["Previous", "Play", "Next", "Loop"]) {
+        expect(screen.getByLabelText(name).hasAttribute("disabled")).toBe(true);
+      }
+      // Radix marks a disabled Slider on the root, not via the disabled attr.
+      expect(
+        screen.getByLabelText("Seek").getAttribute("aria-disabled")
+      ).toBe("true");
+    });
+
+    it("shows no seek position — not a real 0:00 in a track that isn't there", () => {
+      stubMatchMedia(false);
+      render(
+        <MockStudioProvider>
+          <PlaybackBar onExpand={() => {}} />
+        </MockStudioProvider>
+      );
+
+      expect(screen.getAllByText("--:--")).toHaveLength(2);
+      expect(screen.queryByText("0:00")).toBeNull();
+    });
+
+    it("offers no Expand player control — there is no player to expand into", () => {
+      stubMatchMedia(false); // below 1440, where a playing bar DOES offer one
+      render(
+        <MockStudioProvider>
+          <PlaybackBar onExpand={() => {}} />
+        </MockStudioProvider>
+      );
+
+      // Anchor on the bar actually being rendered first, or this assertion
+      // would also pass if the whole component returned null — which is the
+      // exact regression the idle presentation exists to prevent.
+      expect(screen.getByText("Nothing playing")).toBeTruthy();
+      expect(screen.queryByLabelText("Expand player")).toBeNull();
+    });
   });
 
   it("below 1440px shows an Expand player control that invokes onExpand", () => {

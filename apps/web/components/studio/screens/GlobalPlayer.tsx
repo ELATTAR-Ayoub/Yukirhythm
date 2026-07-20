@@ -27,7 +27,9 @@ export default function GlobalPlayer() {
   // Keyboard support for the expanded overlay: Escape dismisses, focus moves
   // to the collapse control on open and returns to the expand trigger on close.
   useEffect(() => {
-    if (!playerExpanded) return;
+    // Mirrors the render guard below — with no track there is no dialog to
+    // move focus into, so this must not run just because the flag is set.
+    if (!playerExpanded || !nowPlaying) return;
 
     // By the time this effect runs the expand trigger has already unmounted,
     // so activeElement is usually <body> — only remember a real element.
@@ -58,13 +60,16 @@ export default function GlobalPlayer() {
           ?.focus();
       }
     };
-  }, [playerExpanded, setPlayerExpanded]);
+  }, [playerExpanded, nowPlaying, setPlayerExpanded]);
 
-  if (!nowPlaying) return null;
-
+  // No early return on `!nowPlaying`: the compressed bar is permanent
+  // chrome, the way Spotify's is, and both bars render an idle presentation
+  // of their own. The EXPANDED overlay is still gated — a fullscreen player
+  // for no track has nothing to show and no way to be dismissed by its own
+  // transport.
   return (
     <>
-      {playerExpanded ? (
+      {playerExpanded && nowPlaying ? (
         <div
           ref={dialogRef}
           className="fixed inset-0 z-50"

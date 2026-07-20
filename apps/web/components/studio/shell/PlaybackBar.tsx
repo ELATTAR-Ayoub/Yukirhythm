@@ -17,6 +17,10 @@ interface PlaybackBarProps {
   onExpand: () => void;
 }
 
+/** Elapsed/total with nothing loaded. Not "0:00" — that is a real position
+ *  in a real track, and this bar has neither. */
+const NO_TIME = "--:--";
+
 /**
  * Full-width desktop playback bar (md and up, replacing MiniPlayerBar).
  * Left: art + title/artist. Centre: transport above a seek slider flanked by
@@ -28,15 +32,21 @@ interface PlaybackBarProps {
  * now-playing rail is on screen at that width and already *is* the expanded
  * player, so a fullscreen overlay would duplicate a surface the user can
  * already see. Below 1440 it's a button that opens that overlay.
+ *
+ * Permanent chrome: it renders whether or not anything is playing, so the
+ * shell's bottom row keeps a constant height. With no track it keeps the
+ * same card, footprint and control layout but goes deliberately inert — no
+ * metadata, a blank art well rather than a record, `--:--` for both times, a
+ * disabled seek, and a transport whose buttons are all disabled (Transport
+ * derives that from `nowPlaying` itself). Nothing about the idle bar should
+ * suggest it can be played.
  */
 export default function PlaybackBar({ onExpand }: PlaybackBarProps) {
   const { nowPlaying, isPlaying, progressSec, seek } = useMockStudio();
   const router = useRouter();
   const isWide = useIsWide();
 
-  if (!nowPlaying) return null;
-
-  const identity = (
+  const identity = nowPlaying ? (
     <>
       <SpinningDisc
         texture={nowPlaying.texture}
@@ -54,6 +64,18 @@ export default function PlaybackBar({ onExpand }: PlaybackBarProps) {
         </span>
       </span>
     </>
+  ) : (
+    <>
+      <span
+        aria-hidden
+        className="w-12 h-12 shrink-0 rounded-full border border-dashed border-border bg-secondary/40"
+      />
+      <span className="min-w-0">
+        <span className="block font-label text-[10px] uppercase tracking-wider text-muted-foreground truncate">
+          Nothing playing
+        </span>
+      </span>
+    </>
   );
 
   // Shared footprint for the left block and its balancing spacer, so both
@@ -68,7 +90,11 @@ export default function PlaybackBar({ onExpand }: PlaybackBarProps) {
       )}
     >
       <div className={sideBlockClass}>
-        {isWide ? (
+        {/* Plain info at 1440+ (the rail already is the expanded player) and
+            also whenever nothing is loaded — with no track there is no
+            fullscreen player to expand into, and a focusable control that
+            does nothing is worse than no control at all. */}
+        {isWide || !nowPlaying ? (
           <div className="flex items-center gap-3 min-w-0">{identity}</div>
         ) : (
           <button
@@ -92,18 +118,21 @@ export default function PlaybackBar({ onExpand }: PlaybackBarProps) {
         <Transport size="base" onQueue={() => router.push(QUEUE)} />
         <div className="w-full flex items-center gap-2">
           <DataText className="text-xs text-muted-foreground shrink-0">
-            {formatDuration(progressSec)}
+            {nowPlaying ? formatDuration(progressSec) : NO_TIME}
           </DataText>
           <Slider
-            value={[Math.min(progressSec, nowPlaying.durationSec)]}
-            max={nowPlaying.durationSec}
+            value={[
+              nowPlaying ? Math.min(progressSec, nowPlaying.durationSec) : 0,
+            ]}
+            max={nowPlaying ? nowPlaying.durationSec : 1}
             step={1}
+            disabled={!nowPlaying}
             onValueChange={(v) => seek(v[0])}
             aria-label="Seek"
             data-signal="seek"
           />
           <DataText className="text-xs text-muted-foreground shrink-0">
-            {formatDuration(nowPlaying.durationSec)}
+            {nowPlaying ? formatDuration(nowPlaying.durationSec) : NO_TIME}
           </DataText>
         </div>
       </div>
