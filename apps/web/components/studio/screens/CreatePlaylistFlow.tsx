@@ -558,7 +558,10 @@ export default function CreatePlaylistFlow({ onCreated }: CreatePlaylistFlowProp
         )}
       </div>
 
-      <div className="flex shrink-0 items-center gap-2 pt-4">
+      {/* pb, not just pt: the footer sits on the column's bottom edge now
+          that the shell reserves only the chrome's real height, so without
+          its own padding the CTA is flush against that edge. */}
+      <div className="flex shrink-0 items-center gap-2 pt-4 pb-2">
         {step > 1 ? (
           <Button
             type="button"

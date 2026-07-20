@@ -11,23 +11,33 @@ import NowPlayingRail from "@/components/studio/shell/NowPlayingRail";
 import { isSystemRoute } from "@/components/studio/shell/routes";
 
 /**
- * The desktop shell grid: header row, a flex band of independently
- * scrolling columns, then the playback bar — all locked to `100vh` with the
- * document itself never scrolling. Below `md` this collapses to a single
- * plain column exactly as before: header and rails are `hidden` (Tailwind
- * breakpoint classes, not `useBreakpoint`, so there is no first-paint flash),
- * `BottomTabBar` and `MiniPlayerBar` (inside `GlobalPlayer`) take over.
+ * The shell grid: header row, a flex band of independently scrolling
+ * columns, then the playback bar — locked to `100vh` at EVERY width, with
+ * the document itself never scrolling and `main` as the page's scroller.
+ * Below `md` the grid collapses to a single plain column: header and rails
+ * are `hidden` (Tailwind breakpoint classes, not `useBreakpoint`, so there
+ * is no first-paint flash), `BottomTabBar` and `MiniPlayerBar` (inside
+ * `GlobalPlayer`) take over.
+ *
+ * The viewport lock used to be `md:`-only, which left mobile as a plain
+ * block column with the document as the scroller. That meant a route
+ * wanting fixed chrome (the create wizard's header + CTA) had no height to
+ * anchor against and had to escape to `fixed inset-0` — which dropped it
+ * out of `main` and took the column's surface with it, leaving content
+ * floating on the raw body background. Locking mobile too gives every
+ * route a real height to divide up, so no route needs that escape hatch.
  *
  * The old centring wrapper (`max-w-6xl mx-auto p-2 sm:p-6`) used to live in
  * the ancestor `screens/layout.tsx` and applied here too — it fought this
  * full-viewport grid, so it was pushed down into `ScreensFrame` for the
  * routes that still want it (auth, credits, terms, the screens index; see
- * that component's own comment). Below `md`, THIS layout now reproduces the
- * same padding total that wrapper used to contribute — `p-2 sm:p-6` here,
- * plus `main`'s own `pb-44` for the fixed MiniPlayerBar/BottomTabBar — so
- * mobile is pixel-identical to before. At `md`+ that padding shrinks to a
- * small `md:p-2` inset around the whole grid, and `main` grows its own
- * `md:px-6 md:pt-6` so its card reads as a page with content, not a bare box.
+ * that component's own comment). Below `md` the outer padding is `p-2
+ * sm:p-6`, and `main` reserves `--mobile-chrome-h` at the bottom for the
+ * fixed MiniPlayerBar/BottomTabBar — derived from the tokens those two are
+ * themselves sized by, so the reservation cannot drift from the chrome. At
+ * `md`+ that padding shrinks to a small `md:p-2` inset around the whole
+ * grid, and `main` grows its own `md:px-6 md:pt-6` so its card reads as a
+ * page with content, not a bare box.
  */
 /**
  * Rail geometry and card treatment, shared between a populated rail and the
@@ -53,12 +63,12 @@ export default function AppShellLayout({
   const system = isSystemRoute(pathname);
 
   return (
-    <div className="p-2 sm:p-6 md:p-2 md:h-screen md:overflow-hidden md:flex md:flex-col md:gap-2">
+    <div className="h-screen overflow-hidden flex flex-col p-2 sm:p-6 md:p-2 md:gap-2">
       <div className="hidden md:block shrink-0">
         <StudioHeader />
       </div>
 
-      <div className="md:flex md:flex-1 md:min-h-0 md:gap-2">
+      <div className="flex flex-1 min-h-0 md:gap-2">
         {system ? (
           <div aria-hidden className={cn(RAIL_SLOT.library, RAIL_SURFACE)} />
         ) : (
@@ -72,9 +82,12 @@ export default function AppShellLayout({
 
         <main
           className={cn(
-            "min-w-0 flex-1 md:min-h-0",
-            "pb-44 md:pb-0",
-            "md:overflow-y-auto md:rounded-2xl md:border md:border-border md:bg-card",
+            "min-w-0 flex-1 min-h-0 overflow-y-auto",
+            // Exactly the fixed chrome below md (nav + gap + player), plus a
+            // little breathing room — not a guessed `pb-44`. Zero at md+,
+            // where the PlaybackBar is an in-flow flex sibling instead.
+            "pb-[calc(var(--mobile-chrome-h)+0.5rem)] md:pb-0",
+            "md:rounded-2xl md:border md:border-border md:bg-card",
             "md:px-6 md:pt-6"
           )}
         >

@@ -577,6 +577,17 @@
     /* Mobile bottom nav height (p-2 + the 60px NavTabs strip). MiniPlayerBar
        offsets against this so the two never drift apart. */
     --bottom-nav-h: 76px;
+    /* MiniPlayerBar's card, and the gap it keeps above the nav. The bar now
+       renders in an idle state too, so it is always on screen and the page
+       column can reserve exactly this much rather than guessing. */
+    --mini-player-h: 70px;
+    --mini-player-gap: 12px;
+    /* Everything fixed to the bottom edge below md: nav + gap + player.
+       `main` reserves this as bottom padding, so the reserved space and the
+       chrome that occupies it can never drift apart. */
+    --mobile-chrome-h: calc(
+      var(--bottom-nav-h) + var(--mini-player-gap) + var(--mini-player-h)
+    );
 
     /* elevation — realistic: tight contact shadow + soft ambient falloff */
     --shadow-e1: 0 1px 1px rgb(25 25 25 / 0.09), 0 1px 3px rgb(25 25 25 / 0.07);
