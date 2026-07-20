@@ -55,11 +55,17 @@ build on correct UI rather than inheriting defects.
       Use `crypto.randomUUID()` until phase 2 issues server ids.
 - [ ] Sign-out is inconsistent: Settings toasts and redirects, the header dropdown does neither.
       Unify on one helper.
-- [ ] Delete `QueueDrawer`, `PlaylistDrawer`, `AddMusicDrawer` (superseded by routes) and
-      `CreatePlaylistForm` (superseded by `CreatePlaylistFlow`). Keep the DS docs gallery entries
-      pointing at the live components instead.
+- [x] ~~Delete the superseded drawers.~~ **Withdrawn.** `QueueDrawer`, `PlaylistDrawer`,
+      `CreatePlaylistDrawer`, and `CreatePlaylistForm` are imported by the design-system docs
+      gallery — they are documented components, not dead code. `AddMusicDrawer` has no importer,
+      but its own route file records a deliberate decision to keep it ("left in place rather than
+      deleted unilaterally"), so it stays until someone chooses otherwise.
 
 **Gate:** `npm run typecheck && npm run lint && npm test && npm run build`.
+
+**Phase 0 complete — 2026-07-20.** 271 tests across 59 files pass; typecheck and build clean.
+Two pre-existing `react-hooks/purity` lint errors remain in `components/studio/deck/Disc.tsx`;
+they are present at the base commit `a5ca6ea` and are unrelated to this phase.
 
 ---
 
@@ -236,14 +242,16 @@ remain in this table when phase 8 ships.**
 
 | # | Stub | Today | Phase |
 |---|---|---|---|
-| 1 | `searchMockCollections` | can't see own or created collections | 0 |
-| 2 | `seek` | unclamped, overshoot auto-advances | 0 |
-| 3 | `DiscDeck` signal | two values comma-joined in one attribute | 0 |
-| 4 | AddMusicPanel rows | dead hover play button | 0 |
-| 5 | Search result rows | nested interactive elements | 0 |
-| 6 | Recents play | drops `collectionId`, loses queue source | 0 |
-| 7 | `createCollection` id | `local-${n}` collides | 0 |
-| 8 | Sign-out | inconsistent between Settings and header | 0 |
+| 1 | ~~`searchMockCollections`~~ | ~~can't see own or created collections~~ | **0 ✅** |
+| 2 | ~~`seek`~~ | ~~unclamped, overshoot auto-advances~~ | **0 ✅** |
+| 3 | ~~`DiscDeck` signal~~ | ~~two values comma-joined in one attribute~~ | **0 ✅** |
+| 4 | ~~AddMusicPanel rows~~ | ~~dead hover play button~~ | **0 ✅** |
+| 5 | ~~Search result rows~~ | ~~nested interactive elements~~ | **0 ✅** |
+| 6 | ~~Recents play~~ | ~~drops `collectionId`, loses queue source~~ | **0 ✅** |
+| 7 | ~~`createCollection` id~~ | ~~`local-${n}` collides~~ | **0 ✅** |
+| 8 | ~~Sign-out~~ | ~~inconsistent between Settings and header~~ | **0 ✅** |
+| — | ~~TrackMenu Like / Add / Share~~ | ~~toasts~~ | **closed by screen work** |
+| — | ~~Library pin~~ | ~~`togglePin` unreachable~~ | **closed by screen work** |
 | 9 | Explore tiles | 6 of 8 return zero results | 1 |
 | 10 | Library search | no endpoint | 1 |
 | 11 | Settings → audio quality | toast | 2 |
