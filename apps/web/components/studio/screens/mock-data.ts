@@ -184,10 +184,19 @@ export function getCollectionTracks(collection: MockCollection): MockTrack[] {
     .filter((t): t is MockTrack => t !== undefined);
 }
 
-export function searchMockCollections(query: string): MockCollection[] {
+/**
+ * Searches the collections passed in — never a module constant. The caller
+ * holds live provider state, which is the only place Liked Songs and
+ * user-created collections exist; filtering the seed array made both
+ * permanently unfindable.
+ */
+export function searchMockCollections(
+  query: string,
+  collections: MockCollection[]
+): MockCollection[] {
   const q = query.trim().toLowerCase();
   if (!q) return [];
-  return MOCK_COLLECTIONS.filter(
+  return collections.filter(
     (c) =>
       c.title.toLowerCase().includes(q) ||
       c.tags.some((tag) => tag.toLowerCase().includes(q))

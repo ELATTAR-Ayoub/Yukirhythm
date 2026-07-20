@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import type { MockCollection } from "./mock-data";
 import {
   LIKED_SONGS,
   MOCK_COLLECTIONS,
@@ -21,9 +22,33 @@ describe("mock-data helpers", () => {
   });
 
   it("searches collections by title and tag, case-insensitive", () => {
-    expect(searchMockCollections("PIXEL").map((c) => c.id)).toContain("c3");
-    expect(searchMockCollections("lofi").map((c) => c.id)).toContain("c1");
-    expect(searchMockCollections("")).toEqual([]);
+    const all = [LIKED_SONGS, ...MOCK_COLLECTIONS];
+    expect(searchMockCollections("PIXEL", all).map((c) => c.id)).toContain("c3");
+    expect(searchMockCollections("lofi", all).map((c) => c.id)).toContain("c1");
+    expect(searchMockCollections("", all)).toEqual([]);
+  });
+
+  it("searches the collections it is given, not a module constant", () => {
+    const local: MockCollection = {
+      id: "local-x",
+      title: "Rainy Tapes",
+      desc: "",
+      texture: "tx-k-silk",
+      trackIds: [],
+      likes: 0,
+      tags: ["rain"],
+      kind: "music",
+      pinned: false,
+    };
+    expect(searchMockCollections("rainy", [local]).map((c) => c.id)).toEqual([
+      "local-x",
+    ]);
+    expect(searchMockCollections("rain", [local])).toHaveLength(1);
+  });
+
+  it("finds Liked Songs, which a constant-based search could never reach", () => {
+    const hits = searchMockCollections("liked", [LIKED_SONGS, ...MOCK_COLLECTIONS]);
+    expect(hits.some((c) => c.id === LIKED_SONGS.id)).toBe(true);
   });
 
   it("dedupes recent collections preserving history order", () => {

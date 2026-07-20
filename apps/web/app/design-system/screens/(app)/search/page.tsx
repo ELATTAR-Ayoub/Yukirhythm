@@ -83,6 +83,7 @@ export default function SearchScreen() {
     play,
     nowPlaying,
     isPlaying,
+    collections,
   } = useMockStudio();
   const [q, setQ] = useState("");
 
@@ -92,7 +93,9 @@ export default function SearchScreen() {
     else clearSearch();
   };
 
-  const collectionHits = q.trim() ? searchMockCollections(q) : [];
+  // Live provider collections, so Liked Songs and anything the create wizard
+  // made are findable.
+  const collectionHits = q.trim() ? searchMockCollections(q, collections) : [];
   const idle = !q.trim();
 
   return (
