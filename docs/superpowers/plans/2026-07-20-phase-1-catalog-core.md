@@ -1,4 +1,4 @@
-# Canonical Catalog Model Implementation Plan
+# Phase 1 — Catalog Core Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -10,13 +10,21 @@
 
 **Spec:** `docs/superpowers/specs/2026-07-20-yukirhythm-backend-design.md`
 
-> **Scope note (rev 2).** The spec was broadened on 2026-07-20 to cover the whole backend —
-> social graph, playback state, play events, stats rollups, and the recommendation algorithms.
-> This plan implements **phase 1 (catalog core) only**, and several of its schema shapes are
-> superseded: `Collection.trackIds: string[]` becomes `tracks: {trackId, addedAt, addedBy}[]`,
-> `kind` splits into `role` + `contentType`, `Track` gains `texture`, and the stored
-> `kind: "liked"` collection is replaced by a virtual one derived from `TrackState.isLiked`.
-> Read §5 of the spec before starting Task 6. Phases 2–8 get their own plans.
+> **Scope.** Phase 1 of `docs/superpowers/plans/2026-07-20-backend-roadmap.md`: the catalog
+> backend and its read routes. Written against spec rev 2.
+>
+> **In scope:** provider interface, `youtubei.js` implementation, mapping, deterministic
+> textures, ingest, search cache, taxonomy, `tracks/` and `artists/` collections, and the five
+> `/api/catalog/*` routes.
+>
+> **Explicitly not in scope:** rewiring the design-system screens. The roadmap originally had
+> phase 1 wiring the Search screen, which contradicts phase 8 being the migration — half-real
+> screens would mean doing that work twice. The explore tiles get their `/browse` endpoint here;
+> the screen starts calling it in phase 8. Verification is against the routes, not the UI.
+>
+> Also out of scope and moved to their own phases: user, collection, and overlay routes
+> (phase 2); `/api/library/search`, which needs collections to exist (phase 2); deleting the old
+> data layer and resetting Firestore (phase 8).
 
 ---
 
@@ -898,7 +906,10 @@ git commit -m "feat(catalog): implement the youtube catalog provider"
 
 ---
 
-## Task 6: Firestore document types
+## Task 6: Firestore document types (spec rev 2)
+
+`model.ts` is the schema home for the whole product, so it defines every document type even
+though phases 2–7 are what write most of them. Getting the shapes right once avoids a rewrite.
 
 **Files:**
 - Create: `apps/web/lib/catalog/model.ts`
@@ -909,15 +920,19 @@ Create `apps/web/lib/catalog/model.ts`:
 
 ```ts
 import type { Timestamp } from "firebase-admin/firestore";
+import type { TextureName } from "@/components/studio/textures";
 
 /**
  * Firestore document shapes. Naming rules (spec §4): no wrapper objects,
  * camelCase, `Sec` for durations, `At` for timestamps, `Count` for counts,
- * booleans read as assertions.
+ * booleans read as assertions, never a field called `private`.
  */
 
 export const SCHEMA_VERSION = 1;
 export const MAX_TRACKS_PER_COLLECTION = 5000;
+
+/** Reserved id for the virtual Liked Songs collection (spec D8). */
+export const LIKED_COLLECTION_ID = "liked";
 
 export type Image = { url: string; width: number; height: number };
 
@@ -938,25 +953,34 @@ export type TrackLabel = {
 export type Track = {
   trackId: string;
   type: "track" | "episode";
+
   title: string;
   artists: { artistId: string; name: string }[];
   album: { albumId: string; name: string } | null;
   durationSec: number | null;
+  /** Provider thumbnails (spec D6). */
   artwork: Image[];
+  /** Deterministic from trackId (spec D6, §5.11) — the design-system fallback. */
+  texture: TextureName;
+
   source: {
     provider: "youtube";
     videoId: string;
     url: string;
     aliasVideoIds: string[];
   };
+
   isEmbeddable: boolean;
   isLive: boolean;
   isFamilySafe: boolean;
-  stats: { viewCount: number; likeCount: number };
+
+  stats: { viewCount: number; likeCount: number; playCount: number };
   publishedAt: Timestamp | null;
+
   labels: TrackLabel[];
   keywords: string[];
   episode?: { showId: string; number: number | null; publishedAt: Timestamp };
+
   enrichedAt: Timestamp | null;
   schemaVersion: number;
 };
@@ -972,17 +996,40 @@ export type Artist = {
   enrichedAt: Timestamp | null;
 };
 
+/** Membership carries its own timestamp so "Recently added" can sort (spec D7). */
+export type CollectionTrack = {
+  trackId: string;
+  addedAt: Timestamp;
+  addedBy: string;
+};
+
 export type Collection = {
   collectionId: string;
   ownerId: string;
-  kind: "playlist" | "liked" | "show";
+
+  /** Container role. There is no "liked" role — that collection is virtual (D8). */
+  role: "playlist" | "show";
+  /** Drives the Library filter chips (D9). */
+  contentType: "music" | "podcast";
+
   title: string;
   description: string;
-  artwork: { url: string }[];
   tags: string[];
-  trackIds: string[];
+
+  cover: "texture" | "mosaic" | "image";
+  texture: TextureName;
+  imageUrl: string | null;
+
+  tracks: CollectionTrack[];
   visibility: "private" | "unlisted" | "public";
-  stats: { trackCount: number; totalDurationSec: number; likeCount: number };
+
+  stats: {
+    trackCount: number;
+    totalDurationSec: number;
+    saveCount: number;
+    playCount: number;
+  };
+
   createdAt: Timestamp;
   updatedAt: Timestamp;
 };
@@ -1005,7 +1052,13 @@ export type User = {
   handle: string | null;
   email: string;
   avatarUrl: string | null;
-  counts: { followerCount: number; followingCount: number };
+  bio: string | null;
+  authProvider: "google" | "facebook";
+  counts: {
+    followerCount: number;
+    followingCount: number;
+    collectionCount: number;
+  };
   privacy: UserPrivacy;
   settings: UserSettings;
   createdAt: Timestamp;
@@ -1018,6 +1071,7 @@ export type TrackState = {
   playCount: number;
   completedCount: number;
   skipCount: number;
+  totalListenedSec: number;
   lastPlayedAt: Timestamp | null;
   resumeSec: number;
   addedAt: Timestamp;
@@ -1026,7 +1080,6 @@ export type TrackState = {
 export type CollectionState = {
   collectionId: string;
   isPinned: boolean;
-  isLiked: boolean;
   lastOpenedAt: Timestamp | null;
 };
 
@@ -1047,16 +1100,105 @@ export const DEFAULT_SETTINGS: UserSettings = {
 };
 ```
 
-- [ ] **Step 2: Typecheck**
+- [ ] **Step 2: Confirm the texture type import path**
+
+`TextureName` must come from wherever the design system already exports it. Find it first:
+
+```bash
+cd apps/web && grep -rn "export type TextureName\|export const TEXTURE_NAMES" --include=*.ts --include=*.tsx . | grep -v node_modules
+```
+
+Use the real path in the import above rather than the guessed one.
+
+- [ ] **Step 3: Typecheck**
 
 Run: `npm run typecheck`
 Expected: PASS.
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
 git add apps/web/lib/catalog/model.ts
 git commit -m "feat(catalog): define firestore document types"
+```
+
+---
+
+## Task 6b: Deterministic track textures
+
+Spec D6/§5.11. Every track needs a texture with no storage lookup and no coordination, stable
+across sessions and clients.
+
+**Files:**
+- Create: `apps/web/lib/catalog/texture.ts`
+- Test: `apps/web/lib/catalog/texture.test.ts`
+
+- [ ] **Step 1: Write the failing test**
+
+```ts
+import { describe, it, expect } from "vitest";
+import { TEXTURE_NAMES } from "@/components/studio/textures";
+import { textureForId } from "./texture";
+
+describe("textureForId", () => {
+  it("returns a real design-system texture", () => {
+    expect(TEXTURE_NAMES).toContain(textureForId("a5uQMwRMHcs"));
+  });
+
+  it("is stable for the same id", () => {
+    expect(textureForId("a5uQMwRMHcs")).toBe(textureForId("a5uQMwRMHcs"));
+  });
+
+  it("spreads ids across more than one texture", () => {
+    const seen = new Set(
+      Array.from({ length: 200 }, (_, i) => textureForId(`track-${i}`))
+    );
+    expect(seen.size).toBeGreaterThan(1);
+  });
+
+  it("never returns undefined for an empty id", () => {
+    expect(TEXTURE_NAMES).toContain(textureForId(""));
+  });
+});
+```
+
+- [ ] **Step 2: Run it, verify it fails**
+
+Run: `npm test --workspace apps/web -- lib/catalog/texture.test.ts`
+Expected: FAIL — cannot resolve `./texture`.
+
+- [ ] **Step 3: Implement**
+
+```ts
+import { TEXTURE_NAMES, type TextureName } from "@/components/studio/textures";
+
+/**
+ * Assigns a texture from an id with no storage lookup and no coordination —
+ * the same track resolves to the same texture on every client and session.
+ * FNV-1a: small, stable, and not a security boundary.
+ */
+export function textureForId(id: string): TextureName {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < id.length; i++) {
+    hash ^= id.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return TEXTURE_NAMES[hash % TEXTURE_NAMES.length];
+}
+```
+
+Correct the import path to the real one found in Task 6 Step 2.
+
+- [ ] **Step 4: Run the test, verify it passes**
+
+Run: `npm test --workspace apps/web -- lib/catalog/texture.test.ts`
+Expected: PASS, 4 tests.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add apps/web/lib/catalog/texture.ts apps/web/lib/catalog/texture.test.ts
+git commit -m "feat(catalog): assign track textures deterministically"
 ```
 
 ---
@@ -1197,6 +1339,7 @@ export function toTrackDoc(t: ProviderTrack): Track {
     album: t.album,
     durationSec: t.durationSec,
     artwork: t.artwork,
+    texture: textureForId(t.providerTrackId),
     source: {
       provider: "youtube",
       videoId: t.videoId,
@@ -1206,7 +1349,9 @@ export function toTrackDoc(t: ProviderTrack): Track {
     isEmbeddable: t.isEmbeddable,
     isLive: t.isLive,
     isFamilySafe: t.isFamilySafe,
-    stats: { viewCount: t.viewCount, likeCount: t.likeCount },
+    // playCount is global and owned by the event pipeline (phase 4); it starts
+    // at zero here and is never overwritten by re-ingest.
+    stats: { viewCount: t.viewCount, likeCount: t.likeCount, playCount: 0 },
     publishedAt: t.publishedAt ? Timestamp.fromDate(new Date(t.publishedAt)) : null,
     // Labels are populated by enrichment (subsystem #4), never at ingest.
     labels: [],
@@ -1810,560 +1955,122 @@ git commit -m "feat(api): add authenticated catalog search and track routes"
 
 ---
 
-## Task 11: User, collection, and overlay routes
+## Task 11: Browse by label, artists route, and suggest
+
+Closes ledger row 9. Today all 8 explore tiles inject their label as a plain text query, and
+because track search matches only title and artist, **six of the eight return zero results**.
 
 **Files:**
-- Modify: `apps/web/app/api/me/route.ts` (rewrite)
-- Modify: `apps/web/app/api/me/route.test.ts` (rewrite)
-- Create: `apps/web/app/api/collections/route.ts`
-- Create: `apps/web/app/api/collections/[collectionId]/tracks/[trackId]/route.ts`
-- Create: `apps/web/app/api/collections/[collectionId]/tracks/[trackId]/route.test.ts`
-- Create: `apps/web/app/api/me/track-state/[trackId]/route.ts`
+- Create: `apps/web/app/api/catalog/browse/route.ts`
+- Create: `apps/web/app/api/catalog/browse/route.test.ts`
+- Create: `apps/web/app/api/catalog/artists/[artistId]/route.ts`
+- Create: `apps/web/app/api/catalog/suggest/route.ts`
 
-- [ ] **Step 1: Rewrite the `/api/me` test**
-
-Replace the contents of `apps/web/app/api/me/route.test.ts`:
+- [ ] **Step 1: Write the failing test**
 
 ```ts
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const verifyIdToken = vi.fn();
-const userGet = vi.fn();
-const userSet = vi.fn();
-vi.mock("@/lib/firebase/admin", () => ({
-  adminAuth: () => ({ verifyIdToken }),
-  adminDb: () => ({
-    collection: () => ({ doc: () => ({ get: userGet, set: userSet }) }),
-  }),
+const { verifyIdToken, where, limit, get } = vi.hoisted(() => ({
+  verifyIdToken: vi.fn(),
+  where: vi.fn(),
+  limit: vi.fn(),
+  get: vi.fn(),
 }));
-
-import { GET, POST, PATCH } from "@/app/api/me/route";
-
-const req = (method: string, headers: Record<string, string>, body?: unknown) =>
-  new Request("http://localhost/api/me", {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-  });
-
-describe("/api/me", () => {
-  beforeEach(() => {
-    verifyIdToken.mockReset();
-    userGet.mockReset();
-    userSet.mockReset();
-  });
-
-  it("401 without a token", async () => {
-    expect((await GET(req("GET", {}))).status).toBe(401);
-  });
-
-  it("creates the user with privacy defaults on first POST", async () => {
-    verifyIdToken.mockResolvedValue({ uid: "uid-real" });
-    userGet.mockResolvedValue({ exists: false });
-    userSet.mockResolvedValue(undefined);
-
-    await POST(req("POST", { Authorization: "Bearer x" }, { displayName: "n" }));
-
-    const written = userSet.mock.calls[0][0];
-    expect(written.userId).toBe("uid-real");
-    expect(written.privacy.saveHistory).toBe(true);
-    expect(written.privacy.personalization).toBe(true);
-    expect(written.privacy.publicProfile).toBe(false);
-  });
-
-  it("forces uid from the token, ignoring a spoofed body userId", async () => {
-    verifyIdToken.mockResolvedValue({ uid: "uid-real" });
-    userGet.mockResolvedValue({ exists: false });
-    userSet.mockResolvedValue(undefined);
-
-    await POST(req("POST", { Authorization: "Bearer x" }, { userId: "uid-VICTIM" }));
-
-    expect(userSet.mock.calls[0][0].userId).toBe("uid-real");
-  });
-
-  it("PATCH updates privacy without touching unrelated fields", async () => {
-    verifyIdToken.mockResolvedValue({ uid: "uid-1" });
-    userGet.mockResolvedValue({ exists: true, data: () => ({ userId: "uid-1" }) });
-    userSet.mockResolvedValue(undefined);
-
-    await PATCH(req("PATCH", { Authorization: "Bearer x" }, { privacy: { saveHistory: false } }));
-
-    const [written, opts] = userSet.mock.calls[0];
-    expect(written.privacy.saveHistory).toBe(false);
-    expect(opts).toEqual({ merge: true });
-    expect(written.settings).toBeUndefined();
-  });
-
-  it("PATCH rejects an attempt to change userId", async () => {
-    verifyIdToken.mockResolvedValue({ uid: "uid-1" });
-    userGet.mockResolvedValue({ exists: true, data: () => ({ userId: "uid-1" }) });
-    userSet.mockResolvedValue(undefined);
-
-    await PATCH(req("PATCH", { Authorization: "Bearer x" }, { userId: "uid-VICTIM" }));
-
-    expect(userSet.mock.calls[0][0].userId).toBeUndefined();
-  });
-});
-```
-
-- [ ] **Step 2: Run, verify failure**
-
-Run: `npm test --workspace apps/web -- app/api/me/route.test.ts`
-Expected: FAIL — `PATCH is not exported`.
-
-- [ ] **Step 3: Rewrite `/api/me`**
-
-Replace `apps/web/app/api/me/route.ts`:
-
-```ts
-import { Timestamp } from "firebase-admin/firestore";
-import { adminDb } from "@/lib/firebase/admin";
-import { uidFromRequest, unauthorized } from "@/lib/firebase/verify";
-import { DEFAULT_PRIVACY, DEFAULT_SETTINGS, type User } from "@/lib/catalog/model";
-
-const userRef = (uid: string) => adminDb().collection("users").doc(uid);
-
-export async function GET(req: Request): Promise<Response> {
-  const uid = await uidFromRequest(req);
-  if (!uid) return unauthorized();
-  const snap = await userRef(uid).get();
-  if (!snap.exists) return Response.json({ error: "Not found" }, { status: 404 });
-  return Response.json(snap.data());
-}
-
-/** Ensure-user. The uid always comes from the verified token, never the body. */
-export async function POST(req: Request): Promise<Response> {
-  const uid = await uidFromRequest(req);
-  if (!uid) return unauthorized();
-
-  const snap = await userRef(uid).get();
-  if (snap.exists) return Response.json(snap.data());
-
-  const body = (await req.json().catch(() => ({}))) as Partial<User>;
-  const user: User = {
-    userId: uid,
-    displayName: typeof body.displayName === "string" ? body.displayName : "",
-    handle: null,
-    email: typeof body.email === "string" ? body.email : "",
-    avatarUrl: typeof body.avatarUrl === "string" ? body.avatarUrl : null,
-    counts: { followerCount: 0, followingCount: 0 },
-    privacy: { ...DEFAULT_PRIVACY },
-    settings: { ...DEFAULT_SETTINGS },
-    createdAt: Timestamp.now(),
-  };
-  await userRef(uid).set(user);
-  return Response.json(user);
-}
-
-/** Partial update of privacy and settings only. Identity fields are immutable. */
-export async function PATCH(req: Request): Promise<Response> {
-  const uid = await uidFromRequest(req);
-  if (!uid) return unauthorized();
-
-  const snap = await userRef(uid).get();
-  if (!snap.exists) return Response.json({ error: "Not found" }, { status: 404 });
-
-  const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
-  const patch: Record<string, unknown> = {};
-
-  if (body.privacy && typeof body.privacy === "object") {
-    const p = body.privacy as Record<string, unknown>;
-    const privacy: Record<string, boolean> = {};
-    for (const k of ["saveHistory", "personalization", "publicProfile"]) {
-      if (typeof p[k] === "boolean") privacy[k] = p[k] as boolean;
-    }
-    if (Object.keys(privacy).length) patch.privacy = privacy;
-  }
-
-  if (body.settings && typeof body.settings === "object") {
-    const s = body.settings as Record<string, unknown>;
-    const settings: Record<string, string> = {};
-    for (const k of ["audioQuality", "language", "theme"]) {
-      if (typeof s[k] === "string") settings[k] = s[k] as string;
-    }
-    if (Object.keys(settings).length) patch.settings = settings;
-  }
-
-  if (typeof body.displayName === "string") patch.displayName = body.displayName;
-
-  await userRef(uid).set(patch, { merge: true });
-  const fresh = await userRef(uid).get();
-  return Response.json(fresh.data());
-}
-```
-
-- [ ] **Step 4: Run, verify pass**
-
-Run: `npm test --workspace apps/web -- app/api/me/route.test.ts`
-Expected: PASS, 5 tests.
-
-- [ ] **Step 5: Write the failing test for track add/remove**
-
-Create `apps/web/app/api/collections/[collectionId]/tracks/[trackId]/route.test.ts`:
-
-```ts
-import { describe, it, expect, vi, beforeEach } from "vitest";
-
-const verifyIdToken = vi.fn();
-let collectionDoc: Record<string, unknown> | null = null;
-let written: Record<string, unknown> | null = null;
 
 vi.mock("@/lib/firebase/admin", () => ({
   adminAuth: () => ({ verifyIdToken }),
-  adminDb: () => ({
-    collection: () => ({ doc: () => ({ id: "c1" }) }),
-    runTransaction: async (
-      fn: (tx: {
-        get: () => Promise<{ exists: boolean; data: () => unknown }>;
-        update: (ref: unknown, data: Record<string, unknown>) => void;
-      }) => Promise<unknown>
-    ) =>
-      fn({
-        get: async () => ({ exists: collectionDoc !== null, data: () => collectionDoc }),
-        update: (_ref, data) => {
-          written = data;
-        },
-      }),
-  }),
+  adminDb: () => ({ collection: () => ({ where, limit, get }) }),
 }));
 
-import { PUT, DELETE } from "@/app/api/collections/[collectionId]/tracks/[trackId]/route";
+import { GET } from "@/app/api/catalog/browse/route";
 
-const params = Promise.resolve({ collectionId: "c1", trackId: "t1" });
-const req = (headers: Record<string, string> = {}) =>
-  new Request("http://localhost/api/collections/c1/tracks/t1", { method: "PUT", headers });
+const req = (url: string, headers: Record<string, string> = {}) =>
+  new Request(`http://localhost${url}`, { headers });
 
-describe("collection track membership", () => {
+describe("GET /api/catalog/browse", () => {
   beforeEach(() => {
-    verifyIdToken.mockReset();
-    verifyIdToken.mockResolvedValue({ uid: "owner" });
-    written = null;
-    collectionDoc = {
-      collectionId: "c1",
-      ownerId: "owner",
-      trackIds: [],
-      stats: { trackCount: 0, totalDurationSec: 0, likeCount: 0 },
-    };
+    verifyIdToken.mockReset().mockResolvedValue({ uid: "u1" });
+    where.mockReset().mockReturnValue({ where, limit, get });
+    limit.mockReset().mockReturnValue({ get });
+    get.mockReset().mockResolvedValue({ docs: [] });
   });
 
   it("401 without a token", async () => {
     verifyIdToken.mockRejectedValue(new Error("bad"));
-    expect((await PUT(req(), { params })).status).toBe(401);
+    expect((await GET(req("/api/catalog/browse?label=lofi"))).status).toBe(401);
   });
 
-  it("403 when the caller does not own the collection", async () => {
-    collectionDoc = { ...collectionDoc, ownerId: "someone-else" };
-    const res = await PUT(req({ Authorization: "Bearer t" }), { params });
-    expect(res.status).toBe(403);
+  it("400 on a label outside the controlled vocabulary", async () => {
+    const res = await GET(req("/api/catalog/browse?label=polka", { Authorization: "Bearer t" }));
+    expect(res.status).toBe(400);
   });
 
-  it("adds the track and keeps trackCount consistent", async () => {
-    await PUT(req({ Authorization: "Bearer t" }), { params });
-    expect(written?.trackIds).toEqual(["t1"]);
-    expect((written?.stats as { trackCount: number }).trackCount).toBe(1);
+  it("accepts a provider spelling and resolves it to the canonical label", async () => {
+    const res = await GET(req("/api/catalog/browse?label=Lo-Fi", { Authorization: "Bearer t" }));
+    expect(res.status).toBe(200);
+    expect(where).toHaveBeenCalledWith("labelIds", "array-contains", "lofi");
   });
 
-  it("does not add the same track twice", async () => {
-    collectionDoc = { ...collectionDoc, trackIds: ["t1"], stats: { trackCount: 1, totalDurationSec: 0, likeCount: 0 } };
-    await PUT(req({ Authorization: "Bearer t" }), { params });
-    expect(written?.trackIds).toEqual(["t1"]);
-    expect((written?.stats as { trackCount: number }).trackCount).toBe(1);
-  });
-
-  it("removes the track and decrements trackCount", async () => {
-    collectionDoc = { ...collectionDoc, trackIds: ["t1"], stats: { trackCount: 1, totalDurationSec: 0, likeCount: 0 } };
-    await DELETE(req({ Authorization: "Bearer t" }), { params });
-    expect(written?.trackIds).toEqual([]);
-    expect((written?.stats as { trackCount: number }).trackCount).toBe(0);
-  });
-
-  it("404 when the collection does not exist", async () => {
-    collectionDoc = null;
-    expect((await PUT(req({ Authorization: "Bearer t" }), { params })).status).toBe(404);
+  it("only returns playable tracks", async () => {
+    await GET(req("/api/catalog/browse?label=lofi", { Authorization: "Bearer t" }));
+    expect(where).toHaveBeenCalledWith("isEmbeddable", "==", true);
   });
 });
 ```
 
-- [ ] **Step 6: Run, verify failure**
+- [ ] **Step 2: Run it, verify it fails**
 
-Run: `npm test --workspace apps/web -- "app/api/collections/**"`
+Run: `npm test --workspace apps/web -- app/api/catalog/browse/route.test.ts`
 Expected: FAIL — cannot resolve the route module.
 
-- [ ] **Step 7: Implement track membership**
+- [ ] **Step 3: Add the flat label index**
 
-Create `apps/web/app/api/collections/[collectionId]/tracks/[trackId]/route.ts`:
+`Track.labels` is an array of objects, and Firestore's `array-contains` cannot match a nested
+field — the query would silently return nothing. Add a flat companion to `model.ts`:
 
 ```ts
-import { Timestamp } from "firebase-admin/firestore";
-import { adminDb } from "@/lib/firebase/admin";
-import { uidFromRequest, unauthorized } from "@/lib/firebase/verify";
-import { MAX_TRACKS_PER_COLLECTION, type Collection } from "@/lib/catalog/model";
-
-type Params = { params: Promise<{ collectionId: string; trackId: string }> };
-
-/**
- * Membership changes run in a transaction because `stats.trackCount` is
- * denormalised — the Library screen renders it directly and must never
- * disagree with trackIds.length.
- */
-async function mutate(
-  req: Request,
-  { params }: Params,
-  op: "add" | "remove"
-): Promise<Response> {
-  const uid = await uidFromRequest(req);
-  if (!uid) return unauthorized();
-
-  const { collectionId, trackId } = await params;
-  const db = adminDb();
-  const ref = db.collection("collections").doc(collectionId);
-
-  let status = 200;
-  await db.runTransaction(async (tx) => {
-    const snap = await tx.get(ref);
-    if (!snap.exists) {
-      status = 404;
-      return;
-    }
-    const c = snap.data() as Collection;
-    if (c.ownerId !== uid) {
-      status = 403;
-      return;
-    }
-
-    const current = c.trackIds ?? [];
-    let next: string[];
-    if (op === "add") {
-      if (current.includes(trackId)) next = current;
-      else if (current.length >= MAX_TRACKS_PER_COLLECTION) {
-        status = 409;
-        return;
-      } else next = [...current, trackId];
-    } else {
-      next = current.filter((id) => id !== trackId);
-    }
-
-    tx.update(ref, {
-      trackIds: next,
-      stats: { ...(c.stats ?? { totalDurationSec: 0, likeCount: 0 }), trackCount: next.length },
-      updatedAt: Timestamp.now(),
-    });
-  });
-
-  if (status !== 200) return Response.json({ error: "Request failed" }, { status });
-  return Response.json({ ok: true });
-}
-
-export async function PUT(req: Request, ctx: Params): Promise<Response> {
-  return mutate(req, ctx, "add");
-}
-
-export async function DELETE(req: Request, ctx: Params): Promise<Response> {
-  return mutate(req, ctx, "remove");
-}
+  labels: TrackLabel[];
+  /** Flat mirror of labels[].label. array-contains cannot match nested fields. */
+  labelIds: string[];
 ```
 
-- [ ] **Step 8: Implement collection create/list**
+Populate it in `ingest.ts` alongside `labels` (both empty at ingest; enrichment in phase 4
+writes them together and must keep them in step).
 
-Create `apps/web/app/api/collections/route.ts`:
+- [ ] **Step 4: Implement the browse route**
 
 ```ts
-import { Timestamp } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/firebase/admin";
 import { uidFromRequest, unauthorized } from "@/lib/firebase/verify";
-import type { Collection } from "@/lib/catalog/model";
+import { resolveLabel } from "@/lib/catalog/taxonomy";
+
+const LIMIT = 40;
 
 export async function GET(req: Request): Promise<Response> {
   const uid = await uidFromRequest(req);
   if (!uid) return unauthorized();
+
+  const raw = (new URL(req.url).searchParams.get("label") ?? "").trim();
+  // Enrichment writes only canonical slugs, so a free-form string can never
+  // match. Resolving here is what lets "Lo-Fi" and "lo fi" both work.
+  const label = resolveLabel(raw);
+  if (!label) {
+    return Response.json({ error: "Unknown label" }, { status: 400 });
+  }
+
   const snap = await adminDb()
-    .collection("collections")
-    .where("ownerId", "==", uid)
+    .collection("tracks")
+    .where("isEmbeddable", "==", true)
+    .where("labelIds", "array-contains", label)
+    .limit(LIMIT)
     .get();
-  return Response.json(snap.docs.map((d) => d.data()));
-}
 
-export async function POST(req: Request): Promise<Response> {
-  const uid = await uidFromRequest(req);
-  if (!uid) return unauthorized();
-
-  const body = (await req.json().catch(() => ({}))) as Partial<Collection>;
-  const title = typeof body.title === "string" ? body.title.trim() : "";
-  if (!title) return Response.json({ error: "Title is required" }, { status: 400 });
-
-  const ref = adminDb().collection("collections").doc();
-  const now = Timestamp.now();
-  const collection: Collection = {
-    collectionId: ref.id,
-    ownerId: uid,
-    kind: body.kind === "show" ? "show" : "playlist",
-    title,
-    description: typeof body.description === "string" ? body.description : "",
-    artwork: [],
-    tags: Array.isArray(body.tags) ? body.tags.filter((t) => typeof t === "string") : [],
-    trackIds: [],
-    visibility: "private",
-    stats: { trackCount: 0, totalDurationSec: 0, likeCount: 0 },
-    createdAt: now,
-    updatedAt: now,
-  };
-  await ref.set(collection);
-  return Response.json(collection, { status: 201 });
+  return Response.json({ label, tracks: snap.docs.map((d) => d.data()) });
 }
 ```
 
-- [ ] **Step 9: Implement the track-state overlay route**
-
-Create `apps/web/app/api/me/track-state/[trackId]/route.ts`:
-
-```ts
-import { Timestamp } from "firebase-admin/firestore";
-import { adminDb } from "@/lib/firebase/admin";
-import { uidFromRequest, unauthorized } from "@/lib/firebase/verify";
-import type { User } from "@/lib/catalog/model";
-
-type Params = { params: Promise<{ trackId: string }> };
-
-export async function PUT(req: Request, { params }: Params): Promise<Response> {
-  const uid = await uidFromRequest(req);
-  if (!uid) return unauthorized();
-
-  const { trackId } = await params;
-  const db = adminDb();
-
-  // Behavioural state is written only with consent (spec §5.4).
-  const userSnap = await db.collection("users").doc(uid).get();
-  const user = userSnap.data() as User | undefined;
-  if (user?.privacy?.saveHistory === false) {
-    return Response.json({ ok: true, skipped: "saveHistory disabled" });
-  }
-
-  const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
-  const patch: Record<string, unknown> = { trackId };
-
-  if (typeof body.isLiked === "boolean") {
-    patch.isLiked = body.isLiked;
-    patch.likedAt = body.isLiked ? Timestamp.now() : null;
-  }
-  if (typeof body.resumeSec === "number" && body.resumeSec >= 0) {
-    patch.resumeSec = Math.floor(body.resumeSec);
-  }
-
-  const ref = db.collection("users").doc(uid).collection("trackState").doc(trackId);
-  const snap = await ref.get();
-  if (!snap.exists) patch.addedAt = Timestamp.now();
-  await ref.set(patch, { merge: true });
-
-  const fresh = await ref.get();
-  return Response.json(fresh.data());
-}
-```
-
-- [ ] **Step 10: Implement the collection-state overlay route**
-
-Pin state is per-user, not on the collection, so pinning works the same for owned and followed
-collections. The Library screen sorts pinned first.
-
-Create `apps/web/app/api/me/collection-state/[collectionId]/route.ts`:
-
-```ts
-import { Timestamp } from "firebase-admin/firestore";
-import { adminDb } from "@/lib/firebase/admin";
-import { uidFromRequest, unauthorized } from "@/lib/firebase/verify";
-
-type Params = { params: Promise<{ collectionId: string }> };
-
-export async function PUT(req: Request, { params }: Params): Promise<Response> {
-  const uid = await uidFromRequest(req);
-  if (!uid) return unauthorized();
-
-  const { collectionId } = await params;
-  const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
-  const patch: Record<string, unknown> = { collectionId };
-
-  if (typeof body.isPinned === "boolean") patch.isPinned = body.isPinned;
-  if (typeof body.isLiked === "boolean") patch.isLiked = body.isLiked;
-  if (body.opened === true) patch.lastOpenedAt = Timestamp.now();
-
-  const ref = adminDb()
-    .collection("users")
-    .doc(uid)
-    .collection("collectionState")
-    .doc(collectionId);
-  await ref.set(patch, { merge: true });
-  return Response.json((await ref.get()).data());
-}
-```
-
-- [ ] **Step 11: Implement collection read, rename, and delete**
-
-Create `apps/web/app/api/collections/[collectionId]/route.ts`:
-
-```ts
-import { Timestamp } from "firebase-admin/firestore";
-import { adminDb } from "@/lib/firebase/admin";
-import { uidFromRequest, unauthorized } from "@/lib/firebase/verify";
-import type { Collection } from "@/lib/catalog/model";
-
-type Params = { params: Promise<{ collectionId: string }> };
-
-async function load(collectionId: string): Promise<Collection | null> {
-  const snap = await adminDb().collection("collections").doc(collectionId).get();
-  return snap.exists ? (snap.data() as Collection) : null;
-}
-
-export async function GET(req: Request, { params }: Params): Promise<Response> {
-  const uid = await uidFromRequest(req);
-  if (!uid) return unauthorized();
-
-  const { collectionId } = await params;
-  const c = await load(collectionId);
-  if (!c) return Response.json({ error: "Not found" }, { status: 404 });
-  if (c.ownerId !== uid && c.visibility === "private") {
-    return Response.json({ error: "Forbidden" }, { status: 403 });
-  }
-  return Response.json(c);
-}
-
-export async function PATCH(req: Request, { params }: Params): Promise<Response> {
-  const uid = await uidFromRequest(req);
-  if (!uid) return unauthorized();
-
-  const { collectionId } = await params;
-  const c = await load(collectionId);
-  if (!c) return Response.json({ error: "Not found" }, { status: 404 });
-  if (c.ownerId !== uid) return Response.json({ error: "Forbidden" }, { status: 403 });
-
-  const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
-  const patch: Record<string, unknown> = { updatedAt: Timestamp.now() };
-  if (typeof body.title === "string" && body.title.trim()) patch.title = body.title.trim();
-  if (typeof body.description === "string") patch.description = body.description;
-  if (Array.isArray(body.tags)) patch.tags = body.tags.filter((t) => typeof t === "string");
-  if (body.visibility === "private" || body.visibility === "unlisted" || body.visibility === "public") {
-    patch.visibility = body.visibility;
-  }
-
-  await adminDb().collection("collections").doc(collectionId).set(patch, { merge: true });
-  return Response.json((await load(collectionId)) ?? {});
-}
-
-export async function DELETE(req: Request, { params }: Params): Promise<Response> {
-  const uid = await uidFromRequest(req);
-  if (!uid) return unauthorized();
-
-  const { collectionId } = await params;
-  const c = await load(collectionId);
-  if (!c) return Response.json({ error: "Not found" }, { status: 404 });
-  if (c.ownerId !== uid) return Response.json({ error: "Forbidden" }, { status: 403 });
-  // Liked Songs is auto-created and undeletable (spec §5.3).
-  if (c.kind === "liked") return Response.json({ error: "Cannot delete" }, { status: 409 });
-
-  await adminDb().collection("collections").doc(collectionId).delete();
-  return Response.json({ ok: true });
-}
-```
-
-- [ ] **Step 12: Implement the artist and suggest routes**
+- [ ] **Step 5: Implement the artists and suggest routes**
 
 Create `apps/web/app/api/catalog/artists/[artistId]/route.ts`:
 
@@ -2384,13 +2091,12 @@ export async function GET(
   const { artistId } = await params;
   const ref = adminDb().collection("artists").doc(artistId);
   const snap = await ref.get();
-  // A stub created during track ingest has no bio; refresh it once.
+  // Track ingest creates name-only stubs; a stub has no bio, so refresh once.
   if (snap.exists && (snap.data() as { bio?: string | null }).bio) {
     return Response.json(snap.data());
   }
 
-  const provider = await getCatalogProvider();
-  const artist = await provider.getArtist(artistId);
+  const artist = await (await getCatalogProvider()).getArtist(artistId);
   if (!artist) {
     if (snap.exists) return Response.json(snap.data());
     return Response.json({ error: "Not found" }, { status: 404 });
@@ -2415,8 +2121,9 @@ export async function GET(req: Request): Promise<Response> {
   if (!q) return Response.json({ suggestions: [] });
 
   try {
-    const provider = await getCatalogProvider();
-    return Response.json({ suggestions: await provider.suggest(q) });
+    return Response.json({
+      suggestions: await (await getCatalogProvider()).suggest(q),
+    });
   } catch {
     // Autocomplete is decorative — degrade silently rather than error.
     return Response.json({ suggestions: [] });
@@ -2424,247 +2131,101 @@ export async function GET(req: Request): Promise<Response> {
 }
 ```
 
-- [ ] **Step 13: Add the network-gated provider contract test**
+- [ ] **Step 6: Run the tests**
 
-This detects provider drift early. It is skipped in CI and run manually after a provider
-upgrade.
+Run: `npm test --workspace apps/web -- app/api/catalog`
+Expected: PASS.
 
-Create `apps/web/lib/catalog/youtube/contract.test.ts`:
+- [ ] **Step 7: Commit**
+
+```bash
+git add apps/web/app/api/catalog apps/web/lib/catalog
+git commit -m "feat(api): browse by label, artist, and suggest routes"
+```
+
+---
+
+## Task 12: Provider contract test
+
+Detects provider drift early. `youtubei.js` is an unofficial client and the previous scraper
+rotted to a 90% failure rate — this is the early-warning system.
+
+**Files:**
+- Create: `apps/web/lib/catalog/youtube/contract.test.ts`
+
+- [ ] **Step 1: Write it**
 
 ```ts
 import { describe, it, expect } from "vitest";
 import { YoutubeCatalogProvider } from "./index";
 
-// Network-gated: run with CATALOG_LIVE=1 npm test to check for provider drift.
+// Network-gated: CATALOG_LIVE=1 npm test -- lib/catalog/youtube/contract
 const live = process.env.CATALOG_LIVE === "1";
 
 describe.skipIf(!live)("YoutubeCatalogProvider (live)", () => {
   const p = new YoutubeCatalogProvider();
 
-  it("searches songs with clean titles and artists", async () => {
+  it("searches songs with clean titles and structured artists", async () => {
     const r = await p.search("daft punk instant crush", { type: "song", limit: 5 });
     expect(r.tracks.length).toBeGreaterThan(0);
     expect(r.tracks[0].title).not.toContain("Official Video");
     expect(r.tracks[0].artists.length).toBeGreaterThan(0);
-  }, 30_000);
+  }, 30000);
 
   it("fetches a track with keywords and an embeddability flag", async () => {
     const t = await p.getTrack("a5uQMwRMHcs");
     expect(t).not.toBeNull();
-    expect(t!.keywords.length).toBeGreaterThan(0);
-    expect(typeof t!.isEmbeddable).toBe("boolean");
-  }, 30_000);
+    expect(t?.keywords.length).toBeGreaterThan(0);
+    expect(typeof t?.isEmbeddable).toBe("boolean");
+  }, 30000);
 
   it("returns related tracks for the cold-start recommender", async () => {
     expect((await p.getRelatedTracks("a5uQMwRMHcs")).length).toBeGreaterThan(0);
-  }, 30_000);
+  }, 30000);
 
   it("fetches a playlist", async () => {
     const pl = await p.getPlaylist("PLOzDu-MXXLliO9fBNZOQTBDddoA3FzZUo");
     expect(pl).not.toBeNull();
-    expect(pl!.tracks.length).toBeGreaterThan(0);
-  }, 30_000);
+    expect(pl?.tracks.length).toBeGreaterThan(0);
+  }, 30000);
 });
 ```
 
-- [ ] **Step 14: Run all tests**
+- [ ] **Step 2: Run it live once**
 
-Run: `npm test`
-Expected: PASS. The contract tests report as skipped. If `lib/search/*.test.ts` still exists it
-also passes — it is removed in Task 12.
+Run: `cd apps/web && CATALOG_LIVE=1 npx vitest run lib/catalog/youtube/contract`
+Expected: 4 PASS. A failure means the provider drifted — recapture fixtures (Task 2) and fix
+`map.ts`.
 
-Then run the live contract check once:
+- [ ] **Step 3: Confirm it skips by default**
 
-Run: `cd apps/web && CATALOG_LIVE=1 npx vitest run lib/catalog/youtube/contract.test.ts`
-Expected: 4 PASS. A failure here means the provider drifted — recapture fixtures (Task 2) and
-fix `map.ts`.
+Run: `npm test --workspace apps/web -- lib/catalog/youtube/contract`
+Expected: skipped, not failed.
 
-- [ ] **Step 15: Commit**
-
-```bash
-git add apps/web/app/api/me apps/web/app/api/collections apps/web/app/api/catalog apps/web/lib/catalog/youtube/contract.test.ts
-git commit -m "feat(api): add collection, overlay, artist, and suggest routes"
-```
-
----
-
-## Task 12: Remove the old data layer
-
-Only after Tasks 1–11 are green. This is the cutover.
-
-**Files:**
-- Delete: `apps/web/pages/api/searchEngine.ts`
-- Delete: `apps/web/lib/search/` (all)
-- Delete: `apps/web/lib/api/shape.ts`
-- Delete: `apps/web/app/api/me/loved-songs/`, `apps/web/app/api/me/loved-collections/`
-- Modify: `apps/web/constants/interfaces.ts`
-- Modify: `apps/web/lib/api/client.ts`
-- Modify: `apps/web/package.json`
-
-- [ ] **Step 1: Find every consumer of the old types**
+- [ ] **Step 4: Commit**
 
 ```bash
-cd apps/web && npx tsc --noEmit; grep -rn "lovedSongs\|collectionData\|userData\|@fabricio-191\|lib/search\|lib/api/shape" --include=*.ts --include=*.tsx . | grep -v node_modules
-```
-Record the list — every hit must be resolved before this task is done.
-
-- [ ] **Step 2: Delete the dead modules**
-
-```bash
-cd apps/web
-rm -rf pages/api/searchEngine.ts lib/search lib/api/shape.ts
-rm -rf app/api/me/loved-songs app/api/me/loved-collections
-rm -rf app/api/users
-```
-
-- [ ] **Step 3: Remove the abandoned scraper dependency**
-
-```bash
-npm uninstall @fabricio-191/youtube --workspace apps/web
-```
-
-- [ ] **Step 4: Replace the old interfaces**
-
-In `apps/web/constants/interfaces.ts`, delete the `Audio`, `Owner`, `Collection`, and `User` interfaces. Re-export the new model instead:
-
-```ts
-export type {
-  Track,
-  Artist,
-  Collection,
-  User,
-  TrackState,
-  CollectionState,
-  TrackLabel,
-} from "@/lib/catalog/model";
-```
-
-Update `apps/web/lib/api/client.ts` to call the new routes. Every call site surfaced in Step 1 must be updated to the new field names (`id` not `ID`, `trackIds` not `audio`, and no `userData`/`collectionData` wrappers).
-
-- [ ] **Step 5: Verify the build is clean**
-
-```bash
-npm run typecheck && npm run lint && npm test && npm run build
-```
-Expected: all four PASS. Do not proceed while any fail.
-
-- [ ] **Step 6: Commit**
-
-```bash
-git add -A
-git commit -m "refactor(api): remove the embedded-track data layer
-
-Deletes the unauthenticated searchEngine route, the abandoned scraper, the
-shape adapters, and the loved-songs/loved-collections routes that wrote
-whole track objects into user documents. Callers now use the canonical
-catalog model."
-```
-
----
-
-## Task 13: Reset Firestore and deploy rules
-
-Destructive. Requires the clean-break decision (spec D1) to still hold — confirm with the owner that production contains only test accounts before running.
-
-**Files:**
-- Create: `apps/web/scripts/reset-firestore.ts`
-
-- [ ] **Step 1: Write the reset script**
-
-Create `apps/web/scripts/reset-firestore.ts`:
-
-```ts
-/**
- * Deletes every document in the legacy collections. The clean-break decision
- * (spec D1) says production holds only test accounts.
- *
- * Run: npx tsx scripts/reset-firestore.ts --yes   (from apps/web)
- */
-import { adminDb } from "../lib/firebase/admin";
-
-const LEGACY = ["users", "collections"];
-
-async function wipe(name: string): Promise<void> {
-  const snap = await adminDb().collection(name).get();
-  console.log(`${name}: ${snap.size} documents`);
-  for (const doc of snap.docs) await doc.ref.delete();
-}
-
-async function main(): Promise<void> {
-  if (!process.argv.includes("--yes")) {
-    console.error("Refusing to run without --yes");
-    process.exit(1);
-  }
-  for (const c of LEGACY) await wipe(c);
-  console.log("done");
-}
-
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
-```
-
-- [ ] **Step 2: Confirm before running**
-
-Print what would be deleted first:
-
-```bash
-cd apps/web && npx tsx -e "
-import('./lib/firebase/admin').then(async (m) => {
-  for (const c of ['users','collections']) {
-    console.log(c, (await m.adminDb().collection(c).get()).size, 'docs');
-  }
-});
-"
-```
-Stop and confirm with the owner if either count is larger than expected for test data.
-
-- [ ] **Step 3: Run the reset**
-
-```bash
-cd apps/web && npx tsx scripts/reset-firestore.ts --yes
-```
-Expected: per-collection counts, then `done`.
-
-- [ ] **Step 4: Confirm the rules still deny all client access**
-
-`firestore.rules` at the repo root must still contain `allow read, write: if false;` — every path goes through Route Handlers with the Admin SDK.
-
-```bash
-cat firestore.rules
-```
-Expected: the deny-all rule is present and unchanged.
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add apps/web/scripts/reset-firestore.ts
-git commit -m "chore(catalog): add the firestore reset script"
+git add apps/web/lib/catalog/youtube/contract.test.ts
+git commit -m "test(catalog): network-gated provider contract test"
 ```
 
 ---
 
 ## Verification
 
-After Task 13, confirm end to end:
+- [ ] `npm run typecheck && npm test && npm run build` all pass
+- [ ] `CATALOG_LIVE=1` contract test passes against the live provider
+- [ ] With a dev server and a valid Firebase ID token:
+      `GET /api/catalog/search?q=daft+punk` returns clean song titles with structured artists,
+      and `tracks/` gains documents keyed by song id
+- [ ] Every returned track has `isEmbeddable: true`, a `texture`, and empty `labels`
+- [ ] The same search twice hits the cache — the second call does not reach the provider
+- [ ] `GET /api/catalog/browse?label=Lo-Fi` resolves to `lofi` and returns only playable tracks
+- [ ] `GET /api/catalog/browse?label=polka` returns 400
+- [ ] Every route returns 401 without a Bearer token
+- [ ] Update roadmap §10: ledger row 9 closed; row 10 (`/api/library/search`) moves to phase 2,
+      since it needs collections to exist
 
-- [ ] `npm run typecheck && npm run lint && npm test && npm run build` all pass
-- [ ] `npm run web dev`, sign in, and search — results are clean song titles with artist names, not raw video titles
-- [ ] Firestore console shows `tracks/` documents keyed by song id, with `source.videoId` and empty `labels`
-- [ ] Adding the same track to a playlist twice leaves `stats.trackCount` at 1
-- [ ] Setting `privacy.saveHistory` to false via `PATCH /api/me` stops `trackState` writes
-- [ ] No document anywhere contains a `userData` or `collectionData` wrapper
-- [ ] `PUT /api/me/collection-state/<id>` with `{ "isPinned": true }` pins, and the Library
-      ordering reflects it
-- [ ] `GET /api/catalog/artists/<UC…>` returns a bio on the second call (the first fills the
-      stub created during track ingest)
-- [ ] `DELETE` on the Liked Songs collection returns 409
+## Not done in this phase
 
-**Deviation from spec §7, intentional:** the spec lists `GET /api/me/collections`; the plan
-implements `GET /api/collections`, which filters by `ownerId == uid` from the verified token.
-Same auth, same result, and it keeps all collection operations under one path prefix.
-
-## What this plan does not build
-
-Subsystems #2–#5 have their own specs and plans: event ingestion, aggregation into stats and recents, label enrichment, and recommendations. The screens that need them (`/profile/stats`, `/profile/recents`, the "You might like" and "Jump back in" rails) continue to render mock data until those land.
+The design-system screens still render mock data. Wiring them to these routes is phase 8.
