@@ -21,6 +21,11 @@ export interface MockCollection {
   title: string;
   desc: string;
   texture: TextureName;
+  /** How the collection's art is drawn: its texture swatch, or a mosaic
+   *  built from its own tracks. Optional so every existing literal and call
+   *  site keeps compiling unchanged; `undefined` means "texture", same as
+   *  the explicit value — see CollectionArt. */
+  cover?: "texture" | "mosaic";
   trackIds: string[];
   likes: number;
   tags: string[];

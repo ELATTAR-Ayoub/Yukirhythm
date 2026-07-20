@@ -76,6 +76,7 @@ interface MockStudioValue {
     tags: string[];
     kind: CollectionKind;
     texture?: TextureName;
+    cover?: "texture" | "mosaic";
     trackIds?: string[];
   }) => MockCollection;
   // player surface
@@ -158,6 +159,7 @@ export default function MockStudioProvider({
       tags: string[];
       kind: CollectionKind;
       texture?: TextureName;
+      cover?: "texture" | "mosaic";
       trackIds?: string[];
     }): MockCollection => {
       // Built from the `collections` closure (not a setState functional
@@ -170,6 +172,7 @@ export default function MockStudioProvider({
         title: input.title,
         desc: input.desc,
         texture: input.texture ?? "tx-k-silk",
+        cover: input.cover ?? "texture",
         trackIds: input.trackIds ?? [],
         likes: 0,
         tags: input.tags,

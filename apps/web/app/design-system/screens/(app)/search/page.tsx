@@ -9,6 +9,7 @@ import MediaCard from "@/components/studio/MediaCard";
 import TrackRow from "@/components/studio/TrackRow";
 import EmptyState from "@/components/studio/EmptyState";
 import Texture from "@/components/studio/Texture";
+import CollectionArt from "@/components/studio/screens/CollectionArt";
 import { SkeletonRow } from "@/components/studio/Skeletons";
 import { Input } from "@/components/ui/input";
 import SectionLabel from "@/components/studio/SectionLabel";
@@ -202,7 +203,7 @@ export default function SearchScreen() {
                         <MediaCard
                           title={c.title}
                           artist={`${c.trackIds.length} tracks`}
-                          texture={c.texture}
+                          art={<CollectionArt collection={c} className="w-full h-full" />}
                           variant="extended"
                           size="sm"
                           playable={false}

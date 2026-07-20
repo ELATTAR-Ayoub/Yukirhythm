@@ -16,6 +16,10 @@ interface MediaCardProps {
   /** Dithered placeholder texture used when no artwork URL exists */
   texture?: TextureName;
   artUrl?: string;
+  /** A fully-built artwork node (e.g. `<CollectionArt>`'s mosaic) that
+   *  replaces the texture/artUrl swatch entirely when supplied — the card
+   *  still owns the sizing/rounding box around it. */
+  art?: React.ReactNode;
   duration?: string;
   size?: MediaCardSize;
   variant?: MediaCardVariant;
@@ -46,14 +50,19 @@ const TITLE_SIZES: Record<MediaCardSize, string> = {
 function Artwork({
   texture,
   artUrl,
+  art,
   title,
   className,
 }: {
   texture?: TextureName;
   artUrl?: string;
+  art?: React.ReactNode;
   title: string;
   className?: string;
 }) {
+  if (art) {
+    return <div className={className}>{art}</div>;
+  }
   if (artUrl) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
@@ -98,6 +107,7 @@ export default function MediaCard({
   artist,
   texture,
   artUrl,
+  art,
   duration,
   size = "md",
   variant = "boxy",
@@ -124,6 +134,7 @@ export default function MediaCard({
           <Artwork
             texture={texture}
             artUrl={artUrl}
+            art={art}
             title={title}
             className="absolute inset-0 w-full h-full"
           />
@@ -171,6 +182,7 @@ export default function MediaCard({
         <Artwork
           texture={texture}
           artUrl={artUrl}
+          art={art}
           title={title}
           className="absolute inset-0 w-full h-full"
         />

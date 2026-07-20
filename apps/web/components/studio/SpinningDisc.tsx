@@ -16,6 +16,10 @@ const REST_EPSILON = 0.02;
 
 interface SpinningDiscProps {
   texture: TextureName;
+  /** Replaces the disc face entirely (e.g. a collection's mosaic collage) —
+   *  when supplied, `texture` is unused for the face but still required so
+   *  every caller keeps a sensible fallback on hand. */
+  art?: React.ReactNode;
   /** Artwork at the spindle; omit for a plain label. */
   labelTexture?: TextureName;
   spinning: boolean;
@@ -32,6 +36,7 @@ interface SpinningDiscProps {
  */
 export default function SpinningDisc({
   texture,
+  art,
   labelTexture,
   spinning,
   className,
@@ -117,7 +122,7 @@ export default function SpinningDisc({
   return (
     <span className={cn("relative block overflow-hidden rounded-full", className)}>
       <span ref={ref} className="absolute inset-0 block will-change-transform">
-        <Texture name={texture} className="absolute inset-0 w-full h-full" />
+        {art ?? <Texture name={texture} className="absolute inset-0 w-full h-full" />}
         {labelTexture ? (
           <span
             className={cn(

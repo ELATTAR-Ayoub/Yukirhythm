@@ -1,7 +1,7 @@
 "use client";
 
 import SpinningDisc from "@/components/studio/SpinningDisc";
-import Texture from "@/components/studio/Texture";
+import CollectionArt from "./CollectionArt";
 import { useMockStudio } from "./MockStudioProvider";
 import type { MockCollection } from "./mock-data";
 
@@ -21,6 +21,7 @@ export default function PlaylistHero({
 }) {
   const { playingCollection, isPlaying } = useMockStudio();
   const spinning = playingCollection?.id === collection.id && isPlaying;
+  const isMosaic = collection.cover === "mosaic";
 
   return (
     <div className="relative overflow-hidden rounded-xl">
@@ -33,8 +34,8 @@ export default function PlaylistHero({
           curve against a 98% card and low against a 13% one, so light reads
           at ~0.78x dark. Measured across all eight collection textures,
           0.40/0.30 brings light to 1.06x dark in CIE L* — near parity. */}
-      <Texture
-        name={collection.texture}
+      <CollectionArt
+        collection={collection}
         className="absolute inset-0 w-full h-full opacity-40 dark:opacity-30"
       />
       <div
@@ -48,6 +49,11 @@ export default function PlaylistHero({
       <div className="relative flex flex-col items-center gap-4 p-5 text-center sm:flex-row sm:items-end sm:gap-6 sm:p-6 sm:text-left">
         <SpinningDisc
           texture={collection.texture}
+          art={
+            isMosaic ? (
+              <CollectionArt collection={collection} className="absolute inset-0 w-full h-full" />
+            ) : undefined
+          }
           labelTexture="tx-k2-vinyl"
           spinning={spinning}
           className="w-36 h-36 shrink-0 disc_shadow sm:w-[200px] sm:h-[200px]"

@@ -8,6 +8,7 @@ import RailShelf from "@/components/studio/RailShelf";
 import MediaCard from "@/components/studio/MediaCard";
 import { PlayerButton } from "@/components/studio/PlayerButton";
 import PageHeader from "@/components/studio/screens/PageHeader";
+import CollectionArt from "@/components/studio/screens/CollectionArt";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
 import { useIsDesktop } from "@/components/studio/shell/useBreakpoint";
 import { playlistHref } from "@/components/studio/shell/routes";
@@ -71,7 +72,7 @@ export default function HomeScreen() {
                 <MediaCard
                   title={c.title}
                   artist={`${c.trackIds.length} tracks`}
-                  texture={c.texture}
+                  art={<CollectionArt collection={c} className="w-full h-full" />}
                   size="sm"
                   playable={false}
                   className={shelfCardClassName}

@@ -20,6 +20,7 @@ import Texture, { TEXTURE_NAMES, type TextureName } from "@/components/studio/Te
 import TrackRow from "@/components/studio/TrackRow";
 import EmptyState from "@/components/studio/EmptyState";
 import { TagChip } from "./TagChip";
+import CollectionArt from "./CollectionArt";
 import { useMockStudio } from "./MockStudioProvider";
 import {
   formatDuration,
@@ -37,13 +38,17 @@ interface CreatePlaylistFlowProps {
 }
 
 /** Draft state for the whole wizard, held here rather than in the store —
- *  nothing here is written to `collections` until step 3's confirm. */
+ *  nothing here is written to `collections` until step 3's confirm. Field
+ *  names mirror `MockCollection` (texture/cover/trackIds) on purpose: it
+ *  lets the draft stand in directly wherever a collection-shaped prop is
+ *  expected, e.g. CollectionArt's live mosaic preview on review. */
 interface Draft {
   title: string;
   desc: string;
-  tags: string;
+  tags: string[];
   kind: CollectionKind;
   texture: TextureName;
+  cover: "texture" | "mosaic";
   trackIds: string[];
 }
 
@@ -52,21 +57,15 @@ const DEFAULT_TEXTURE: TextureName = "tx-k-silk";
 const EMPTY_DRAFT: Draft = {
   title: "",
   desc: "",
-  tags: "",
+  tags: [],
   kind: "music",
   texture: DEFAULT_TEXTURE,
+  cover: "texture",
   trackIds: [],
 };
 
 const STEP_LABELS = ["Details", "Add music", "Review"] as const;
 type Step = 1 | 2 | 3;
-
-function parseTags(raw: string): string[] {
-  return raw
-    .split(",")
-    .map((t) => t.trim().toLowerCase())
-    .filter(Boolean);
-}
 
 /** "tx-k2-ascii-eq" -> "ascii eq" — readable enough for a swatch's
  *  accessible name; sighted users tell swatches apart by the texture image. */
@@ -129,6 +128,67 @@ function StepIndicator({ step }: { step: Step }) {
   );
 }
 
+interface TagsFieldProps {
+  tags: string[];
+  onChange: (tags: string[]) => void;
+}
+
+/**
+ * Type a tag, press Enter to turn it into a chip; Backspace on an empty
+ * field pops the last chip back off — the same shortcut most tag pickers
+ * use, and it falls out naturally here since the field already tracks
+ * whether it's empty for the placeholder text.
+ *
+ * Trimmed and lowercased on add (matches the old comma-separated field's
+ * behaviour), blanks ignored, duplicates rejected.
+ */
+function TagsField({ tags, onChange }: TagsFieldProps) {
+  const [value, setValue] = useState("");
+
+  const commit = () => {
+    const t = value.trim().toLowerCase();
+    setValue("");
+    if (!t || tags.includes(t)) return;
+    onChange([...tags, t]);
+  };
+
+  const removeTag = (tag: string) => {
+    onChange(tags.filter((t) => t !== tag));
+  };
+
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor="pl-tags">Tags</Label>
+      <div
+        className={cn(
+          "flex flex-wrap items-center gap-1.5 rounded-2xl border border-input bg-card px-3 py-1.5 shadow-pressed",
+          "transition-[box-shadow,border-color] duration-base",
+          "focus-within:ring-2 focus-within:ring-ring/35 focus-within:border-primary/50"
+        )}
+      >
+        {tags.map((tag) => (
+          <TagChip key={tag} label={tag} onRemove={() => removeTag(tag)} />
+        ))}
+        <input
+          id="pl-tags"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              commit();
+            } else if (e.key === "Backspace" && value === "" && tags.length > 0) {
+              removeTag(tags[tags.length - 1]);
+            }
+          }}
+          placeholder={tags.length === 0 ? "lofi, night, focus…" : "Add another…"}
+          className="min-w-[96px] flex-1 bg-transparent py-1 text-sm outline-none placeholder:text-muted-foreground/60"
+        />
+      </div>
+    </div>
+  );
+}
+
 interface DetailsStepProps {
   draft: Draft;
   setDraft: React.Dispatch<React.SetStateAction<Draft>>;
@@ -177,43 +237,63 @@ function DetailsStep({ draft, setDraft }: DetailsStepProps) {
         </div>
       </div>
 
-      <div className="space-y-1.5">
-        <Label htmlFor="pl-tags">Tags (comma separated)</Label>
-        <Input
-          id="pl-tags"
-          placeholder="lofi, night, focus"
-          value={draft.tags}
-          onChange={(e) => setDraft((d) => ({ ...d, tags: e.target.value }))}
-        />
-      </div>
+      <TagsField
+        tags={draft.tags}
+        onChange={(tags) => setDraft((d) => ({ ...d, tags }))}
+      />
 
       <div className="space-y-1.5">
         <Label id="pl-cover-label">Cover</Label>
-        <div
-          role="group"
-          aria-labelledby="pl-cover-label"
-          className="grid grid-cols-5 gap-2 sm:grid-cols-7"
-        >
-          {TEXTURE_NAMES.map((name) => {
-            const active = draft.texture === name;
-            return (
-              <button
-                key={name}
-                type="button"
-                aria-pressed={active}
-                aria-label={`Cover: ${textureLabel(name)}`}
-                onClick={() => setDraft((d) => ({ ...d, texture: name }))}
-                className={cn(
-                  "aspect-square rounded-md overflow-hidden border-2 transition-colors duration-fast",
-                  active
-                    ? "border-primary"
-                    : "border-transparent hover:border-border"
-                )}
-              >
-                <Texture name={name} className="w-full h-full" />
-              </button>
-            );
-          })}
+        <div role="group" aria-labelledby="pl-cover-label" className="space-y-2.5">
+          <div className="flex gap-2">
+            <TagChip
+              label="Texture"
+              active={draft.cover === "texture"}
+              onClick={() => setDraft((d) => ({ ...d, cover: "texture" }))}
+            />
+            <TagChip
+              label="Mosaic"
+              active={draft.cover === "mosaic"}
+              disabled={draft.trackIds.length === 0}
+              onClick={() => setDraft((d) => ({ ...d, cover: "mosaic" }))}
+            />
+          </div>
+
+          {draft.trackIds.length === 0 ? (
+            <p className="type-muted">
+              Add tracks in the next step to build a mosaic cover.
+            </p>
+          ) : null}
+
+          {draft.cover === "texture" ? (
+            <div className="grid grid-cols-5 gap-2 sm:grid-cols-7">
+              {TEXTURE_NAMES.map((name) => {
+                const active = draft.texture === name;
+                return (
+                  <button
+                    key={name}
+                    type="button"
+                    aria-pressed={active}
+                    aria-label={`Cover: ${textureLabel(name)}`}
+                    onClick={() => setDraft((d) => ({ ...d, texture: name }))}
+                    className={cn(
+                      "aspect-square rounded-md overflow-hidden border-2 transition-colors duration-fast",
+                      active
+                        ? "border-primary"
+                        : "border-transparent hover:border-border"
+                    )}
+                  >
+                    <Texture name={name} className="w-full h-full" />
+                  </button>
+                );
+              })}
+            </div>
+          ) : draft.trackIds.length > 0 ? (
+            <CollectionArt
+              collection={draft}
+              className="h-28 w-28 rounded-lg border border-border overflow-hidden"
+            />
+          ) : null}
         </div>
       </div>
     </div>
@@ -341,7 +421,7 @@ function AddMusicStep({ trackIds, onToggleTrack }: AddMusicStepProps) {
 /** Step 3 — everything that's about to be written, and the one control
  *  (Create playlist) that actually writes it. */
 function ReviewStep({ draft }: { draft: Draft }) {
-  const tags = useMemo(() => parseTags(draft.tags), [draft.tags]);
+  const tags = draft.tags;
   const tracks = useMemo(
     () =>
       draft.trackIds
@@ -355,9 +435,9 @@ function ReviewStep({ draft }: { draft: Draft }) {
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-4">
-        <Texture
-          name={draft.texture}
-          className="w-20 h-20 rounded-lg shrink-0 border border-border"
+        <CollectionArt
+          collection={draft}
+          className="w-20 h-20 rounded-lg shrink-0 border border-border overflow-hidden"
         />
         <div className="min-w-0">
           <div className="type-h3 truncate">{title || "Untitled"}</div>
@@ -443,28 +523,42 @@ export default function CreatePlaylistFlow({ onCreated }: CreatePlaylistFlowProp
     const created = createCollection({
       title,
       desc: draft.desc.trim(),
-      tags: parseTags(draft.tags),
+      tags: draft.tags,
       kind: draft.kind,
       texture: draft.texture,
+      cover: draft.cover,
       trackIds: draft.trackIds,
     });
     toast(`Created “${title}”`);
     onCreated(created);
   };
 
+  // A fixed-height flex column, not `space-y-6` around three siblings: the
+  // step indicator (header) and the Back/Next/Create row (footer) are both
+  // `shrink-0` and stay put, and only the middle step content scrolls —
+  // `flex-1 min-h-0` is what lets that middle region claim exactly the
+  // remaining height and become the sole scroller instead of overflowing
+  // into the page column's own scroller (see CreatePlaylistScreen, which
+  // gives this component a definite height to divide up in the first
+  // place; without that ancestor chain `h-full` here would resolve to
+  // nothing and every child would fall back to natural document flow).
   return (
-    <div className="space-y-6">
-      <StepIndicator step={step} />
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="shrink-0 pb-6">
+        <StepIndicator step={step} />
+      </div>
 
-      {step === 1 ? (
-        <DetailsStep draft={draft} setDraft={setDraft} />
-      ) : step === 2 ? (
-        <AddMusicStep trackIds={draft.trackIds} onToggleTrack={toggleTrack} />
-      ) : (
-        <ReviewStep draft={draft} />
-      )}
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        {step === 1 ? (
+          <DetailsStep draft={draft} setDraft={setDraft} />
+        ) : step === 2 ? (
+          <AddMusicStep trackIds={draft.trackIds} onToggleTrack={toggleTrack} />
+        ) : (
+          <ReviewStep draft={draft} />
+        )}
+      </div>
 
-      <div className="flex items-center gap-2 pt-2">
+      <div className="flex shrink-0 items-center gap-2 pt-4">
         {step > 1 ? (
           <Button
             type="button"

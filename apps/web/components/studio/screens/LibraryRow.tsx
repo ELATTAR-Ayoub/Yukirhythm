@@ -3,6 +3,7 @@
 import { DrawingPinFilledIcon, PlusIcon } from "@radix-ui/react-icons";
 
 import MediaCard from "@/components/studio/MediaCard";
+import CollectionArt from "./CollectionArt";
 import type { MockCollection } from "./mock-data";
 
 interface LibraryRowCardProps {
@@ -25,7 +26,7 @@ export function LibraryRowCard({ collection, playable }: LibraryRowCardProps) {
       <MediaCard
         title={collection.title}
         artist={`${collection.trackIds.length} tracks · ${collection.kind}`}
-        texture={collection.texture}
+        art={<CollectionArt collection={collection} className="w-full h-full" />}
         variant="extended"
         size="sm"
         playable={playable}
