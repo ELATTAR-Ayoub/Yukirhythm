@@ -9,7 +9,9 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./vitest.setup.ts"],
     include: ["**/*.{test,spec}.{ts,tsx}"],
-    exclude: ["node_modules", ".next"],
+    // Integration tests need the Firestore emulator and run via
+    // vitest.integration.config.ts, not the default jsdom unit run.
+    exclude: ["node_modules", ".next", "**/*.integration.test.ts"],
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],

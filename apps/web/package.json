@@ -15,7 +15,10 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
     "coverage": "vitest run --coverage",
+    "emulator": "firebase emulators:start --only firestore,auth --project demo-yukirhythm",
+    "capture:fixtures": "tsx scripts/capture-catalog-fixtures.ts",
     "migrate:users": "tsx scripts/migrate-users-to-uid.ts"
   },
   "dependencies": {
