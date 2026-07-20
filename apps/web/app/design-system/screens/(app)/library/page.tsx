@@ -7,6 +7,7 @@ import { PlusIcon } from "@radix-ui/react-icons";
 import { PlayerButton } from "@/components/studio/PlayerButton";
 import PageHeader from "@/components/studio/screens/PageHeader";
 import SignInPrompt from "@/components/studio/screens/SignInPrompt";
+import CollectionMenu from "@/components/studio/screens/CollectionMenu";
 import { FilterChipRow } from "@/components/studio/screens/TagChip";
 import {
   LIBRARY_FILTERS,
@@ -66,16 +67,24 @@ export default function LibraryScreen() {
 
       <div className="space-y-2">
         {visible.map((c) => (
-          <Link
-            key={c.id}
-            href={playlistHref(c.id)}
-            aria-label={`Open collection ${c.title}`}
-            className="relative block"
-          >
-            {/* No play overlay: this row is an anchor, and MediaCard's
-                overlay would nest a button inside it. */}
-            <LibraryRowCard collection={c} playable={false} />
-          </Link>
+          // The menu is a SIBLING of the anchor, not a child: a button inside
+          // an <a> is invalid and becomes a dead keyboard stop that only
+          // works because the click bubbles.
+          <div key={c.id} className="relative">
+            <Link
+              href={playlistHref(c.id)}
+              aria-label={`Open collection ${c.title}`}
+              className="relative block"
+            >
+              {/* No play overlay: this row is an anchor, and MediaCard's
+                  overlay would nest a button inside it. */}
+              <LibraryRowCard collection={c} playable={false} />
+            </Link>
+            {/* Bottom-right, clear of the pinned marker at the top. */}
+            <div className="absolute right-2 bottom-2">
+              <CollectionMenu collection={c} />
+            </div>
+          </div>
         ))}
 
         <CreatePlaylistTile onClick={openCreate} />

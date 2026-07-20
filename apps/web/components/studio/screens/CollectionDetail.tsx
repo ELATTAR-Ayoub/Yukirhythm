@@ -18,6 +18,7 @@ import TrackRow from "@/components/studio/TrackRow";
 import EmptyState from "@/components/studio/EmptyState";
 import { PlayerButton } from "@/components/studio/PlayerButton";
 import IconSwap from "@/components/studio/IconSwap";
+import LikeButton from "./LikeButton";
 import TrackMenu from "./TrackMenu";
 import ViewToggle, { type TrackView } from "./ViewToggle";
 import SortControl from "./SortControl";
@@ -238,6 +239,10 @@ export default function CollectionDetail({
                   album={collection.title}
                 />
               </div>
+              {/* Siblings of the row, not children: the row is a role="button"
+                  and nesting controls inside it would make each a dead
+                  keyboard stop that only works because the click bubbles. */}
+              <LikeButton trackId={track.id} trackTitle={track.title} />
               <TrackMenu trackTitle={track.title} />
             </div>
           ))}

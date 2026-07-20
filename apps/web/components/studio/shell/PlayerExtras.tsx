@@ -13,6 +13,7 @@ import IconSwap from "@/components/studio/IconSwap";
 import { PlayerButton } from "@/components/studio/PlayerButton";
 import { Slider } from "@/components/ui/slider";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
+import LikeButton from "@/components/studio/screens/LikeButton";
 import { useFullscreen } from "./useFullscreen";
 
 /**
@@ -53,13 +54,18 @@ const FULLSCREEN_ICONS = {
  * the way the seek bar and transport are.
  */
 export default function PlayerExtras() {
-  const { volume, setVolume, muted, toggleMute } = useMockStudio();
+  const { volume, setVolume, muted, toggleMute, nowPlaying } = useMockStudio();
   const fullscreen = useFullscreen();
 
   return (
     <div className="flex items-center justify-end gap-2 min-w-0">
+      {/* Only with a track loaded — liking nothing is not a state. */}
+      {nowPlaying ? (
+        <LikeButton trackId={nowPlaying.id} trackTitle={nowPlaying.title} />
+      ) : null}
+
       <PlayerButton
-        variant="ghost"
+        variant="secondary"
         size="sm"
         aria-label={muted ? "Unmute" : "Mute"}
         aria-pressed={muted}
@@ -84,7 +90,7 @@ export default function PlayerExtras() {
           never work is noise, not information. */}
       {fullscreen.supported ? (
         <PlayerButton
-          variant="ghost"
+          variant="secondary"
           size="sm"
           aria-label={fullscreen.active ? "Exit full screen" : "Full screen"}
           aria-pressed={fullscreen.active}

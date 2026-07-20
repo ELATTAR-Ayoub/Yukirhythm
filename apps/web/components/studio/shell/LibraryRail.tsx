@@ -11,6 +11,7 @@ import {
   CreatePlaylistTile,
   LibraryRowCard,
 } from "@/components/studio/screens/LibraryRow";
+import CollectionMenu from "@/components/studio/screens/CollectionMenu";
 import { FilterChipRow } from "@/components/studio/screens/TagChip";
 import {
   LIBRARY_FILTERS,
@@ -75,20 +76,28 @@ export default function LibraryRail() {
           const href = playlistHref(c.id);
           const active = pathname === href;
           return (
-            <Link
-              key={c.id}
-              href={href}
-              aria-current={active ? "page" : undefined}
-              aria-label={`Open collection ${c.title}`}
-              className={cn(
-                "relative block rounded-lg transition-colors duration-fast",
-                active && "bg-secondary"
-              )}
-            >
-              {/* No play overlay: this row is an anchor, and MediaCard's
-                  overlay would nest a button inside it. */}
-              <LibraryRowCard collection={c} playable={false} />
-            </Link>
+            // The menu is a SIBLING of the anchor, not a child: a button
+            // inside an <a> is invalid and becomes a dead keyboard stop that
+            // only works because the click bubbles.
+            <div key={c.id} className="relative">
+              <Link
+                href={href}
+                aria-current={active ? "page" : undefined}
+                aria-label={`Open collection ${c.title}`}
+                className={cn(
+                  "relative block rounded-lg transition-colors duration-fast",
+                  active && "bg-secondary"
+                )}
+              >
+                {/* No play overlay: this row is an anchor, and MediaCard's
+                    overlay would nest a button inside it. */}
+                <LibraryRowCard collection={c} playable={false} />
+              </Link>
+              {/* Bottom-right, clear of the pinned marker at the top. */}
+              <div className="absolute right-2 bottom-2">
+                <CollectionMenu collection={c} />
+              </div>
+            </div>
           );
         })}
 

@@ -11,6 +11,7 @@ import {
 } from "react";
 import {
   LIKED_SONGS,
+  LIKED_SONGS_ID,
   MOCK_COLLECTIONS,
   MOCK_TRACKS,
   MOCK_USER,
@@ -61,6 +62,10 @@ interface MockStudioValue {
   libraryFilter: LibraryFilter;
   setLibraryFilter: (filter: LibraryFilter) => void;
   togglePin: (id: string) => void;
+  /** Liking is membership of the Liked Songs collection, not a parallel list —
+   *  one source of truth, and the playlist stays honest. */
+  isLiked: (trackId: string) => boolean;
+  toggleLike: (trackId: string) => void;
   /** Append a track to a collection; no-op if it's already in there. */
   addTrackToCollection: (collectionId: string, trackId: string) => void;
   /** Returns the created collection so a caller (the create-playlist route)
@@ -147,6 +152,34 @@ export default function MockStudioProvider({
   const togglePin = useCallback((id: string) => {
     setCollections((cs) =>
       cs.map((c) => (c.id === id ? { ...c, pinned: !c.pinned } : c))
+    );
+  }, []);
+
+  /** Membership of Liked Songs, read straight off the collections state so a
+   *  like shows up in the playlist and vice versa — there is no second list to
+   *  fall out of step. */
+  const likedTrackIds = useMemo(
+    () => collections.find((c) => c.id === LIKED_SONGS_ID)?.trackIds ?? [],
+    [collections]
+  );
+
+  const isLiked = useCallback(
+    (trackId: string) => likedTrackIds.includes(trackId),
+    [likedTrackIds]
+  );
+
+  const toggleLike = useCallback((trackId: string) => {
+    setCollections((cs) =>
+      cs.map((c) =>
+        c.id === LIKED_SONGS_ID
+          ? {
+              ...c,
+              trackIds: c.trackIds.includes(trackId)
+                ? c.trackIds.filter((id) => id !== trackId)
+                : [...c.trackIds, trackId],
+            }
+          : c
+      )
     );
   }, []);
 
@@ -327,6 +360,8 @@ export default function MockStudioProvider({
     libraryFilter,
     setLibraryFilter,
     togglePin,
+    isLiked,
+    toggleLike,
     addTrackToCollection,
     createCollection,
     playerExpanded,
