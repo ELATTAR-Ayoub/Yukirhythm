@@ -20,11 +20,22 @@ interface PageTextureProps {
  * whatever survives the mask settles into the surface behind it instead of
  * meeting a hard line.
  *
- * A flat 15% in both themes, set by eye rather than derived. Light would
- * carry slightly more alpha than dark for equal *perceived* weight — sRGB is
- * gamma-encoded, so the same luminance spread sits higher on the curve
- * against a near-white card — but at this weight the field is a hint rather
- * than a texture, and the difference is not worth two numbers.
+ * `ascii-dunes` paints its own fixed palette — a `#191919` ink fill under
+ * hardcoded brand-colour glyphs (see AnimatedTexture; it quantises onto the
+ * six-stop Studio ramp, not any theme token). That ink fill is most of the
+ * canvas by area, so a plain alpha blend reads fine in dark theme (near-black
+ * on a near-black card, ~13% L) but turns into a flat grey veil in light
+ * theme (near-black on a ~98% L card) — the whole field darkens the card
+ * instead of just hinting at a texture.
+ *
+ * `mix-blend-screen` fixes that without touching the canvas: screen only
+ * ever lightens, so the ink fill contributes nothing over a light card and
+ * only the bright accent glyphs (green/blue/white) show through — the same
+ * "hint, not a texture" read the dark theme already had. Dark theme keeps
+ * the default `normal` blend, since ink-on-ink was already correct there and
+ * `screen` would wash out the glyphs' own contrast against a dark card for
+ * no benefit. Opacity stays a flat 15% in both — only the blend mode needed
+ * to change.
  */
 export default function PageTexture({
   kind = "ascii-dunes",
@@ -41,7 +52,10 @@ export default function PageTexture({
       <AnimatedTexture
         kind={kind}
         speed={0.4}
-        className="absolute inset-0 h-full w-full opacity-[0.15] [mask-image:radial-gradient(130%_100%_at_50%_0%,#000_30%,transparent_100%)]"
+        className={cn(
+          "absolute inset-0 h-full w-full opacity-[0.15] [mask-image:radial-gradient(130%_100%_at_50%_0%,#000_30%,transparent_100%)]",
+          "mix-blend-screen dark:mix-blend-normal"
+        )}
       />
       {/* Settles the field into the card rather than letting it end on a cut.
           Two passes, because the gradient alone still left a visible seam at
