@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 
 import MockStudioProvider, {
@@ -10,12 +10,16 @@ import {
   type MockCollection,
 } from "@/components/studio/screens/mock-data";
 import NowPlayingRail from "./NowPlayingRail";
-import { playlistHref, SCREENS } from "./routes";
+import { QUEUE, playlistHref, SCREENS } from "./routes";
 
-const nav = vi.hoisted(() => ({ pathname: "/design-system/screens/home" }));
+const { push, nav } = vi.hoisted(() => ({
+  push: vi.fn(),
+  nav: { pathname: "/design-system/screens/home" },
+}));
 
 vi.mock("next/navigation", () => ({
   usePathname: () => nav.pathname,
+  useRouter: () => ({ push }),
 }));
 
 /** Starts playback of `track` from `source` when clicked. */
@@ -31,18 +35,14 @@ function NowPlayingProbe() {
   return <div data-testid="now-playing">{nowPlaying?.title ?? "none"}</div>;
 }
 
-/** Surfaces the shared queueOpen flag — the drawer itself now lives in
- *  GlobalPlayer (Part A), so a NowPlayingRail-only render has no drawer body
- *  to assert on; this is the closest observable proxy for "did the control
- *  ask the shared drawer to open". */
-function QueueOpenProbe() {
-  const { queueOpen } = useMockStudio();
-  return <div data-testid="queue-open">{String(queueOpen)}</div>;
-}
-
 describe("NowPlayingRail", () => {
   beforeEach(() => {
     nav.pathname = "/design-system/screens/home";
+    push.mockClear();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it("keeps the docked player pinned outside the scrollable up-next/add-music section", () => {
@@ -174,24 +174,16 @@ describe("NowPlayingRail", () => {
       expect(screen.queryByText("Queue is empty")).toBeNull();
     });
 
-    it("opens the shared queue drawer state from the Open queue control", () => {
-      // The queue drawer itself is lifted into the provider and mounted once
-      // by GlobalPlayer (Part A) — a NowPlayingRail-only render has no drawer
-      // body to assert on, so this checks the shared queueOpen flag instead.
+    it("navigates to the routed queue page from the Open queue control, at every width", () => {
       render(
         <MockStudioProvider>
-          <Seed track="t2" source={LIKED_SONGS} />
-          <QueueOpenProbe />
           <NowPlayingRail />
         </MockStudioProvider>
       );
 
-      fireEvent.click(screen.getByText("seed"));
-      expect(screen.getByTestId("queue-open").textContent).toBe("false");
-
       fireEvent.click(screen.getByLabelText("Open queue"));
 
-      expect(screen.getByTestId("queue-open").textContent).toBe("true");
+      expect(push).toHaveBeenCalledWith(QUEUE);
     });
 
     it("does not nest a play button inside the row's role=button wrapper", () => {

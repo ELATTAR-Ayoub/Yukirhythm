@@ -1,10 +1,22 @@
-import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { describe, it, expect, vi, afterEach } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
 
 import MockStudioProvider from "./MockStudioProvider";
+import { QUEUE } from "../shell/routes";
 import DevicePlayer from "./DevicePlayer";
 
+const { push } = vi.hoisted(() => ({ push: vi.fn() }));
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push }),
+}));
+
 describe("DevicePlayer", () => {
+  afterEach(() => {
+    push.mockClear();
+  });
+
+
   it("shows a collapse control when given onCollapse", () => {
     render(
       <MockStudioProvider>
@@ -61,5 +73,19 @@ describe("DevicePlayer", () => {
     // assertion would read 0 either way — the class is the only observable
     // signal that the 340px cap was lifted.
     expect(root.className).not.toContain("max-w-[340px]");
+  });
+
+  describe("transport queue control", () => {
+    it("navigates to the routed queue page, at every width", () => {
+      render(
+        <MockStudioProvider>
+          <DevicePlayer onCollapse={() => {}} />
+        </MockStudioProvider>
+      );
+
+      fireEvent.click(screen.getByLabelText("Queue"));
+
+      expect(push).toHaveBeenCalledWith(QUEUE);
+    });
   });
 });

@@ -1,5 +1,7 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+
 import { cn } from "@/lib/utils";
 import SpinningDisc from "@/components/studio/SpinningDisc";
 import DataText from "@/components/studio/DataText";
@@ -8,6 +10,7 @@ import Transport from "@/components/studio/screens/Transport";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
 import { formatDuration } from "@/components/studio/screens/mock-data";
 import { useIsWide } from "./useBreakpoint";
+import { QUEUE } from "./routes";
 
 interface PlaybackBarProps {
   /** Opens the fullscreen DevicePlayer overlay. Ignored at 1440+ — see below. */
@@ -27,8 +30,8 @@ interface PlaybackBarProps {
  * already see. Below 1440 it's a button that opens that overlay.
  */
 export default function PlaybackBar({ onExpand }: PlaybackBarProps) {
-  const { nowPlaying, isPlaying, progressSec, seek, setQueueOpen } =
-    useMockStudio();
+  const { nowPlaying, isPlaying, progressSec, seek } = useMockStudio();
+  const router = useRouter();
   const isWide = useIsWide();
 
   if (!nowPlaying) return null;
@@ -83,7 +86,10 @@ export default function PlaybackBar({ onExpand }: PlaybackBarProps) {
       </div>
 
       <div className="flex-[2] flex flex-col items-center gap-2 min-w-0 max-w-xl mx-auto">
-        <Transport size="base" onQueue={() => setQueueOpen(true)} />
+        {/* PlaybackBar only ever renders once GlobalPlayer's own isDesktop
+            check picks it over MiniPlayerBar, so unlike NowPlayingRail/
+            DevicePlayer there is no mobile fallback to branch to here. */}
+        <Transport size="base" onQueue={() => router.push(QUEUE)} />
         <div className="w-full flex items-center gap-2">
           <DataText className="text-xs text-muted-foreground shrink-0">
             {formatDuration(progressSec)}

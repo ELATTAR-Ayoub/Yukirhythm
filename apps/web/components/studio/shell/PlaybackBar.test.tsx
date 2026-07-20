@@ -5,7 +5,14 @@ import MockStudioProvider, {
   useMockStudio,
 } from "@/components/studio/screens/MockStudioProvider";
 import { MOCK_TRACKS } from "@/components/studio/screens/mock-data";
+import { QUEUE } from "./routes";
 import PlaybackBar from "./PlaybackBar";
+
+const { push } = vi.hoisted(() => ({ push: vi.fn() }));
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push }),
+}));
 
 function PlayFirst() {
   const { play } = useMockStudio();
@@ -31,6 +38,7 @@ describe("PlaybackBar", () => {
   afterEach(() => {
     vi.useRealTimers();
     vi.unstubAllGlobals();
+    push.mockClear();
   });
 
   it("renders nothing when no track is playing", () => {
@@ -96,24 +104,19 @@ describe("PlaybackBar", () => {
     expect(slider.getAttribute("aria-valuenow")).toBe("11");
   });
 
-  it("opens the shared queue drawer from the transport's queue control", () => {
+  it("navigates to the routed queue page from the transport's queue control", () => {
     stubMatchMedia(false);
-    function QueueOpenProbe() {
-      const { queueOpen } = useMockStudio();
-      return <div data-testid="queue-open">{String(queueOpen)}</div>;
-    }
     render(
       <MockStudioProvider>
         <PlayFirst />
-        <QueueOpenProbe />
         <PlaybackBar onExpand={() => {}} />
       </MockStudioProvider>
     );
     fireEvent.click(screen.getByText("seed"));
     act(() => vi.advanceTimersByTime(650));
 
-    expect(screen.getByTestId("queue-open").textContent).toBe("false");
     fireEvent.click(screen.getByLabelText("Queue"));
-    expect(screen.getByTestId("queue-open").textContent).toBe("true");
+
+    expect(push).toHaveBeenCalledWith(QUEUE);
   });
 });

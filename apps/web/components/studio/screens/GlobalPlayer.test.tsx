@@ -3,14 +3,14 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 
 import MockStudioProvider, { useMockStudio } from "./MockStudioProvider";
 import GlobalPlayer from "./GlobalPlayer";
-import NowPlayingRail from "../shell/NowPlayingRail";
-import { LIKED_SONGS, MOCK_TRACKS, getCollectionTracks } from "./mock-data";
+import { MOCK_TRACKS } from "./mock-data";
 
-// NowPlayingRail (used by the shared-queue-drawer tests below) reads the
-// pathname to decide what to show in its Add-music section; a fixed value is
-// enough since these tests don't exercise that section.
+// The queue control on every player surface (NowPlayingRail, DevicePlayer,
+// PlaybackBar) now calls useRouter() unconditionally to route to the queue
+// page; none of these tests click that control, so a no-op push is enough.
 vi.mock("next/navigation", () => ({
   usePathname: () => "/design-system/screens/home",
+  useRouter: () => ({ push: () => {} }),
 }));
 
 function PlayFirst() {
@@ -95,76 +95,5 @@ describe("GlobalPlayer", () => {
     act(() => vi.advanceTimersByTime(650));
     expect(screen.getByLabelText("Expand player")).toBeTruthy();
     expect(screen.getByLabelText("Loop")).toBeTruthy();
-  });
-
-  describe("shared queue drawer (Part A)", () => {
-    it("mounts exactly one QueueDrawer, driven by both the rail's and the docked player's queue controls", () => {
-      stubViewportWidth(500);
-      const source = LIKED_SONGS;
-      const seedTrack = getCollectionTracks(source)[0];
-
-      function SeedFromCollection() {
-        const { play } = useMockStudio();
-        return (
-          <button onClick={() => play(seedTrack, source)}>seed</button>
-        );
-      }
-
-      render(
-        <MockStudioProvider>
-          <SeedFromCollection />
-          <NowPlayingRail />
-          <GlobalPlayer />
-        </MockStudioProvider>
-      );
-
-      fireEvent.click(screen.getByText("seed"));
-      act(() => vi.advanceTimersByTime(650));
-
-      // Closed: nothing to see yet from either control.
-      expect(screen.queryAllByLabelText("Close queue")).toHaveLength(0);
-
-      // NowPlayingRail's "Open queue" control opens the one shared drawer.
-      fireEvent.click(screen.getByLabelText("Open queue"));
-      expect(screen.queryAllByLabelText("Close queue")).toHaveLength(1);
-
-      fireEvent.click(screen.getByLabelText("Close queue"));
-      expect(screen.queryAllByLabelText("Close queue")).toHaveLength(0);
-
-      // The docked DevicePlayer's own transport "Queue" control (a distinct
-      // aria-label from the rail's "Open queue") opens the very same drawer
-      // rather than a second instance of its own.
-      fireEvent.click(screen.getByLabelText("Queue"));
-      expect(screen.queryAllByLabelText("Close queue")).toHaveLength(1);
-    });
-
-    it("opens the queue on a cold session, with nothing ever played", () => {
-      // Regression guard. GlobalPlayer early-returns null when nothing is
-      // playing, but NowPlayingRail's "Open queue" control renders
-      // unconditionally — so when the drawer was mounted below that guard,
-      // this click set queueOpen against a drawer that did not exist and the
-      // control was silently dead. Every other queue test seeds a track
-      // first, which is exactly why that slipped through.
-      stubViewportWidth(500);
-      render(
-        <MockStudioProvider>
-          <NowPlayingRail />
-          <GlobalPlayer />
-        </MockStudioProvider>
-      );
-
-      expect(screen.queryByLabelText("Close queue")).toBeNull();
-
-      fireEvent.click(screen.getByLabelText("Open queue"));
-
-      // Real visible drawer content, not just the state flag: the close
-      // control, CollectionDetail's play button, and — the load-bearing one —
-      // a track the rail's own 5-row preview caps out before. "Ripple
-      // Theory" (t6) can only be on screen because the full queue list
-      // rendered, so this cannot pass on the rail's preview alone.
-      expect(screen.getByLabelText("Close queue")).toBeTruthy();
-      expect(screen.getByLabelText("Play collection")).toBeTruthy();
-      expect(screen.getByText("Ripple Theory")).toBeTruthy();
-    });
   });
 });

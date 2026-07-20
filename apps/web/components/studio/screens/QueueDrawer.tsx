@@ -15,10 +15,12 @@ interface QueueDrawerProps {
 }
 
 /**
- * The queue as a full sheet. The desktop rail deliberately does not reuse this
- * body — CollectionDetail's description block, tags, sort/view controls and
- * add-music drawer are far too heavy for a 340px column, so NowPlayingRail
- * renders its own light preview and opens this drawer for the full list.
+ * The queue as a full sheet, demoed in the design-system docs. The app's
+ * queue flow is the routed page (`/screens/queue`, reachable at every
+ * width) rather than this drawer — NowPlayingRail renders its own light
+ * preview (CollectionDetail's description block, tags, sort/view controls
+ * and add-music control are far too heavy for a 340px column) and routes
+ * to that page for the full list.
  */
 export default function QueueDrawer({ open, onOpenChange }: QueueDrawerProps) {
   const { playingCollection } = useMockStudio();

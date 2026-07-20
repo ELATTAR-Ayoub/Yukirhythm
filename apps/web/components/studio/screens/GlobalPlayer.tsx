@@ -7,28 +7,19 @@ import { useIsDesktop } from "../shell/useBreakpoint";
 import PlaybackBar from "../shell/PlaybackBar";
 import DevicePlayer from "./DevicePlayer";
 import MiniPlayerBar from "./MiniPlayerBar";
-import QueueDrawer from "./QueueDrawer";
 
 /**
  * The one player surface for the whole app shell.
  * Compressed: MiniPlayerBar below md, PlaybackBar at md (768px) and up.
  * Expanded: DevicePlayer centered over the page.
  *
- * This is also the single mount point for QueueDrawer: DevicePlayer (docked
- * in NowPlayingRail or expanded here) and the compact bars all open the queue
- * by calling the provider's setQueueOpen(true) rather than mounting their
- * own drawer, so exactly one portal tree ever backs the queue sheet. That
- * drawer outlives the nowPlaying guard below — the queue is reachable before
- * anything has ever played.
+ * The queue is a routed page (`/screens/queue`) at every width now, so this
+ * no longer mounts QueueDrawer — every surface that used to open it
+ * (DevicePlayer's transport, NowPlayingRail's "Open queue") navigates there
+ * directly instead.
  */
 export default function GlobalPlayer() {
-  const {
-    nowPlaying,
-    playerExpanded,
-    setPlayerExpanded,
-    queueOpen,
-    setQueueOpen,
-  } = useMockStudio();
+  const { nowPlaying, playerExpanded, setPlayerExpanded } = useMockStudio();
   const isDesktop = useIsDesktop();
   const dialogRef = useRef<HTMLDivElement>(null);
   const restoreRef = useRef<HTMLElement | null>(null);
@@ -69,17 +60,7 @@ export default function GlobalPlayer() {
     };
   }, [playerExpanded, setPlayerExpanded]);
 
-  // The queue drawer mounts unconditionally, ABOVE the nowPlaying guard.
-  // Surfaces that open it — notably NowPlayingRail's "Open queue" — render
-  // whether or not anything has played, since useQueueCollection falls back
-  // to a synthetic "Up next" over the whole library. Mounting the drawer
-  // below the guard left those controls setting state against a drawer that
-  // did not exist, so on a cold session the queue was silently unreachable.
-  const queueDrawer = (
-    <QueueDrawer open={queueOpen} onOpenChange={setQueueOpen} />
-  );
-
-  if (!nowPlaying) return queueDrawer;
+  if (!nowPlaying) return null;
 
   return (
     <>
@@ -106,7 +87,6 @@ export default function GlobalPlayer() {
       ) : (
         <MiniPlayerBar onExpand={() => setPlayerExpanded(true)} />
       )}
-      {queueDrawer}
     </>
   );
 }

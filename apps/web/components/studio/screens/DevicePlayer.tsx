@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { ChevronDownIcon, MagnifyingGlassIcon } from "@radix-ui/react-icons";
 
 import { cn } from "@/lib/utils";
@@ -11,6 +12,7 @@ import Transport from "./Transport";
 import VinylDisc from "./VinylDisc";
 import PlayerSearchDrawer from "./PlayerSearchDrawer";
 import { useMockStudio } from "./MockStudioProvider";
+import { QUEUE } from "../shell/routes";
 import { formatDuration } from "./mock-data";
 
 interface DevicePlayerProps {
@@ -25,8 +27,9 @@ interface DevicePlayerProps {
 
 /** The full device player — the app's signature surface, now a component. */
 export default function DevicePlayer({ onCollapse, docked = false }: DevicePlayerProps) {
-  const { nowPlaying, isPlaying, progressSec, seek, navDirection, setQueueOpen } =
+  const { nowPlaying, isPlaying, progressSec, seek, navDirection } =
     useMockStudio();
+  const router = useRouter();
   const [discExpanded, setDiscExpanded] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
@@ -152,7 +155,7 @@ export default function DevicePlayer({ onCollapse, docked = false }: DevicePlaye
 
       {/* stays above the expanded disc so the controls never get covered */}
       <div className="relative z-20 mt-7">
-        <Transport size="lg" onQueue={() => setQueueOpen(true)} />
+        <Transport size="lg" onQueue={() => router.push(QUEUE)} />
       </div>
 
         <div aria-hidden className="w-full pb-8" />

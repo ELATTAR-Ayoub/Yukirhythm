@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { ListBulletIcon } from "@radix-ui/react-icons";
 
 import SectionLabel from "@/components/studio/SectionLabel";
@@ -13,7 +13,7 @@ import AddMusicPanel from "@/components/studio/screens/AddMusicPanel";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
 import useQueueCollection from "@/components/studio/screens/useQueueCollection";
 import { formatDuration, getCollectionTracks } from "@/components/studio/screens/mock-data";
-import { SCREENS } from "./routes";
+import { QUEUE, SCREENS } from "./routes";
 
 /**
  * A 340px rail has no room for the whole queue before it starts pushing the
@@ -45,13 +45,14 @@ function PlayerSection() {
 /**
  * A light preview of the queue — deliberately not CollectionDetail, which
  * carries a description block, tags, sort/view controls and its own
- * Add-music drawer. That's far too heavy for a 340px column and would
+ * add-music control. That's far too heavy for a 340px column and would
  * duplicate the rail's own Add music section below. Instead this renders a
- * capped list of TrackRows for what's coming up, with a control that opens
- * the existing QueueDrawer for the full list.
+ * capped list of TrackRows for what's coming up, with a control that routes
+ * to the full queue page.
  */
 function UpNextSection() {
-  const { nowPlaying, playingCollection, play, setQueueOpen } = useMockStudio();
+  const { nowPlaying, playingCollection, play } = useMockStudio();
+  const router = useRouter();
   const collection = useQueueCollection();
 
   const tracks = useMemo(() => getCollectionTracks(collection), [collection]);
@@ -82,7 +83,7 @@ function UpNextSection() {
           variant="ghost"
           size="sm"
           aria-label="Open queue"
-          onClick={() => setQueueOpen(true)}
+          onClick={() => router.push(QUEUE)}
           data-signal="queue_open"
         >
           <ListBulletIcon />
