@@ -70,12 +70,15 @@ export default function AddMusicPanel({
             return (
               <div key={track.id} className="flex items-center gap-1">
                 <div className="flex-1 min-w-0">
+                  {/* No play affordance: this row's only action is adding, and
+                      the overlay button had no handler behind it. */}
                   <TrackRow
                     index={i + 1}
                     title={track.title}
                     artist={track.artist}
                     duration={formatDuration(track.durationSec)}
                     texture={track.texture}
+                    playable={false}
                   />
                 </div>
                 <PlayerButton

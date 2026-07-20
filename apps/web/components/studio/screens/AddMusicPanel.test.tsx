@@ -62,3 +62,19 @@ describe("AddMusicPanel add/added icon", () => {
     expect(faces[1].getAttribute("aria-hidden")).toBe("false");
   });
 });
+
+describe("AddMusicPanel play affordance", () => {
+  it("renders no play button — these rows only add, they never play", () => {
+    render(
+      <MockStudioProvider>
+        <AddMusicPanel collection={MOCK_COLLECTIONS.find((c) => c.id === "c3")!} />
+      </MockStudioProvider>
+    );
+
+    fireEvent.change(screen.getByLabelText("Search tracks to add"), {
+      target: { value: "Cobalt" },
+    });
+
+    expect(screen.queryByRole("button", { name: "Play" })).toBeNull();
+  });
+});

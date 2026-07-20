@@ -176,6 +176,8 @@ export default function SearchScreen() {
                         onKeyDown={playKeyHandler(() => play(track))}
                         className="cursor-pointer"
                       >
+                        {/* The wrapping div is the button; an overlay would
+                            nest one inside it. */}
                         <TrackRow
                           index={i + 1}
                           title={track.title}
@@ -183,6 +185,7 @@ export default function SearchScreen() {
                           duration={formatDuration(track.durationSec)}
                           texture={track.texture}
                           playing={nowPlaying?.id === track.id && isPlaying}
+                          playable={false}
                         />
                       </div>
                     ))}
