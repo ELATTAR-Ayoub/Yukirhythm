@@ -53,3 +53,7 @@ next-env.d.ts
 # claude code local session settings
 .claude/
 .superpowers/
+# Firebase emulator debug logs
+firestore-debug.log
+firebase-debug.log
+ui-debug.log
