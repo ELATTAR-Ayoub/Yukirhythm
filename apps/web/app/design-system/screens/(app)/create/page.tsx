@@ -22,10 +22,14 @@ export default function CreatePlaylistScreen() {
   return (
     <div className="relative">
       <PageTexture />
-      <BackHeader title="Create playlist" backHref={LIBRARY} />
-      <CreatePlaylistFlow
-        onCreated={(collection) => router.push(playlistHref(collection.id))}
-      />
+      {/* Lifted above the texture — it sits at z-0 rather than behind the
+          column's opaque background. */}
+      <div className="relative z-10">
+        <BackHeader title="Create playlist" backHref={LIBRARY} />
+        <CreatePlaylistFlow
+          onCreated={(collection) => router.push(playlistHref(collection.id))}
+        />
+      </div>
     </div>
   );
 }
