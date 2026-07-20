@@ -10,6 +10,7 @@ import EmptyState from "@/components/studio/EmptyState";
 import { PlayerButton } from "@/components/studio/PlayerButton";
 import DevicePlayer from "@/components/studio/screens/DevicePlayer";
 import AddMusicPanel from "@/components/studio/screens/AddMusicPanel";
+import LikeButton from "@/components/studio/screens/LikeButton";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
 import useQueueCollection from "@/components/studio/screens/useQueueCollection";
 import { formatDuration, getCollectionTracks } from "@/components/studio/screens/mock-data";
@@ -103,25 +104,29 @@ function UpNextSection() {
       ) : (
         <div className="px-3 pb-2 space-y-1">
           {upcoming.map((track, i) => (
-            <div
-              key={track.id}
-              role="button"
-              tabIndex={0}
-              aria-label={`Play ${track.title}`}
-              className="cursor-pointer"
-              onClick={() => play(track, playingCollection ?? undefined)}
-              onKeyDown={playKeyHandler(track)}
-            >
-              {/* No play overlay: this row sits inside a role="button" div,
-                  and TrackRow's overlay would nest a button inside it. */}
-              <TrackRow
-                index={i + 1}
-                title={track.title}
-                artist={track.artist}
-                duration={formatDuration(track.durationSec)}
-                texture={track.texture}
-                playable={false}
-              />
+            <div key={track.id} className="flex items-center gap-1">
+              <div
+                role="button"
+                tabIndex={0}
+                aria-label={`Play ${track.title}`}
+                className="flex-1 min-w-0 cursor-pointer"
+                onClick={() => play(track, playingCollection ?? undefined)}
+                onKeyDown={playKeyHandler(track)}
+              >
+                {/* No play overlay: this row sits inside a role="button" div,
+                    and TrackRow's overlay would nest a button inside it. */}
+                <TrackRow
+                  index={i + 1}
+                  title={track.title}
+                  artist={track.artist}
+                  duration={formatDuration(track.durationSec)}
+                  texture={track.texture}
+                  playable={false}
+                />
+              </div>
+              {/* Sibling of the row, not a child — nesting it in the
+                  role="button" wrapper would make it a dead keyboard stop. */}
+              <LikeButton trackId={track.id} trackTitle={track.title} />
             </div>
           ))}
         </div>

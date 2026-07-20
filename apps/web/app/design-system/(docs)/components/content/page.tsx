@@ -9,6 +9,7 @@ import { TagChip, FilterChipRow } from "@/components/studio/screens/TagChip";
 import ViewToggle, { type TrackView } from "@/components/studio/screens/ViewToggle";
 import SortControl from "@/components/studio/screens/SortControl";
 import TrackMenu from "@/components/studio/screens/TrackMenu";
+import { MOCK_TRACKS } from "@/components/studio/screens/mock-data";
 import { LIBRARY_FILTERS, type LibraryFilter, type TrackSort } from "@/components/studio/screens/library-utils";
 
 function Demos() {
@@ -61,7 +62,7 @@ function Demos() {
         <StatePanel
           name="TrackMenu"
           signal="row_share, row_add, row_like"
-          views={{ default: <TrackMenu trackTitle="Midnight Snowfall" /> }}
+          views={{ default: <TrackMenu track={MOCK_TRACKS[0]} /> }}
         />
       </DsSection>
     </div>

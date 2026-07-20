@@ -66,6 +66,9 @@ interface MockStudioValue {
    *  one source of truth, and the playlist stays honest. */
   isLiked: (trackId: string) => boolean;
   toggleLike: (trackId: string) => void;
+  /** Add or remove a track from any collection. The add-to-playlist checklist
+   *  needs both directions; addTrackToCollection only ever adds. */
+  toggleTrackInCollection: (collectionId: string, trackId: string) => void;
   /** Append a track to a collection; no-op if it's already in there. */
   addTrackToCollection: (collectionId: string, trackId: string) => void;
   /** Returns the created collection so a caller (the create-playlist route)
@@ -168,20 +171,30 @@ export default function MockStudioProvider({
     [likedTrackIds]
   );
 
-  const toggleLike = useCallback((trackId: string) => {
-    setCollections((cs) =>
-      cs.map((c) =>
-        c.id === LIKED_SONGS_ID
-          ? {
-              ...c,
-              trackIds: c.trackIds.includes(trackId)
-                ? c.trackIds.filter((id) => id !== trackId)
-                : [...c.trackIds, trackId],
-            }
-          : c
-      )
-    );
-  }, []);
+  const toggleTrackInCollection = useCallback(
+    (collectionId: string, trackId: string) => {
+      setCollections((cs) =>
+        cs.map((c) =>
+          c.id === collectionId
+            ? {
+                ...c,
+                trackIds: c.trackIds.includes(trackId)
+                  ? c.trackIds.filter((id) => id !== trackId)
+                  : [...c.trackIds, trackId],
+              }
+            : c
+        )
+      );
+    },
+    []
+  );
+
+  /** Liking is exactly this toggle aimed at Liked Songs — the like button and
+   *  the add-to-playlist checklist are the same operation on different rows. */
+  const toggleLike = useCallback(
+    (trackId: string) => toggleTrackInCollection(LIKED_SONGS_ID, trackId),
+    [toggleTrackInCollection]
+  );
 
   const addTrackToCollection = useCallback(
     (collectionId: string, trackId: string) => {
@@ -362,6 +375,7 @@ export default function MockStudioProvider({
     togglePin,
     isLiked,
     toggleLike,
+    toggleTrackInCollection,
     addTrackToCollection,
     createCollection,
     playerExpanded,

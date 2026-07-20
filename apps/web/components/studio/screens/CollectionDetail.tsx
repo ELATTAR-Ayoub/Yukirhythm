@@ -243,7 +243,7 @@ export default function CollectionDetail({
                   and nesting controls inside it would make each a dead
                   keyboard stop that only works because the click bubbles. */}
               <LikeButton trackId={track.id} trackTitle={track.title} />
-              <TrackMenu trackTitle={track.title} />
+              <TrackMenu track={track} collection={collection} />
             </div>
           ))}
         </FadeScrollArea>

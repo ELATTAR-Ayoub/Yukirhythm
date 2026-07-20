@@ -1,0 +1,115 @@
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { fireEvent, render, screen, within } from "@testing-library/react";
+
+import MockStudioProvider, { useMockStudio } from "./MockStudioProvider";
+import { MOCK_COLLECTIONS, MOCK_TRACKS } from "./mock-data";
+import TrackMenu from "./TrackMenu";
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn() }),
+}));
+
+const TRACK = MOCK_TRACKS[0];
+const COLLECTION = MOCK_COLLECTIONS[0];
+
+/** Reads a collection's membership so the checklist is asserted as state. */
+function MembershipProbe({ collectionId }: { collectionId: string }) {
+  const { collections } = useMockStudio();
+  const c = collections.find((x) => x.id === collectionId)!;
+  return (
+    <span data-testid="members">{c.trackIds.join(",")}</span>
+  );
+}
+
+function renderMenu() {
+  return render(
+    <MockStudioProvider>
+      <MembershipProbe collectionId={COLLECTION.id} />
+      <TrackMenu track={TRACK} collection={COLLECTION} />
+    </MockStudioProvider>
+  );
+}
+
+const members = () => screen.getByTestId("members").textContent!.split(",");
+
+/** Radix opens on pointerdown; a bare click never opens the menu in jsdom. */
+const openMenu = () =>
+  fireEvent.pointerDown(screen.getByLabelText(`More for ${TRACK.title}`), {
+    button: 0,
+  });
+
+describe("TrackMenu", () => {
+  beforeEach(() => {
+    window.HTMLElement.prototype.hasPointerCapture = () => false;
+    window.HTMLElement.prototype.releasePointerCapture = () => {};
+    window.HTMLElement.prototype.scrollIntoView = () => {};
+  });
+
+  it("shares through the same dialog a playlist uses", () => {
+    renderMenu();
+    openMenu();
+    fireEvent.click(screen.getByText("Share"));
+
+    const dialog = within(screen.getByRole("dialog"));
+    // A link that resolves: there is no route for a single track, so it
+    // points at the playlist holding it.
+    expect(
+      dialog.getByText(
+        new RegExp(`/design-system/screens/playlist/${COLLECTION.id}`)
+      )
+    ).toBeTruthy();
+    expect(dialog.getByText("Copy link")).toBeTruthy();
+  });
+
+  it("opens a checklist of playlists", () => {
+    renderMenu();
+    openMenu();
+    fireEvent.click(screen.getByText("Add to playlist"));
+
+    const dialog = within(screen.getByRole("dialog"));
+    expect(dialog.getAllByRole("checkbox").length).toBeGreaterThan(1);
+  });
+
+  it("adds and removes the track from a playlist", () => {
+    renderMenu();
+    openMenu();
+    fireEvent.click(screen.getByText("Add to playlist"));
+
+    const dialog = within(screen.getByRole("dialog"));
+    const row = dialog.getByRole("checkbox", { name: COLLECTION.title });
+    const startsIn = COLLECTION.trackIds.includes(TRACK.id);
+    expect(row.getAttribute("aria-checked")).toBe(String(startsIn));
+
+    fireEvent.click(row);
+    expect(members().includes(TRACK.id)).toBe(!startsIn);
+
+    fireEvent.click(row);
+    expect(members().includes(TRACK.id)).toBe(startsIn);
+  });
+
+  it("names the like item by what the click will do", () => {
+    renderMenu();
+    openMenu();
+    // MOCK_TRACKS[0] is not seeded into Liked Songs, so the offer is "Like".
+    expect(screen.getByText("Like")).toBeTruthy();
+    fireEvent.click(screen.getByText("Like"));
+
+    openMenu();
+    expect(screen.getByText("Remove from Liked Songs")).toBeTruthy();
+  });
+
+  it("omits podcasts from the checklist", () => {
+    // Podcasts hold episodes, not tracks — offering them would be a lie.
+    renderMenu();
+    openMenu();
+    fireEvent.click(screen.getByText("Add to playlist"));
+
+    const dialog = within(screen.getByRole("dialog"));
+    const podcast = MOCK_COLLECTIONS.find((c) => c.kind === "podcast");
+    if (podcast) {
+      expect(
+        dialog.queryByRole("checkbox", { name: podcast.title })
+      ).toBeNull();
+    }
+  });
+});
