@@ -1,13 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { PlusIcon } from "@radix-ui/react-icons";
 
 import { PlayerButton } from "@/components/studio/PlayerButton";
 import PageHeader from "@/components/studio/screens/PageHeader";
 import SignInPrompt from "@/components/studio/screens/SignInPrompt";
-import PlaylistDrawer from "@/components/studio/screens/PlaylistDrawer";
-import CreatePlaylistDrawer from "@/components/studio/screens/CreatePlaylistDrawer";
 import { FilterChipRow } from "@/components/studio/screens/TagChip";
 import {
   LIBRARY_FILTERS,
@@ -18,15 +17,18 @@ import {
   CreatePlaylistTile,
   LibraryRowCard,
 } from "@/components/studio/screens/LibraryRow";
-import type { MockCollection } from "@/components/studio/screens/mock-data";
+import { CREATE, playlistHref } from "@/components/studio/shell/routes";
 
+/**
+ * The routed library screen. Rows navigate to the playlist route and the
+ * create controls navigate to the create route, at every width — same
+ * behaviour as LibraryRail, just for the surface mobile actually lands on
+ * (LibraryRail itself is CSS-hidden below `md`).
+ */
 export default function LibraryScreen() {
   const { user, collections, libraryFilter, setLibraryFilter } =
     useMockStudio();
-  const [openCollection, setOpenCollection] = useState<MockCollection | null>(
-    null
-  );
-  const [creating, setCreating] = useState(false);
+  const router = useRouter();
 
   if (!user) {
     return (
@@ -38,14 +40,7 @@ export default function LibraryScreen() {
   }
 
   const visible = filterLibrary(collections, libraryFilter);
-
-  /** Enter/Space activation for the non-button collection row (it nests a PlayerButton). */
-  const openKeyHandler = (c: MockCollection) => (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      setOpenCollection(c);
-    }
-  };
+  const openCreate = () => router.push(CREATE);
 
   return (
     <div>
@@ -55,7 +50,7 @@ export default function LibraryScreen() {
           <PlayerButton
             variant="ghost"
             aria-label="Create playlist"
-            onClick={() => setCreating(true)}
+            onClick={openCreate}
           >
             <PlusIcon />
           </PlayerButton>
@@ -71,29 +66,20 @@ export default function LibraryScreen() {
 
       <div className="space-y-2">
         {visible.map((c) => (
-          <div
+          <Link
             key={c.id}
-            role="button"
-            tabIndex={0}
+            href={playlistHref(c.id)}
             aria-label={`Open collection ${c.title}`}
-            onClick={() => setOpenCollection(c)}
-            onKeyDown={openKeyHandler(c)}
-            className="relative w-full text-left cursor-pointer"
+            className="relative block"
           >
-            <LibraryRowCard collection={c} />
-          </div>
+            {/* No play overlay: this row is an anchor, and MediaCard's
+                overlay would nest a button inside it. */}
+            <LibraryRowCard collection={c} playable={false} />
+          </Link>
         ))}
 
-        <CreatePlaylistTile onClick={() => setCreating(true)} />
+        <CreatePlaylistTile onClick={openCreate} />
       </div>
-
-      <PlaylistDrawer
-        collection={openCollection}
-        onOpenChange={(o) => {
-          if (!o) setOpenCollection(null);
-        }}
-      />
-      <CreatePlaylistDrawer open={creating} onOpenChange={setCreating} />
     </div>
   );
 }

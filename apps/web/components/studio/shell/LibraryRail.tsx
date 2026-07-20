@@ -1,14 +1,12 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { PlusIcon } from "@radix-ui/react-icons";
 
 import { cn } from "@/lib/utils";
 import { PlayerButton } from "@/components/studio/PlayerButton";
 import SignInPrompt from "@/components/studio/screens/SignInPrompt";
-import CreatePlaylistDrawer from "@/components/studio/screens/CreatePlaylistDrawer";
 import {
   CreatePlaylistTile,
   LibraryRowCard,
@@ -19,7 +17,7 @@ import {
   filterLibrary,
 } from "@/components/studio/screens/library-utils";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
-import { playlistHref } from "./routes";
+import { CREATE, playlistHref } from "./routes";
 
 /**
  * The left column: the library, permanently docked. Rows navigate to the
@@ -31,7 +29,9 @@ export default function LibraryRail() {
   const { user, collections, libraryFilter, setLibraryFilter } =
     useMockStudio();
   const pathname = usePathname();
-  const [creating, setCreating] = useState(false);
+  const router = useRouter();
+
+  const openCreate = () => router.push(CREATE);
 
   if (!user) {
     return (
@@ -55,7 +55,7 @@ export default function LibraryRail() {
         <PlayerButton
           variant="ghost"
           aria-label="Create playlist"
-          onClick={() => setCreating(true)}
+          onClick={openCreate}
         >
           <PlusIcon />
         </PlayerButton>
@@ -92,10 +92,8 @@ export default function LibraryRail() {
           );
         })}
 
-        <CreatePlaylistTile onClick={() => setCreating(true)} />
+        <CreatePlaylistTile onClick={openCreate} />
       </div>
-
-      <CreatePlaylistDrawer open={creating} onOpenChange={setCreating} />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { useEffect } from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 
@@ -6,12 +6,16 @@ import MockStudioProvider, {
   useMockStudio,
 } from "@/components/studio/screens/MockStudioProvider";
 import LibraryRail from "./LibraryRail";
-import { playlistHref } from "./routes";
+import { CREATE, playlistHref } from "./routes";
 
-const nav = vi.hoisted(() => ({ pathname: "/design-system/screens/home" }));
+const { push, nav } = vi.hoisted(() => ({
+  push: vi.fn(),
+  nav: { pathname: "/design-system/screens/home" },
+}));
 
 vi.mock("next/navigation", () => ({
   usePathname: () => nav.pathname,
+  useRouter: () => ({ push }),
 }));
 
 /** Empties the seeded user so the signed-out branch can be rendered. */
@@ -39,6 +43,11 @@ const LIKED_ID = "liked";
 describe("LibraryRail", () => {
   beforeEach(() => {
     nav.pathname = "/design-system/screens/home";
+    push.mockClear();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it("links each collection to its playlist route", () => {
@@ -141,6 +150,34 @@ describe("LibraryRail", () => {
       </MockStudioProvider>
     );
     expect(screen.getByLabelText("Create playlist")).toBeTruthy();
+  });
+
+  describe("create playlist control", () => {
+    it("navigates to the routed create page from the header button, at every width", () => {
+      render(
+        <MockStudioProvider>
+          <LibraryRail />
+        </MockStudioProvider>
+      );
+
+      fireEvent.click(screen.getByLabelText("Create playlist"));
+
+      expect(push).toHaveBeenCalledWith(CREATE);
+      // No drawer form should ever mount alongside the rail any more.
+      expect(screen.queryByLabelText("Name")).toBeNull();
+    });
+
+    it("navigates to the routed create page from the dashed tile, at every width", () => {
+      render(
+        <MockStudioProvider>
+          <LibraryRail />
+        </MockStudioProvider>
+      );
+
+      fireEvent.click(screen.getByText("Create playlist"));
+
+      expect(push).toHaveBeenCalledWith(CREATE);
+    });
   });
 
   it("prompts sign-in when signed out", () => {
