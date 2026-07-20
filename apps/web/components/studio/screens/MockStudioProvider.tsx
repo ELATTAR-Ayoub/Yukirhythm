@@ -122,6 +122,8 @@ export default function MockStudioProvider({
   const [isLoading, setIsLoading] = useState(false);
   const [progressSec, setProgressSec] = useState(0);
   const loadTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Set by seek so the completion effect can tell a scrub from a real finish. */
+  const justSeeked = useRef(false);
 
   const [user, setUser] = useState<MockUser | null>(MOCK_USER);
 
@@ -291,9 +293,19 @@ export default function MockStudioProvider({
     setIsPlaying(true);
   }, [queue.length]);
 
-  const seek = useCallback((sec: number) => {
-    setProgressSec(Math.max(0, Math.floor(sec)));
-  }, []);
+  /**
+   * Clamped at both ends. Without the upper bound, seeking past the end set a
+   * progress value beyond durationSec, which the auto-advance effect reads as
+   * "finished" and skips the track — so the final seconds were unreachable.
+   */
+  const seek = useCallback(
+    (sec: number) => {
+      const max = nowPlaying?.durationSec ?? 0;
+      justSeeked.current = true;
+      setProgressSec(Math.min(max, Math.max(0, Math.floor(sec))));
+    },
+    [nowPlaying]
+  );
 
   const setVolume = useCallback((next: number) => {
     const clamped = Math.min(1, Math.max(0, next));
@@ -314,8 +326,15 @@ export default function MockStudioProvider({
     return () => clearInterval(id);
   }, [isPlaying, nowPlaying]);
 
-  // auto-advance when a track finishes
+  // Auto-advance when a track finishes — but only when playback got there by
+  // ticking. Scrubbing to the very end is a request to hear the last moment,
+  // not to skip the track, so a seek is allowed to land on durationSec without
+  // triggering this. The following tick pushes past it and advances normally.
   useEffect(() => {
+    if (justSeeked.current) {
+      justSeeked.current = false;
+      return;
+    }
     if (nowPlaying && isPlaying && progressSec >= nowPlaying.durationSec) {
       next();
     }

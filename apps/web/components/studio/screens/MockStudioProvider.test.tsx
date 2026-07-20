@@ -134,4 +134,52 @@ describe("MockStudioProvider", () => {
     act(() => result.current.setPlayerExpanded(false));
     expect(result.current.playerExpanded).toBe(false);
   });
+
+  it("clamps seek to the track length instead of auto-advancing", () => {
+    const { result } = renderHook(() => useMockStudio(), { wrapper });
+
+    act(() => result.current.play(MOCK_TRACKS[0]));
+    act(() => vi.advanceTimersByTime(650));
+
+    act(() => result.current.seek(999_999));
+
+    expect(result.current.progressSec).toBe(MOCK_TRACKS[0].durationSec);
+    expect(result.current.nowPlaying?.id).toBe(MOCK_TRACKS[0].id);
+  });
+
+  it("still advances when a track finishes on its own", () => {
+    const { result } = renderHook(() => useMockStudio(), { wrapper });
+
+    act(() => result.current.play(MOCK_TRACKS[0]));
+    act(() => vi.advanceTimersByTime(650));
+
+    // let the ticker run the whole track out
+    act(() => vi.advanceTimersByTime((MOCK_TRACKS[0].durationSec + 1) * 1000));
+
+    expect(result.current.nowPlaying?.id).toBe(MOCK_TRACKS[1].id);
+  });
+
+  it("advances a tick after a seek to the very end, not instantly", () => {
+    const { result } = renderHook(() => useMockStudio(), { wrapper });
+
+    act(() => result.current.play(MOCK_TRACKS[0]));
+    act(() => vi.advanceTimersByTime(650));
+
+    act(() => result.current.seek(MOCK_TRACKS[0].durationSec));
+    expect(result.current.nowPlaying?.id).toBe(MOCK_TRACKS[0].id);
+
+    act(() => vi.advanceTimersByTime(1000));
+    expect(result.current.nowPlaying?.id).toBe(MOCK_TRACKS[1].id);
+  });
+
+  it("clamps a negative seek to zero", () => {
+    const { result } = renderHook(() => useMockStudio(), { wrapper });
+
+    act(() => result.current.play(MOCK_TRACKS[0]));
+    act(() => vi.advanceTimersByTime(650));
+
+    act(() => result.current.seek(-50));
+
+    expect(result.current.progressSec).toBe(0);
+  });
 });
