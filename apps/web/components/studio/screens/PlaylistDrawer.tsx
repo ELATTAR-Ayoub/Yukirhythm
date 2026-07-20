@@ -13,7 +13,14 @@ interface PlaylistDrawerProps {
   onOpenChange: (open: boolean) => void;
 }
 
-/** 95vh playlist detail — play, shuffle, tags, view/sort, tracks with menus. */
+/**
+ * 95vh playlist detail — play, shuffle, tags, view/sort, tracks with menus.
+ *
+ * No app-flow consumer left: every surface that used to open this (the
+ * library, home's recently-played shelf, search's collection hits) now
+ * navigates to the playlist route instead, at every width. Still rendered by
+ * the design-system drawers gallery, which is why it stays.
+ */
 export default function PlaylistDrawer({
   collection,
   onOpenChange,

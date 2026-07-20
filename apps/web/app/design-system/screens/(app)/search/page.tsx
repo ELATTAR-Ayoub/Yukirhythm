@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { MagnifyingGlassIcon } from "@radix-ui/react-icons";
 
 import RailShelf from "@/components/studio/RailShelf";
@@ -12,8 +13,8 @@ import { SkeletonRow } from "@/components/studio/Skeletons";
 import { Input } from "@/components/ui/input";
 import SectionLabel from "@/components/studio/SectionLabel";
 import PageHeader from "@/components/studio/screens/PageHeader";
-import PlaylistDrawer from "@/components/studio/screens/PlaylistDrawer";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
+import { playlistHref } from "@/components/studio/shell/routes";
 import {
   EXPLORE_TILES,
   NEW_RELEASE_IDS,
@@ -21,7 +22,6 @@ import {
   formatDuration,
   getTrack,
   searchMockCollections,
-  type MockCollection,
 } from "@/components/studio/screens/mock-data";
 
 /** Enter/Space activation for non-button click targets. */
@@ -84,9 +84,6 @@ export default function SearchScreen() {
     isPlaying,
   } = useMockStudio();
   const [q, setQ] = useState("");
-  const [openCollection, setOpenCollection] = useState<MockCollection | null>(
-    null
-  );
 
   const onChange = (value: string) => {
     setQ(value);
@@ -194,23 +191,23 @@ export default function SearchScreen() {
                   <SectionLabel>Collections</SectionLabel>
                   <div className="space-y-2 mt-2">
                     {collectionHits.map((c) => (
-                      <div
+                      <Link
                         key={c.id}
-                        role="button"
-                        tabIndex={0}
+                        href={playlistHref(c.id)}
                         aria-label={`Open ${c.title}`}
-                        onClick={() => setOpenCollection(c)}
-                        onKeyDown={playKeyHandler(() => setOpenCollection(c))}
-                        className="w-full text-left cursor-pointer"
+                        className="block w-full text-left"
                       >
+                        {/* No play overlay: this card is an anchor, and
+                            MediaCard's overlay would nest a button inside it. */}
                         <MediaCard
                           title={c.title}
                           artist={`${c.trackIds.length} tracks`}
                           texture={c.texture}
                           variant="extended"
                           size="sm"
+                          playable={false}
                         />
-                      </div>
+                      </Link>
                     ))}
                   </div>
                 </section>
@@ -229,13 +226,6 @@ export default function SearchScreen() {
           )}
         </div>
       )}
-
-      <PlaylistDrawer
-        collection={openCollection}
-        onOpenChange={(o) => {
-          if (!o) setOpenCollection(null);
-        }}
-      />
     </div>
   );
 }
