@@ -25,19 +25,19 @@ const UPCOMING_CAP = 5;
 
 const PLAYLIST_PREFIX = `${SCREENS}/playlist/`;
 
-/** The docked player, or an honest line when nothing has started. */
+/**
+ * The docked player — always the player, even with nothing loaded.
+ *
+ * This used to collapse to a line of text when idle, which made the rail
+ * change shape the instant playback started and gave a cold session no sense
+ * of what the column is for. `DevicePlayer` carries its own idle
+ * presentation (blank art well, `--:--`, inert transport), so the chassis is
+ * present either way and only its contents change.
+ */
 function PlayerSection() {
-  const { nowPlaying } = useMockStudio();
-
   return (
     <div className="px-4 pt-4 shrink-0">
-      {nowPlaying ? (
-        <DevicePlayer docked />
-      ) : (
-        <p className="type-muted text-sm text-muted-foreground text-center py-6">
-          Nothing playing yet.
-        </p>
-      )}
+      <DevicePlayer docked />
     </div>
   );
 }
@@ -76,9 +76,12 @@ function UpNextSection() {
     };
 
   return (
-    <div className="shrink-0">
+    // A named region, taking its name from the label already on screen rather
+    // than repeating the string — the rail holds three distinct areas and
+    // "the queue preview" needs to be addressable as one of them.
+    <section aria-labelledby="up-next-label" className="shrink-0">
       <div className="flex items-center justify-between gap-2 px-4 pt-5 pb-2">
-        <SectionLabel>Up next</SectionLabel>
+        <SectionLabel id="up-next-label">Up next</SectionLabel>
         <PlayerButton
           variant="ghost"
           size="sm"
@@ -123,7 +126,7 @@ function UpNextSection() {
           ))}
         </div>
       )}
-    </div>
+    </section>
   );
 }
 

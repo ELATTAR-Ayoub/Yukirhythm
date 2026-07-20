@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 
 import MockStudioProvider, {
   useMockStudio,
@@ -9,6 +9,7 @@ import {
   getCollectionTracks,
   type MockCollection,
 } from "@/components/studio/screens/mock-data";
+import { IDLE_LABEL } from "@/components/studio/screens/player-idle";
 import NowPlayingRail from "./NowPlayingRail";
 import { QUEUE, playlistHref, SCREENS } from "./routes";
 
@@ -61,7 +62,9 @@ describe("NowPlayingRail", () => {
     const scrollRegion = container.querySelector(".overflow-y-auto");
     expect(scrollRegion).toBeTruthy();
 
-    const playerText = screen.getByText("Nothing playing yet.");
+    // The rail renders the player chassis whether or not a track is loaded,
+    // so anchor on its idle copy rather than the old "nothing here" line.
+    const playerText = screen.getByText(IDLE_LABEL);
     expect(scrollRegion!.contains(playerText)).toBe(false);
 
     expect(scrollRegion!.contains(screen.getByText("Up next"))).toBe(true);
@@ -196,10 +199,14 @@ describe("NowPlayingRail", () => {
         </MockStudioProvider>
       );
 
-      expect(screen.queryAllByLabelText("Play")).toHaveLength(0);
+      // Scoped to the queue preview, not the whole rail: the docked player's
+      // own transport legitimately carries aria-label="Play", so a rail-wide
+      // count would fail for a reason that has nothing to do with the rows.
+      const upNext = within(screen.getByRole("region", { name: "Up next" }));
+      expect(upNext.queryAllByLabelText("Play")).toHaveLength(0);
       // The wrapper's own accessible name must still be present.
       expect(
-        screen.getByRole("button", { name: "Play Midnight Snowfall" })
+        upNext.getByRole("button", { name: "Play Midnight Snowfall" })
       ).toBeTruthy();
     });
 
