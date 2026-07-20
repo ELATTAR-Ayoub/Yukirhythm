@@ -95,6 +95,34 @@ describe("MockStudioProvider", () => {
     // id, so createCollection must hand that id back rather than leaving the
     // caller to guess it from the (still-stale, pre-render) collections array.
     expect(created!).toEqual(result.current.collections.at(-1));
+    // texture/trackIds omitted — falls back to the previous hard-coded
+    // defaults so every existing caller keeps behaving the same.
+    expect(result.current.collections.at(-1)?.texture).toBe("tx-k-silk");
+    expect(result.current.collections.at(-1)?.trackIds).toEqual([]);
+  });
+
+  it("creates a collection with a chosen cover and starting tracks in one call", () => {
+    // The create-playlist wizard builds cover + tracks into the same call
+    // that creates the collection, rather than creating then patching —
+    // a create-then-patch sequence would leave a half-built playlist
+    // visible if a later call failed.
+    const { result } = renderHook(() => useMockStudio(), { wrapper });
+
+    let created: ReturnType<typeof result.current.createCollection>;
+    act(() => {
+      created = result.current.createCollection({
+        title: "Rainy Tapes",
+        desc: "Tape loops for rain.",
+        tags: ["rain"],
+        kind: "music",
+        texture: "tx-k2-vinyl",
+        trackIds: [MOCK_TRACKS[0].id, MOCK_TRACKS[1].id],
+      });
+    });
+
+    expect(created!.texture).toBe("tx-k2-vinyl");
+    expect(created!.trackIds).toEqual([MOCK_TRACKS[0].id, MOCK_TRACKS[1].id]);
+    expect(result.current.collections.at(-1)).toEqual(created!);
   });
 
   it("expands and collapses the player", () => {

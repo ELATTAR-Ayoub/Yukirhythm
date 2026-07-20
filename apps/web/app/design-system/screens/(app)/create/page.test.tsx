@@ -14,7 +14,7 @@ vi.mock("next/navigation", () => ({
 describe("CreatePlaylistScreen", () => {
   beforeEach(() => push.mockClear());
 
-  it("renders the create-playlist form body", () => {
+  it("renders the wizard's first step", () => {
     render(
       <MockStudioProvider>
         <CreatePlaylistScreen />
@@ -22,7 +22,7 @@ describe("CreatePlaylistScreen", () => {
     );
 
     expect(screen.getByLabelText("Name")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Create" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Next" })).toBeTruthy();
   });
 
   it("has a way back to the library", () => {
@@ -36,7 +36,7 @@ describe("CreatePlaylistScreen", () => {
     expect(back.getAttribute("href")).toBe(LIBRARY);
   });
 
-  it("navigates to the new playlist's page after creating", () => {
+  it("navigates to the new playlist's page after completing the wizard", () => {
     render(
       <MockStudioProvider>
         <CreatePlaylistScreen />
@@ -46,7 +46,9 @@ describe("CreatePlaylistScreen", () => {
     fireEvent.change(screen.getByLabelText("Name"), {
       target: { value: "Rainy Tapes" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Create" }));
+    fireEvent.click(screen.getByRole("button", { name: "Next" })); // -> step 2
+    fireEvent.click(screen.getByRole("button", { name: "Next" })); // -> step 3 (skip music)
+    fireEvent.click(screen.getByRole("button", { name: "Create playlist" }));
 
     expect(push).toHaveBeenCalledTimes(1);
     const target = push.mock.calls[0][0] as string;

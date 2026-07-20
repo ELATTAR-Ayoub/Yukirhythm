@@ -3,14 +3,17 @@
 import { useRouter } from "next/navigation";
 
 import BackHeader from "@/components/studio/screens/BackHeader";
-import CreatePlaylistForm from "@/components/studio/screens/CreatePlaylistForm";
+import CreatePlaylistFlow from "@/components/studio/screens/CreatePlaylistFlow";
 import { LIBRARY, playlistHref } from "@/components/studio/shell/routes";
 
 /**
  * The create-playlist route, reachable at every width — see LibraryRail's
- * and the mobile library page's create controls. CreatePlaylistForm is the
- * same body CreatePlaylistDrawer renders inside a sheet for the
- * design-system docs gallery; this page is the only app-flow consumer now.
+ * and the mobile library page's create controls. A three-step wizard
+ * (details -> add music -> review) rather than a single form: cover art and
+ * starting tracks need somewhere to live before the write happens, and a
+ * review step means the write only ever happens once. CreatePlaylistForm
+ * (the older single-step body) lives on only as CreatePlaylistDrawer's sheet
+ * demo in the design-system docs gallery.
  */
 export default function CreatePlaylistScreen() {
   const router = useRouter();
@@ -19,7 +22,7 @@ export default function CreatePlaylistScreen() {
     <div>
       <BackHeader title="Create playlist" backHref={LIBRARY} />
       <div className="max-w-md">
-        <CreatePlaylistForm
+        <CreatePlaylistFlow
           onCreated={(collection) => router.push(playlistHref(collection.id))}
         />
       </div>

@@ -22,6 +22,7 @@ import {
   type MockUser,
 } from "./mock-data";
 import type { LibraryFilter } from "./library-utils";
+import type { TextureName } from "@/components/studio/Texture";
 
 /**
  * Scoped fake studio state for the /design-system/screens previews:
@@ -63,12 +64,19 @@ interface MockStudioValue {
   /** Append a track to a collection; no-op if it's already in there. */
   addTrackToCollection: (collectionId: string, trackId: string) => void;
   /** Returns the created collection so a caller (the create-playlist route)
-   *  can navigate straight to it. */
+   *  can navigate straight to it. `texture` and `trackIds` are optional so
+   *  every existing caller keeps working unchanged — a real backend will
+   *  eventually expose one create endpoint that takes the same shape, so the
+   *  wizard builds the whole collection in a single atomic call rather than
+   *  create-then-patch (which would leave a half-built playlist visible if a
+   *  later call failed). */
   createCollection: (input: {
     title: string;
     desc: string;
     tags: string[];
     kind: CollectionKind;
+    texture?: TextureName;
+    trackIds?: string[];
   }) => MockCollection;
   // player surface
   playerExpanded: boolean;
@@ -149,6 +157,8 @@ export default function MockStudioProvider({
       desc: string;
       tags: string[];
       kind: CollectionKind;
+      texture?: TextureName;
+      trackIds?: string[];
     }): MockCollection => {
       // Built from the `collections` closure (not a setState functional
       // updater) so the id and full object are available to return
@@ -159,8 +169,8 @@ export default function MockStudioProvider({
         id: `local-${collections.length + 1}`,
         title: input.title,
         desc: input.desc,
-        texture: "tx-k-silk",
-        trackIds: [],
+        texture: input.texture ?? "tx-k-silk",
+        trackIds: input.trackIds ?? [],
         likes: 0,
         tags: input.tags,
         kind: input.kind,
