@@ -21,11 +21,9 @@ export default function CreatePlaylistScreen() {
   return (
     <div>
       <BackHeader title="Create playlist" backHref={LIBRARY} />
-      <div className="max-w-md">
-        <CreatePlaylistFlow
-          onCreated={(collection) => router.push(playlistHref(collection.id))}
-        />
-      </div>
+      <CreatePlaylistFlow
+        onCreated={(collection) => router.push(playlistHref(collection.id))}
+      />
     </div>
   );
 }

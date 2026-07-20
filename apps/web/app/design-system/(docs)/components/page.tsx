@@ -14,6 +14,7 @@ const CATEGORIES: {
   { href: "content", title: "Content", desc: "Chips, view toggle, sort, track menu.", texture: "tx-k-marble" },
   { href: "drawers", title: "Drawers", desc: "AppDrawer, playlist detail, create playlist.", texture: "tx-k-silk" },
   { href: "profile", title: "Profile & States", desc: "ProfileBadge, menus, stats, auth, gates.", texture: "tx-k2-static" },
+  { href: "feedback", title: "Feedback", desc: "Toasts — position, theming, actions.", texture: "tx-k-glitch" },
 ];
 
 export default function ComponentsIndex() {

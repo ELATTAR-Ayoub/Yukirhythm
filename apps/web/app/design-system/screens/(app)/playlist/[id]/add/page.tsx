@@ -39,7 +39,7 @@ export default function AddMusicScreen() {
   }
 
   return (
-    <div className="pb-8 max-w-3xl">
+    <div className="pb-8">
       <BackHeader title="Add music" backHref={playlistHref(collection.id)} />
       <p className="type-muted -mt-4 mb-4 truncate">to {collection.title}</p>
       <AddMusicPanel collection={collection} autoFocus />
