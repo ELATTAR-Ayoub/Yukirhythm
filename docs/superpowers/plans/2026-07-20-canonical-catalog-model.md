@@ -8,7 +8,15 @@
 
 **Tech Stack:** Next.js App Router, TypeScript, Firebase Admin SDK (Firestore), `youtubei.js` 17.x, Vitest.
 
-**Spec:** `docs/superpowers/specs/2026-07-20-canonical-catalog-model-design.md`
+**Spec:** `docs/superpowers/specs/2026-07-20-yukirhythm-backend-design.md`
+
+> **Scope note (rev 2).** The spec was broadened on 2026-07-20 to cover the whole backend —
+> social graph, playback state, play events, stats rollups, and the recommendation algorithms.
+> This plan implements **phase 1 (catalog core) only**, and several of its schema shapes are
+> superseded: `Collection.trackIds: string[]` becomes `tracks: {trackId, addedAt, addedBy}[]`,
+> `kind` splits into `role` + `contentType`, `Track` gains `texture`, and the stored
+> `kind: "liked"` collection is replaced by a virtual one derived from `TrackState.isLiked`.
+> Read §5 of the spec before starting Task 6. Phases 2–8 get their own plans.
 
 ---
 
