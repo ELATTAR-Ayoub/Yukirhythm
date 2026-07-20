@@ -62,20 +62,17 @@ interface MockStudioValue {
   togglePin: (id: string) => void;
   /** Append a track to a collection; no-op if it's already in there. */
   addTrackToCollection: (collectionId: string, trackId: string) => void;
+  /** Returns the created collection so a caller (the create-playlist route)
+   *  can navigate straight to it. */
   createCollection: (input: {
     title: string;
     desc: string;
     tags: string[];
     kind: CollectionKind;
-  }) => void;
+  }) => MockCollection;
   // player surface
   playerExpanded: boolean;
   setPlayerExpanded: (open: boolean) => void;
-  /** The one queue drawer for the whole shell — every surface with a queue
-   *  control (DevicePlayer, NowPlayingRail, PlaybackBar) drives this instead
-   *  of mounting its own. */
-  queueOpen: boolean;
-  setQueueOpen: (open: boolean) => void;
 }
 
 const MockStudioContext = createContext<MockStudioValue | null>(null);
@@ -115,7 +112,6 @@ export default function MockStudioProvider({
   ]);
   const [libraryFilter, setLibraryFilter] = useState<LibraryFilter>("playlists");
   const [playerExpanded, setPlayerExpanded] = useState(false);
-  const [queueOpen, setQueueOpen] = useState(false);
   const [playingCollection, setPlayingCollection] =
     useState<MockCollection | null>(null);
   const [navDirection, setNavDirection] = useState<"next" | "prev" | null>(null);
@@ -148,23 +144,32 @@ export default function MockStudioProvider({
   );
 
   const createCollection = useCallback(
-    (input: { title: string; desc: string; tags: string[]; kind: CollectionKind }) => {
-      setCollections((cs) => [
-        ...cs,
-        {
-          id: `local-${cs.length + 1}`,
-          title: input.title,
-          desc: input.desc,
-          texture: "tx-k-silk",
-          trackIds: [],
-          likes: 0,
-          tags: input.tags,
-          kind: input.kind,
-          pinned: false,
-        },
-      ]);
+    (input: {
+      title: string;
+      desc: string;
+      tags: string[];
+      kind: CollectionKind;
+    }): MockCollection => {
+      // Built from the `collections` closure (not a setState functional
+      // updater) so the id and full object are available to return
+      // immediately — a functional updater only runs when React processes
+      // the queued render, which is not synchronous with this call, so
+      // capturing the id from inside one would hand the caller `undefined`.
+      const created: MockCollection = {
+        id: `local-${collections.length + 1}`,
+        title: input.title,
+        desc: input.desc,
+        texture: "tx-k-silk",
+        trackIds: [],
+        likes: 0,
+        tags: input.tags,
+        kind: input.kind,
+        pinned: false,
+      };
+      setCollections((cs) => [...cs, created]);
+      return created;
     },
-    []
+    [collections.length]
   );
 
   const nowPlaying = currentIndex >= 0 ? (queue[currentIndex] ?? null) : null;
@@ -290,8 +295,6 @@ export default function MockStudioProvider({
     createCollection,
     playerExpanded,
     setPlayerExpanded,
-    queueOpen,
-    setQueueOpen,
   };
 
   return (

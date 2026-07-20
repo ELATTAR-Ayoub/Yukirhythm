@@ -79,17 +79,22 @@ describe("MockStudioProvider", () => {
     expect(result.current.libraryFilter).toBe("podcasts");
 
     const before = result.current.collections.length;
-    act(() =>
-      result.current.createCollection({
+    let created: ReturnType<typeof result.current.createCollection>;
+    act(() => {
+      created = result.current.createCollection({
         title: "Rainy Tapes",
         desc: "Tape loops for rain.",
         tags: ["rain"],
         kind: "music",
-      })
-    );
+      });
+    });
     expect(result.current.collections).toHaveLength(before + 1);
     expect(result.current.collections.at(-1)?.title).toBe("Rainy Tapes");
     expect(result.current.collections.at(-1)?.pinned).toBe(false);
+    // The create-playlist route navigates straight to the new collection by
+    // id, so createCollection must hand that id back rather than leaving the
+    // caller to guess it from the (still-stale, pre-render) collections array.
+    expect(created!).toEqual(result.current.collections.at(-1));
   });
 
   it("expands and collapses the player", () => {
@@ -100,15 +105,5 @@ describe("MockStudioProvider", () => {
     expect(result.current.playerExpanded).toBe(true);
     act(() => result.current.setPlayerExpanded(false));
     expect(result.current.playerExpanded).toBe(false);
-  });
-
-  it("opens and closes the shared queue drawer", () => {
-    const { result } = renderHook(() => useMockStudio(), { wrapper });
-
-    expect(result.current.queueOpen).toBe(false);
-    act(() => result.current.setQueueOpen(true));
-    expect(result.current.queueOpen).toBe(true);
-    act(() => result.current.setQueueOpen(false));
-    expect(result.current.queueOpen).toBe(false);
   });
 });
