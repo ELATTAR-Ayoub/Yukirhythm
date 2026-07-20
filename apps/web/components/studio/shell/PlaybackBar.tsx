@@ -9,6 +9,10 @@ import { Slider } from "@/components/ui/slider";
 import Transport from "@/components/studio/screens/Transport";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
 import { formatDuration } from "@/components/studio/screens/mock-data";
+import {
+  IDLE_LABEL,
+  NO_TIME,
+} from "@/components/studio/screens/player-idle";
 import { useIsWide } from "./useBreakpoint";
 import { QUEUE } from "./routes";
 
@@ -16,10 +20,6 @@ interface PlaybackBarProps {
   /** Opens the fullscreen DevicePlayer overlay. Ignored at 1440+ — see below. */
   onExpand: () => void;
 }
-
-/** Elapsed/total with nothing loaded. Not "0:00" — that is a real position
- *  in a real track, and this bar has neither. */
-const NO_TIME = "--:--";
 
 /**
  * Full-width desktop playback bar (md and up, replacing MiniPlayerBar).
@@ -34,7 +34,10 @@ const NO_TIME = "--:--";
  * already see. Below 1440 it's a button that opens that overlay.
  *
  * Permanent chrome: it renders whether or not anything is playing, so the
- * shell's bottom row keeps a constant height. With no track it keeps the
+ * shell's bottom row keeps a constant height — it is an in-flow flex
+ * sibling here, so hiding it would collapse that row and shift the whole
+ * grid. (`MiniPlayerBar` is `fixed` and does hide, for the opposite
+ * reason.) With no track it keeps the
  * same card, footprint and control layout but goes deliberately inert — no
  * metadata, a blank art well rather than a record, `--:--` for both times, a
  * disabled seek, and a transport whose buttons are all disabled (Transport
@@ -72,7 +75,7 @@ export default function PlaybackBar({ onExpand }: PlaybackBarProps) {
       />
       <span className="min-w-0">
         <span className="block font-label text-[10px] uppercase tracking-wider text-muted-foreground truncate">
-          Nothing playing
+          {IDLE_LABEL}
         </span>
       </span>
     </>

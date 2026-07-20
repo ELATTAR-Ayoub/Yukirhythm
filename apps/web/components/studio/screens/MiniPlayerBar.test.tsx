@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 
 import MockStudioProvider, { useMockStudio } from "./MockStudioProvider";
-import { MOCK_TRACKS } from "./mock-data";
+import { MOCK_TRACKS, formatDuration } from "./mock-data";
 import MiniPlayerBar from "./MiniPlayerBar";
 
 function PlayFirst() {
@@ -21,50 +21,27 @@ describe("MiniPlayerBar", () => {
   afterEach(() => vi.useRealTimers());
 
   /**
-   * The bar is permanent chrome now — it used to return null with no track,
-   * which is what left the app with no bottom bar on a cold session. These
-   * cover the idle presentation: present, but inert.
+   * Deliberately absent when idle, unlike the desktop PlaybackBar: on a
+   * phone this bar is `fixed`, so hiding it costs nothing but the padding
+   * `main` reserves, and a dead 70px band would compete with the tab bar
+   * for the scarcest space on screen.
+   *
+   * Asserting on an empty container rather than on absent labels: the whole
+   * point is that NOTHING renders, and a label-absence check would also
+   * pass for a bar that rendered with different copy.
    */
   describe("with no track playing", () => {
-    it("still renders the bar, with an honest idle label and no metadata", () => {
-      render(
+    it("renders nothing at all", () => {
+      const { container } = render(
         <MockStudioProvider>
           <MiniPlayerBar onExpand={() => {}} />
         </MockStudioProvider>
       );
 
-      expect(screen.getByText("Nothing playing")).toBeTruthy();
-      expect(screen.queryByText(MOCK_TRACKS[0].title)).toBeNull();
+      expect(container).toBeEmptyDOMElement();
     });
 
-    it("disables the playback controls and the seek", () => {
-      render(
-        <MockStudioProvider>
-          <MiniPlayerBar onExpand={() => {}} />
-        </MockStudioProvider>
-      );
-
-      // compact: prev/play/next only — no Loop or Queue in this cluster.
-      for (const name of ["Previous", "Play", "Next"]) {
-        expect(screen.getByLabelText(name).hasAttribute("disabled")).toBe(true);
-      }
-      expect(screen.getByLabelText("Seek").getAttribute("aria-disabled")).toBe(
-        "true"
-      );
-    });
-
-    it("shows no seek position — not a real 0:00 in a track that isn't there", () => {
-      render(
-        <MockStudioProvider>
-          <MiniPlayerBar onExpand={() => {}} />
-        </MockStudioProvider>
-      );
-
-      expect(screen.getAllByText("--:--")).toHaveLength(2);
-      expect(screen.queryByText("0:00")).toBeNull();
-    });
-
-    it("offers no Expand player control — there is no player to expand into", () => {
+    it("puts no player controls on screen for a track that isn't there", () => {
       const onExpand = vi.fn();
       render(
         <MockStudioProvider>
@@ -72,11 +49,9 @@ describe("MiniPlayerBar", () => {
         </MockStudioProvider>
       );
 
-      // Anchor on the bar actually being rendered first, or this assertion
-      // would also pass if the whole component returned null — which is the
-      // exact regression the idle presentation exists to prevent.
-      expect(screen.getByText("Nothing playing")).toBeTruthy();
-      expect(screen.queryByLabelText("Expand player")).toBeNull();
+      for (const name of ["Expand player", "Previous", "Play", "Next", "Seek"]) {
+        expect(screen.queryByLabelText(name)).toBeNull();
+      }
       expect(onExpand).not.toHaveBeenCalled();
     });
   });
@@ -94,13 +69,12 @@ describe("MiniPlayerBar", () => {
 
       expect(screen.getByText(MOCK_TRACKS[0].title)).toBeTruthy();
       expect(screen.getByText(MOCK_TRACKS[0].artist)).toBeTruthy();
-      expect(screen.queryByText("Nothing playing")).toBeNull();
 
       fireEvent.click(screen.getByLabelText("Expand player"));
       expect(onExpand).toHaveBeenCalledTimes(1);
     });
 
-    it("re-enables the playback controls and the seek", () => {
+    it("has live playback controls and a seek carrying the real duration", () => {
       render(
         <MockStudioProvider>
           <PlayFirst />
@@ -117,7 +91,13 @@ describe("MiniPlayerBar", () => {
       expect(screen.getByLabelText("Seek").getAttribute("aria-disabled")).toBe(
         "false"
       );
-      expect(screen.queryAllByText("--:--")).toHaveLength(0);
+      // The seek is bound to this track, not left at some placeholder range.
+      expect(screen.getByRole("slider").getAttribute("aria-valuemax")).toBe(
+        String(MOCK_TRACKS[0].durationSec)
+      );
+      expect(
+        screen.getByText(formatDuration(MOCK_TRACKS[0].durationSec))
+      ).toBeTruthy();
     });
   });
 });

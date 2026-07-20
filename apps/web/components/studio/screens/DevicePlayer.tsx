@@ -14,6 +14,7 @@ import PlayerSearchDrawer from "./PlayerSearchDrawer";
 import { useMockStudio } from "./MockStudioProvider";
 import { QUEUE } from "../shell/routes";
 import { formatDuration } from "./mock-data";
+import { IDLE_LABEL, NO_TIME } from "./player-idle";
 
 interface DevicePlayerProps {
   onCollapse?: () => void;
@@ -25,7 +26,18 @@ interface DevicePlayerProps {
   docked?: boolean;
 }
 
-/** The full device player — the app's signature surface, now a component. */
+/**
+ * The full device player — the app's signature surface, now a component.
+ *
+ * With no track it renders the same chassis, unloaded: a blank art well
+ * where the record sits, `IDLE_LABEL` instead of metadata, and a disabled
+ * seek reading `--:--` at both ends. Every part of that is laid out to
+ * occupy the SAME footprint as a loaded player — the art well mirrors
+ * VinylDisc's absolute geometry (so, like the disc, it contributes no flow
+ * height; the `pt-[56%]` spacer below reserves the visible half either
+ * way), and the scrub block renders in both states rather than being
+ * omitted when idle. The rail must not jump when playback starts.
+ */
 export default function DevicePlayer({ onCollapse, docked = false }: DevicePlayerProps) {
   const { nowPlaying, isPlaying, progressSec, seek, navDirection } =
     useMockStudio();
@@ -110,7 +122,20 @@ export default function DevicePlayer({ onCollapse, docked = false }: DevicePlaye
             {nowPlaying.title}
           </span>
         </VinylDisc>
-      ) : null}
+      ) : (
+        // The empty art well. Same absolute geometry as VinylDisc's own
+        // button (half off the top, clipped by the card) so the silhouette
+        // and the footprint are identical — just no record in it. Not a
+        // button: there is nothing to expand.
+        <span
+          aria-hidden
+          className={cn(
+            "absolute z-10 left-1/2 top-0 w-[112%] aspect-square",
+            "-translate-x-1/2 -translate-y-1/2 rounded-full",
+            "border border-dashed border-border bg-secondary/40"
+          )}
+        />
+      )}
 
       {/* reserves the disc's visible half — 112% card width, so 56% for half */}
       <div aria-hidden className="w-full pt-[56%] shrink-0" />
@@ -122,35 +147,49 @@ export default function DevicePlayer({ onCollapse, docked = false }: DevicePlaye
         )}
       >
         <div className="text-center mt-2">
-          <div className="font-label text-[11px] uppercase tracking-[0.2em] text-primary truncate">
-            {nowPlaying ? nowPlaying.artist : "Welcome!"}
+          {/* Idle keeps both lines so the block is the same height either
+              way — the artist slot holds a non-breaking space rather than
+              collapsing, and the title slot states the player's state
+              instead of naming a track that isn't loaded. */}
+          <div
+            aria-hidden={!nowPlaying}
+            className="font-label text-[11px] uppercase tracking-[0.2em] text-primary truncate"
+          >
+            {nowPlaying ? nowPlaying.artist : " "}
           </div>
-          <div className="font-ui font-semibold text-lg truncate mt-1">
-            {nowPlaying ? nowPlaying.title : "Pick a track"}
+          <div
+            className={cn(
+              "font-ui font-semibold text-lg truncate mt-1",
+              !nowPlaying && "text-muted-foreground"
+            )}
+          >
+            {nowPlaying ? nowPlaying.title : IDLE_LABEL}
           </div>
         </div>
 
-        {/* Scrub bar — drag to jump to any second in the track. */}
-        {nowPlaying ? (
-          <div className="mt-6">
-            <Slider
-              value={[Math.min(progressSec, nowPlaying.durationSec)]}
-              max={nowPlaying.durationSec}
-              step={1}
-              onValueChange={(v) => seek(v[0])}
-              aria-label="Seek"
-              data-signal="seek"
-            />
-            <div className="flex items-center justify-between mt-2">
-              <DataText className="text-xs text-muted-foreground">
-                {formatDuration(progressSec)}
-              </DataText>
-              <DataText className="text-xs text-muted-foreground">
-                {formatDuration(nowPlaying.durationSec)}
-              </DataText>
-            </div>
+        {/* Scrub bar — drag to jump to any second in the track. Rendered in
+            both states (disabled and reading --:-- when idle) so the chassis
+            keeps one height; omitting it made the empty rail player shorter
+            than a loaded one and the whole column jumped on first play. */}
+        <div className="mt-6">
+          <Slider
+            value={[nowPlaying ? Math.min(progressSec, nowPlaying.durationSec) : 0]}
+            max={nowPlaying ? nowPlaying.durationSec : 1}
+            step={1}
+            disabled={!nowPlaying}
+            onValueChange={(v) => seek(v[0])}
+            aria-label="Seek"
+            data-signal="seek"
+          />
+          <div className="flex items-center justify-between mt-2">
+            <DataText className="text-xs text-muted-foreground">
+              {nowPlaying ? formatDuration(progressSec) : NO_TIME}
+            </DataText>
+            <DataText className="text-xs text-muted-foreground">
+              {nowPlaying ? formatDuration(nowPlaying.durationSec) : NO_TIME}
+            </DataText>
           </div>
-        ) : null}
+        </div>
       </div>
 
       {/* stays above the expanded disc so the controls never get covered */}

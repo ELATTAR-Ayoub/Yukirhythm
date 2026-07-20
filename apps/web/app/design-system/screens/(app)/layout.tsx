@@ -8,6 +8,7 @@ import GlobalPlayer from "@/components/studio/screens/GlobalPlayer";
 import StudioHeader from "@/components/studio/shell/StudioHeader";
 import LibraryRail from "@/components/studio/shell/LibraryRail";
 import NowPlayingRail from "@/components/studio/shell/NowPlayingRail";
+import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
 import { isSystemRoute } from "@/components/studio/shell/routes";
 
 /**
@@ -32,9 +33,10 @@ import { isSystemRoute } from "@/components/studio/shell/routes";
  * full-viewport grid, so it was pushed down into `ScreensFrame` for the
  * routes that still want it (auth, credits, terms, the screens index; see
  * that component's own comment). Below `md` the outer padding is `p-2
- * sm:p-6`, and `main` reserves `--mobile-chrome-h` at the bottom for the
- * fixed MiniPlayerBar/BottomTabBar — derived from the tokens those two are
- * themselves sized by, so the reservation cannot drift from the chrome. At
+ * sm:p-6`, and `main` reserves bottom room for the fixed BottomTabBar plus
+ * MiniPlayerBar when one is on screen — see `MAIN_BOTTOM_INSET`, derived
+ * from the tokens that chrome is itself sized by, so the reservation cannot
+ * drift from what occupies it. At
  * `md`+ that padding shrinks to a small `md:p-2` inset around the whole
  * grid, and `main` grows its own `md:px-6 md:pt-6` so its card reads as a
  * page with content, not a bare box.
@@ -54,6 +56,24 @@ const RAIL_SLOT = {
 
 const RAIL_SURFACE = "rounded-2xl border border-border bg-card overflow-hidden";
 
+/**
+ * What `main` reserves at the bottom below `md`, tracking what is actually
+ * fixed down there. `MiniPlayerBar` only renders with a track loaded, so
+ * reserving room for it unconditionally leaves ~82px of dead band on a cold
+ * session — the same dead space, just moved to the other playback state.
+ *
+ * Both branches are literal class strings (Tailwind scans source text, so an
+ * interpolated value would generate no CSS) and both are built from the same
+ * tokens the chrome sizes itself with, so the reservation still cannot drift
+ * from what occupies it.
+ */
+const MAIN_BOTTOM_INSET = {
+  /** Nav only — no player on screen. */
+  idle: "pb-[calc(var(--bottom-nav-h)+0.5rem)]",
+  /** Nav + gap + player. */
+  playing: "pb-[calc(var(--mobile-chrome-h)+0.5rem)]",
+} as const;
+
 export default function AppShellLayout({
   children,
 }: {
@@ -61,6 +81,7 @@ export default function AppShellLayout({
 }) {
   const pathname = usePathname();
   const system = isSystemRoute(pathname);
+  const { nowPlaying } = useMockStudio();
 
   return (
     <div className="h-screen overflow-hidden flex flex-col p-2 sm:p-6 md:p-2 md:gap-2">
@@ -83,10 +104,12 @@ export default function AppShellLayout({
         <main
           className={cn(
             "min-w-0 flex-1 min-h-0 overflow-y-auto",
-            // Exactly the fixed chrome below md (nav + gap + player), plus a
-            // little breathing room — not a guessed `pb-44`. Zero at md+,
-            // where the PlaybackBar is an in-flow flex sibling instead.
-            "pb-[calc(var(--mobile-chrome-h)+0.5rem)] md:pb-0",
+            // Exactly the fixed chrome below md, plus a little breathing
+            // room — not a guessed `pb-44`, and not a constant either, since
+            // the mini player only exists while something is loaded. Zero at
+            // md+, where PlaybackBar is an in-flow flex sibling instead.
+            nowPlaying ? MAIN_BOTTOM_INSET.playing : MAIN_BOTTOM_INSET.idle,
+            "md:pb-0",
             "md:rounded-2xl md:border md:border-border md:bg-card",
             "md:px-6 md:pt-6"
           )}

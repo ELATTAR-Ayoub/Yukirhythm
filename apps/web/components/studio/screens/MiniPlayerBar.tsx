@@ -12,56 +12,23 @@ interface MiniPlayerBarProps {
   onExpand: () => void;
 }
 
-/** Elapsed/total with nothing loaded. Not "0:00" — that is a real position
- *  in a real track, and this bar has neither. */
-const NO_TIME = "--:--";
-
 /**
  * Compressed player — info left, controls right, tap to expand.
  *
- * Permanent chrome: it renders whether or not anything is playing, so the
- * bottom of the app has a constant height and the page column can reserve
- * exactly that much (see `--mobile-chrome-h`). With no track it keeps the
- * same card, footprint and control layout but goes deliberately inert — no
- * metadata, a blank art well rather than a record, `--:--` for both times, a
- * disabled seek, and a transport whose buttons are all disabled (Transport
- * derives that from `nowPlaying` itself). Nothing about the idle bar should
- * suggest it can be played.
+ * Renders nothing with no track, unlike the desktop `PlaybackBar`, which
+ * keeps an idle presentation. The two are not the same situation: at `md`+
+ * the bar is an in-flow flex sibling, so hiding it would collapse the
+ * shell's bottom row and shift the whole grid, whereas this one is `fixed`
+ * and costs only the padding `main` reserves for it. On a phone an idle bar
+ * is a dead 70px band competing with the tab bar for the scarcest space on
+ * screen — with nothing to play there is nothing worth spending it on.
+ *
+ * `main`'s bottom reservation follows this same condition (see the `(app)`
+ * layout), so the space and the bar appear and disappear together.
  */
 export default function MiniPlayerBar({ onExpand }: MiniPlayerBarProps) {
   const { nowPlaying, isPlaying, progressSec, seek } = useMockStudio();
-
-  const identity = nowPlaying ? (
-    <>
-      <SpinningDisc
-        texture={nowPlaying.texture}
-        labelTexture="tx-k2-vinyl"
-        spinning={isPlaying}
-        className="w-11 h-11 shrink-0 disc_shadow"
-        labelClassName="w-1/3 h-1/3 border-2 border-card"
-      />
-      <span className="min-w-0">
-        <span className="block font-ui font-medium text-sm truncate">
-          {nowPlaying.title}
-        </span>
-        <span className="block font-label text-[10px] uppercase tracking-wider text-muted-foreground truncate">
-          {nowPlaying.artist}
-        </span>
-      </span>
-    </>
-  ) : (
-    <>
-      <span
-        aria-hidden
-        className="w-11 h-11 shrink-0 rounded-full border border-dashed border-border bg-secondary/40"
-      />
-      <span className="min-w-0">
-        <span className="block font-label text-[10px] uppercase tracking-wider text-muted-foreground truncate">
-          Nothing playing
-        </span>
-      </span>
-    </>
-  );
+  if (!nowPlaying) return null;
 
   return (
     // 12px above the bottom nav; md has no nav so it just clears the edge.
@@ -75,38 +42,42 @@ export default function MiniPlayerBar({ onExpand }: MiniPlayerBarProps) {
           "flex items-center gap-4"
         )}
       >
-        {nowPlaying ? (
-          <button
-            type="button"
-            aria-label="Expand player"
-            onClick={onExpand}
-            className="flex items-center gap-4 min-w-0 flex-1 text-left rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
-          >
-            {identity}
-          </button>
-        ) : (
-          // Not a button with nothing loaded: there is no fullscreen player
-          // to expand into, and a focusable control that does nothing is
-          // worse than no control at all.
-          <div className="flex items-center gap-4 min-w-0 flex-1">{identity}</div>
-        )}
+        <button
+          type="button"
+          aria-label="Expand player"
+          onClick={onExpand}
+          className="flex items-center gap-4 min-w-0 flex-1 text-left rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+        >
+          <SpinningDisc
+            texture={nowPlaying.texture}
+            labelTexture="tx-k2-vinyl"
+            spinning={isPlaying}
+            className="w-11 h-11 shrink-0 disc_shadow"
+            labelClassName="w-1/3 h-1/3 border-2 border-card"
+          />
+          <span className="min-w-0">
+            <span className="block font-ui font-medium text-sm truncate">
+              {nowPlaying.title}
+            </span>
+            <span className="block font-label text-[10px] uppercase tracking-wider text-muted-foreground truncate">
+              {nowPlaying.artist}
+            </span>
+          </span>
+        </button>
         <div className="hidden sm:flex flex-1 items-center gap-3 min-w-0">
           <DataText className="text-xs text-muted-foreground shrink-0">
-            {nowPlaying ? formatDuration(progressSec) : NO_TIME}
+            {formatDuration(progressSec)}
           </DataText>
           <Slider
-            value={[
-              nowPlaying ? Math.min(progressSec, nowPlaying.durationSec) : 0,
-            ]}
-            max={nowPlaying ? nowPlaying.durationSec : 1}
+            value={[Math.min(progressSec, nowPlaying.durationSec)]}
+            max={nowPlaying.durationSec}
             step={1}
-            disabled={!nowPlaying}
             onValueChange={(v) => seek(v[0])}
             aria-label="Seek"
             data-signal="seek"
           />
           <DataText className="text-xs text-muted-foreground shrink-0">
-            {nowPlaying ? formatDuration(nowPlaying.durationSec) : NO_TIME}
+            {formatDuration(nowPlaying.durationSec)}
           </DataText>
         </div>
         <div className="shrink-0">
