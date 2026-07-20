@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -10,6 +9,7 @@ import BackHeader from "@/components/studio/screens/BackHeader";
 import SignInPrompt from "@/components/studio/screens/SignInPrompt";
 import SectionLabel from "@/components/studio/SectionLabel";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
+import { useSignOut } from "@/components/studio/screens/useSignOut";
 
 const BASE = "/design-system/screens";
 
@@ -27,8 +27,8 @@ function SettingRow({ label, value }: { label: string; value: string }) {
 }
 
 export default function SettingsScreen() {
-  const { user, signOut } = useMockStudio();
-  const router = useRouter();
+  const { user } = useMockStudio();
+  const handleSignOut = useSignOut();
   if (!user) return <SignInPrompt />;
 
   return (
@@ -60,11 +60,7 @@ export default function SettingsScreen() {
       <Button
         variant="destructive"
         className="w-full"
-        onClick={() => {
-          signOut();
-          toast("Signed out");
-          router.push(`${BASE}/auth`);
-        }}
+        onClick={handleSignOut}
       >
         Sign out
       </Button>

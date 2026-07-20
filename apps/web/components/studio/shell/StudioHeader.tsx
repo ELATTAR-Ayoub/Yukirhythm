@@ -17,6 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
+import { useSignOut } from "@/components/studio/screens/useSignOut";
 import { AUTH, CREDITS, HOME, PROFILE, SEARCH } from "./routes";
 
 const MENU = [
@@ -36,7 +37,8 @@ const MENU = [
 export default function StudioHeader() {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, signOut, search, clearSearch } = useMockStudio();
+  const { user, search, clearSearch } = useMockStudio();
+  const handleSignOut = useSignOut();
   const [q, setQ] = useState("");
 
   // The field is local state but the results live in the studio context, so
@@ -132,7 +134,7 @@ export default function StudioHeader() {
                 </DropdownMenuItem>
               ))}
               <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={() => signOut()}>
+              <DropdownMenuItem onSelect={() => handleSignOut()}>
                 Sign out
               </DropdownMenuItem>
             </DropdownMenuContent>
