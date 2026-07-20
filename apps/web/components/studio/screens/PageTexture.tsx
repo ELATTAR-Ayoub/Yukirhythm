@@ -34,8 +34,7 @@ interface PageTextureProps {
  * "hint, not a texture" read the dark theme already had. Dark theme keeps
  * the default `normal` blend, since ink-on-ink was already correct there and
  * `screen` would wash out the glyphs' own contrast against a dark card for
- * no benefit. Opacity stays a flat 15% in both — only the blend mode needed
- * to change.
+ * no benefit. Opacity is a flat 10% in both — only the blend mode differs.
  */
 export default function PageTexture({
   kind = "ascii-dunes",
@@ -53,7 +52,7 @@ export default function PageTexture({
         kind={kind}
         speed={0.4}
         className={cn(
-          "absolute inset-0 h-full w-full opacity-[0.15] [mask-image:radial-gradient(130%_100%_at_50%_0%,#000_30%,transparent_100%)]",
+          "absolute inset-0 h-full w-full opacity-[0.10] [mask-image:radial-gradient(130%_100%_at_50%_0%,#000_30%,transparent_100%)]",
           "mix-blend-screen dark:mix-blend-normal"
         )}
       />

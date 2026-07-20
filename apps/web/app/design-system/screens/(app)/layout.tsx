@@ -111,7 +111,11 @@ export default function AppShellLayout({
             nowPlaying ? MAIN_BOTTOM_INSET.playing : MAIN_BOTTOM_INSET.idle,
             "md:pb-0",
             "md:rounded-2xl md:border md:border-border md:bg-card",
-            "md:px-6 md:pt-6"
+            // Symmetric: the column's bottom inset matches its top, so a page
+            // whose last element is a CTA doesn't end flush against the card
+            // edge. Mobile keeps the chrome reservation above instead — that
+            // padding is clearance for the fixed bars, not page inset.
+            "md:px-6 md:pt-6 md:pb-6"
           )}
         >
           {children}
