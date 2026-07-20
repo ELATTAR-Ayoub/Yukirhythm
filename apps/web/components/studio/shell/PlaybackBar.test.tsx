@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 
 import MockStudioProvider, {
   useMockStudio,
@@ -151,7 +151,12 @@ describe("PlaybackBar", () => {
 
     // The accessible aria-label lands on the Radix slider Root, but
     // aria-valuenow lives on its Thumb (role="slider") — target that.
-    const slider = screen.getByRole("slider");
+    // The bar now carries a volume slider too, and thumbs have no accessible
+    // name of their own, so reach this one through its labelled root rather
+    // than by role alone.
+    const slider = within(
+      screen.getByLabelText("Seek") as HTMLElement
+    ).getByRole("slider");
     expect(slider.getAttribute("aria-valuenow")).toBe("10");
 
     fireEvent.keyDown(slider, { key: "ArrowRight" });

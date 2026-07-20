@@ -14,6 +14,7 @@ import {
   NO_TIME,
 } from "@/components/studio/screens/player-idle";
 import { useIsWide } from "./useBreakpoint";
+import PlayerExtras from "./PlayerExtras";
 import { QUEUE } from "./routes";
 
 interface PlaybackBarProps {
@@ -24,9 +25,10 @@ interface PlaybackBarProps {
 /**
  * Full-width desktop playback bar (md and up, replacing MiniPlayerBar).
  * Left: art + title/artist. Centre: transport above a seek slider flanked by
- * elapsed/total. Right: an empty spacer matching the left block's footprint
- * so the transport stays optically centred rather than drifting toward
- * whichever side is lighter.
+ * elapsed/total. Right: volume and fullscreen, in a block matching the left
+ * one's footprint so the transport stays optically centred rather than
+ * drifting toward whichever side is lighter. That block used to be an empty
+ * spacer holding the balance; real controls of the same width do it honestly.
  *
  * At `useIsWide()` (1440+) the left block is plain info, not a button: the
  * now-playing rail is on screen at that width and already *is* the expanded
@@ -140,7 +142,9 @@ export default function PlaybackBar({ onExpand }: PlaybackBarProps) {
         </div>
       </div>
 
-      <div aria-hidden className={sideBlockClass} />
+      <div className={sideBlockClass}>
+        <PlayerExtras />
+      </div>
     </div>
   );
 }

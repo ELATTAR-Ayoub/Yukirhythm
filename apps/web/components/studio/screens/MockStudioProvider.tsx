@@ -82,6 +82,13 @@ interface MockStudioValue {
   // player surface
   playerExpanded: boolean;
   setPlayerExpanded: (open: boolean) => void;
+  /** 0–1. Output level, independent of whether anything is loaded. */
+  volume: number;
+  setVolume: (volume: number) => void;
+  /** Muting is volume 0 that remembers where it came from, so unmuting
+   *  restores the level the user actually chose rather than jumping to full. */
+  muted: boolean;
+  toggleMute: () => void;
 }
 
 const MockStudioContext = createContext<MockStudioValue | null>(null);
@@ -121,6 +128,10 @@ export default function MockStudioProvider({
   ]);
   const [libraryFilter, setLibraryFilter] = useState<LibraryFilter>("playlists");
   const [playerExpanded, setPlayerExpanded] = useState(false);
+  const [volume, setVolumeState] = useState(1);
+  /** The level to come back to when unmuting. Never 0, so an unmute always
+   *  restores something audible even if the user muted from silence. */
+  const preMuteVolume = useRef(1);
   const [playingCollection, setPlayingCollection] =
     useState<MockCollection | null>(null);
   const [navDirection, setNavDirection] = useState<"next" | "prev" | null>(null);
@@ -238,6 +249,18 @@ export default function MockStudioProvider({
     setProgressSec(Math.max(0, Math.floor(sec)));
   }, []);
 
+  const setVolume = useCallback((next: number) => {
+    const clamped = Math.min(1, Math.max(0, next));
+    // Dragging the slider to a real level is also how you leave mute, so the
+    // restore point follows the last audible choice.
+    if (clamped > 0) preMuteVolume.current = clamped;
+    setVolumeState(clamped);
+  }, []);
+
+  const toggleMute = useCallback(() => {
+    setVolumeState((v) => (v > 0 ? 0 : preMuteVolume.current));
+  }, []);
+
   // 1s progress ticker while playing
   useEffect(() => {
     if (!isPlaying || !nowPlaying) return;
@@ -307,6 +330,10 @@ export default function MockStudioProvider({
     addTrackToCollection,
     createCollection,
     playerExpanded,
+    volume,
+    setVolume,
+    muted: volume === 0,
+    toggleMute,
     setPlayerExpanded,
   };
 
