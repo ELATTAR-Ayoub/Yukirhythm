@@ -71,24 +71,36 @@ they are present at the base commit `a5ca6ea` and are unrelated to this phase.
 
 ## Phase 1 — Catalog core
 
-The existing plan `2026-07-20-canonical-catalog-model.md` covers this, with the rev-2 schema
-corrections noted in its header.
+Detailed plan: `2026-07-20-phase-1-catalog-core.md`.
 
-- [ ] `lib/catalog/types.ts` + `provider.ts` — the interface, no implementation
-- [ ] Install `youtubei.js`; record fixtures (live stream, non-embeddable, no-album, 960-item playlist)
-- [ ] `youtube/map.ts` — song, video info, artist, playlist, `mergeTrack`
-- [ ] `youtube/client.ts` + `index.ts` — the provider
-- [ ] `model.ts` — Firestore document types (rev-2 shapes)
-- [ ] `ingest.ts` — idempotent upsert, alias collapse, user-label protection
-- [ ] `cache.ts` — persistent 24h search cache
-- [ ] `taxonomy.ts` — controlled vocabulary, `resolveLabel`, explore tiles
-- [ ] `texture.ts` — deterministic `hash(trackId) % TEXTURE_NAMES.length`
-- [ ] Routes: `/api/catalog/search`, `/suggest`, `/tracks/[id]`, `/artists/[id]`, `/browse?label=`
-- [ ] Route: `/api/library/search` — the caller's own collections and liked tracks
-- [ ] Wire Search screen to real endpoints; **explore tiles hit `/browse`, not a text query**
-- [ ] Network-gated provider contract test
+- [x] `lib/catalog/types.ts` + `provider.ts` — the interface, no implementation
+- [x] Install `youtubei.js`; record fixtures (song, video info, long video, artist, playlist)
+- [x] `youtube/map.ts` — song, video info, artist, playlist, `mergeTrack` (17 unit tests vs. real fixtures)
+- [x] `youtube/client.ts` + `index.ts` — the provider (5 live contract tests)
+- [x] `model.ts` — Firestore document types (rev-2 shapes)
+- [x] `ingest.ts` — idempotent upsert, alias collapse, user-label protection
+- [x] `cache.ts` — persistent 24h search cache
+- [x] `taxonomy.ts` — controlled vocabulary, `resolveLabel`, explore tiles
+- [x] `texture.ts` — deterministic `hash(trackId) % TEXTURE_NAMES.length`
+- [x] Routes: `/api/catalog/search`, `/suggest`, `/tracks/[id]`, `/artists/[id]`, `/browse?label=`
+- [x] Network-gated provider contract test
+- [→] `/api/library/search` — moved to **phase 2**; it needs collections to exist
+- [→] Wire Search screen to real endpoints — moved to **phase 8** (the migration); wiring
+      half the screens onto a still-moving backend means doing it twice
 
-**Closes:** explore tiles returning nothing (6 of 8 today), library search invisibility.
+**Closes:** ledger row 9 (explore tiles returning nothing — `/browse` now serves them from the
+taxonomy). Row 10 (library search) moves to phase 2 with its endpoint.
+
+**Phase 1 complete — 2026-07-20.** Verified with **real data, no mocks**: 298 unit tests (map
+against recorded fixtures, 5 live YouTube contract checks) and **20 integration tests against
+the real Firestore + Auth emulators** — real writes, transactions, `array-contains`, token
+verification, and cache hits. `scripts/demo-catalog-pipeline.ts` runs the whole path on live
+YouTube data: search in, Firestore docs out, input matching output. Typecheck and build clean.
+
+**Backend delivered, screens still on mock data — that is deliberate (phase 8 migrates them).**
+Exercising the routes against **production** Firestore needs `FIREBASE_SERVICE_ACCOUNT_B64` in
+`apps/web/.env.local`, which only the owner can generate (Firebase console → Service accounts).
+Until then everything runs against the local emulator.
 
 ---
 
