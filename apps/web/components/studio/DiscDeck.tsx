@@ -41,7 +41,11 @@ const DeckScene = dynamic(() => import("@/components/studio/deck/DeckScene"), {
 interface DiscDeckProps {
   tracks: DeckTrack[];
   className?: string;
-  /** Signals: disc_next, disc_prev, play, pause */
+  /**
+   * Signals, one per control: `disc_prev`, `disc_next`, and `play`/`pause` on
+   * the transport. They sit on the buttons that emit them rather than on the
+   * wrapper, so a listener reads exactly one event name per element.
+   */
 }
 
 /**
@@ -85,10 +89,7 @@ export default function DiscDeck({ tracks, className }: DiscDeckProps) {
   const track = tracks[current];
 
   return (
-    <div
-      className={cn("w-full flex flex-col items-center gap-4", className)}
-      data-signal="disc_next, disc_prev"
-    >
+    <div className={cn("w-full flex flex-col items-center gap-4", className)}>
       {/* ── the deck (WebGL) ── */}
       <div
         data-deck-stage
@@ -116,6 +117,7 @@ export default function DiscDeck({ tracks, className }: DiscDeckProps) {
           disabled={busy}
           onClick={() => go(-1)}
           aria-label="Previous track"
+          data-signal="disc_prev"
         >
           <TrackPreviousIcon />
         </PlayerButton>
@@ -125,6 +127,7 @@ export default function DiscDeck({ tracks, className }: DiscDeckProps) {
           disabled={busy}
           onClick={toggle}
           aria-label={busy ? "Working" : spinning ? "Pause" : "Play"}
+          data-signal={spinning ? "pause" : "play"}
         >
           <IconSwap
             active={busy ? "wait" : spinning ? "pause" : "play"}
@@ -139,6 +142,7 @@ export default function DiscDeck({ tracks, className }: DiscDeckProps) {
           disabled={busy}
           onClick={() => go(1)}
           aria-label="Next track"
+          data-signal="disc_next"
         >
           <TrackNextIcon />
         </PlayerButton>
