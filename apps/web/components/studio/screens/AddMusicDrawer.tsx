@@ -11,7 +11,10 @@ interface AddMusicDrawerProps {
   onOpenChange: (open: boolean) => void;
 }
 
-/** Mobile presentation of AddMusicPanel. */
+/** Sheet presentation of AddMusicPanel. No consumer left anywhere — the
+ *  app's add-music flow is the routed page (`/screens/playlist/[id]/add`,
+ *  reachable at every width) rather than this drawer. Kept rather than
+ *  deleted unilaterally; see the task report for the call. */
 export default function AddMusicDrawer({
   collection,
   open,

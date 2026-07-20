@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   DiscIcon,
   PauseIcon,
@@ -17,13 +18,13 @@ import TrackRow from "@/components/studio/TrackRow";
 import EmptyState from "@/components/studio/EmptyState";
 import { PlayerButton } from "@/components/studio/PlayerButton";
 import IconSwap from "@/components/studio/IconSwap";
-import AddMusicDrawer from "./AddMusicDrawer";
 import TrackMenu from "./TrackMenu";
 import ViewToggle, { type TrackView } from "./ViewToggle";
 import SortControl from "./SortControl";
 import { TagChip } from "./TagChip";
 import { sortTracks, type TrackSort } from "./library-utils";
 import { useMockStudio } from "./MockStudioProvider";
+import { addMusicHref } from "../shell/routes";
 import {
   formatDuration,
   getCollectionTracks,
@@ -120,18 +121,19 @@ interface CollectionDetailProps {
 }
 
 /**
- * The shared body of every collection sheet — description, tags, play/shuffle,
- * sort + view, and the track list. PlaylistDrawer and QueueDrawer differ only
- * in the header they put above this.
+ * The shared body of every collection surface — description, tags,
+ * play/shuffle, sort + view, and the track list. The playlist and queue
+ * routes, and the PlaylistDrawer/QueueDrawer components still demoed in the
+ * design-system docs, differ only in the header they put above this.
  */
 export default function CollectionDetail({
   collection,
   playFrom,
 }: CollectionDetailProps) {
   const { play, toggle, nowPlaying, isPlaying } = useMockStudio();
+  const router = useRouter();
   const [view, setView] = useState<TrackView>("rows");
   const [sort, setSort] = useState<TrackSort>("recent");
-  const [adding, setAdding] = useState(false);
 
   const source = playFrom ?? collection;
   const tracks = sortTracks(getCollectionTracks(collection), sort);
@@ -195,7 +197,7 @@ export default function CollectionDetail({
             variant="outline"
             size="sm"
             aria-label="Add music"
-            onClick={() => setAdding(true)}
+            onClick={() => router.push(addMusicHref(collection.id))}
             data-signal="add_music_open"
           >
             <PlusIcon />
@@ -203,12 +205,6 @@ export default function CollectionDetail({
           <ViewToggle view={view} onChange={setView} />
         </div>
       </div>
-
-      <AddMusicDrawer
-        collection={collection}
-        open={adding}
-        onOpenChange={setAdding}
-      />
 
       {tracks.length === 0 ? (
         <EmptyState

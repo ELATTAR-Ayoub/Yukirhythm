@@ -9,6 +9,9 @@ const nav = vi.hoisted(() => ({ id: "liked" }));
 vi.mock("next/navigation", () => ({
   useParams: () => ({ id: nav.id }),
   usePathname: () => `/design-system/screens/playlist/${nav.id}`,
+  // CollectionDetail's Add-music control calls useRouter() unconditionally
+  // now (it routes at every width); none of these tests exercise that click.
+  useRouter: () => ({ push: () => {} }),
 }));
 
 describe("PlaylistScreen", () => {

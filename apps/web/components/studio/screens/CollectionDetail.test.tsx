@@ -3,7 +3,14 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 
 import MockStudioProvider from "@/components/studio/screens/MockStudioProvider";
 import { LIKED_SONGS } from "@/components/studio/screens/mock-data";
+import { addMusicHref } from "@/components/studio/shell/routes";
 import CollectionDetail from "./CollectionDetail";
+
+const { push } = vi.hoisted(() => ({ push: vi.fn() }));
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push }),
+}));
 
 /**
  * IconSwap renders both icon faces as siblings (class `col-start-1`), the
@@ -19,6 +26,9 @@ function iconSwapFaces(button: HTMLElement): HTMLElement[] {
 }
 
 describe("CollectionDetail", () => {
+  beforeEach(() => push.mockClear());
+  afterEach(() => vi.unstubAllGlobals());
+
   it("does not nest a play button inside each row's role=button wrapper", () => {
     // TrackRow's hover overlay is a real <button aria-label="Play">. Nested
     // inside the row's own role="button" div it's invalid HTML and a dead,
@@ -87,6 +97,22 @@ describe("CollectionDetail", () => {
       expect(faces[0].getAttribute("aria-hidden")).toBe("true");
       expect(faces[1].className).toContain("opacity-100");
       expect(faces[1].getAttribute("aria-hidden")).toBe("false");
+    });
+  });
+
+  describe("add music control", () => {
+    it("navigates to the routed add-music page, at every width", () => {
+      render(
+        <MockStudioProvider>
+          <CollectionDetail collection={LIKED_SONGS} />
+        </MockStudioProvider>
+      );
+
+      fireEvent.click(screen.getByLabelText("Add music"));
+
+      expect(push).toHaveBeenCalledWith(addMusicHref(LIKED_SONGS.id));
+      // No drawer form should ever mount alongside this control any more.
+      expect(screen.queryByLabelText("Search tracks to add")).toBeNull();
     });
   });
 });
