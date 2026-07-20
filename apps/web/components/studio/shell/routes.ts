@@ -9,6 +9,12 @@ export const AUTH = `${SCREENS}/auth`;
 export const PROFILE = `${SCREENS}/profile`;
 export const CREDITS = `${SCREENS}/credits`;
 export const TERMS = `${SCREENS}/terms`;
+/** Routed form of the create-playlist flow, reachable at every width (see
+ *  LibraryRail and the mobile library page). */
+export const CREATE = `${SCREENS}/create`;
+/** Routed form of the queue, reachable at every width (see NowPlayingRail,
+ *  Transport/DevicePlayer/PlaybackBar). */
+export const QUEUE = `${SCREENS}/queue`;
 
 /**
  * Pages that are not music surfaces. On these the shell hides both rails and
@@ -28,4 +34,10 @@ export function isSystemRoute(pathname: string | null | undefined): boolean {
 
 export function playlistHref(id: string): string {
   return `${SCREENS}/playlist/${encodeURIComponent(id)}`;
+}
+
+/** Routed form of the add-music flow for a given playlist, reachable at
+ *  every width (see CollectionDetail's "Add music" control). */
+export function addMusicHref(id: string): string {
+  return `${playlistHref(id)}/add`;
 }
