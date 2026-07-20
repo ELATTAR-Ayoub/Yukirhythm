@@ -56,10 +56,12 @@ export default function RecentsScreen() {
                         role="button"
                         tabIndex={0}
                         aria-label={`Play ${track.title}`}
-                        onClick={() => play(track)}
-                        onKeyDown={playKeyHandler(() => play(track))}
+                        onClick={() => play(track, source)}
+                        onKeyDown={playKeyHandler(() => play(track, source))}
                         className="cursor-pointer"
                       >
+                        {/* The wrapping div is the button; an overlay would
+                            nest one inside it. */}
                         <TrackRow
                           title={track.title}
                           artist={
@@ -70,6 +72,7 @@ export default function RecentsScreen() {
                           duration={entry.timeLabel}
                           texture={track.texture}
                           playing={nowPlaying?.id === track.id && isPlaying}
+                          playable={false}
                         />
                       </div>
                     );
