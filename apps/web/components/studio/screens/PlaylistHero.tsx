@@ -42,23 +42,26 @@ export default function PlaylistHero({
         className="absolute inset-0 bg-gradient-to-t from-card via-card/80 to-transparent"
       />
 
-      <div className="relative flex items-end gap-6 p-6">
+      {/* Stacked on a phone, side by side from sm up. Laid out as a row at
+          every width the disc took most of a 393px screen and left the title
+          about 100px, so "Late Study Lo-Fi" rendered as "Late…". */}
+      <div className="relative flex flex-col items-center gap-4 p-5 text-center sm:flex-row sm:items-end sm:gap-6 sm:p-6 sm:text-left">
         <SpinningDisc
           texture={collection.texture}
           labelTexture="tx-k2-vinyl"
           spinning={spinning}
-          className="w-[200px] h-[200px] shrink-0 disc_shadow"
+          className="w-36 h-36 shrink-0 disc_shadow sm:w-[200px] sm:h-[200px]"
           labelClassName="w-1/3 h-1/3 border-4 border-card"
         />
-        <div className="min-w-0 pb-2">
+        {/* No title here — the page's BackHeader carries it, at every width,
+            in the same type as every other screen's header. Rendering it in
+            both places put two <h1>s on one page: a screen reader announced
+            the collection twice, and on a phone the name was printed twice
+            above the fold. */}
+        <div className="min-w-0 sm:pb-2">
           <div className="font-label text-[11px] uppercase tracking-[0.2em] text-primary">
             {collection.kind}
           </div>
-          {/* type-h1, not type-display: this column will sit flanked by the
-              library rail and the now-playing rail once the desktop shell
-              lands, and type-display's text-6xl reads oversized once a
-              200px disc is already anchoring the row. */}
-          <h1 className="type-h1 truncate mt-1">{collection.title}</h1>
         </div>
       </div>
     </div>

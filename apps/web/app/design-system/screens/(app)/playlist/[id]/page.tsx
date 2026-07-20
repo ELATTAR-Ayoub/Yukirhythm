@@ -2,10 +2,12 @@
 
 import { useParams } from "next/navigation";
 
+import BackHeader from "@/components/studio/screens/BackHeader";
 import EmptyState from "@/components/studio/EmptyState";
 import CollectionDetail from "@/components/studio/screens/CollectionDetail";
 import PlaylistHero from "@/components/studio/screens/PlaylistHero";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
+import { LIBRARY } from "@/components/studio/shell/routes";
 
 export default function PlaylistScreen() {
   const { collections } = useMockStudio();
@@ -34,6 +36,14 @@ export default function PlaylistScreen() {
 
   return (
     <div className="pb-8">
+      {/* The same header every other screen uses — it anchors the top of the
+          page, names where you are, and carries the way back. Playlist detail
+          used to be a sheet you dismissed by swiping; as a route it needs a
+          real exit, and on a phone there is no library rail to fall back to.
+          The hero deliberately has no title of its own so this is the page's
+          single heading. */}
+      <BackHeader title={collection.title} backHref={LIBRARY} />
+
       <PlaylistHero collection={collection} />
       <div className="px-1 mt-4">
         <CollectionDetail collection={collection} />

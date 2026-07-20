@@ -17,7 +17,10 @@ export default function BackHeader({ title, backHref }: BackHeaderProps) {
           <ChevronLeftIcon className="w-5 h-5" />
         </Link>
       </Button>
-      <h1 className="type-h2 truncate">{title}</h1>
+      {/* Same type as PageHeader's title — a sub-screen header and a top-level
+          one sat at different sizes, so moving between them changed the
+          heading size for no reason. */}
+      <h1 className="type-h2 text-2xl sm:text-3xl truncate">{title}</h1>
     </header>
   );
 }
