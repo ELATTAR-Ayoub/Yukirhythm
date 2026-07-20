@@ -1,0 +1,21 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "trackState",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isLiked", "order": "ASCENDING" },
+        { "fieldPath": "likedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "tracks",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isEmbeddable", "order": "ASCENDING" },
+        { "fieldPath": "labelIds", "arrayConfig": "CONTAINS" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
