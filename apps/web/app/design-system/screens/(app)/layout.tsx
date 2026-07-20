@@ -29,6 +29,21 @@ import { isSystemRoute } from "@/components/studio/shell/routes";
  * small `md:p-2` inset around the whole grid, and `main` grows its own
  * `md:px-6 md:pt-6` so its card reads as a page with content, not a bare box.
  */
+/**
+ * Rail geometry and card treatment, shared between a populated rail and the
+ * empty one a system route leaves in its place. A system route empties the
+ * rails, it does not remove them: the panels keep their width, border and
+ * surface so the grid holds its shape and the page column measures the same
+ * on Settings as it does on Home. Walking into a system route should quiet
+ * the rails, not resize the page.
+ */
+const RAIL_SLOT = {
+  library: "hidden md:block md:min-h-0 w-[var(--shell-rail-w)] shrink-0",
+  nowPlaying: "hidden 3xl:block md:min-h-0 w-[var(--shell-rail-w)] shrink-0",
+} as const;
+
+const RAIL_SURFACE = "rounded-2xl border border-border bg-card overflow-hidden";
+
 export default function AppShellLayout({
   children,
 }: {
@@ -44,10 +59,12 @@ export default function AppShellLayout({
       </div>
 
       <div className="md:flex md:flex-1 md:min-h-0 md:gap-2">
-        {system ? null : (
+        {system ? (
+          <div aria-hidden className={cn(RAIL_SLOT.library, RAIL_SURFACE)} />
+        ) : (
           <aside
             aria-labelledby="library-rail-heading"
-            className="hidden md:block md:min-h-0 w-[var(--shell-rail-w)] shrink-0 rounded-2xl border border-border bg-card overflow-hidden"
+            className={cn(RAIL_SLOT.library, RAIL_SURFACE)}
           >
             <LibraryRail />
           </aside>
@@ -64,10 +81,12 @@ export default function AppShellLayout({
           {children}
         </main>
 
-        {system ? null : (
+        {system ? (
+          <div aria-hidden className={cn(RAIL_SLOT.nowPlaying, RAIL_SURFACE)} />
+        ) : (
           <aside
             aria-label="Now playing"
-            className="hidden 3xl:block md:min-h-0 w-[var(--shell-rail-w)] shrink-0 rounded-2xl border border-border bg-card overflow-hidden"
+            className={cn(RAIL_SLOT.nowPlaying, RAIL_SURFACE)}
           >
             <NowPlayingRail />
           </aside>
