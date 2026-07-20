@@ -227,7 +227,10 @@ export default function MockStudioProvider({
       // the queued render, which is not synchronous with this call, so
       // capturing the id from inside one would hand the caller `undefined`.
       const created: MockCollection = {
-        id: `local-${collections.length + 1}`,
+        // Counting collections reuses ids after any removal, which phase 2
+        // introduces — two collections would then share an id and routes would
+        // resolve to the wrong one. Server-issued ids replace this then.
+        id: `local-${crypto.randomUUID()}`,
         title: input.title,
         desc: input.desc,
         texture: input.texture ?? "tx-k-silk",

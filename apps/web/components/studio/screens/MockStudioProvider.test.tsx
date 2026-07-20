@@ -135,6 +135,20 @@ describe("MockStudioProvider", () => {
     expect(result.current.playerExpanded).toBe(false);
   });
 
+  it("issues unique collection ids", () => {
+    const { result } = renderHook(() => useMockStudio(), { wrapper });
+
+    act(() => {
+      result.current.createCollection({ title: "A", desc: "", tags: [], kind: "music" });
+    });
+    act(() => {
+      result.current.createCollection({ title: "B", desc: "", tags: [], kind: "music" });
+    });
+
+    const ids = result.current.collections.map((c) => c.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
   it("clamps seek to the track length instead of auto-advancing", () => {
     const { result } = renderHook(() => useMockStudio(), { wrapper });
 
