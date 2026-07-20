@@ -214,9 +214,14 @@ export default function CollectionDetail({
           texture="tx-k2-static"
         />
       ) : view === "rows" ? (
-        <FadeScrollArea className="space-y-1 pr-0.5">
+        // pr-1 and gap-2 are what put a row's like button on the same column
+        // as the Add music control above it, and give the like/⋯ pair the same
+        // 8px separation the Add music/view-toggle pair has. The two rows
+        // can't also share a right edge — the view toggle is wider than the ⋯
+        // button — and matching the leading control is what reads.
+        <FadeScrollArea className="space-y-1 pr-1">
           {tracks.map((track, i) => (
-            <div key={track.id} className="flex items-center gap-1">
+            <div key={track.id} className="flex items-center gap-2">
               <div
                 role="button"
                 tabIndex={0}

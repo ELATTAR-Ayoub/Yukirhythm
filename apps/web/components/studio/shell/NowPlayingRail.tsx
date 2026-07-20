@@ -81,7 +81,12 @@ function UpNextSection() {
     // than repeating the string — the rail holds three distinct areas and
     // "the queue preview" needs to be addressable as one of them.
     <section aria-labelledby="up-next-label" className="shrink-0">
-      <div className="flex items-center justify-between gap-2 px-4 pt-5 pb-2">
+      {/* Asymmetric on purpose, to line the header up with the rows beneath
+          it: the list is inset px-3 and TrackRow adds another px-3, so the
+          artwork starts 24px in — pl-6 puts the label on that same edge. The
+          rows' trailing control sits 12px from the rail edge, so pr-3 puts
+          the queue button on the same column as the hearts. */}
+      <div className="flex items-center justify-between gap-2 pl-6 pr-3 pt-5 pb-2">
         <SectionLabel id="up-next-label">Up next</SectionLabel>
         <PlayerButton
           variant="ghost"

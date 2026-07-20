@@ -66,17 +66,17 @@ export default function StudioHeader() {
 
   return (
     <header className="h-[var(--shell-header-h)] shrink-0 flex items-center gap-3 px-3">
-      <Link href={HOME} className="flex items-center gap-2 shrink-0 px-1">
+      {/* No wordmark beside the mark — the asset already contains one, so the
+          text set the name twice. The alt carries it for anyone who can't see
+          the logo, since there is no visible text to name this link now. */}
+      <Link href={HOME} className="flex items-center shrink-0 px-1">
         <Image
           src="/svgs/logo_light.svg"
           width={20}
           height={20}
-          alt=""
+          alt="Yukirhythm"
           className="h-5 w-auto object-contain"
         />
-        <span className="font-display font-bold tracking-tight hidden sm:inline">
-          Yukirhythm
-        </span>
       </Link>
 
       <div className="flex-1 flex items-center justify-center gap-2 min-w-0">
