@@ -10,8 +10,10 @@ import {
   HISTORY_GROUPS,
   getTrack,
 } from "@/components/studio/screens/mock-data";
+import { SCREENS } from "@/components/studio/shell/routes";
 
-const BASE = "/design-system/screens";
+/** Route base — the app lives at the root (see shell/routes.ts). */
+const BASE = SCREENS;
 
 export default function RecentsScreen() {
   const { user, collections, play, nowPlaying, isPlaying, recents } = useMockStudio();

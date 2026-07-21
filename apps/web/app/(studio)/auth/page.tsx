@@ -7,8 +7,10 @@ import { useRouter } from "next/navigation";
 import { TextureBackground } from "@/components/ui/texture-background";
 import SocialAuthButtons from "@/components/studio/screens/SocialAuthButtons";
 import ScreensFrame from "@/components/studio/screens/ScreensFrame";
+import { SCREENS } from "@/components/studio/shell/routes";
 
-const BASE = "/design-system/screens";
+/** Route base — the app lives at the root (see shell/routes.ts). */
+const BASE = SCREENS;
 
 /** One door for everyone — Firebase social sign-in creates accounts on first login. */
 export default function AuthScreen() {

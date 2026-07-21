@@ -8,11 +8,13 @@ import DataText from "@/components/studio/DataText";
 import TrackRow from "@/components/studio/TrackRow";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
 import {
-    formatDuration,
+  formatDuration,
   getTrack,
 } from "@/components/studio/screens/mock-data";
+import { SCREENS } from "@/components/studio/shell/routes";
 
-const BASE = "/design-system/screens";
+/** Route base — the app lives at the root (see shell/routes.ts). */
+const BASE = SCREENS;
 
 export default function StatsScreen() {
   const { user, play, nowPlaying, isPlaying, stats } = useMockStudio();

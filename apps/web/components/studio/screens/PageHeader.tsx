@@ -4,8 +4,10 @@ import Link from "next/link";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useMockStudio } from "./MockStudioProvider";
+import { SCREENS } from "@/components/studio/shell/routes";
 
-const BASE = "/design-system/screens";
+/** Route base — the app lives at the root (see shell/routes.ts). */
+const BASE = SCREENS;
 
 interface PageHeaderProps {
   title: string;

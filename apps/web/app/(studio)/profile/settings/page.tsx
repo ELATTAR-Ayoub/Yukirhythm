@@ -10,8 +10,10 @@ import SignInPrompt from "@/components/studio/screens/SignInPrompt";
 import SectionLabel from "@/components/studio/SectionLabel";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
 import { useSignOut } from "@/components/studio/screens/useSignOut";
+import { SCREENS } from "@/components/studio/shell/routes";
 
-const BASE = "/design-system/screens";
+/** Route base — the app lives at the root (see shell/routes.ts). */
+const BASE = SCREENS;
 
 function SettingRow({ label, value }: { label: string; value: string }) {
   return (

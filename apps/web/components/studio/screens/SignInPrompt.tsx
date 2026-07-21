@@ -2,8 +2,10 @@ import Link from "next/link";
 
 import EmptyState from "@/components/studio/EmptyState";
 import { Button } from "@/components/ui/button";
+import { SCREENS } from "@/components/studio/shell/routes";
 
-const BASE = "/design-system/screens";
+/** Route base — the app lives at the root (see shell/routes.ts). */
+const BASE = SCREENS;
 
 interface SignInPromptProps {
   title?: string;

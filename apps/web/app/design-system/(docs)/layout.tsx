@@ -56,7 +56,7 @@ export default function DesignSystemDocsLayout({
               Components
             </Link>
             <Link
-              href="/design-system/screens"
+              href="/home"
               className="px-3 py-1.5 rounded-md hover:bg-secondary transition-colors duration-fast"
             >
               Screens

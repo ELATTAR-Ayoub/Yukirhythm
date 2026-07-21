@@ -8,8 +8,10 @@ import BackHeader from "@/components/studio/screens/BackHeader";
 import SignInPrompt from "@/components/studio/screens/SignInPrompt";
 import ToggleSwitch from "@/components/studio/screens/ToggleSwitch";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
+import { SCREENS } from "@/components/studio/shell/routes";
 
-const BASE = "/design-system/screens";
+/** Route base — the app lives at the root (see shell/routes.ts). */
+const BASE = SCREENS;
 
 function PrivacyRow({
   label,

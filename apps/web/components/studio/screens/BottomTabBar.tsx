@@ -8,8 +8,10 @@ import {
 } from "@radix-ui/react-icons";
 
 import NavTabs, { type NavTabItem } from "./NavTabs";
+import { SCREENS } from "@/components/studio/shell/routes";
 
-const BASE = "/design-system/screens";
+/** Route base — the app lives at the root (see shell/routes.ts). */
+const BASE = SCREENS;
 
 const TABS: NavTabItem[] = [
   { href: `${BASE}/home`, label: "Home", icon: HomeIcon },

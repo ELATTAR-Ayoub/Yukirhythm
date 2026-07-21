@@ -3,8 +3,10 @@ import type { Metadata } from "next";
 import BackHeader from "@/components/studio/screens/BackHeader";
 import SectionLabel from "@/components/studio/SectionLabel";
 import ScreensFrame from "@/components/studio/screens/ScreensFrame";
+import { SCREENS } from "@/components/studio/shell/routes";
 
-const BASE = "/design-system/screens";
+/** Route base — the app lives at the root (see shell/routes.ts). */
+const BASE = SCREENS;
 
 export const metadata: Metadata = {
   title: "Terms · Yukirhythm",

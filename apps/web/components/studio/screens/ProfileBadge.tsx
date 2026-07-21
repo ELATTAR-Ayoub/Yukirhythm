@@ -6,8 +6,10 @@ import { ChevronRightIcon } from "@radix-ui/react-icons";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import DataText from "@/components/studio/DataText";
 import type { MockUser } from "./mock-data";
+import { SCREENS } from "@/components/studio/shell/routes";
 
-const BASE = "/design-system/screens";
+/** Route base — the app lives at the root (see shell/routes.ts). */
+const BASE = SCREENS;
 
 interface ProfileBadgeProps {
   user: MockUser;

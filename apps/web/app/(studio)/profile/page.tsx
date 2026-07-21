@@ -12,8 +12,10 @@ import ProfileBadge from "@/components/studio/screens/ProfileBadge";
 import SignInPrompt from "@/components/studio/screens/SignInPrompt";
 import { MenuList, MenuRow } from "@/components/studio/screens/MenuList";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
+import { SCREENS } from "@/components/studio/shell/routes";
 
-const BASE = "/design-system/screens";
+/** Route base — the app lives at the root (see shell/routes.ts). */
+const BASE = SCREENS;
 
 export default function ProfileHub() {
   const { user } = useMockStudio();

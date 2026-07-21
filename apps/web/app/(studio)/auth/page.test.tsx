@@ -43,6 +43,6 @@ describe("AuthScreen", () => {
     expect(screen.getByTestId("session").textContent).toBe("guest");
     fireEvent.click(screen.getByRole("button", { name: /continue with google/i }));
     expect(screen.getByTestId("session").textContent).toBe("Yuki Sato");
-    expect(push).toHaveBeenCalledWith("/design-system/screens/home");
+    expect(push).toHaveBeenCalledWith("/home");
   });
 });

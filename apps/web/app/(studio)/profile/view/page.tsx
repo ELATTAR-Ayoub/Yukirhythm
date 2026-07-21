@@ -6,8 +6,10 @@ import SignInPrompt from "@/components/studio/screens/SignInPrompt";
 import StatCard from "@/components/studio/screens/StatCard";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
 import { MOCK_STATS } from "@/components/studio/screens/mock-data";
+import { SCREENS } from "@/components/studio/shell/routes";
 
-const BASE = "/design-system/screens";
+/** Route base — the app lives at the root (see shell/routes.ts). */
+const BASE = SCREENS;
 
 export default function ViewProfileScreen() {
   const { user } = useMockStudio();
