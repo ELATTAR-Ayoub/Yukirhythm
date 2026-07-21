@@ -204,18 +204,26 @@ transport are UI → phase 8. Stats rollups consume these events in phase 5.
 
 ## Phase 5 — Stats
 
-- [ ] `users/{uid}/stats/rollup` maintained incrementally by the event pipeline
-- [ ] Store the user's IANA timezone on the rollup
-- [ ] Scheduled sweep for rolling windows — `minutesWeek` never decreases without it
-- [ ] `minutesWeek` / `minutesMonth` / **`minutesYear`** / `minutesAllTime`
-- [ ] `streakDays` — consecutive days with ≥1 completed play, in the user's timezone
-- [ ] `topArtists`, `topTrackIds`, `genreSplit`, `byHour[24]`
-- [ ] `GET /api/me/stats` → `/profile/stats` on real data
-- [ ] `GET /api/me/recents?cursor=` → `/profile/recents` with provenance and pagination
-- [ ] Derive Today/Yesterday/This week from timestamps — today `group` is a hardcoded field and
-      `timeLabel` a display string
+Detailed plan: `2026-07-20-phase-5-stats.md`. **Backend delivered** — compute-on-read.
 
-**Closes:** Stats and Recents stop being fiction.
+- [~] Cached `stats/rollup` + scheduled sweep — **deferred** (scale optimization); computed on
+      read instead, so the rolling windows decrease as events age out with no sweep needed
+- [x] Timezone handled per-request (`?tz=`); `byHour` uses the event's stored local hour
+- [x] `minutesWeek` / `minutesMonth` / **`minutesYear`** / `minutesAllTime`
+- [x] `streakDays` — consecutive days with ≥1 completed play, in the user's timezone
+- [x] `topArtists`, `topTrackIds`, `genreSplit`, `byHour[24]`
+- [x] `GET /api/me/stats` — computed from real events
+- [x] `GET /api/me/recents?cursor=` — provenance + cursor pagination
+- [→] Derive Today/Yesterday/This week for the screen → phase 8 (recents returns `startedAtMs`)
+
+**Phase 5 complete — 2026-07-20.** Backend verified with **real data, no mocks**: a 10-test
+pure-aggregation unit suite (window boundaries, tz-aware streak, ranking, genre denominator) plus
+6 integration tests against the real emulator; `scripts/demo-stats.ts` computes a week of real
+plays into stats (streak 3, top artist, genre split, peak hour) and paginated recents with
+provenance. Adds the `playEvents` composite index for production. 75 integration + 315 unit green.
+
+**Closes ledger rows implied by Stats/Recents at the data layer.** The screens render them in
+phase 8.
 
 ---
 
