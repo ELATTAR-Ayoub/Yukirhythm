@@ -147,21 +147,30 @@ phase 8** (screens still on `MockStudioProvider`). Row 17 (clear history) reassi
 
 ## Phase 3 — Playback state
 
-- [ ] `users/{uid}/playback/current` document
-- [ ] `GET/PUT /api/me/playback` — restore on load, throttled writes (10s + on pause/unload)
-- [ ] Replace the derived queue with the persisted one; keep `sourceType`/`sourceId` provenance
-- [ ] `POST /api/me/playback/queue` — enqueue and **play next** (`manualQueue`)
-- [ ] `DELETE /api/me/playback/queue/[index]` — remove
-- [ ] **Queue reorder + remove UI** on the queue route — no representation today
-- [ ] `TrackMenu`: add "Add to queue" and "Play next" — this is the `row_queue` signal that has
-      been documented but never emitted
-- [ ] **`shuffleMode` as a real mode.** Today shuffle is a one-shot random start index.
-- [ ] **`repeatMode` as a real mode** (`off`/`all`/`one`). Today the loop button holds a local
-      boolean **nothing reads**, while `next`/`prev` wrap unconditionally regardless of it.
-- [ ] **Add a volume control to `Transport`.** There is none anywhere in the player, despite
-      `volume_change` being in the signal vocabulary from the start.
-- [ ] `resumeSec` written on pause/stop; restored on play
-- [ ] Replace the wall-clock `setInterval` ticker with real media `currentTime`
+Detailed plan: `2026-07-20-phase-3-playback-state.md`. **Backend delivered.** Player-UI rows
+(marked → below) land in phase 8.
+
+- [x] `users/{uid}/playback/current` document (spec §5.8), `PlaybackState` + `EMPTY_PLAYBACK`
+- [x] `GET/PUT /api/me/playback` — restore on load; PUT is a throttled, clamped partial write
+- [→] Replace the derived queue with the persisted one → phase 8 (state + routes exist)
+- [x] `POST /api/me/playback/queue` — enqueue and **play next** (`manualQueue`)
+- [x] `DELETE /api/me/playback/queue/[index]` — remove, cursor-preserving
+- [→] **Queue reorder + remove UI** → phase 8 (remove API exists; reorder rides the PUT queue)
+- [→] `TrackMenu` "Add to queue" / "Play next" (`row_queue`) → phase 8 (enqueue API exists)
+- [→] **`shuffleMode` as a real mode** → phase 8 (field persisted)
+- [→] **`repeatMode` as a real mode** (`off`/`all`/`one`) → phase 8 (field persisted, enum-checked)
+- [→] **Volume control in `Transport`** → phase 8 (`volume` persisted, clamped `[0,1]`)
+- [x] `resumeSec` persisted via `positionSec`; restored by `GET /api/me/playback`
+- [→] Replace the wall-clock ticker with a real media `currentTime` → phase 8
+
+**Phase 3 complete — 2026-07-20.** Backend verified with **real data, no mocks**: 12 integration
+tests against the real emulator (field clamping, mode validation, partial-merge, queue-cursor
+logic), the four client methods verified over real HTTP, and `scripts/demo-playback.ts` building
+a queue from live YouTube, mutating it, and resuming it across a simulated reload. 63 integration
++ 301 unit green; typecheck and build clean.
+
+**Closes ledger rows 29 (enqueue/play-next), 30 (queue remove — API), 32 (resume) at the data
+layer.** Rows 26/27/28/31 (loop, shuffle, volume, `row_queue` UI) are UI and land in phase 8.
 
 **Closes:** 8 stubs. This is the phase where the player stops being a simulation.
 
