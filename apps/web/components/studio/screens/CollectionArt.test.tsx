@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { render } from "@testing-library/react";
 
 import CollectionArt from "./CollectionArt";
-import { getTrack } from "./mock-data";
+import { getTrack, registerStudioTracks } from "./mock-data";
 
 /** Pulls the `/textures/NAME.png` name out of every element's inline
  *  `background-image`, in DOM order — the honest signal for "which texture
@@ -92,5 +92,49 @@ describe("CollectionArt", () => {
       T3.texture,
       T4.texture,
     ]);
+  });
+
+  it("renders the collection's own cover image when it has one", () => {
+    const { container } = render(
+      <CollectionArt
+        collection={{
+          texture: "tx-k-silk",
+          cover: "image",
+          artUrl: "https://cdn/cover.jpg",
+          trackIds: [],
+        }}
+      />
+    );
+    expect(container.querySelector('img[src="https://cdn/cover.jpg"]')).toBeTruthy();
+  });
+
+  it("composes the mosaic from the tracks' real thumbnails", () => {
+    registerStudioTracks([
+      { id: "m1", title: "One", artist: "A", texture: "tx-k-silk", durationSec: 1, artUrl: "https://cdn/1.jpg" },
+      { id: "m2", title: "Two", artist: "B", texture: "tx-k-marble", durationSec: 1, artUrl: "https://cdn/2.jpg" },
+    ]);
+
+    const { container } = render(
+      <CollectionArt
+        collection={{ texture: "tx-k-silk", cover: "mosaic", trackIds: ["m1", "m2"] }}
+      />
+    );
+    expect(container.querySelector('img[src="https://cdn/1.jpg"]')).toBeTruthy();
+    expect(container.querySelector('img[src="https://cdn/2.jpg"]')).toBeTruthy();
+  });
+
+  it("falls back per cell when only some tracks have artwork", () => {
+    registerStudioTracks([
+      { id: "m3", title: "Three", artist: "C", texture: "tx-k-silk", durationSec: 1, artUrl: "https://cdn/3.jpg" },
+      { id: "m4", title: "Four", artist: "D", texture: "tx-k-marble", durationSec: 1 },
+    ]);
+
+    const { container } = render(
+      <CollectionArt
+        collection={{ texture: "tx-k-silk", cover: "mosaic", trackIds: ["m3", "m4"] }}
+      />
+    );
+    // One real image, one texture cell — not an empty square.
+    expect(container.querySelectorAll("img")).toHaveLength(1);
   });
 });
