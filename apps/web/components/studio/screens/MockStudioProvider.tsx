@@ -99,7 +99,11 @@ interface MockStudioValue {
   toggleMute: () => void;
 }
 
-const MockStudioContext = createContext<MockStudioValue | null>(null);
+// Exported so the real StudioProvider (phase 8) can feed the same context —
+// the screens call useMockStudio() and neither knows nor cares which provider
+// is above them.
+export const MockStudioContext = createContext<MockStudioValue | null>(null);
+export type { MockStudioValue };
 
 export function useMockStudio(): MockStudioValue {
   const ctx = useContext(MockStudioContext);

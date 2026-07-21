@@ -174,8 +174,20 @@ export const EXPLORE_TILES: { label: string; texture: TextureName }[] = [
   { label: "Glitch", texture: "tx-k-glitch" },
 ];
 
+/**
+ * A runtime registry the real StudioProvider (phase 8) fills with tracks
+ * fetched from the backend, so the screens' getTrack/getCollectionTracks
+ * resolve real ids without every component taking a provider dependency.
+ * Empty in the mock preview; the seed catalogue below still resolves.
+ */
+const trackRegistry = new Map<string, MockTrack>();
+
+export function registerStudioTracks(tracks: MockTrack[]): void {
+  for (const t of tracks) trackRegistry.set(t.id, t);
+}
+
 export function getTrack(id: string): MockTrack | undefined {
-  return MOCK_TRACKS.find((t) => t.id === id);
+  return trackRegistry.get(id) ?? MOCK_TRACKS.find((t) => t.id === id);
 }
 
 export function getCollectionTracks(collection: MockCollection): MockTrack[] {

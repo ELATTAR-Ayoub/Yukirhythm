@@ -43,3 +43,18 @@ export async function signIn(
 export function signOutUser(): Promise<void> {
   return fbSignOut(auth);
 }
+
+/**
+ * Dev-only email/password sign-in for the Auth emulator — no popup, so the
+ * migration can be driven headlessly. Creates the account on first use. Never
+ * exposed in production (guarded by NEXT_PUBLIC_AUTH_EMULATOR at the call site).
+ */
+export async function devSignIn(email: string, password: string): Promise<void> {
+  const { createUserWithEmailAndPassword, signInWithEmailAndPassword } =
+    await import("firebase/auth");
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+  } catch {
+    await createUserWithEmailAndPassword(auth, email, password);
+  }
+}
