@@ -88,4 +88,26 @@ describe("PlaylistHero", () => {
     fireEvent.click(screen.getByText("toggle"));
     expect(stillTurningAfterSettling(container)).toBe(false);
   });
+
+  it("puts an image cover's real artwork on the disc, not a texture", () => {
+    // The background wash (CollectionArt, rendered above the disc) also
+    // draws this same URL, so a bare "at least one <img> with this src"
+    // assertion would pass even with the bug present — it'd just be seeing
+    // the wash. Scope to the disc itself (`.disc_shadow`, SpinningDisc's own
+    // wrapper) so this only passes when the DISC carries the real artwork.
+    const { container } = render(
+      <MockStudioProvider>
+        <PlaylistHero
+          collection={{
+            ...MOCK_COLLECTIONS[0],
+            cover: "image",
+            artUrl: "https://cdn/hero.jpg",
+          }}
+        />
+      </MockStudioProvider>
+    );
+    const disc = container.querySelector(".disc_shadow");
+    expect(disc).toBeTruthy();
+    expect(disc!.querySelector('img[src="https://cdn/hero.jpg"]')).toBeTruthy();
+  });
 });

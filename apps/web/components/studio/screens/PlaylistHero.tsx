@@ -21,7 +21,6 @@ export default function PlaylistHero({
 }) {
   const { playingCollection, isPlaying } = useMockStudio();
   const spinning = playingCollection?.id === collection.id && isPlaying;
-  const isMosaic = collection.cover === "mosaic";
 
   return (
     <div className="relative overflow-hidden rounded-xl">
@@ -50,9 +49,10 @@ export default function PlaylistHero({
         <SpinningDisc
           texture={collection.texture}
           art={
-            isMosaic ? (
-              <CollectionArt collection={collection} className="absolute inset-0 w-full h-full" />
-            ) : undefined
+            <CollectionArt
+              collection={collection}
+              className="absolute inset-0 w-full h-full"
+            />
           }
           labelTexture="tx-k2-vinyl"
           spinning={spinning}
