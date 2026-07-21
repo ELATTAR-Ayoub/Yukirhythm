@@ -23,6 +23,14 @@
         { "fieldPath": "userId", "order": "ASCENDING" },
         { "fieldPath": "startedAt", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "tracks",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isEmbeddable", "order": "ASCENDING" },
+        { "fieldPath": "stats.viewCount", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

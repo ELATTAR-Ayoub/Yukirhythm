@@ -10,6 +10,15 @@ import type {
   User,
 } from "@/lib/catalog/model";
 
+/** A recommended track with why it surfaced — for the feed rails and the loop. */
+export type FeedItem = {
+  trackId: string;
+  score: number;
+  reason: string;
+  recommendationId: string;
+  track: Track;
+};
+
 export type RecentsPage = {
   items: {
     eventId: string;
@@ -88,6 +97,20 @@ export function createBackendClient(getToken: TokenProvider) {
           method: "POST",
           body: body({ events }),
         }),
+    },
+
+    /** Recommendation feeds — every item carries a recommendationId + reason. */
+    feed: {
+      jumpBackIn: () =>
+        request<{ collections: Collection[] }>(endpoints.feed.jumpBackIn()),
+      newReleases: () =>
+        request<{ personalized: boolean; items: FeedItem[] }>(
+          endpoints.feed.newReleases()
+        ),
+      youMightLike: () =>
+        request<{ personalized: boolean; items: FeedItem[] }>(
+          endpoints.feed.youMightLike()
+        ),
     },
 
     collections: {
