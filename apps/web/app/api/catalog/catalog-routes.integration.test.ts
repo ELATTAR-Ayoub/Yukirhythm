@@ -13,7 +13,7 @@ import type { ProviderTrack } from "@/lib/catalog/types";
 import type { Track } from "@/lib/catalog/model";
 
 import { GET as searchGET } from "./search/route";
-import { GET as browseGET } from "./browse/route";
+import { GET as browseGET } from "./tracks/route";
 import { GET as suggestGET } from "./suggest/route";
 
 /**
@@ -142,11 +142,11 @@ describe("GET /api/catalog/search", () => {
   });
 });
 
-describe("GET /api/catalog/browse", () => {
+describe("GET /api/catalog/tracks", () => {
   beforeEach(() => clearFirestore());
 
   it("400 on a label outside the vocabulary", async () => {
-    const res = await browseGET(req("/api/catalog/browse?label=polka", token));
+    const res = await browseGET(req("/api/catalog/tracks?label=polka", token));
     expect(res.status).toBe(400);
   });
 
@@ -166,7 +166,7 @@ describe("GET /api/catalog/browse", () => {
       .doc("jazzA")
       .set({ labelIds: ["jazz"] }, { merge: true });
 
-    const res = await browseGET(req("/api/catalog/browse?label=Lo-Fi", token));
+    const res = await browseGET(req("/api/catalog/tracks?label=Lo-Fi", token));
     expect(res.status).toBe(200);
 
     const body = (await res.json()) as {

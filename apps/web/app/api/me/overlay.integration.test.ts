@@ -8,9 +8,9 @@ import {
 } from "@/lib/catalog/__integration__/emulator";
 import type { ProviderTrack } from "@/lib/catalog/types";
 
-import { PUT as putTrackState } from "./track-state/[trackId]/route";
-import { GET as getLiked } from "./liked/route";
-import { PUT as putCollectionState } from "./collection-state/[collectionId]/route";
+import { PUT as putTrackState } from "./tracks/[trackId]/route";
+import { GET as getLiked } from "./likes/route";
+import { PUT as putCollectionState } from "./pins/[collectionId]/route";
 
 function providerTrack(id: string, title: string): ProviderTrack {
   return {

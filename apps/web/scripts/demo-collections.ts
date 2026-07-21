@@ -18,9 +18,9 @@ import {
   PUT as addTrack,
   DELETE as removeTrack,
 } from "@/app/api/collections/[collectionId]/tracks/[trackId]/route";
-import { PATCH as reorder } from "@/app/api/collections/[collectionId]/order/route";
-import { PUT as likeTrack } from "@/app/api/me/track-state/[trackId]/route";
-import { GET as getLiked } from "@/app/api/me/liked/route";
+import { PATCH as reorder } from "@/app/api/collections/[collectionId]/tracks/route";
+import { PUT as likeTrack } from "@/app/api/me/tracks/[trackId]/route";
+import { GET as getLiked } from "@/app/api/me/likes/route";
 
 const auth = (token: string, method = "GET", body?: unknown) =>
   new Request("http://localhost/x", {

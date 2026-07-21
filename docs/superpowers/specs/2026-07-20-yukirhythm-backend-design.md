@@ -515,23 +515,51 @@ the normalised query, TTL 24h, cuts provider load and survives a provider outage
 Route Handlers under `apps/web/app/api/`. Every route derives uid from the verified Bearer token
 via `uidFromRequest` — never from the body. Firestore rules stay `allow read, write: if false`.
 
-**Catalog**
+**Naming convention (standardized).** Plural resource nouns, no action words in paths — the HTTP
+method carries the verb. Per-user resources live under `/api/me/`; shared catalog under
+`/api/catalog/`; owned playlists under `/api/collections/`; other users under `/api/users/`.
+A collection is filtered with query params (`?label=`, `?q=`), not an action segment.
+
+**Catalog** (shared, read-mostly)
 
 | Method | Route | Purpose |
 |---|---|---|
 | GET | `/api/catalog/search?q=&type=` | provider search, cached, ingests results |
 | GET | `/api/catalog/suggest?q=` | autocomplete |
-| GET | `/api/catalog/tracks/[trackId]` | canonical track, enriches on first fetch |
-| GET | `/api/catalog/artists/[artistId]` | canonical artist |
-| GET | `/api/catalog/browse?label=` | explore tiles (§6.4) |
+| GET | `/api/catalog/tracks?label=` | tracks filtered by taxonomy label — the explore tiles (§6.4) |
+| GET | `/api/catalog/tracks/[trackId]` | one canonical track, enriches on first fetch |
+| GET | `/api/catalog/artists/[artistId]` | one canonical artist |
 
-**Library search** — the missing piece the Search screen needs
+**Collections** (owned playlists)
 
 | Method | Route | Purpose |
 |---|---|---|
-| GET | `/api/library/search?q=` | the caller's collections and liked tracks by title/tag |
+| GET | `/api/collections` | owned + saved, merged |
+| POST | `/api/collections` | create — accepts `title, description, tags, contentType, texture, cover, trackIds` in one call |
+| GET/PATCH/DELETE | `/api/collections/[id]` | read / edit / delete |
+| PATCH | `/api/collections/[id]/tracks` | reorder (body: ordered `trackIds`, must be a permutation) |
+| PUT/DELETE | `/api/collections/[id]/tracks/[trackId]` | add / remove, transactional, updates `stats` |
+| PUT/DELETE | `/api/collections/[id]/save` | save / unsave someone else's public collection |
+| GET | `/api/collections/public?ownerId=` | another user's public collections |
 
-**Feeds**
+**Me** (the authenticated user)
+
+| Method | Route | Purpose |
+|---|---|---|
+| GET/POST/PATCH | `/api/me` | profile, privacy, settings |
+| GET | `/api/me/library?q=` | the caller's own collections and liked tracks by title/tag |
+| GET | `/api/me/likes` | Liked Songs — the virtual collection (§5.3, D8) |
+| PUT | `/api/me/tracks/[trackId]` | per-track overlay: like, resume position |
+| PUT/DELETE | `/api/me/pins/[collectionId]` | pin / unpin a collection |
+| GET | `/api/me/playback` | restore playback state on load |
+| PUT | `/api/me/playback` | throttled write of position, queue, modes |
+| POST | `/api/me/playback/queue` | enqueue / play-next |
+| DELETE | `/api/me/playback/queue/[index]` | remove from queue |
+| GET | `/api/me/stats` | the rollup |
+| GET | `/api/me/recents?cursor=` | paginated history with provenance |
+| DELETE | `/api/me/history` | clear listening history |
+
+**Feeds** (recommendations)
 
 | Method | Route | Purpose |
 |---|---|---|
@@ -539,43 +567,16 @@ via `uidFromRequest` — never from the body. Firestore rules stay `allow read, 
 | GET | `/api/feed/new-releases` | §6.2 |
 | GET | `/api/feed/you-might-like` | §6.3 |
 
-**Collections**
-
-| Method | Route | Purpose |
-|---|---|---|
-| GET | `/api/collections` | owned + saved, merged |
-| POST | `/api/collections` | create — accepts `title, description, tags, contentType, texture, cover, trackIds` in one call (the wizard sends all seven) |
-| GET/PATCH/DELETE | `/api/collections/[id]` | read / edit / delete |
-| PUT/DELETE | `/api/collections/[id]/tracks/[trackId]` | add / remove, transactional, updates `stats` |
-| PATCH | `/api/collections/[id]/order` | reorder |
-| PUT/DELETE | `/api/collections/[id]/save` | save / unsave someone else's public collection |
-| GET | `/api/collections/public?ownerId=` | another user's public collections |
-
-**Playback**
-
-| Method | Route | Purpose |
-|---|---|---|
-| GET | `/api/me/playback` | restore state on load |
-| PUT | `/api/me/playback` | throttled write of position, queue, modes |
-| POST | `/api/me/playback/queue` | enqueue / play-next |
-| DELETE | `/api/me/playback/queue/[index]` | remove from queue |
-
-**Events and stats**
+**Events**
 
 | Method | Route | Purpose |
 |---|---|---|
 | POST | `/api/events` | batched play events, gated on `saveHistory` |
-| GET | `/api/me/stats` | the rollup |
-| GET | `/api/me/recents?cursor=` | paginated history with provenance |
-| DELETE | `/api/me/history` | clear listening history |
 
-**Me and social**
+**Users** (social)
 
 | Method | Route | Purpose |
 |---|---|---|
-| GET/POST/PATCH | `/api/me` | profile, privacy, settings |
-| PUT | `/api/me/track-state/[trackId]` | like, resume position |
-| PUT | `/api/me/collection-state/[id]` | pin |
 | GET | `/api/users/[userId]` | public profile, 404 unless `publicProfile` |
 | PUT/DELETE | `/api/users/[userId]/follow` | follow / unfollow, transactional counts |
 | GET | `/api/users/[userId]/followers` | paginated |

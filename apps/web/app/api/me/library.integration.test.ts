@@ -8,10 +8,10 @@ import {
 import type { ProviderTrack } from "@/lib/catalog/types";
 import type { Collection, Track } from "@/lib/catalog/model";
 
-import { POST as createUser } from "../me/route";
+import { POST as createUser } from "./route";
 import { POST as createCollection } from "../collections/route";
-import { PUT as putTrackState } from "../me/track-state/[trackId]/route";
-import { GET as librarySearch } from "./search/route";
+import { PUT as putTrackState } from "./tracks/[trackId]/route";
+import { GET as librarySearch } from "./library/route";
 
 function providerTrack(id: string, title: string, artist: string): ProviderTrack {
   return {
@@ -49,7 +49,7 @@ beforeAll(async () => {
   other = await mintIdToken(`libother-${Date.now()}@x.com`);
 });
 
-describe("GET /api/library/search against real Firestore", () => {
+describe("GET /api/me/library against real Firestore", () => {
   beforeEach(async () => {
     await clearFirestore();
     await ingestTracks([
@@ -61,14 +61,14 @@ describe("GET /api/library/search against real Firestore", () => {
   });
 
   it("401 without a token", async () => {
-    expect((await librarySearch(auth("", "/api/library/search?q=x"))).status).toBe(401);
+    expect((await librarySearch(auth("", "/api/me/library?q=x"))).status).toBe(401);
   });
 
   it("finds the caller's own collection by title", async () => {
     await createCollection(
       auth(owner, "/api/collections", "POST", { title: "Rainy Tapes", tags: ["rain"] })
     );
-    const res = await librarySearch(auth(owner, "/api/library/search?q=rainy"));
+    const res = await librarySearch(auth(owner, "/api/me/library?q=rainy"));
     const body = (await res.json()) as { collections: Collection[] };
     expect(body.collections.map((c) => c.title)).toEqual(["Rainy Tapes"]);
   });
@@ -77,7 +77,7 @@ describe("GET /api/library/search against real Firestore", () => {
     await createCollection(
       auth(owner, "/api/collections", "POST", { title: "Untitled", tags: ["Focus"] })
     );
-    const res = await librarySearch(auth(owner, "/api/library/search?q=FOCUS"));
+    const res = await librarySearch(auth(owner, "/api/me/library?q=FOCUS"));
     const body = (await res.json()) as { collections: Collection[] };
     expect(body.collections).toHaveLength(1);
   });
@@ -88,12 +88,12 @@ describe("GET /api/library/search against real Firestore", () => {
     });
 
     const byTitle = (await (
-      await librarySearch(auth(owner, "/api/library/search?q=snowfall"))
+      await librarySearch(auth(owner, "/api/me/library?q=snowfall"))
     ).json()) as { tracks: Track[] };
     expect(byTitle.tracks.map((t) => t.trackId)).toEqual(["t1"]);
 
     const byArtist = (await (
-      await librarySearch(auth(owner, "/api/library/search?q=aoi"))
+      await librarySearch(auth(owner, "/api/me/library?q=aoi"))
     ).json()) as { tracks: Track[] };
     expect(byArtist.tracks.map((t) => t.trackId)).toEqual(["t1"]);
   });
@@ -102,7 +102,7 @@ describe("GET /api/library/search against real Firestore", () => {
     await createCollection(
       auth(other, "/api/collections", "POST", { title: "Rainy Secrets", tags: ["rain"] })
     );
-    const res = await librarySearch(auth(owner, "/api/library/search?q=rainy"));
+    const res = await librarySearch(auth(owner, "/api/me/library?q=rainy"));
     const body = (await res.json()) as { collections: Collection[] };
     expect(body.collections).toHaveLength(0);
   });

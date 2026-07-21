@@ -20,7 +20,7 @@ import {
   PUT as addTrack,
   DELETE as removeTrack,
 } from "./[collectionId]/tracks/[trackId]/route";
-import { PATCH as reorder } from "./[collectionId]/order/route";
+import { PATCH as reorder } from "./[collectionId]/tracks/route";
 
 function providerTrack(id: string, durationSec: number): ProviderTrack {
   return {

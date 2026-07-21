@@ -42,9 +42,9 @@ async function main(): Promise<void> {
     "@/app/api/collections/[collectionId]/tracks/[trackId]/route"
   );
   const { PUT: likeTrack } = await import(
-    "@/app/api/me/track-state/[trackId]/route"
+    "@/app/api/me/tracks/[trackId]/route"
   );
-  const { GET: likedGET } = await import("@/app/api/me/liked/route");
+  const { GET: likedGET } = await import("@/app/api/me/likes/route");
 
   const db = adminDb();
   const before = {
@@ -129,7 +129,7 @@ async function main(): Promise<void> {
       virtual: boolean;
       tracks: { title: string }[];
     };
-    console.log(`GET /api/me/liked (virtual=${liked.virtual}): ${liked.tracks.map((t) => t.title).join(" | ")}`);
+    console.log(`GET /api/me/likes (virtual=${liked.virtual}): ${liked.tracks.map((t) => t.title).join(" | ")}`);
 
     console.log("\nALL ROUTES OK against production with a real user id.");
   } finally {
