@@ -196,6 +196,53 @@ export type PlaybackState = {
 
 export const REPEAT_MODES = ["off", "all", "one"] as const;
 
+export type EventSource =
+  | "collection"
+  | "search"
+  | "library"
+  | "radio"
+  | "recommendation";
+
+/**
+ * An append-only play event (spec §5.9). `listenedSec` is actual seconds heard,
+ * not the track length. `clientHourOfDay` is captured LOCAL to the user so the
+ * stats histogram is correct even if their timezone later changes.
+ */
+export type PlayEvent = {
+  eventId: string;
+  userId: string;
+  trackId: string;
+  collectionId: string | null;
+
+  startedAt: Timestamp;
+  listenedSec: number;
+  completed: boolean;
+  skipped: boolean;
+
+  source: EventSource;
+  recommendationId: string | null;
+  deviceId: string;
+  clientHourOfDay: number;
+};
+
+/**
+ * The completion floor. 30s matches industry convention and stops a six-hour
+ * mix from being unskippable; below it, a play is a skip.
+ */
+export const COMPLETION_MIN_SEC = 30;
+
+/** `listenedSec >= min(30, durationSec * 0.5)` — see spec §5.9. */
+export function isCompleted(
+  listenedSec: number,
+  durationSec: number | null
+): boolean {
+  const threshold =
+    durationSec && durationSec > 0
+      ? Math.min(COMPLETION_MIN_SEC, durationSec * 0.5)
+      : COMPLETION_MIN_SEC;
+  return listenedSec >= threshold;
+}
+
 /** Fresh playback state for a user who has never played anything. */
 export const EMPTY_PLAYBACK: Omit<PlaybackState, "updatedAt"> = {
   trackId: null,

@@ -67,6 +67,15 @@ export function createBackendClient(getToken: TokenProvider) {
         request<Artist>(endpoints.catalog.artist(artistId)),
     },
 
+    /** Batched play/behaviour events — flushed by the transport, gated on consent. */
+    events: {
+      ingest: (events: unknown[]) =>
+        request<{ ok: true; written?: number }>(endpoints.events.ingest(), {
+          method: "POST",
+          body: body({ events }),
+        }),
+    },
+
     collections: {
       list: () => request<Collection[]>(endpoints.collections.list()),
       create: (input: Partial<Collection> & { title: string }) =>
@@ -123,6 +132,12 @@ export function createBackendClient(getToken: TokenProvider) {
         request<{ isPinned: boolean }>(endpoints.me.pin(collectionId), {
           method: "PUT",
           body: body(patch),
+        }),
+
+      /** Clear listening history — deletes events, zeroes counters, keeps likes. */
+      clearHistory: () =>
+        request<{ ok: true; deletedEvents: number }>(endpoints.me.history(), {
+          method: "DELETE",
         }),
 
       playback: {
