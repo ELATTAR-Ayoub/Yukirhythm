@@ -109,6 +109,7 @@ export default function DevicePlayer({ onCollapse, docked = false }: DevicePlaye
       {nowPlaying ? (
         <VinylDisc
           texture={nowPlaying.texture}
+          artUrl={nowPlaying.artUrl}
           trackKey={nowPlaying.id}
           direction={navDirection}
           spinning={isPlaying}

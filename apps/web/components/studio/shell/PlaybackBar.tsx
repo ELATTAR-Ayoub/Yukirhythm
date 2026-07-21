@@ -55,6 +55,7 @@ export default function PlaybackBar({ onExpand }: PlaybackBarProps) {
     <>
       <SpinningDisc
         texture={nowPlaying.texture}
+        artUrl={nowPlaying.artUrl}
         labelTexture="tx-k2-vinyl"
         spinning={isPlaying}
         className="w-12 h-12 shrink-0 disc_shadow"

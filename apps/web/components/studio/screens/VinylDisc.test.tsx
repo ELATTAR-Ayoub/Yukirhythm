@@ -66,3 +66,50 @@ describe("VinylDisc overlay copy", () => {
     ).toContain("scale-100");
   });
 });
+
+describe("VinylDisc artwork", () => {
+  it("renders the track's artwork on the disc face", () => {
+    const { container } = render(
+      <VinylDisc
+        texture="tx-k-silk"
+        artUrl="https://cdn/realize.jpg"
+        trackKey="abc123"
+        direction={null}
+        spinning={false}
+        expanded={false}
+        onToggle={() => {}}
+      />
+    );
+    const img = container.querySelector('img[src="https://cdn/realize.jpg"]');
+    expect(img).toBeTruthy();
+  });
+
+  it("swaps artwork with the texture when the track changes", () => {
+    // The two disc layers persist across a swap by design. Artwork has to ride
+    // on the layer or the new track would wear the old track's photo.
+    const { container, rerender } = render(
+      <VinylDisc
+        texture="tx-k-silk"
+        artUrl="https://cdn/one.jpg"
+        trackKey="one"
+        direction={null}
+        spinning={false}
+        expanded={false}
+        onToggle={() => {}}
+      />
+    );
+    rerender(
+      <VinylDisc
+        texture="tx-k2-vinyl"
+        artUrl="https://cdn/two.jpg"
+        trackKey="two"
+        direction={null}
+        spinning={false}
+        expanded={false}
+        onToggle={() => {}}
+      />
+    );
+    expect(container.querySelector('img[src="https://cdn/two.jpg"]')).toBeTruthy();
+    expect(container.querySelector('img[src="https://cdn/one.jpg"]')).toBeNull();
+  });
+});

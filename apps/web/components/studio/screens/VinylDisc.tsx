@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import Texture, { type TextureName } from "@/components/studio/Texture";
 import SpinningDisc from "@/components/studio/SpinningDisc";
+import Artwork from "@/components/studio/Artwork";
 
 /*
   The expand is two phases, not one blend: the record travels to the middle of
@@ -58,6 +59,8 @@ const discShape = (expanded: boolean) =>
 interface VinylDiscProps {
   /** Artwork for the current track — fills the disc face. */
   texture: TextureName;
+  /** The track's real thumbnail; falls back to `texture`. */
+  artUrl?: string;
   /** Changes whenever the track changes; drives the arc swap. */
   trackKey: string;
   /** Which way the last change went, so the disc arcs the right way. */
@@ -72,10 +75,12 @@ interface VinylDiscProps {
 /** One disc face — artwork under the grooves, label at the spindle. */
 function DiscFace({
   texture,
+  artUrl,
   spinning,
   expanded,
 }: {
   texture: TextureName;
+  artUrl?: string;
   spinning: boolean;
   expanded: boolean;
 }) {
@@ -84,7 +89,12 @@ function DiscFace({
   if (expanded) {
     return (
       <div className="absolute inset-0">
-        <Texture name={texture} className="absolute inset-0 w-full h-full" />
+        <Artwork
+          src={artUrl}
+          texture={texture}
+          alt=""
+          className="absolute inset-0 w-full h-full"
+        />
         <div
           className={cn(
             "absolute inset-0 m-auto w-16 h-16 rounded-full overflow-hidden",
@@ -100,6 +110,7 @@ function DiscFace({
   return (
     <SpinningDisc
       texture={texture}
+      artUrl={artUrl}
       labelTexture="tx-k2-vinyl"
       spinning={spinning}
       className="absolute inset-0"
@@ -118,6 +129,7 @@ function DiscFace({
  */
 export default function VinylDisc({
   texture,
+  artUrl,
   trackKey,
   direction,
   spinning,
@@ -136,9 +148,9 @@ export default function VinylDisc({
     until it is called back in.
   */
   const [layers, setLayers] = useState<
-    { texture: TextureName | null; cls: string }[]
+    { texture: TextureName | null; artUrl?: string; cls: string }[]
   >([
-    { texture, cls: "" },
+    { texture, artUrl, cls: "" },
     { texture: null, cls: "" },
   ]);
   const [active, setActive] = useState(0);
@@ -151,7 +163,9 @@ export default function VinylDisc({
     // A fresh play() rather than next/prev: swap the face in place, no travel.
     if (!direction) {
       setLayers((l) =>
-        l.map((layer, i) => (i === active ? { ...layer, texture } : layer))
+        l.map((layer, i) =>
+          i === active ? { ...layer, texture, artUrl } : layer
+        )
       );
       return;
     }
@@ -163,11 +177,11 @@ export default function VinylDisc({
       direction === "prev" ? "disc-arc-in-left" : "disc-arc-in-right";
     setLayers((l) =>
       l.map((layer, i) =>
-        i === incoming ? { texture, cls: into } : { ...layer, cls: out }
+        i === incoming ? { texture, artUrl, cls: into } : { ...layer, cls: out }
       )
     );
     setActive(incoming);
-  }, [trackKey, texture, direction, active]);
+  }, [trackKey, texture, artUrl, direction, active]);
 
   return (
     <>
@@ -207,6 +221,7 @@ export default function VinylDisc({
             <span key={i} className={cn(discShape(expanded), layer.cls)}>
               <DiscFace
                 texture={layer.texture}
+                artUrl={layer.artUrl}
                 // only the disc on stage keeps turning
                 spinning={spinning && i === active}
                 expanded={expanded}

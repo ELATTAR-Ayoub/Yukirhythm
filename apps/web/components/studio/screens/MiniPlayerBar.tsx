@@ -50,6 +50,7 @@ export default function MiniPlayerBar({ onExpand }: MiniPlayerBarProps) {
         >
           <SpinningDisc
             texture={nowPlaying.texture}
+            artUrl={nowPlaying.artUrl}
             labelTexture="tx-k2-vinyl"
             spinning={isPlaying}
             className="w-11 h-11 shrink-0 disc_shadow"

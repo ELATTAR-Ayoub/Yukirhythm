@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 
 import { cn } from "@/lib/utils";
 import Texture, { type TextureName } from "@/components/studio/Texture";
+import Artwork from "@/components/studio/Artwork";
 
 /** Full speed, degrees per second (~18s per revolution — a 33⅓ feel). */
 const MAX_DPS = 20;
@@ -16,6 +17,8 @@ const REST_EPSILON = 0.02;
 
 interface SpinningDiscProps {
   texture: TextureName;
+  /** The track's real thumbnail; falls back to `texture` when absent/broken. */
+  artUrl?: string;
   /** Replaces the disc face entirely (e.g. a collection's mosaic collage) —
    *  when supplied, `texture` is unused for the face but still required so
    *  every caller keeps a sensible fallback on hand. */
@@ -36,6 +39,7 @@ interface SpinningDiscProps {
  */
 export default function SpinningDisc({
   texture,
+  artUrl,
   art,
   labelTexture,
   spinning,
@@ -122,7 +126,14 @@ export default function SpinningDisc({
   return (
     <span className={cn("relative block overflow-hidden rounded-full", className)}>
       <span ref={ref} className="absolute inset-0 block will-change-transform">
-        {art ?? <Texture name={texture} className="absolute inset-0 w-full h-full" />}
+        {art ?? (
+          <Artwork
+            src={artUrl}
+            texture={texture}
+            alt=""
+            className="absolute inset-0 w-full h-full"
+          />
+        )}
         {labelTexture ? (
           <span
             className={cn(
