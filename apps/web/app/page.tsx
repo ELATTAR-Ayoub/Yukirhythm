@@ -1,17 +1,7 @@
-"use client";
+import { redirect } from "next/navigation";
+import { HOME } from "@/components/studio/shell/routes";
 
-// Sections
-import { Hero } from "@/sections";
-
-// styles
-import styles from "@/styles/index";
-
-const Page = () => {
-  return (
-    <div className={`  relative ${styles.flexStart} w-full h-full `}>
-      <Hero />
-    </div>
-  );
-};
-
-export default Page;
+/** The app root is the player. The marketing landing is gone (phase 8). */
+export default function RootPage() {
+  redirect(HOME);
+}

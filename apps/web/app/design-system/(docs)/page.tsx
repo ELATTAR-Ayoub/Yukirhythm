@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Texture, { TEXTURE_NAMES } from "@/components/studio/Texture";
+import AnimatedTexture from "@/components/studio/AnimatedTexture";
 import { DsSection } from "@/components/studio/ds/blocks";
 import AgentGallery from "@/components/studio/ds/AgentGallery";
 
@@ -41,6 +42,18 @@ const CHAPTERS = [
         <span className="w-8 h-8 rounded-md bg-ink" />
         <span className="w-8 h-8 rounded-md bg-cobalt" />
         <span className="w-8 h-8 rounded-md bg-mint" />
+      </div>
+    ),
+  },
+  {
+    href: "/design-system/textures",
+    title: "Textures",
+    desc: "The branding pack running live — dithered fields and glyph fields.",
+    sample: (
+      <div className="flex gap-2">
+        <AnimatedTexture kind="marble" className="w-8 h-8 rounded-md overflow-hidden" />
+        <AnimatedTexture kind="ripple" className="w-8 h-8 rounded-md overflow-hidden" />
+        <AnimatedTexture kind="spiral" className="w-8 h-8 rounded-md overflow-hidden" />
       </div>
     ),
   },

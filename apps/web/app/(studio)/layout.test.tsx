@@ -16,6 +16,13 @@ import AppShellLayout from "./layout";
 // one mock covers the whole tree this layout mounts.
 const nav = vi.hoisted(() => ({ pathname: "" }));
 
+// The layout now mounts the real StudioProvider, which initialises Firebase.
+// This suite is about the shell grid, so stand the provider down and let the
+// test supply state through MockStudioProvider as before.
+vi.mock("@/components/studio/StudioProvider", () => ({
+  default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
+
 vi.mock("next/navigation", () => ({
   usePathname: () => nav.pathname,
   useRouter: () => ({ push: () => {} }),

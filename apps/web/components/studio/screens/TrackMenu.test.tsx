@@ -55,7 +55,7 @@ describe("TrackMenu", () => {
     // points at the playlist holding it.
     expect(
       dialog.getByText(
-        new RegExp(`/design-system/screens/playlist/${COLLECTION.id}`)
+        new RegExp(`/playlist/${COLLECTION.id}`)
       )
     ).toBeTruthy();
     expect(dialog.getByText("Copy link")).toBeTruthy();

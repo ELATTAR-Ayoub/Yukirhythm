@@ -2,7 +2,10 @@
 
 import { usePathname } from "next/navigation";
 
+import { Toaster } from "sonner";
+
 import { cn } from "@/lib/utils";
+import StudioProvider from "@/components/studio/StudioProvider";
 import BottomTabBar from "@/components/studio/screens/BottomTabBar";
 import GlobalPlayer from "@/components/studio/screens/GlobalPlayer";
 import StudioHeader from "@/components/studio/shell/StudioHeader";
@@ -74,7 +77,7 @@ const MAIN_BOTTOM_INSET = {
   playing: "pb-[calc(var(--mobile-chrome-h)+0.5rem)]",
 } as const;
 
-export default function AppShellLayout({
+function Shell({
   children,
 }: {
   children: React.ReactNode;
@@ -136,5 +139,22 @@ export default function AppShellLayout({
       <BottomTabBar />
       <GlobalPlayer />
     </div>
+  );
+}
+
+/**
+ * The real app shell: the studio grid on the real backend. Screens read data
+ * from the studio context, which StudioProvider fills from the API.
+ */
+export default function StudioLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <StudioProvider>
+      <Shell>{children}</Shell>
+      <Toaster />
+    </StudioProvider>
   );
 }

@@ -1,6 +1,7 @@
 /** Route helpers for the studio shell. Pure — no React, no navigation. */
 
-export const SCREENS = "/design-system/screens";
+/** The app lives at the root; screens were promoted out of /design-system. */
+export const SCREENS = "";
 
 export const HOME = `${SCREENS}/home`;
 export const SEARCH = `${SCREENS}/search`;

@@ -65,7 +65,7 @@ describe("CollectionMenu", () => {
 
     const dialog = within(screen.getByRole("dialog"));
     // Inspectable, and still recoverable if the copy fails.
-    expect(dialog.getByText(/\/design-system\/screens\/playlist\//)).toBeTruthy();
+    expect(dialog.getByText(/\/playlist\//)).toBeTruthy();
     expect(dialog.getByText("Copy link")).toBeTruthy();
   });
 
@@ -85,7 +85,7 @@ describe("CollectionMenu", () => {
 
     expect(writeText).toHaveBeenCalledTimes(1);
     expect(writeText.mock.calls[0][0]).toContain(
-      "/design-system/screens/playlist/liked"
+      "/playlist/liked"
     );
   });
 

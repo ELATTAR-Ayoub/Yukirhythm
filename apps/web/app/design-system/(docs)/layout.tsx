@@ -38,6 +38,12 @@ export default function DesignSystemDocsLayout({
               Colors
             </Link>
             <Link
+              href="/design-system/textures"
+              className="px-3 py-1.5 rounded-md hover:bg-secondary transition-colors duration-fast"
+            >
+              Textures
+            </Link>
+            <Link
               href="/design-system/space"
               className="px-3 py-1.5 rounded-md hover:bg-secondary transition-colors duration-fast"
             >
