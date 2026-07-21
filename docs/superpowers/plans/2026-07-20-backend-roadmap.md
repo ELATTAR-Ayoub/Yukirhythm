@@ -257,16 +257,27 @@ green. Consolidated the legacy `/api/users/[uid]` onto the social routes.
 
 ## Phase 7 — Recommendations
 
-- [ ] `GET /api/feed/jump-back-in` — distinct collections from 30 days of events, recency-ordered
-- [ ] `GET /api/feed/new-releases` — personalized: `0.5·artistAffinity + 0.3·recency + 0.2·popularity`
-- [ ] `GET /api/feed/you-might-like` — blend provider radio, co-occurrence, label affinity
-- [ ] Cold-start paths for every feed — a new user must never see an empty rail
-- [ ] `recommendationId` + human-readable `reason` on every item
-- [ ] Record `recommendation_play` so the blend can be evaluated rather than guessed at
-- [ ] Fall back to non-personalized variants when `privacy.personalization === false`
-- [ ] Wire the notifications bell — `toast("No new notifications")` today
+Detailed plan: `2026-07-20-phase-7-recommendations.md`. **Backend delivered.**
 
-**Closes:** Home's two rails and Search's "You might like".
+- [x] `GET /api/feed/jump-back-in` — distinct collections from 30 days of events, recency-ordered
+- [x] `GET /api/feed/new-releases` — personalized: `0.5·artistAffinity + 0.3·recency + 0.2·popularity`
+- [x] `GET /api/feed/you-might-like` — blend provider radio, co-occurrence, label affinity
+- [x] Cold-start paths for every feed — a new user never sees an empty rail
+- [x] `recommendationId` + human-readable `reason` on every item
+- [x] Record `recommendation_play` — the events route accepts `recommendationId`, closing the loop
+- [x] Fall back to non-personalized variants when `privacy.personalization === false`
+- [→] Wire the notifications bell → phase 8
+
+**Phase 7 complete — 2026-07-20.** Backend verified with **real data, no mocks**: 7 pure-scorer
+unit tests + 6 integration tests injecting a deterministic provider over real emulator data;
+`scripts/demo-recommend.ts` produces live-YouTube radio off a real Daft Punk play (The Strokes,
+Djo, Gorillaz) and artist-affinity new releases. Honest limits noted in code — label affinity and
+recency are weak until enrichment and the publish-date fetch land, and the scorers already read
+those fields so they strengthen for free. Adds the `tracks` (isEmbeddable + viewCount) index. 93
+integration + 322 unit green.
+
+**Closes Home's two rails and Search's "You might like" at the data layer.** The rails render in
+phase 8.
 
 ---
 
