@@ -3,6 +3,7 @@ import type {
   Artist,
   Collection,
   PlaybackState,
+  PublicProfile,
   StatsRollup,
   Track,
   TrackState,
@@ -119,6 +120,31 @@ export function createBackendClient(getToken: TokenProvider) {
         request<{ ok: true }>(endpoints.collections.track(id, trackId), {
           method: "DELETE",
         }),
+      /** Save / unsave another user's public collection. */
+      save: (id: string) =>
+        request<{ saved: true }>(endpoints.collections.save(id), { method: "PUT" }),
+      unsave: (id: string) =>
+        request<{ saved: false }>(endpoints.collections.save(id), { method: "DELETE" }),
+      publicOf: (ownerId: string) =>
+        request<Collection[]>(endpoints.collections.publicOf(ownerId)),
+    },
+
+    /** Other users — the social surface. */
+    users: {
+      profile: (userId: string) =>
+        request<PublicProfile>(endpoints.users.profile(userId)),
+      follow: (userId: string) =>
+        request<{ following: true }>(endpoints.users.follow(userId), { method: "PUT" }),
+      unfollow: (userId: string) =>
+        request<{ following: false }>(endpoints.users.follow(userId), { method: "DELETE" }),
+      followers: (userId: string) =>
+        request<{ items: { userId: string }[]; nextCursor: number | null }>(
+          endpoints.users.followers(userId)
+        ),
+      following: (userId: string) =>
+        request<{ items: { userId: string }[]; nextCursor: number | null }>(
+          endpoints.users.following(userId)
+        ),
     },
 
     me: {

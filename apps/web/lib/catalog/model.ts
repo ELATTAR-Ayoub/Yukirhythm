@@ -165,6 +165,37 @@ export type CollectionState = {
 };
 
 /**
+ * Social graph (spec §5.5). Both directions are stored so each list is a single
+ * read: users/{uid}/following/{targetId} and users/{uid}/followers/{sourceId}.
+ */
+export type FollowEdge = {
+  userId: string; // the other end of the edge
+  followedAt: Timestamp;
+};
+
+/**
+ * A saved reference to someone else's public collection — NOT a copy. The owner's
+ * edits show through; if it goes private it drops from the library but the record
+ * survives so it returns when re-published.
+ */
+export type SavedCollection = {
+  collectionId: string;
+  ownerId: string;
+  savedAt: Timestamp;
+  isPinned: boolean;
+};
+
+/** Public projection of a user — what another person may see. Never private fields. */
+export type PublicProfile = {
+  userId: string;
+  displayName: string;
+  handle: string | null;
+  avatarUrl: string | null;
+  bio: string | null;
+  counts: User["counts"];
+};
+
+/**
  * Persisted playback (spec §5.8, D10). One document per user at
  * users/{uid}/playback/current, so playback resumes across reloads and follows
  * the user between devices. This is the only home for shuffle/repeat/volume —

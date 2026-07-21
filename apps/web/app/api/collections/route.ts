@@ -15,11 +15,30 @@ const COVERS = ["texture", "mosaic", "image"] as const;
 export async function GET(req: Request): Promise<Response> {
   const uid = await uidFromRequest(req);
   if (!uid) return unauthorized();
-  const snap = await adminDb()
-    .collection("collections")
-    .where("ownerId", "==", uid)
+
+  const db = adminDb();
+  const owned = (
+    await db.collection("collections").where("ownerId", "==", uid).get()
+  ).docs.map((d) => d.data() as Collection);
+
+  // Merge in saved references, resolved to their live docs. A collection turned
+  // private since it was saved is dropped from the merge, but the saved record
+  // survives (it reappears if the owner republishes).
+  const saved = await db
+    .collection("users")
+    .doc(uid)
+    .collection("savedCollections")
     .get();
-  return Response.json(snap.docs.map((d) => d.data()));
+  const savedCollections: Collection[] = [];
+  for (const s of saved.docs) {
+    const c = await db.collection("collections").doc(s.id).get();
+    if (c.exists && (c.data() as Collection).visibility !== "private") {
+      savedCollections.push(c.data() as Collection);
+    }
+  }
+
+  // Owned and saved are distinguishable by ownerId (saved have ownerId !== uid).
+  return Response.json([...owned, ...savedCollections]);
 }
 
 /**
