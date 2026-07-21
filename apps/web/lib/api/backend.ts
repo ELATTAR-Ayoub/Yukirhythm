@@ -2,6 +2,7 @@ import { endpoints } from "./endpoints";
 import type {
   Artist,
   Collection,
+  PlaybackState,
   Track,
   TrackState,
   User,
@@ -123,6 +124,25 @@ export function createBackendClient(getToken: TokenProvider) {
           method: "PUT",
           body: body(patch),
         }),
+
+      playback: {
+        get: () => request<PlaybackState>(endpoints.me.playback()),
+        /** Throttled — flush every ~10s and on pause/stop/unload, not per tick. */
+        save: (patch: Partial<PlaybackState>) =>
+          request<PlaybackState>(endpoints.me.playback(), {
+            method: "PUT",
+            body: body(patch),
+          }),
+        enqueue: (trackId: string, mode: "next" | "end") =>
+          request<PlaybackState>(endpoints.me.playbackQueue(), {
+            method: "POST",
+            body: body({ trackId, mode }),
+          }),
+        removeFromQueue: (index: number) =>
+          request<PlaybackState>(endpoints.me.playbackQueueItem(index), {
+            method: "DELETE",
+          }),
+      },
     },
   };
 }

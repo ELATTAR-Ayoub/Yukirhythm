@@ -165,6 +165,54 @@ export type CollectionState = {
 };
 
 /**
+ * Persisted playback (spec §5.8, D10). One document per user at
+ * users/{uid}/playback/current, so playback resumes across reloads and follows
+ * the user between devices. This is the only home for shuffle/repeat/volume —
+ * the UI's loop button holds an inert local boolean today.
+ */
+export type PlaybackState = {
+  trackId: string | null;
+  sourceType: "collection" | "library" | "search" | "radio";
+  sourceId: string | null;
+
+  /** Resolved trackIds in play order. */
+  queue: string[];
+  /** -1 when nothing is playing. */
+  queueIndex: number;
+  /** "Play next" entries, consumed before the main queue. */
+  manualQueue: string[];
+
+  positionSec: number;
+  isPlaying: boolean;
+  shuffleMode: boolean;
+  repeatMode: "off" | "all" | "one";
+  /** 0..1. */
+  volume: number;
+
+  /** Last writer, for multi-device handoff. */
+  deviceId: string;
+  updatedAt: Timestamp;
+};
+
+export const REPEAT_MODES = ["off", "all", "one"] as const;
+
+/** Fresh playback state for a user who has never played anything. */
+export const EMPTY_PLAYBACK: Omit<PlaybackState, "updatedAt"> = {
+  trackId: null,
+  sourceType: "library",
+  sourceId: null,
+  queue: [],
+  queueIndex: -1,
+  manualQueue: [],
+  positionSec: 0,
+  isPlaying: false,
+  shuffleMode: false,
+  repeatMode: "off",
+  volume: 1,
+  deviceId: "",
+};
+
+/**
  * History and personalization default on because the product is built around
  * them; public profile defaults off because it exposes the user to others.
  */
