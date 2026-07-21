@@ -3,10 +3,23 @@ import type {
   Artist,
   Collection,
   PlaybackState,
+  StatsRollup,
   Track,
   TrackState,
   User,
 } from "@/lib/catalog/model";
+
+export type RecentsPage = {
+  items: {
+    eventId: string;
+    trackId: string;
+    startedAtMs: number;
+    listenedSec: number;
+    track: Track | null;
+    collection: { collectionId: string; title: string } | null;
+  }[];
+  nextCursor: number | null;
+};
 
 /**
  * The typed browser client for the standardized backend. Every method routes
@@ -134,6 +147,11 @@ export function createBackendClient(getToken: TokenProvider) {
           body: body(patch),
         }),
 
+      /** Listening stats, computed for the caller's timezone. */
+      stats: (tz?: string) =>
+        request<StatsRollup>(endpoints.me.stats() + (tz ? `?tz=${encodeURIComponent(tz)}` : "")),
+      /** History with provenance, paginated by startedAt-millis cursor. */
+      recents: (cursor?: string) => request<RecentsPage>(endpoints.me.recents(cursor)),
       /** Clear listening history — deletes events, zeroes counters, keeps likes. */
       clearHistory: () =>
         request<{ ok: true; deletedEvents: number }>(endpoints.me.history(), {

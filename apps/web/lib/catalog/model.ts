@@ -226,6 +226,27 @@ export type PlayEvent = {
 };
 
 /**
+ * Listening stats (spec §5.10). Computed from playEvents on read today; a
+ * cached rollup refreshed by a scheduled sweep is a later scale optimization.
+ */
+export type StatsRollup = {
+  minutesWeek: number;
+  minutesMonth: number;
+  minutesYear: number;
+  minutesAllTime: number;
+
+  streakDays: number;
+  lastListenDate: string | null; // "YYYY-MM-DD" in the user's timezone
+
+  topArtists: { artistId: string; name: string; plays: number }[];
+  topTrackIds: string[];
+  genreSplit: { label: string; pct: number }[];
+  byHour: number[]; // 24 entries, 0..1 normalised
+
+  timezone: string;
+};
+
+/**
  * The completion floor. 30s matches industry convention and stops a six-hour
  * mix from being unskippable; below it, a play is a skip.
  */

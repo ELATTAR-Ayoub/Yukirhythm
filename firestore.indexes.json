@@ -15,6 +15,14 @@
         { "fieldPath": "isEmbeddable", "order": "ASCENDING" },
         { "fieldPath": "labelIds", "arrayConfig": "CONTAINS" }
       ]
+    },
+    {
+      "collectionGroup": "playEvents",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "startedAt", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []
