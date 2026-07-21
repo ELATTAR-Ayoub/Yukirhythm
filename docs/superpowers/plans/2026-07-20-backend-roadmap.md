@@ -229,25 +229,29 @@ phase 8.
 
 ## Phase 6 — Social
 
-Runs in parallel with 4–5.
+Detailed plan: `2026-07-20-phase-6-social.md`. **Backend delivered.**
 
-- [ ] `following/` + `followers/` edges, both directions, transactional with `counts`
-- [ ] `PUT/DELETE /api/users/[id]/follow` — idempotent, self-follow rejected
-- [ ] `GET /api/users/[id]/followers` / `/following` — paginated
-- [ ] `GET /api/users/[id]` — 404 unless `publicProfile`
-- [ ] `handle` uniqueness and reservation (spec §14 open question)
-- [ ] `savedCollections/` + `PUT/DELETE /api/collections/[id]/save`
-- [ ] `GET /api/collections/public?ownerId=`
-- [ ] Library merges owned + saved; a collection turning private drops out without deleting the record
-- [ ] **New route `/profile/followers`** — the count on `/profile/view` is dead text today
-- [ ] **New route `/profile/following`**
-- [ ] **New route `/user/[handle]`** — public profile, their public collections, follow button
-- [ ] **Save button** on another user's collection
-- [ ] **"Saved" filter chip** in Library alongside Playlists / Podcasts / Liked
-- [ ] **Profiles section** in Search, so users are findable
-- [ ] Render `stats.saveCount` — collection `likes` is stored today and displayed nowhere
+- [x] `following/` + `followers/` edges, both directions, transactional with `counts`
+- [x] `PUT/DELETE /api/users/[uid]/follow` — idempotent, self-follow rejected
+- [x] `GET /api/users/[uid]/followers` / `/following` — paginated
+- [x] `GET /api/users/[uid]` — public projection, 404 unless `publicProfile`
+- [~] `handle` uniqueness and reservation — **deferred** (spec §14; revisit before the UI ships)
+- [x] `savedCollections/` + `PUT/DELETE /api/collections/[id]/save`
+- [x] `GET /api/collections/public?ownerId=`
+- [x] Library merges owned + saved; a collection turning private drops out, record retained
+- [→] **New route `/profile/followers`** → phase 8
+- [→] **New route `/profile/following`** → phase 8
+- [→] **New route `/user/[handle]`** → phase 8
+- [→] **Save button** / **"Saved" filter chip** / **Profiles in Search** → phase 8
+- [→] Render `stats.saveCount` → phase 8 (field maintained now)
 
-**Closes:** 7 stubs plus 3 new routes. The entire social surface currently has zero backing.
+**Phase 6 complete — 2026-07-20.** Backend verified with **real data, no mocks**: 12 integration
+tests with two real users (both-edge counts, idempotency, self-follow reject, privacy 404,
+save/unsave, the turned-private-then-republished case); `scripts/demo-social.ts` has one user
+publish a playlist off live YouTube and another follow and save it. 87 integration + 315 unit
+green. Consolidated the legacy `/api/users/[uid]` onto the social routes.
+
+**Closes the social ledger rows at the data layer** (7 stubs + 3 routes). The UI is phase 8.
 
 ---
 
