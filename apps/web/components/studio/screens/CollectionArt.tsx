@@ -8,7 +8,7 @@ import type { TextureName } from "@/components/studio/Texture";
  *  step can hand its live draft straight in without adapting it. */
 export interface CollectionArtSource {
   texture: TextureName;
-  cover?: "texture" | "mosaic";
+  cover?: "texture" | "mosaic" | "image";
   trackIds: string[];
 }
 

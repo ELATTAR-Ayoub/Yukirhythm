@@ -12,6 +12,9 @@ export interface MockTrack {
   artist: string;
   texture: TextureName;
   durationSec: number;
+  /** The track's real thumbnail. Absent or broken falls back to `texture` —
+   *  see components/studio/Artwork.tsx. Fixture tracks have none. */
+  artUrl?: string;
 }
 
 export type CollectionKind = "music" | "podcast";
@@ -25,7 +28,12 @@ export interface MockCollection {
    *  built from its own tracks. Optional so every existing literal and call
    *  site keeps compiling unchanged; `undefined` means "texture", same as
    *  the explicit value — see CollectionArt. */
-  cover?: "texture" | "mosaic";
+  cover?: "texture" | "mosaic" | "image";
+  /** A stored cover image, when `cover` is "image". */
+  artUrl?: string;
+  /** Built-in and permanent — Liked Songs. Cannot be unpinned or deleted,
+   *  and always sorts first in the library. */
+  system?: boolean;
   trackIds: string[];
   likes: number;
   tags: string[];

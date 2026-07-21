@@ -104,10 +104,10 @@ describe("toStudioCollection", () => {
     expect(m.pinned).toBe(false);
   });
 
-  it("takes pin state from the provider and downgrades an image cover", () => {
+  it("takes pin state from the provider and keeps an image cover as-is", () => {
     const m = toStudioCollection(collection({ cover: "image" }), { pinned: true });
     expect(m.pinned).toBe(true);
-    expect(m.cover).toBe("texture");
+    expect(m.cover).toBe("image");
   });
 });
 
@@ -127,5 +127,62 @@ describe("toStudioUser", () => {
     expect(m.initials).toBe("YS");
     expect(m.followers).toBe(1240);
     expect(m.following).toBe(318);
+  });
+});
+
+describe("artwork carried onto the studio shapes", () => {
+  it("carries the widest provider artwork onto the track", () => {
+    const t = {
+      trackId: "abc123",
+      title: "Realize",
+      artists: [{ artistId: "a1", name: "鈴木このみ" }],
+      durationSec: 244,
+      texture: "tx-k2-vinyl",
+      artwork: [
+        { url: "https://cdn/small.jpg", width: 120, height: 90 },
+        { url: "https://cdn/big.jpg", width: 640, height: 480 },
+      ],
+      source: { provider: "youtube", videoId: "abc123", url: "", aliasVideoIds: [] },
+    } as unknown as Parameters<typeof toStudioTrack>[0];
+
+    expect(toStudioTrack(t).artUrl).toBe("https://cdn/big.jpg");
+  });
+
+  it("derives a YouTube thumbnail for a track with no stored artwork", () => {
+    const t = {
+      trackId: "xyz789",
+      title: "il vento d'oro",
+      artists: [{ artistId: "a2", name: "YUGO KANNO" }],
+      durationSec: 296,
+      texture: "tx-k-silk",
+      artwork: [],
+      source: { provider: "youtube", videoId: "xyz789", url: "", aliasVideoIds: [] },
+    } as unknown as Parameters<typeof toStudioTrack>[0];
+
+    expect(toStudioTrack(t).artUrl).toBe(
+      "https://i.ytimg.com/vi/xyz789/hqdefault.jpg"
+    );
+  });
+
+  it("keeps an image cover as an image instead of downgrading it to a texture", () => {
+    // The old adapter rewrote cover:"image" to "texture" because the mock art
+    // components could not render a remote image. Artwork can, so the
+    // downgrade is now pure data loss.
+    const c = {
+      collectionId: "c1",
+      title: "Late Study Lo-Fi",
+      description: "Quiet loops.",
+      texture: "tx-k2-topo",
+      cover: "image",
+      imageUrl: "https://cdn/cover.jpg",
+      tracks: [],
+      tags: [],
+      contentType: "music",
+      stats: { trackCount: 0, totalDurationSec: 0, saveCount: 0, playCount: 0 },
+    } as unknown as Parameters<typeof toStudioCollection>[0];
+
+    const out = toStudioCollection(c);
+    expect(out.cover).toBe("image");
+    expect(out.artUrl).toBe("https://cdn/cover.jpg");
   });
 });

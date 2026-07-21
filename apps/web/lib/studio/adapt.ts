@@ -7,6 +7,7 @@ import type {
   MockTrack,
   MockUser,
 } from "@/components/studio/screens/mock-data";
+import { collectionArtUrl, trackArtUrl } from "./artwork";
 
 /**
  * Maps backend documents onto the shapes the design-system screens render.
@@ -25,6 +26,7 @@ export function toStudioTrack(t: Track): MockTrack {
     artist: t.artists.map((a) => a.name).join(", ") || "Unknown",
     texture: t.texture,
     durationSec: t.durationSec ?? 0,
+    artUrl: trackArtUrl(t),
   };
 }
 
@@ -37,9 +39,10 @@ export function toStudioCollection(
     title: c.title,
     desc: c.description,
     texture: c.texture,
-    // MockCollection supports texture|mosaic only; an image cover falls back to
-    // its texture swatch (the mock art components do not render a remote image).
-    cover: c.cover === "image" ? "texture" : c.cover,
+    // An image cover renders as an image now that Artwork can draw one; it
+    // used to be downgraded to the texture swatch, which was data loss.
+    cover: c.cover,
+    artUrl: collectionArtUrl(c),
     trackIds: (c.tracks ?? []).map((m) => m.trackId),
     likes: c.stats?.saveCount ?? 0,
     tags: c.tags ?? [],
