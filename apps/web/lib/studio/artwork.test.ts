@@ -82,4 +82,8 @@ describe("collectionArtUrl", () => {
     expect(collectionArtUrl(collection({ cover: "texture", imageUrl: "https://cdn/c.jpg" }))).toBe("");
     expect(collectionArtUrl(collection({ cover: "mosaic", imageUrl: "https://cdn/c.jpg" }))).toBe("");
   });
+
+  it("returns empty for an image cover whose upload has not landed yet", () => {
+    expect(collectionArtUrl(collection({ cover: "image", imageUrl: null }))).toBe("");
+  });
 });

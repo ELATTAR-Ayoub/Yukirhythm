@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 import Texture, { type TextureName } from "@/components/studio/Texture";
@@ -31,9 +31,14 @@ export default function Artwork({
 }: ArtworkProps) {
   const [failed, setFailed] = useState(false);
 
-  // A disc face keeps the same element across track changes, so a single 404
-  // would otherwise stick to every track that follows it.
-  useEffect(() => setFailed(false), [src]);
+  // Reset during render, not in an effect. A disc face keeps the same element
+  // across track changes, so an effect-based reset would paint one frame of
+  // the NEW track wearing the OLD track's failure before correcting itself.
+  const lastSrc = useRef(src);
+  if (lastSrc.current !== src) {
+    lastSrc.current = src;
+    if (failed) setFailed(false);
+  }
 
   if (!src || failed) {
     return <Texture name={texture ?? "tx-k-marble"} className={className} />;

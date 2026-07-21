@@ -1,7 +1,21 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 
 import Artwork from "./Artwork";
+import Texture from "@/components/studio/Texture";
+
+// RTL's rerender() is wrapped in act(), which flushes pending useEffects
+// synchronously before returning — so a plain "does the DOM show the image
+// after rerender" assertion can't tell an effect-based reset from a
+// render-time one; both converge to the same final DOM before the test can
+// look. Spying on Texture's render calls exposes the intermediate commit
+// instead: an effect-based reset still paints <Texture> once, mid-swap,
+// before the effect corrects it on a second pass within the same act().
+vi.mock("@/components/studio/Texture", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("@/components/studio/Texture")>();
+  return { ...actual, default: vi.fn(actual.default) };
+});
 
 describe("Artwork", () => {
   it("renders the image when a src is given", () => {
@@ -47,5 +61,21 @@ describe("Artwork", () => {
   it("marks decorative artwork aria-hidden with an empty alt", () => {
     render(<Artwork src="https://cdn/a.jpg" texture="tx-k-silk" alt="" />);
     expect(screen.queryByRole("img")).toBeNull();
+  });
+
+  it("never paints the texture on the same commit as a new src", () => {
+    // The disc faces stay mounted across track changes, so a stale `failed`
+    // would flash the texture on every track after one bad thumbnail. If the
+    // reset happens in an effect, React still renders <Texture> once for the
+    // new src before the effect fires and corrects it on a second pass.
+    const textureSpy = vi.mocked(Texture);
+    const { rerender } = render(
+      <Artwork src="https://cdn/gone.jpg" texture="tx-k-silk" alt="A" />
+    );
+    fireEvent.error(screen.getByRole("img", { name: "A" }));
+    textureSpy.mockClear();
+
+    rerender(<Artwork src="https://cdn/good.jpg" texture="tx-k-silk" alt="B" />);
+    expect(textureSpy).not.toHaveBeenCalled();
   });
 });
