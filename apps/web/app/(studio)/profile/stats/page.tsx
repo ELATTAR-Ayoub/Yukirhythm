@@ -89,6 +89,7 @@ export default function StatsScreen() {
                   artist={track.artist}
                   duration={formatDuration(track.durationSec)}
                   texture={track.texture}
+                  artUrl={track.artUrl}
                   playing={nowPlaying?.id === track.id && isPlaying}
                 />
               </div>

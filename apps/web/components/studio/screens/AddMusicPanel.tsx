@@ -140,6 +140,7 @@ export default function AddMusicPanel({
                     artist={track.artist}
                     duration={formatDuration(track.durationSec)}
                     texture={track.texture}
+                    artUrl={track.artUrl}
                     playable={false}
                   />
                 </div>

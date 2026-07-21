@@ -238,6 +238,7 @@ export default function CollectionDetail({
                   artist={track.artist}
                   duration={formatDuration(track.durationSec)}
                   texture={track.texture}
+                  artUrl={track.artUrl}
                   playing={nowPlaying?.id === track.id && isPlaying}
                   playable={false}
                   desktop
@@ -268,6 +269,7 @@ export default function CollectionDetail({
                 title={track.title}
                 artist={track.artist}
                 texture={track.texture}
+                artUrl={track.artUrl}
                 size="sm"
                 playing={nowPlaying?.id === track.id && isPlaying}
                 className="w-full"

@@ -57,6 +57,7 @@ function TrackShelf({
               title={track.title}
               artist={track.artist}
               texture={track.texture}
+              artUrl={track.artUrl}
               duration={formatDuration(track.durationSec)}
               size="sm"
               playing={nowPlaying?.id === track.id && isPlaying}
@@ -181,6 +182,7 @@ export default function SearchScreen() {
                           artist={track.artist}
                           duration={formatDuration(track.durationSec)}
                           texture={track.texture}
+                          artUrl={track.artUrl}
                           playing={nowPlaying?.id === track.id && isPlaying}
                           playable={false}
                         />

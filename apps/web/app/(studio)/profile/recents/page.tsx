@@ -72,6 +72,7 @@ export default function RecentsScreen() {
                           }
                           duration={entry.timeLabel}
                           texture={track.texture}
+                          artUrl={track.artUrl}
                           playing={nowPlaying?.id === track.id && isPlaying}
                           playable={false}
                         />

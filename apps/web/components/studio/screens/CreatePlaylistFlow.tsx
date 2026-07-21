@@ -364,6 +364,7 @@ function AddMusicStep({ trackIds, onToggleTrack }: AddMusicStepProps) {
                       artist={track.artist}
                       duration={formatDuration(track.durationSec)}
                       texture={track.texture}
+                      artUrl={track.artUrl}
                       playable={false}
                     />
                   </div>
@@ -399,6 +400,7 @@ function AddMusicStep({ trackIds, onToggleTrack }: AddMusicStepProps) {
                   artist={track.artist}
                   duration={formatDuration(track.durationSec)}
                   texture={track.texture}
+                  artUrl={track.artUrl}
                   playable={false}
                 />
               </div>
@@ -484,6 +486,7 @@ function ReviewStep({ draft }: { draft: Draft }) {
                 artist={track.artist}
                 duration={formatDuration(track.durationSec)}
                 texture={track.texture}
+                artUrl={track.artUrl}
                 playable={false}
               />
             ))}

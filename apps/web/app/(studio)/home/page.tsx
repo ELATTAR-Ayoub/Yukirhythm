@@ -91,6 +91,7 @@ export default function HomeScreen() {
                   title={track.title}
                   artist={track.artist}
                   texture={track.texture}
+                  artUrl={track.artUrl}
                   duration={formatDuration(track.durationSec)}
                   size="md"
                   playing={nowPlaying?.id === track.id && isPlaying}
