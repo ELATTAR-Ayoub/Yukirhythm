@@ -16,7 +16,7 @@ import { playlistHref } from "@/components/studio/shell/routes";
  * route covers every width — left in place rather than deleted unilaterally.
  */
 export default function AddMusicScreen() {
-  const { collections } = useMockStudio();
+  const { collections, libraryLoading } = useMockStudio();
   // next-env.d.ts types useParams() as `T | null` for pages/-router
   // back-compat even though the app router never actually returns null here
   // — mirrors the guard in the playlist route for the same reason.
@@ -28,6 +28,11 @@ export default function AddMusicScreen() {
     : undefined;
   const id = rawId ? decodeURIComponent(rawId) : undefined;
   const collection = id ? collections.find((c) => c.id === id) : undefined;
+
+  // The library loads asynchronously; an empty list on the first render is
+  // "not loaded yet", not "missing". Claiming not-found here flashed a false
+  // error on every direct navigation.
+  if (libraryLoading) return null;
 
   if (!collection) {
     return (

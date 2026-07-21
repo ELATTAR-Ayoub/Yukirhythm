@@ -6,10 +6,14 @@ import { useMockStudio } from "./MockStudioProvider";
 import { type MockCollection } from "./mock-data";
 
 /**
- * What's playing right now, as a collection. When playback was launched from a
- * collection this is that collection; when a track was played straight from
- * search or a rail there is no source, so the whole library queue is presented
- * under a synthetic "Up next" collection.
+ * The running queue, shaped as a collection so the queue surfaces can reuse
+ * the collection components.
+ *
+ * The track list always comes from `queue` — never from the collection's own
+ * `trackIds`. Playing from a playlist only supplies the identity (title,
+ * texture) of what's running; the order being walked through is the queue,
+ * which drifts from the playlist the moment anything is added to it from the
+ * rail. Reading the playlist instead would silently hide queued tracks.
  *
  * Call this once per surface and pass the result down. QueueDrawer uses it for
  * both its heading and its body; NowPlayingRail uses it for the upcoming-track
@@ -19,19 +23,20 @@ import { type MockCollection } from "./mock-data";
 export default function useQueueCollection(): MockCollection {
   const { playingCollection, queue } = useMockStudio();
 
-  return useMemo(
-    () =>
-      playingCollection ?? {
-        id: "queue",
-        title: "Up next",
-        desc: "Everything queued from your library.",
-        texture: "tx-k-silk",
-        trackIds: queue.map((t) => t.id),
-        likes: 0,
-        tags: ["queue"],
-        kind: "music",
-        pinned: false,
-      },
-    [playingCollection, queue]
-  );
+  return useMemo(() => {
+    const trackIds = queue.map((t) => t.id);
+    return playingCollection
+      ? { ...playingCollection, trackIds }
+      : {
+          id: "queue",
+          title: "Up next",
+          desc: "Everything queued from your library.",
+          texture: "tx-k-silk",
+          trackIds,
+          likes: 0,
+          tags: ["queue"],
+          kind: "music",
+          pinned: false,
+        };
+  }, [playingCollection, queue]);
 }

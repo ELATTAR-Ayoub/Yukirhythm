@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 
 // styles
 import "./globals.css";
-import styles from "@/styles/index";
 import { fontVariables } from "./fonts";
 
 // providers (client)
@@ -40,8 +39,11 @@ export default function RootLayout({
           }}
         />
       </head>
+      {/* Plain block, full bleed. The old `flex justify-start items-start`
+          belonged to the marketing landing and shrank every child to its
+          content width; the app shell needs the whole viewport. */}
       <body
-        className={` ${styles.flexStart} flex-col relative bg-background h-screen overflow-x-hidden`}
+        className="relative bg-background h-screen overflow-x-hidden"
       >
         <Providers>{children}</Providers>
       </body>

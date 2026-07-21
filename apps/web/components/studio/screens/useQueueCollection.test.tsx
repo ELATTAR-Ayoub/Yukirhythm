@@ -3,7 +3,7 @@ import { act, renderHook } from "@testing-library/react";
 
 import MockStudioProvider, { useMockStudio } from "./MockStudioProvider";
 import useQueueCollection from "./useQueueCollection";
-import { MOCK_COLLECTIONS, getCollectionTracks } from "./mock-data";
+import { MOCK_COLLECTIONS, MOCK_TRACKS, getCollectionTracks } from "./mock-data";
 
 /** Exposes the studio alongside the hook so tests can start playback. */
 function useProbe() {
@@ -15,7 +15,7 @@ function renderProbe() {
 }
 
 describe("useQueueCollection", () => {
-  it("returns the source collection when playback came from one", () => {
+  it("takes its identity from the source collection when playback came from one", () => {
     const source = MOCK_COLLECTIONS[0];
     const { result } = renderProbe();
 
@@ -23,7 +23,31 @@ describe("useQueueCollection", () => {
       result.current.studio.play(getCollectionTracks(source)[0], source);
     });
 
-    expect(result.current.collection).toBe(source);
+    expect(result.current.collection.id).toBe(source.id);
+    expect(result.current.collection.title).toBe(source.title);
+    expect(result.current.collection.texture).toBe(source.texture);
+  });
+
+  it("tracks the running queue, not the source collection's own track list", () => {
+    // The queue drifts from the playlist the moment something is queued from
+    // the rail. Reading trackIds off the collection would hide it.
+    const source = MOCK_COLLECTIONS[0];
+    const { result } = renderProbe();
+
+    act(() => {
+      result.current.studio.play(getCollectionTracks(source)[0], source);
+    });
+
+    const extra = MOCK_TRACKS.find((t) => !source.trackIds.includes(t.id))!;
+    act(() => {
+      result.current.studio.enqueue(extra);
+    });
+
+    expect(result.current.collection.trackIds).toContain(extra.id);
+    expect(result.current.collection.trackIds).toEqual(
+      result.current.studio.queue.map((t) => t.id)
+    );
+    expect(source.trackIds).not.toContain(extra.id);
   });
 
   it("falls back to a synthetic Up next collection with no source", () => {

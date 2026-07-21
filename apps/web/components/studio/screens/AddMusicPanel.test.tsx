@@ -19,7 +19,7 @@ function iconSwapFaces(button: HTMLElement): HTMLElement[] {
 }
 
 describe("AddMusicPanel add/added icon", () => {
-  it("shows the add face through IconSwap for a track not yet in the collection", () => {
+  it("shows the add face through IconSwap for a track not yet in the collection", async () => {
     // c3 "Pixel Podcasts" holds t3 and t12 only — "Cobalt Dreams" (t2) is not in it.
     const notAdded = MOCK_COLLECTIONS.find((c) => c.id === "c3")!;
     render(
@@ -31,7 +31,11 @@ describe("AddMusicPanel add/added icon", () => {
     fireEvent.change(screen.getByLabelText("Search tracks to add"), {
       target: { value: "Cobalt" },
     });
-    const button = screen.getByRole("button", { name: "Add Cobalt Dreams" });
+    // Results arrive from the provider's search, which is debounced and async
+    // even in the mock — a synchronous get would race the first keystroke.
+    const button = await screen.findByRole("button", {
+      name: "Add Cobalt Dreams",
+    });
     const faces = iconSwapFaces(button);
     expect(faces).toHaveLength(2);
     expect(faces[0].className).toContain("opacity-100");
@@ -40,7 +44,7 @@ describe("AddMusicPanel add/added icon", () => {
     expect(faces[1].getAttribute("aria-hidden")).toBe("true");
   });
 
-  it("rolls the strip to the added face for a track already in the collection", () => {
+  it("rolls the strip to the added face for a track already in the collection", async () => {
     // LIKED_SONGS already contains t2 "Cobalt Dreams".
     render(
       <MockStudioProvider>
@@ -51,7 +55,7 @@ describe("AddMusicPanel add/added icon", () => {
     fireEvent.change(screen.getByLabelText("Search tracks to add"), {
       target: { value: "Cobalt" },
     });
-    const button = screen.getByRole("button", {
+    const button = await screen.findByRole("button", {
       name: "Cobalt Dreams already added",
     });
     const faces = iconSwapFaces(button);
@@ -64,7 +68,7 @@ describe("AddMusicPanel add/added icon", () => {
 });
 
 describe("AddMusicPanel play affordance", () => {
-  it("renders no play button — these rows only add, they never play", () => {
+  it("renders no play button — these rows only add, they never play", async () => {
     render(
       <MockStudioProvider>
         <AddMusicPanel collection={MOCK_COLLECTIONS.find((c) => c.id === "c3")!} />
@@ -75,6 +79,9 @@ describe("AddMusicPanel play affordance", () => {
       target: { value: "Cobalt" },
     });
 
+    // Wait for results first: asserting absence before the search resolves
+    // would pass against an empty list and prove nothing.
+    await screen.findByRole("button", { name: "Add Cobalt Dreams" });
     expect(screen.queryByRole("button", { name: "Play" })).toBeNull();
   });
 });

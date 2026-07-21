@@ -10,7 +10,7 @@ import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
 import { LIBRARY } from "@/components/studio/shell/routes";
 
 export default function PlaylistScreen() {
-  const { collections } = useMockStudio();
+  const { collections, libraryLoading } = useMockStudio();
   // next-env.d.ts pulls in next/navigation-types/compat/navigation, which
   // types useParams() as `T | null` for pages/-router back-compat even
   // though the app router never actually returns null here — so this guard
@@ -23,6 +23,11 @@ export default function PlaylistScreen() {
     : undefined;
   const id = rawId ? decodeURIComponent(rawId) : undefined;
   const collection = id ? collections.find((c) => c.id === id) : undefined;
+
+  // The library loads asynchronously; an empty list on the first render is
+  // "not loaded yet", not "missing". Claiming not-found here flashed a false
+  // error on every direct navigation.
+  if (libraryLoading) return null;
 
   if (!collection) {
     return (

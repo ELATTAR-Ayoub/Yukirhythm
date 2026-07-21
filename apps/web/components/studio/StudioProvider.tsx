@@ -20,6 +20,10 @@ import type {
   MockUser,
 } from "@/components/studio/screens/mock-data";
 import type { LibraryFilter } from "@/components/studio/screens/library-utils";
+import {
+  insertIntoQueue,
+  type EnqueueMode,
+} from "@/components/studio/screens/queue-utils";
 import type { TextureName } from "@/components/studio/Texture";
 import { registerStudioTracks } from "@/components/studio/screens/mock-data";
 import { useAuthState, signIn as fbSignIn, signOutUser } from "@/lib/studio/useAuth";
@@ -60,6 +64,7 @@ export default function StudioProvider({
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
   const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set());
   const [libraryFilter, setLibraryFilter] = useState<LibraryFilter>("playlists");
+  const [libraryLoading, setLibraryLoading] = useState(true);
 
   // playback
   const [queue, setQueue] = useState<MockTrack[]>([]);
@@ -132,6 +137,7 @@ export default function StudioProvider({
       if (!fbUser) {
         setUser(null);
         setCollections([]);
+        setLibraryLoading(false);
         return;
       }
       // ensure the user doc exists, then load it
@@ -149,6 +155,7 @@ export default function StudioProvider({
       if (!live || !me) return;
       setUser(toStudioUser(me));
       await refreshLibrary();
+      if (live) setLibraryLoading(false);
 
       // Feeds and profile data. Each is independent — one failing rail must not
       // blank the others, so they settle separately.
@@ -230,6 +237,23 @@ export default function StudioProvider({
       startTrack(idx >= 0 ? idx : 0);
     },
     [backend, absorb, flushEvent, startTrack]
+  );
+
+  /**
+   * Add to the running queue. Local state moves first so the rail updates on
+   * the click, and the same splice is persisted server-side so the queue
+   * survives a reload. Nothing starts playing: the user asked for this track
+   * later, not now.
+   */
+  const enqueue = useCallback(
+    (track: MockTrack, mode: EnqueueMode = "end") => {
+      registerStudioTracks([track]);
+      setQueue((q) => insertIntoQueue(q, track, mode, currentIndex));
+      // Best-effort persistence — a failed write must not undo the queue the
+      // user is looking at, and the next save() flush re-sends the whole list.
+      void backend.me.playback.enqueue(track.id, mode).catch(() => {});
+    },
+    [backend, currentIndex]
   );
 
   const toggle = useCallback(() => setIsPlaying((p) => (nowPlaying ? !p : p)), [nowPlaying]);
@@ -317,6 +341,23 @@ export default function StudioProvider({
     },
     [backend, absorb]
   );
+  /** Catalogue lookup that returns rather than publishes — see the context
+   *  docs. Failures come back as no matches; a rail-side field is not the
+   *  place to surface a network error banner. */
+  const searchTracks = useCallback(
+    async (query: string): Promise<MockTrack[]> => {
+      const q = query.trim();
+      if (!q) return [];
+      try {
+        const res = await backend.catalog.search(q, "song");
+        return absorb(res.tracks);
+      } catch {
+        return [];
+      }
+    },
+    [backend, absorb]
+  );
+
   const clearSearch = useCallback(() => {
     if (searchTimer.current) clearTimeout(searchTimer.current);
     setSearchResults([]);
@@ -430,6 +471,7 @@ export default function StudioProvider({
       isLoading,
       progressSec,
       play,
+      enqueue,
       toggle,
       next,
       prev,
@@ -442,7 +484,9 @@ export default function StudioProvider({
       hasSearched,
       search,
       clearSearch,
+      searchTracks,
       collections,
+      libraryLoading,
       libraryFilter,
       setLibraryFilter,
       togglePin,
@@ -466,9 +510,10 @@ export default function StudioProvider({
     }),
     [
       queue, playingCollection, navDirection, nowPlaying, isPlaying, isLoading,
-      progressSec, play, toggle, next, prev, seek, user, signIn, signOut,
-      searchResults, searching, hasSearched, search, clearSearch, collections,
-      libraryFilter, togglePin, isLiked, toggleLike, toggleTrackInCollection,
+      progressSec, play, enqueue, toggle, next, prev, seek, user, signIn, signOut,
+      searchResults, searching, hasSearched, search, clearSearch, searchTracks,
+      collections,
+      libraryLoading, libraryFilter, togglePin, isLiked, toggleLike, toggleTrackInCollection,
       addTrackToCollection, createCollection, playerExpanded, volume, setVolume,
       toggleMute, jumpBackIn, newReleases, youMightLike, collectionResults,
       stats, recents,

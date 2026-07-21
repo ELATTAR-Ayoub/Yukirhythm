@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { CheckIcon, MagnifyingGlassIcon, PlusIcon } from "@radix-ui/react-icons";
 
 import { Input } from "@/components/ui/input";
@@ -9,17 +9,22 @@ import EmptyState from "@/components/studio/EmptyState";
 import { PlayerButton } from "@/components/studio/PlayerButton";
 import IconSwap from "@/components/studio/IconSwap";
 import { useMockStudio } from "./MockStudioProvider";
-import {
-  formatDuration,
-  searchMockTracks,
-  type MockCollection,
-} from "./mock-data";
+import { formatDuration, type MockCollection, type MockTrack } from "./mock-data";
 
 interface AddMusicPanelProps {
-  collection: MockCollection;
+  /**
+   * Playlist to add to. Omit to add to the running queue instead — the rail's
+   * "Up next" is the queue, and queueing a track must not require a playlist
+   * to be open, nor write anything to one.
+   */
+  collection?: MockCollection;
   /** The drawer focuses the field on open; the docked rail must not. */
   autoFocus?: boolean;
 }
+
+/** Long enough to stop firing a request per keystroke, short enough that the
+ *  results still feel attached to the typing. */
+const DEBOUNCE_MS = 250;
 
 /**
  * Search-and-add body. Suggestions render inline rather than in a floating
@@ -30,11 +35,51 @@ export default function AddMusicPanel({
   collection,
   autoFocus = false,
 }: AddMusicPanelProps) {
-  const { addTrackToCollection } = useMockStudio();
+  const { addTrackToCollection, enqueue, searchTracks, queue, user } =
+    useMockStudio();
   const [q, setQ] = useState("");
+  const [results, setResults] = useState<MockTrack[]>([]);
+  const [searching, setSearching] = useState(false);
 
-  // Suggestions are synchronous here — no need for the debounced global search.
-  const results = useMemo(() => (q.trim() ? searchMockTracks(q) : []), [q]);
+  // Debounced against the provider's one-shot search: the real one is a
+  // network call to the catalogue, so this cannot be the synchronous fixture
+  // lookup it used to be.
+  useEffect(() => {
+    const query = q.trim();
+    if (!query) {
+      setResults([]);
+      setSearching(false);
+      return;
+    }
+    setSearching(true);
+    let live = true;
+    const timer = setTimeout(async () => {
+      const found = await searchTracks(query);
+      if (!live) return;
+      setResults(found);
+      setSearching(false);
+    }, DEBOUNCE_MS);
+    return () => {
+      live = false;
+      clearTimeout(timer);
+    };
+  }, [q, searchTracks]);
+
+  const toQueue = collection === undefined;
+  const isAdded = (trackId: string) =>
+    toQueue
+      ? queue.some((t) => t.id === trackId)
+      : collection.trackIds.includes(trackId);
+
+  const addedLabel = (title: string) =>
+    toQueue ? `${title} already queued` : `${title} already added`;
+  const addLabel = (title: string) =>
+    toQueue ? `Add ${title} to queue` : `Add ${title}`;
+
+  const add = (trackId: string, track: MockTrack) => {
+    if (toQueue) enqueue(track);
+    else addTrackToCollection(collection.id, trackId);
+  };
 
   return (
     <>
@@ -42,21 +87,38 @@ export default function AddMusicPanel({
         <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
           autoFocus={autoFocus}
+          // Signed out the field can't answer, and a box that swallows typing
+          // is worse than one that plainly isn't ready yet.
+          disabled={!user}
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Tracks, artists, tags…"
-          aria-label="Search tracks to add"
+          aria-label={toQueue ? "Search tracks to queue" : "Search tracks to add"}
           className="pl-9"
           data-signal="add_music_search"
         />
       </div>
 
-      {!q.trim() ? (
+      {!user ? (
+        // The catalogue search is authenticated: signed out it answers 401,
+        // which would otherwise surface as "no matches" — a wrong answer to a
+        // question that was never asked.
         <EmptyState
-          title="Search to add"
+          title="Sign in to search"
+          hint="Your queue and library live with your account."
+          texture="tx-k2-static"
+        />
+      ) : !q.trim() ? (
+        <EmptyState
+          title={toQueue ? "Search to queue" : "Search to add"}
           hint="Find a track by title, artist or tag."
           texture="tx-k2-static"
         />
+      ) : searching ? (
+        // Not an EmptyState: "no matches" and "still looking" are different
+        // answers, and showing the former while a request is in flight reads
+        // as a result the search never gave.
+        <p className="text-sm text-muted-foreground">Searching…</p>
       ) : results.length === 0 ? (
         <EmptyState
           title="No matches"
@@ -66,7 +128,7 @@ export default function AddMusicPanel({
       ) : (
         <div className="space-y-1">
           {results.map((track, i) => {
-            const added = collection.trackIds.includes(track.id);
+            const added = isAdded(track.id);
             return (
               <div key={track.id} className="flex items-center gap-1">
                 <div className="flex-1 min-w-0">
@@ -86,11 +148,9 @@ export default function AddMusicPanel({
                   size="sm"
                   disabled={added}
                   aria-label={
-                    added
-                      ? `${track.title} already added`
-                      : `Add ${track.title}`
+                    added ? addedLabel(track.title) : addLabel(track.title)
                   }
-                  onClick={() => addTrackToCollection(collection.id, track.id)}
+                  onClick={() => add(track.id, track)}
                   data-signal="add_music_confirm"
                 >
                   <IconSwap

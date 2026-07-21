@@ -32,6 +32,7 @@ import {
   type MockUser,
 } from "./mock-data";
 import type { LibraryFilter } from "./library-utils";
+import { insertIntoQueue, type EnqueueMode } from "./queue-utils";
 import type { TextureName } from "@/components/studio/Texture";
 
 /**
@@ -52,6 +53,10 @@ interface MockStudioValue {
   isLoading: boolean;
   progressSec: number;
   play: (track: MockTrack, from?: MockCollection) => void;
+  /** Put a track into the running queue — what the rail shows under "Up next".
+   *  This is playback state, not library state: nothing is written to any
+   *  playlist, and no playlist needs to be open for it to work. */
+  enqueue: (track: MockTrack, mode?: EnqueueMode) => void;
   toggle: () => void;
   next: () => void;
   prev: () => void;
@@ -66,8 +71,17 @@ interface MockStudioValue {
   hasSearched: boolean;
   search: (query: string) => void;
   clearSearch: () => void;
+  /** One-shot track lookup for surfaces that search alongside the Search
+   *  screen (the rail's add-to-queue field). It returns its results instead of
+   *  publishing them, so a rail-side query can't wipe what the user is reading
+   *  on /search. */
+  searchTracks: (query: string) => Promise<MockTrack[]>;
   // library
   collections: MockCollection[];
+  /** True until the library has loaded. Routes that look a collection up by id
+   *  must wait on this — with a real backend `collections` is empty on the
+   *  first render, and treating that as "not found" flashes a false error. */
+  libraryLoading: boolean;
   libraryFilter: LibraryFilter;
   setLibraryFilter: (filter: LibraryFilter) => void;
   togglePin: (id: string) => void;
@@ -174,13 +188,10 @@ export default function MockStudioProvider({
     useState<MockCollection | null>(null);
   const [navDirection, setNavDirection] = useState<"next" | "prev" | null>(null);
 
-  const queue = useMemo(
-    () =>
-      playingCollection
-        ? getCollectionTracks(playingCollection)
-        : LIBRARY_QUEUE,
-    [playingCollection]
-  );
+  /** Held as state, not derived from `playingCollection`: the queue can be
+   *  added to on its own (the rail's add-to-queue field), so it has to be able
+   *  to differ from the collection playback started with. */
+  const [queue, setQueue] = useState<MockTrack[]>(LIBRARY_QUEUE);
 
   const togglePin = useCallback((id: string) => {
     setCollections((cs) =>
@@ -298,10 +309,20 @@ export default function MockStudioProvider({
       const nextQueue = source ? getCollectionTracks(source) : LIBRARY_QUEUE;
       const idx = nextQueue.findIndex((t) => t.id === track.id);
       setPlayingCollection(source);
+      setQueue(nextQueue);
       setNavDirection(null);
       startLoad(idx >= 0 ? idx : 0);
     },
     [startLoad]
+  );
+
+  /** Splices into the running queue. Deliberately does not start playback:
+   *  queueing something is a statement about what comes later, not now. */
+  const enqueue = useCallback(
+    (track: MockTrack, mode: EnqueueMode = "end") => {
+      setQueue((q) => insertIntoQueue(q, track, mode, currentIndex));
+    },
+    [currentIndex]
   );
 
   const toggle = useCallback(() => {
@@ -396,6 +417,13 @@ export default function MockStudioProvider({
     }, 550);
   }, []);
 
+  /** Async to match the real provider's network search; the fixtures answer
+   *  immediately, so callers written against one work against the other. */
+  const searchTracks = useCallback(
+    async (query: string) => searchMockTracks(query),
+    []
+  );
+
   const clearSearch = useCallback(() => {
     if (searchTimer.current) clearTimeout(searchTimer.current);
     setQuery("");
@@ -429,6 +457,7 @@ export default function MockStudioProvider({
     isLoading,
     progressSec,
     play,
+    enqueue,
     toggle,
     next,
     prev,
@@ -441,7 +470,9 @@ export default function MockStudioProvider({
     hasSearched,
     search,
     clearSearch,
+    searchTracks,
     collections,
+    libraryLoading: false,
     libraryFilter,
     setLibraryFilter,
     togglePin,

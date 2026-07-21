@@ -11,7 +11,7 @@ import {
 } from "@/components/studio/screens/mock-data";
 import { IDLE_LABEL } from "@/components/studio/screens/player-idle";
 import NowPlayingRail from "./NowPlayingRail";
-import { QUEUE, playlistHref, SCREENS } from "./routes";
+import { QUEUE } from "./routes";
 
 const { push, nav } = vi.hoisted(() => ({
   push: vi.fn(),
@@ -28,6 +28,15 @@ function Seed({ track, source }: { track: string; source: MockCollection }) {
   const { play } = useMockStudio();
   const found = getCollectionTracks(source).find((t) => t.id === track)!;
   return <button onClick={() => play(found, source)}>seed</button>;
+}
+
+/** Surfaces a collection's size, to prove queueing never wrote into it. */
+function CollectionProbe({ id }: { id: string }) {
+  const { collections } = useMockStudio();
+  const found = collections.find((c) => c.id === id);
+  return (
+    <div data-testid="collection-size">{found?.trackIds.length ?? -1}</div>
+  );
 }
 
 /** Surfaces nowPlaying so tests can assert a click actually changed it. */
@@ -68,49 +77,58 @@ describe("NowPlayingRail", () => {
     expect(scrollRegion!.contains(playerText)).toBe(false);
 
     expect(scrollRegion!.contains(screen.getByText("Up next"))).toBe(true);
-    expect(scrollRegion!.contains(screen.getByText("Add music"))).toBe(true);
+    expect(scrollRegion!.contains(screen.getByText("Add to queue"))).toBe(true);
   });
 
-  describe("add music section", () => {
-    it("shows an honest hint when the path is not a playlist route", () => {
-      nav.pathname = "/design-system/screens/home";
+  describe("add to queue section", () => {
+    it("offers a live field on a route with no playlist open", () => {
+      // The rail belongs to playback, not to the library: queueing must not
+      // depend on what page happens to be open.
+      nav.pathname = "/home";
       render(
         <MockStudioProvider>
           <NowPlayingRail />
         </MockStudioProvider>
       );
 
-      expect(
-        screen.getByText("Open a playlist to add tracks to it.")
-      ).toBeTruthy();
-      expect(screen.queryByLabelText("Search tracks to add")).toBeNull();
+      const field = screen.getByLabelText<HTMLInputElement>(
+        "Search tracks to queue"
+      );
+      expect(field.disabled).toBe(false);
     });
 
-    it("shows the add-music search field when the path is a playlist route", () => {
-      nav.pathname = playlistHref(LIKED_SONGS.id);
+    it("adds the picked track to the running queue, not to any playlist", async () => {
+      // Playing t8 — the last track of Liked Songs — so Up next is empty and
+      // anything appearing there can only have come from this field.
+      const source = LIKED_SONGS; // t2, t5, t7, t10, t8
       render(
         <MockStudioProvider>
+          <Seed track="t8" source={source} />
+          <CollectionProbe id={source.id} />
           <NowPlayingRail />
         </MockStudioProvider>
       );
 
-      expect(screen.getByLabelText("Search tracks to add")).toBeTruthy();
-      expect(
-        screen.queryByText("Open a playlist to add tracks to it.")
-      ).toBeNull();
-    });
+      fireEvent.click(screen.getByText("seed"));
+      expect(screen.getByText("Nothing queued yet.")).toBeTruthy();
+      const before = screen.getByTestId("collection-size").textContent;
 
-    it("falls back to the hint when the playlist id in the path is unknown", () => {
-      nav.pathname = `${SCREENS}/playlist/not-a-real-id`;
-      render(
-        <MockStudioProvider>
-          <NowPlayingRail />
-        </MockStudioProvider>
+      // t1 "Midnight Snowfall" is not in Liked Songs, so it is neither
+      // already queued nor already in the collection.
+      fireEvent.change(screen.getByLabelText("Search tracks to queue"), {
+        target: { value: "Midnight" },
+      });
+      fireEvent.click(
+        await screen.findByRole("button", {
+          name: "Add Midnight Snowfall to queue",
+        })
       );
 
-      expect(
-        screen.getByText("Open a playlist to add tracks to it.")
-      ).toBeTruthy();
+      // It landed in the queue preview...
+      const upNext = within(screen.getByRole("region", { name: "Up next" }));
+      expect(upNext.getByText("Midnight Snowfall")).toBeTruthy();
+      // ...and the collection playback started from is untouched.
+      expect(screen.getByTestId("collection-size").textContent).toBe(before);
     });
   });
 
@@ -149,7 +167,7 @@ describe("NowPlayingRail", () => {
 
       fireEvent.click(screen.getByText("seed"));
 
-      expect(screen.getByText("Queue is empty")).toBeTruthy();
+      expect(screen.getByText("Nothing queued yet.")).toBeTruthy();
       expect(screen.queryByText("Topographic Heart")).toBeNull();
     });
 
@@ -174,7 +192,7 @@ describe("NowPlayingRail", () => {
       expect(screen.getByText("Topographic Heart")).toBeTruthy();
       // t6 is the 6th track — the cap must stop the preview before it.
       expect(screen.queryByText("Ripple Theory")).toBeNull();
-      expect(screen.queryByText("Queue is empty")).toBeNull();
+      expect(screen.queryByText("Nothing queued yet.")).toBeNull();
     });
 
     it("navigates to the routed queue page from the Open queue control, at every width", () => {

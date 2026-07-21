@@ -1,12 +1,11 @@
 "use client";
 
 import { useMemo } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { ListBulletIcon } from "@radix-ui/react-icons";
 
 import SectionLabel from "@/components/studio/SectionLabel";
 import TrackRow from "@/components/studio/TrackRow";
-import EmptyState from "@/components/studio/EmptyState";
 import { PlayerButton } from "@/components/studio/PlayerButton";
 import DevicePlayer from "@/components/studio/screens/DevicePlayer";
 import AddMusicPanel from "@/components/studio/screens/AddMusicPanel";
@@ -14,7 +13,7 @@ import LikeButton from "@/components/studio/screens/LikeButton";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
 import useQueueCollection from "@/components/studio/screens/useQueueCollection";
 import { formatDuration, getCollectionTracks } from "@/components/studio/screens/mock-data";
-import { QUEUE, SCREENS } from "./routes";
+import { QUEUE } from "./routes";
 
 /**
  * A 340px rail has no room for the whole queue before it starts pushing the
@@ -23,8 +22,6 @@ import { QUEUE, SCREENS } from "./routes";
  * one tap away via "Open queue".
  */
 const UPCOMING_CAP = 5;
-
-const PLAYLIST_PREFIX = `${SCREENS}/playlist/`;
 
 /**
  * The docked player — always the player, even with nothing loaded.
@@ -100,12 +97,11 @@ function UpNextSection() {
       </div>
 
       {upcoming.length === 0 ? (
-        <EmptyState
-          title="Queue is empty"
-          hint="Nothing lined up after this track."
-          texture="tx-k2-static"
-          className="py-8"
-        />
+        // One quiet line, not a full empty-state block. An empty queue is the
+        // normal resting state of the rail, so it must not dominate it.
+        <p className="px-6 pb-3 text-sm text-muted-foreground">
+          Nothing queued yet.
+        </p>
       ) : (
         <div className="px-3 pb-2 space-y-1">
           {upcoming.map((track, i) => (
@@ -141,40 +137,34 @@ function UpNextSection() {
 }
 
 /**
- * AddMusicPanel for whichever collection the page column currently shows.
- * Derived from the pathname rather than context — the rail has no other way
- * to know what playlist route is open. Anywhere else (home, search, a
- * system route, or an unknown playlist id) gets an honest hint instead of a
- * disabled form.
+ * Add to the running queue — the list Up next is previewing directly above.
+ *
+ * This is not the add-to-playlist control; that one lives inside a playlist,
+ * where the playlist being edited is unambiguous. The rail belongs to
+ * playback, so its field works on every route with no playlist open and
+ * writes to no playlist: what you add here plays after what's playing.
  */
 function AddMusicSection() {
-  const pathname = usePathname();
-  const { collections } = useMockStudio();
-
-  const collection = useMemo(() => {
-    if (!pathname || !pathname.startsWith(PLAYLIST_PREFIX)) return undefined;
-    const rawId = pathname.slice(PLAYLIST_PREFIX.length);
-    const id = rawId ? decodeURIComponent(rawId) : undefined;
-    return id ? collections.find((c) => c.id === id) : undefined;
-  }, [pathname, collections]);
-
   return (
-    <div className="px-4 pt-5 pb-4 shrink-0">
-      <SectionLabel className="block mb-2">Add music</SectionLabel>
-      {collection ? (
-        <AddMusicPanel collection={collection} />
-      ) : (
-        <p className="type-muted text-sm text-muted-foreground">
-          Open a playlist to add tracks to it.
-        </p>
-      )}
-    </div>
+    <section
+      aria-labelledby="add-to-queue-label"
+      className="px-4 pt-5 pb-4 shrink-0"
+    >
+      <SectionLabel id="add-to-queue-label" className="block mb-2">
+        Add to queue
+      </SectionLabel>
+      {/* Carded to match the rails: the field is a control the user acts in,
+          not loose text floating at the bottom of the column. */}
+      <div className="rounded-lg border border-border bg-card/40 p-3">
+        <AddMusicPanel />
+      </div>
+    </section>
   );
 }
 
 /**
- * The right-hand 340px column: docked player, an Up next preview, and
- * Add music for whatever playlist the page column has open.
+ * The right-hand 340px column: docked player, an Up next preview of the
+ * running queue, and a field that adds to that same queue.
  *
  * The player is pinned (`shrink-0`, outside the scroll container) — same
  * pattern as `LibraryRail`'s header — so scrolling down to Up next / Add
