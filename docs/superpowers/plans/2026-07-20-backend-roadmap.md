@@ -178,19 +178,27 @@ layer.** Rows 26/27/28/31 (loop, shuffle, volume, `row_queue` UI) are UI and lan
 
 ## Phase 4 — Events
 
-- [ ] Client event transport: batch, debounce, flush on `visibilitychange` and `beforeunload`
-- [ ] Bind the reconciled `data-signal` vocabulary to the transport
-- [ ] `POST /api/events` — batched write, **gated on `privacy.saveHistory`**
-- [ ] `playEvents/{id}` with `listenedSec`, `completed`, `skipped`, `collectionId`,
-      `clientHourOfDay` (local to the user), `recommendationId`
-- [ ] Completion threshold `min(30s, durationSec * 0.5)`
-- [ ] Update `trackState` counters: `playCount`, `completedCount`, `skipCount`, `totalListenedSec`
-- [ ] Global `tracks.stats.playCount` — sharded counter or deferred aggregation (spec §14)
-- [ ] Wire `shelf_see_all` — no shelf passes `seeAllHref`, so it never fires
-- [ ] New signals: `follow`, `collection_save`, `queue_reorder`, `shuffle_toggle`,
-      `repeat_change`, `track_like`, `recommendation_play`
+Detailed plan: `2026-07-20-phase-4-events.md`. **Backend delivered.**
 
-**Closes:** the "nothing writes history" gap. Everything downstream depends on this.
+- [→] Client event transport: batch, debounce, flush on `visibilitychange`/`beforeunload` → phase 8
+- [→] Bind the reconciled `data-signal` vocabulary to the transport → phase 8
+- [x] `POST /api/events` — batched write, **gated on `privacy.saveHistory`**
+- [x] `playEvents/{id}` with `listenedSec`, `completed`, `skipped`, `collectionId`,
+      `clientHourOfDay` (local to the user), `recommendationId`
+- [x] Completion threshold `min(30s, durationSec * 0.5)` (`isCompleted`, unit-tested)
+- [x] Update `trackState` counters: `playCount`, `completedCount`, `skipCount`, `totalListenedSec`
+- [~] Global `tracks.stats.playCount` — deferred (per-doc hotspot, spec §14); noted, not inlined
+- [→] Wire `shelf_see_all` → phase 8
+- [→] New signals (`follow`, `collection_save`, …) — emitted by the transport → phase 8
+- [x] `DELETE /api/me/history` (moved from phase 2) — clears events + counters, keeps likes
+
+**Phase 4 complete — 2026-07-20.** Backend verified with **real data, no mocks**: 6 integration
+tests + a unit-tested completion threshold, all against the real emulator; `scripts/demo-events.ts`
+posts real play events off a live YouTube search and reads the counters and completed/skipped
+split back, then clears history. 69 integration + 305 unit green; typecheck and build clean.
+
+**Closes ledger rows 33 (play history) and 17 (clear history).** Row 34 (`shelf_see_all`) and the
+transport are UI → phase 8. Stats rollups consume these events in phase 5.
 
 ---
 
