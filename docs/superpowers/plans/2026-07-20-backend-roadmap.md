@@ -292,9 +292,14 @@ Detailed plan: `2026-07-20-phase-8-migration.md`. **Increments 1-6 delivered; 7 
 - [x] 5 Screens promoted to the app root; `/design-system` back to docs only
 - [x] 6 Legacy landing app, old data layer and the abandoned scraper deleted
 - [x] 7a **Production Firestore wiped** (12 docs: 9 users + 3 collections), backup taken
-- [ ] 7b Deploy `firestore.indexes.json` - **needs the owner**; the adminsdk service
-      account lacks `serviceusage`/index-admin
-- [ ] 7c Deploy `firestore.rules` (deny-all) - same
+- [ ] 7b Deploy `firestore.indexes.json` - **needs the owner**. Tried the CLI and the
+      Firestore Admin REST API directly; both refused with PERMISSION_DENIED. The
+      adminsdk service account has data-plane rights only, not `datastore.indexes.create`.
+      Production currently has **0 composite indexes**, so Liked Songs, browse-by-label,
+      recents and the feeds will 500 until they are created.
+- [x] 7c **`firestore.rules` deployed and live** (deny-all) via the Firebase Rules REST API -
+      ruleset `fbf2f9b9`, released to `cloud.firestore`. All client access denied; data
+      flows only through the authenticated Route Handlers.
 - [ ] Browser click-through of the promoted screens - the in-app preview pane would not
       hydrate this app (no console error; SSR, typecheck and build all clean)
 
