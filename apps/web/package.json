@@ -22,7 +22,6 @@
     "migrate:users": "tsx scripts/migrate-users-to-uid.ts"
   },
   "dependencies": {
-    "@fabricio-191/youtube": "^0.0.4",
     "@hookform/resolvers": "^5.4.0",
     "@radix-ui/react-alert-dialog": "^1.1.1",
     "@radix-ui/react-avatar": "^1.1.0",
