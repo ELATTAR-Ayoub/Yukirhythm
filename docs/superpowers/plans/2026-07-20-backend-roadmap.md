@@ -283,7 +283,25 @@ phase 8.
 
 ## Phase 8 — Migration
 
-Gets its own spec. The screens become the application.
+Detailed plan: `2026-07-20-phase-8-migration.md`. **Increments 1-6 delivered; 7 partly.**
+
+- [x] 1 Adapter layer (backend shapes -> screen shapes), unit-tested
+- [x] 2 Real auth (Firebase client + emulator) and a token-bound backend client
+- [x] 3 Real `StudioProvider` - real data, real react-player playback, track registry
+- [x] 4 Screens read feeds/stats/history from the context; both providers supply it
+- [x] 5 Screens promoted to the app root; `/design-system` back to docs only
+- [x] 6 Legacy landing app, old data layer and the abandoned scraper deleted
+- [x] 7a **Production Firestore wiped** (12 docs: 9 users + 3 collections), backup taken
+- [ ] 7b Deploy `firestore.indexes.json` - **needs the owner**; the adminsdk service
+      account lacks `serviceusage`/index-admin
+- [ ] 7c Deploy `firestore.rules` (deny-all) - same
+- [ ] Browser click-through of the promoted screens - the in-app preview pane would not
+      hydrate this app (no console error; SSR, typecheck and build all clean)
+
+**Owner action:** `firebase login && firebase deploy --only firestore:indexes,firestore:rules
+--project yukirythem-a38dd`
+
+294 unit + 93 integration green.
 
 - [ ] Move routes from `/design-system/screens/*` to the app root
 - [ ] Delete the landing page and the legacy dashboard
