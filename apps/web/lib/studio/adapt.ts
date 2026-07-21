@@ -1,6 +1,9 @@
-import type { Collection, Track, User } from "@/lib/catalog/model";
+import type { Collection, StatsRollup, Track, User } from "@/lib/catalog/model";
 import type {
+  HistoryGroup,
   MockCollection,
+  MockHistoryEntry,
+  MockStats,
   MockTrack,
   MockUser,
 } from "@/components/studio/screens/mock-data";
@@ -52,6 +55,60 @@ export function initialsOf(displayName: string): string {
   if (parts.length === 0) return "?";
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+/** Backend rollup → the shape /profile/stats renders. */
+export function toStudioStats(s: StatsRollup): MockStats {
+  return {
+    minutesWeek: s.minutesWeek,
+    minutesMonth: s.minutesMonth,
+    minutesAllTime: s.minutesAllTime,
+    streakDays: s.streakDays,
+    topArtists: s.topArtists.map((a) => ({ name: a.name, plays: a.plays })),
+    topTrackIds: s.topTrackIds,
+    // the screen calls the label "name"
+    genreSplit: s.genreSplit.map((g) => ({ name: g.label, pct: g.pct })),
+    byHour: s.byHour,
+  };
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Buckets a play into the group /profile/recents renders. The screen's groups
+ * are relative to now, so they are derived here rather than stored — a play
+ * that was "Today" yesterday must read as "Yesterday" tomorrow.
+ */
+export function historyGroupOf(startedAtMs: number, nowMs: number): HistoryGroup {
+  const startOfToday = new Date(nowMs);
+  startOfToday.setHours(0, 0, 0, 0);
+  if (startedAtMs >= startOfToday.getTime()) return "Today";
+  if (startedAtMs >= startOfToday.getTime() - DAY_MS) return "Yesterday";
+  return "This week";
+}
+
+/** "09:12" for today/yesterday, weekday ("Tue") for older — matches the screen. */
+export function historyTimeLabel(startedAtMs: number, group: HistoryGroup): string {
+  const d = new Date(startedAtMs);
+  if (group === "This week") {
+    return d.toLocaleDateString("en-US", { weekday: "short" });
+  }
+  return d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+}
+
+export function toStudioHistory(
+  items: { trackId: string; startedAtMs: number; collection: { collectionId: string } | null }[],
+  nowMs: number
+): MockHistoryEntry[] {
+  return items.map((i) => {
+    const group = historyGroupOf(i.startedAtMs, nowMs);
+    return {
+      trackId: i.trackId,
+      collectionId: i.collection?.collectionId ?? "",
+      group,
+      timeLabel: historyTimeLabel(i.startedAtMs, group),
+    };
+  });
 }
 
 export function toStudioUser(u: User): MockUser {

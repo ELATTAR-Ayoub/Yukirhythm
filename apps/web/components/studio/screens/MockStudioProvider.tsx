@@ -13,12 +13,21 @@ import {
   LIKED_SONGS,
   LIKED_SONGS_ID,
   MOCK_COLLECTIONS,
+  MOCK_HISTORY,
+  MOCK_STATS,
   MOCK_TRACKS,
   MOCK_USER,
+  NEW_RELEASE_IDS,
+  YOU_MIGHT_LIKE_IDS,
   getCollectionTracks,
+  getTrack,
+  recentCollections,
+  searchMockCollections,
   searchMockTracks,
   type CollectionKind,
   type MockCollection,
+  type MockHistoryEntry,
+  type MockStats,
   type MockTrack,
   type MockUser,
 } from "./mock-data";
@@ -87,6 +96,21 @@ interface MockStudioValue {
     cover?: "texture" | "mosaic";
     trackIds?: string[];
   }) => MockCollection;
+  // feeds & profile data (phase 8). Both providers supply these — the mock one
+  // from fixtures, the real one from /api/feed, /api/me/stats and /api/me/recents
+  // — so the screens read one shape and never import fixtures directly.
+  /** Home "Jump back in": collections played recently. */
+  jumpBackIn: MockCollection[];
+  /** Home "New releases". */
+  newReleases: MockTrack[];
+  /** Search "You might like". */
+  youMightLike: MockTrack[];
+  /** Collections matching the current search query (the caller's own library). */
+  collectionResults: MockCollection[];
+  /** Listening stats; null while loading or signed out. */
+  stats: MockStats | null;
+  /** Play history, newest first, grouped for the Recents screen. */
+  recents: MockHistoryEntry[];
   // player surface
   playerExpanded: boolean;
   setPlayerExpanded: (open: boolean) => void;
@@ -357,7 +381,12 @@ export default function MockStudioProvider({
   const signIn = useCallback(() => setUser(MOCK_USER), []);
   const signOut = useCallback(() => setUser(null), []);
 
+  /** The live query, so collection results can live on the context like the
+   *  real provider's do rather than being recomputed inside the screen. */
+  const [query, setQuery] = useState("");
+
   const search = useCallback((query: string) => {
+    setQuery(query);
     setHasSearched(true);
     setSearching(true);
     if (searchTimer.current) clearTimeout(searchTimer.current);
@@ -369,10 +398,27 @@ export default function MockStudioProvider({
 
   const clearSearch = useCallback(() => {
     if (searchTimer.current) clearTimeout(searchTimer.current);
+    setQuery("");
     setSearchResults([]);
     setSearching(false);
     setHasSearched(false);
   }, []);
+
+  // Feed data from the fixtures, in the same shape the real provider supplies.
+  const resolve = (ids: string[]): MockTrack[] =>
+    ids.map(getTrack).filter((t): t is MockTrack => t !== undefined);
+  const jumpBackIn = useMemo(
+    () => recentCollections(MOCK_HISTORY, collections),
+    [collections]
+  );
+  const newReleases = useMemo(() => resolve(NEW_RELEASE_IDS), []);
+  const youMightLike = useMemo(() => resolve(YOU_MIGHT_LIKE_IDS), []);
+  const collectionResults = useMemo(
+    () => (query.trim() ? searchMockCollections(query, collections) : []),
+    [query, collections]
+  );
+  const stats: MockStats = MOCK_STATS;
+  const recents: MockHistoryEntry[] = MOCK_HISTORY;
 
   const value: MockStudioValue = {
     queue,
@@ -404,6 +450,12 @@ export default function MockStudioProvider({
     toggleTrackInCollection,
     addTrackToCollection,
     createCollection,
+    jumpBackIn,
+    newReleases,
+    youMightLike,
+    collectionResults,
+    stats,
+    recents,
     playerExpanded,
     volume,
     setVolume,

@@ -12,16 +12,11 @@ import CollectionArt from "@/components/studio/screens/CollectionArt";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
 import { useIsDesktop } from "@/components/studio/shell/useBreakpoint";
 import { playlistHref } from "@/components/studio/shell/routes";
-import {
-  MOCK_HISTORY,
-  NEW_RELEASE_IDS,
-  formatDuration,
-  getTrack,
-  recentCollections,
-} from "@/components/studio/screens/mock-data";
+import { formatDuration } from "@/components/studio/screens/mock-data";
 
 export default function HomeScreen() {
-  const { user, collections, nowPlaying, isPlaying, play } = useMockStudio();
+  const { user, nowPlaying, isPlaying, play, jumpBackIn, newReleases } =
+    useMockStudio();
   const isDesktop = useIsDesktop();
   /**
    * MediaCard is a fixed-width scroller card (`BOXY_WIDTHS`) by default. The
@@ -31,8 +26,6 @@ export default function HomeScreen() {
    * and only when, the shelf itself is actually in grid shape.
    */
   const shelfCardClassName = isDesktop ? "w-full" : undefined;
-
-  const recents = recentCollections(MOCK_HISTORY, collections);
 
   /** Enter/Space activation for non-button click targets. */
   const playKeyHandler = (fn: () => void) => (e: React.KeyboardEvent) => {
@@ -58,9 +51,9 @@ export default function HomeScreen() {
       />
 
       <div className="space-y-10">
-        {user && recents.length > 0 ? (
+        {user && jumpBackIn.length > 0 ? (
           <RailShelf label="Recently played" title="Jump back in" grid>
-            {recents.map((c) => (
+            {jumpBackIn.map((c) => (
               <Link
                 key={c.id}
                 href={playlistHref(c.id)}
@@ -83,12 +76,10 @@ export default function HomeScreen() {
         ) : null}
 
         <RailShelf label="Fresh drops" title="New releases" grid>
-          {NEW_RELEASE_IDS.map((id) => {
-            const track = getTrack(id);
-            if (!track) return null;
+          {newReleases.map((track) => {
             return (
               <div
-                key={id}
+                key={track.id}
                 role="button"
                 tabIndex={0}
                 aria-label={`Play ${track.title}`}

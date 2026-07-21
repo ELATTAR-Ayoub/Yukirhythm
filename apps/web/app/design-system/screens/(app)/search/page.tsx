@@ -18,11 +18,8 @@ import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
 import { playlistHref } from "@/components/studio/shell/routes";
 import {
   EXPLORE_TILES,
-  NEW_RELEASE_IDS,
-  YOU_MIGHT_LIKE_IDS,
   formatDuration,
-  getTrack,
-  searchMockCollections,
+  type MockTrack,
 } from "@/components/studio/screens/mock-data";
 
 /** Enter/Space activation for non-button click targets. */
@@ -36,21 +33,19 @@ const playKeyHandler = (fn: () => void) => (e: React.KeyboardEvent) => {
 function TrackShelf({
   label,
   title,
-  ids,
+  tracks,
 }: {
   label: string;
   title: string;
-  ids: string[];
+  tracks: MockTrack[];
 }) {
   const { play, nowPlaying, isPlaying } = useMockStudio();
   return (
     <RailShelf label={label} title={title}>
-      {ids.map((id) => {
-        const track = getTrack(id);
-        if (!track) return null;
+      {tracks.map((track) => {
         return (
           <div
-            key={id}
+            key={track.id}
             role="button"
             tabIndex={0}
             aria-label={`Play ${track.title}`}
@@ -83,7 +78,9 @@ export default function SearchScreen() {
     play,
     nowPlaying,
     isPlaying,
-    collections,
+    youMightLike,
+    newReleases,
+    collectionResults,
   } = useMockStudio();
   const [q, setQ] = useState("");
 
@@ -93,9 +90,9 @@ export default function SearchScreen() {
     else clearSearch();
   };
 
-  // Live provider collections, so Liked Songs and anything the create wizard
-  // made are findable.
-  const collectionHits = q.trim() ? searchMockCollections(q, collections) : [];
+  // Collection results come from the provider (the caller's own library), so
+  // Liked Songs and anything the create wizard made are findable.
+  const collectionHits = collectionResults;
   const idle = !q.trim();
 
   return (
@@ -118,7 +115,7 @@ export default function SearchScreen() {
           <TrackShelf
             label="For you"
             title="You might like"
-            ids={YOU_MIGHT_LIKE_IDS}
+            tracks={youMightLike}
           />
 
           <section>
@@ -149,7 +146,7 @@ export default function SearchScreen() {
           <TrackShelf
             label="Fresh drops"
             title="New releases"
-            ids={NEW_RELEASE_IDS}
+            tracks={newReleases}
           />
         </div>
       ) : (

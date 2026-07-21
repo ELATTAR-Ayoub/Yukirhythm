@@ -8,16 +8,16 @@ import DataText from "@/components/studio/DataText";
 import TrackRow from "@/components/studio/TrackRow";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
 import {
-  MOCK_STATS,
-  formatDuration,
+    formatDuration,
   getTrack,
 } from "@/components/studio/screens/mock-data";
 
 const BASE = "/design-system/screens";
 
 export default function StatsScreen() {
-  const { user, play, nowPlaying, isPlaying } = useMockStudio();
+  const { user, play, nowPlaying, isPlaying, stats } = useMockStudio();
   if (!user) return <SignInPrompt />;
+  if (!stats) return null;
 
   /** Enter/Space activation for non-button click targets. */
   const playKeyHandler = (fn: () => void) => (e: React.KeyboardEvent) => {
@@ -32,15 +32,15 @@ export default function StatsScreen() {
       <div>
         <BackHeader title="Listening stats" backHref={`${BASE}/profile`} />
         <div className="grid grid-cols-2 gap-3">
-          <StatCard label="This week" value={`${MOCK_STATS.minutesWeek} min`} />
-          <StatCard label="This month" value={`${MOCK_STATS.minutesMonth} min`} />
+          <StatCard label="This week" value={`${stats.minutesWeek} min`} />
+          <StatCard label="This month" value={`${stats.minutesMonth} min`} />
           <StatCard
             label="All time"
-            value={`${Math.round(MOCK_STATS.minutesAllTime / 60)} hrs`}
+            value={`${Math.round(stats.minutesAllTime / 60)} hrs`}
           />
           <StatCard
             label="Streak"
-            value={`${MOCK_STATS.streakDays} days`}
+            value={`${stats.streakDays} days`}
             hint="listened every day"
           />
         </div>
@@ -49,7 +49,7 @@ export default function StatsScreen() {
       <section>
         <SectionLabel>Top artists</SectionLabel>
         <div className="mt-2 rounded-lg border border-border bg-card divide-y divide-border">
-          {MOCK_STATS.topArtists.map((artist, i) => (
+          {stats.topArtists.map((artist, i) => (
             <div key={artist.name} className="flex items-center gap-3 px-4 py-2.5">
               <DataText className="text-sm text-muted-foreground w-6">
                 {String(i + 1).padStart(2, "0")}
@@ -68,7 +68,7 @@ export default function StatsScreen() {
       <section>
         <SectionLabel>Top tracks</SectionLabel>
         <div className="space-y-1 mt-2">
-          {MOCK_STATS.topTrackIds.map((id, i) => {
+          {stats.topTrackIds.map((id, i) => {
             const track = getTrack(id);
             if (!track) return null;
             return (
@@ -98,7 +98,7 @@ export default function StatsScreen() {
       <section>
         <SectionLabel>Genres</SectionLabel>
         <div className="space-y-2.5 mt-2">
-          {MOCK_STATS.genreSplit.map((genre) => (
+          {stats.genreSplit.map((genre) => (
             <div key={genre.name}>
               <div className="flex items-center justify-between mb-1">
                 <span className="font-ui text-sm">{genre.name}</span>
@@ -123,7 +123,7 @@ export default function StatsScreen() {
           className="flex items-end gap-1 h-24 mt-2"
           aria-label="Listening intensity by hour of day"
         >
-          {MOCK_STATS.byHour.map((v, hour) => (
+          {stats.byHour.map((v, hour) => (
             <div
               key={hour}
               className="flex-1 rounded-sm bg-primary/80 min-h-[2px]"

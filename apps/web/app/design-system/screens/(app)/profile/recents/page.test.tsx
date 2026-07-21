@@ -10,6 +10,9 @@ vi.mock("@/components/studio/screens/MockStudioProvider", () => ({
     play,
     nowPlaying: null,
     isPlaying: false,
+    // History now comes from the provider (phase 8) rather than the fixture
+    // module, so the stub has to supply it.
+    recents: MOCK_HISTORY,
   }),
 }));
 

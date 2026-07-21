@@ -26,10 +26,16 @@ import { useAuthState, signIn as fbSignIn, signOutUser } from "@/lib/studio/useA
 import { useBackend } from "@/lib/studio/useBackend";
 import {
   toStudioCollection,
+  toStudioHistory,
+  toStudioStats,
   toStudioTrack,
   toStudioUser,
 } from "@/lib/studio/adapt";
 import type { Track } from "@/lib/catalog/model";
+import type {
+  MockHistoryEntry,
+  MockStats,
+} from "@/components/studio/screens/mock-data";
 
 // react-player pulls in browser-only globals; load it client-side only.
 const ReactPlayer = dynamic(() => import("react-player"), { ssr: false });
@@ -72,9 +78,17 @@ export default function StudioProvider({
 
   // search
   const [searchResults, setSearchResults] = useState<MockTrack[]>([]);
+  const [collectionResults, setCollectionResults] = useState<MockCollection[]>([]);
   const [searching, setSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // feeds + profile data
+  const [jumpBackIn, setJumpBackIn] = useState<MockCollection[]>([]);
+  const [newReleases, setNewReleases] = useState<MockTrack[]>([]);
+  const [youMightLike, setYouMightLike] = useState<MockTrack[]>([]);
+  const [stats, setStats] = useState<MockStats | null>(null);
+  const [recents, setRecents] = useState<MockHistoryEntry[]>([]);
 
   const nowPlaying = currentIndex >= 0 ? (queue[currentIndex] ?? null) : null;
 
@@ -135,6 +149,34 @@ export default function StudioProvider({
       if (!live || !me) return;
       setUser(toStudioUser(me));
       await refreshLibrary();
+
+      // Feeds and profile data. Each is independent — one failing rail must not
+      // blank the others, so they settle separately.
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      void backend.feed.jumpBackIn().then(
+        (r) => live && setJumpBackIn(r.collections.map((c) => toStudioCollection(c))),
+        () => {}
+      );
+      void backend.feed.newReleases().then(
+        (r) => live && setNewReleases(absorb(r.items.map((i) => i.track))),
+        () => {}
+      );
+      void backend.feed.youMightLike().then(
+        (r) => live && setYouMightLike(absorb(r.items.map((i) => i.track))),
+        () => {}
+      );
+      void backend.me.stats(tz).then(
+        (s) => live && setStats(toStudioStats(s)),
+        () => {}
+      );
+      void backend.me.recents().then(
+        (r) => {
+          if (!live) return;
+          absorb(r.items.map((i) => i.track).filter((t): t is Track => t !== null));
+          setRecents(toStudioHistory(r.items, Date.now()));
+        },
+        () => {}
+      );
     })();
     return () => {
       live = false;
@@ -256,12 +298,20 @@ export default function StudioProvider({
       setSearching(true);
       if (searchTimer.current) clearTimeout(searchTimer.current);
       searchTimer.current = setTimeout(async () => {
-        try {
-          const res = await backend.catalog.search(query, "song");
-          setSearchResults(absorb(res.tracks));
-        } catch {
-          setSearchResults([]);
-        }
+        // Catalogue (YouTube) and the caller's own library are separate
+        // surfaces on the Search screen, so both are fetched.
+        const [cat, lib] = await Promise.allSettled([
+          backend.catalog.search(query, "song"),
+          backend.me.library(query),
+        ]);
+        setSearchResults(
+          cat.status === "fulfilled" ? absorb(cat.value.tracks) : []
+        );
+        setCollectionResults(
+          lib.status === "fulfilled"
+            ? lib.value.collections.map((c) => toStudioCollection(c))
+            : []
+        );
         setSearching(false);
       }, 550);
     },
@@ -270,6 +320,7 @@ export default function StudioProvider({
   const clearSearch = useCallback(() => {
     if (searchTimer.current) clearTimeout(searchTimer.current);
     setSearchResults([]);
+    setCollectionResults([]);
     setSearching(false);
     setHasSearched(false);
   }, []);
@@ -400,6 +451,12 @@ export default function StudioProvider({
       toggleTrackInCollection,
       addTrackToCollection,
       createCollection,
+      jumpBackIn,
+      newReleases,
+      youMightLike,
+      collectionResults,
+      stats,
+      recents,
       playerExpanded,
       volume,
       setVolume,
@@ -413,7 +470,8 @@ export default function StudioProvider({
       searchResults, searching, hasSearched, search, clearSearch, collections,
       libraryFilter, togglePin, isLiked, toggleLike, toggleTrackInCollection,
       addTrackToCollection, createCollection, playerExpanded, volume, setVolume,
-      toggleMute,
+      toggleMute, jumpBackIn, newReleases, youMightLike, collectionResults,
+      stats, recents,
     ]
   );
 
