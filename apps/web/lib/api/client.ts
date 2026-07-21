@@ -1,3 +1,7 @@
+// DEPRECATED — legacy client for the old landing/dashboard app and the old
+// userData/collectionData shapes. The go-forward system is lib/api/endpoints.ts
+// (the centralized URL registry) + lib/api/backend.ts (the typed client). This
+// file and its only consumer, context/AuthContext.tsx, are removed in phase 8.
 import { auth } from "@/config/firebase";
 import type { Audio, Collection, User } from "@/constants/interfaces";
 

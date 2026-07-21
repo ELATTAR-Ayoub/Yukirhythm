@@ -108,11 +108,9 @@ describe("GET /api/catalog/search", () => {
     const res = await searchGET(req("/api/catalog/search?q=daft+punk", token));
     expect(res.status).toBe(200);
 
-    const body = (await res.json()) as { tracks: { providerTrackId: string }[] };
-    expect(body.tracks.map((t) => t.providerTrackId)).toEqual([
-      "playable1",
-      "playable2",
-    ]);
+    // Search returns the canonical Track shape (trackId), not raw ProviderTrack.
+    const body = (await res.json()) as { tracks: { trackId: string }[] };
+    expect(body.tracks.map((t) => t.trackId)).toEqual(["playable1", "playable2"]);
 
     // the blocked track never reached the store
     const stored = await adminDb().collection("tracks").get();
