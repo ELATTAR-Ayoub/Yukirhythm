@@ -106,30 +106,42 @@ Until then everything runs against the local emulator.
 
 ## Phase 2 — Identity & collections
 
-- [ ] `users/{uid}` with `authProvider`, `privacy`, `settings`, `counts`, `createdAt`
-- [ ] Capture the auth provider at sign-in — currently the string is used only in a toast, so
-      Settings hardcodes "Connected with Google"
-- [ ] `/api/me` GET/POST/PATCH — privacy and settings persist
-- [ ] Settings: audio quality and language become real (both toast stubs today)
-- [ ] Privacy: three toggles persist; **`saveHistory: false` must actually suppress writes in phase 4**
-- [ ] `DELETE /api/me/history` — the Clear button is a toast today
-- [ ] `collections/{id}` with `role` + `contentType`, `cover`/`texture`, timestamped `tracks[]`
-- [ ] `POST /api/collections` accepting all seven wizard fields atomically
-- [ ] `PUT/DELETE /api/collections/[id]/tracks/[trackId]` — transactional `stats`
-- [ ] `PATCH /api/collections/[id]/order` — reorder
-- [ ] **Remove-track UI** in `CollectionDetail` — no representation today
-- [ ] **Drag-reorder UI** in `CollectionDetail`
-- [ ] `TrackState.isLiked` + `PUT /api/me/track-state/[trackId]`
-- [ ] Liked Songs rendered as a **virtual** collection from the overlay, ordered by `likedAt`
-- [ ] `TrackMenu`: Like becomes real (toast today, writes nothing)
-- [ ] `TrackMenu`: Add to playlist opens a real picker (toast today)
-- [ ] `TrackMenu`: Share copies a real link (toast today, copies nothing)
-- [ ] `collectionState.isPinned` + **pin/unpin control in Library** — `togglePin` exists in the
-      provider but no UI reaches it
-- [ ] `"Joined March 2024"` reads `user.createdAt`
-- [ ] Redirect guard on `/auth` for already-signed-in users
+Detailed plan: `2026-07-20-phase-2-identity-collections.md`. **Backend delivered.** UI wiring
+(marked → below) stays for phase 8, matching the phase 1 discipline.
 
-**Closes:** 13 stubs. Library, create, and collection editing become fully real.
+- [x] `users/{uid}` with `authProvider`, `privacy`, `settings`, `counts`, `createdAt`
+- [x] Capture the auth provider — `POST /api/me` persists `authProvider` honestly (immutable after)
+- [x] `/api/me` GET/POST/PATCH — privacy and settings persist
+- [→] Settings: audio quality and language inputs → phase 8 (routes persist them now)
+- [x] Privacy: three toggles persist via PATCH; `saveHistory` gate enforced in phase 4
+- [→] `DELETE /api/me/history` — belongs with the event store; **moved to phase 4**
+- [x] `collections/{id}` with `role` + `contentType`, `cover`/`texture`, timestamped `tracks[]`
+- [x] `POST /api/collections` accepting all seven wizard fields atomically
+- [x] `PUT/DELETE /api/collections/[id]/tracks/[trackId]` — transactional `stats`
+- [x] `PATCH /api/collections/[id]/order` — reorder (permutation-checked)
+- [→] **Remove-track UI** in `CollectionDetail` → phase 8 (DELETE route exists)
+- [→] **Drag-reorder UI** in `CollectionDetail` → phase 8 (order route exists)
+- [x] `TrackState.isLiked` + `PUT /api/me/track-state/[trackId]`
+- [x] Liked Songs as a **virtual** collection from the overlay, ordered by `likedAt` (`GET /api/me/liked`)
+- [x] ~~`TrackMenu` Like / Add / Share~~ — already real (closed by earlier screen work; wiring to
+      these routes in phase 8)
+- [x] `collectionState.isPinned` (`PUT /api/me/collection-state/[id]`); the Library pin control
+      already exists via `CollectionMenu`
+- [→] `"Joined March 2024"` reads `user.createdAt` → phase 8 (field exists)
+- [→] Redirect guard on `/auth` → phase 8
+
+**Also delivered:** `GET /api/library/search` (ledger row 10, moved from phase 1) — searches the
+caller's own collections and liked tracks; and `firestore.indexes.json` declaring the two
+production composite indexes the emulator does not enforce.
+
+**Phase 2 complete — 2026-07-20.** Backend verified with **real data, no mocks**: 51 integration
+tests against the real Firestore + Auth emulators (real transactions, real token verification,
+concurrent-add consistency, virtual Liked Songs ordering). `scripts/demo-collections.ts` runs
+the whole flow on live YouTube data through the real routes — create, add, remove, reorder, like,
+read — input matching output. Typecheck and build clean.
+
+**Backend closes ledger rows 10, 11–17, 22, 23 at the data layer; their UI wiring lands in
+phase 8** (screens still on `MockStudioProvider`). Row 17 (clear history) reassigned to phase 4.
 
 ---
 
