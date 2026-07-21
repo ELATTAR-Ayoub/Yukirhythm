@@ -1,7 +1,8 @@
 import { PauseIcon, PlayIcon } from "@radix-ui/react-icons";
 
 import { cn } from "@/lib/utils";
-import Texture, { TextureName } from "@/components/studio/Texture";
+import Artwork from "@/components/studio/Artwork";
+import { TextureName } from "@/components/studio/Texture";
 import DataText from "@/components/studio/DataText";
 import EqIndicator from "@/components/studio/EqIndicator";
 import { PlayerButton } from "@/components/studio/PlayerButton";
@@ -47,7 +48,7 @@ const TITLE_SIZES: Record<MediaCardSize, string> = {
   lg: "text-xl",
 };
 
-function Artwork({
+function CardArt({
   texture,
   artUrl,
   art,
@@ -63,13 +64,9 @@ function Artwork({
   if (art) {
     return <div className={className}>{art}</div>;
   }
-  if (artUrl) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img src={artUrl} alt={title} className={cn("object-cover", className)} />
-    );
-  }
-  return <Texture name={texture ?? "tx-k-marble"} className={className} />;
+  return (
+    <Artwork src={artUrl} texture={texture ?? "tx-k-marble"} alt={title} className={className} />
+  );
 }
 
 function PlayOverlay({ playing }: { playing: boolean }) {
@@ -131,7 +128,7 @@ export default function MediaCard({
             size === "sm" ? "w-12 h-12" : size === "md" ? "w-16 h-16" : "w-24 h-24"
           )}
         >
-          <Artwork
+          <CardArt
             texture={texture}
             artUrl={artUrl}
             art={art}
@@ -179,7 +176,7 @@ export default function MediaCard({
       data-signal="card_play"
     >
       <div className="relative aspect-square rounded-md overflow-hidden">
-        <Artwork
+        <CardArt
           texture={texture}
           artUrl={artUrl}
           art={art}

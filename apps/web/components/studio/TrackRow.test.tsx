@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 
 import TrackRow from "./TrackRow";
 
@@ -92,6 +92,16 @@ describe("TrackRow", () => {
       // discoverability) — only `playable={false}` removes it.
       expect(screen.getByRole("button", { name: "Play" })).toBeTruthy();
       expect(container.querySelector("svg")).toBeTruthy();
+    });
+
+    it("falls back to the texture when the artwork URL fails to load", () => {
+      const { container } = render(
+        <TrackRow title="Realize" artUrl="https://cdn/gone.jpg" texture="tx-k-silk" />
+      );
+      const img = container.querySelector("img")!;
+      expect(img).toBeTruthy();
+      fireEvent.error(img);
+      expect(container.querySelector("img")).toBeNull();
     });
   });
 });

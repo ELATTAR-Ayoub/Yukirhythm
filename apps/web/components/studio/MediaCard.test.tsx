@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 
 import MediaCard from "./MediaCard";
 
@@ -46,5 +46,15 @@ describe("MediaCard play overlay", () => {
       <MediaCard title="Cobalt Dreams" artist="Aoi Waves" playable={false} />
     );
     expect(screen.queryByRole("button", { name: "Play" })).toBeNull();
+  });
+
+  it("falls back to the texture when the artwork URL fails to load", () => {
+    const { container } = render(
+      <MediaCard title="Realize" artUrl="https://cdn/gone.jpg" texture="tx-k-silk" />
+    );
+    const img = container.querySelector("img")!;
+    expect(img).toBeTruthy();
+    fireEvent.error(img);
+    expect(container.querySelector("img")).toBeNull();
   });
 });
