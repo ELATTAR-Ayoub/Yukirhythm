@@ -4,7 +4,7 @@ import BackHeader from "@/components/studio/screens/BackHeader";
 import CollectionDetail from "@/components/studio/screens/CollectionDetail";
 import useQueueCollection from "@/components/studio/screens/useQueueCollection";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
-import { HOME } from "@/components/studio/shell/routes";
+import { HOME, QUEUE_ADD } from "@/components/studio/shell/routes";
 
 /**
  * The queue route, reachable at every width — see NowPlayingRail's and
@@ -26,6 +26,7 @@ export default function QueueScreen() {
       <CollectionDetail
         collection={collection}
         playFrom={playingCollection ?? undefined}
+        addHref={QUEUE_ADD}
       />
     </div>
   );

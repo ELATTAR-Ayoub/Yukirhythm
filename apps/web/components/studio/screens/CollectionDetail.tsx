@@ -119,6 +119,9 @@ interface CollectionDetailProps {
   collection: MockCollection;
   /** Play calls carry the collection so the queue follows what was opened. */
   playFrom?: MockCollection;
+  /** Where the "+" goes. Defaults to this collection's add-music route. The
+   *  queue passes its own, because the queue has no id to build one from. */
+  addHref?: string;
 }
 
 /**
@@ -130,6 +133,7 @@ interface CollectionDetailProps {
 export default function CollectionDetail({
   collection,
   playFrom,
+  addHref,
 }: CollectionDetailProps) {
   const { play, toggle, nowPlaying, isPlaying } = useMockStudio();
   const router = useRouter();
@@ -198,7 +202,7 @@ export default function CollectionDetail({
             variant="outline"
             size="sm"
             aria-label="Add music"
-            onClick={() => router.push(addMusicHref(collection.id))}
+            onClick={() => router.push(addHref ?? addMusicHref(collection.id))}
             data-signal="add_music_open"
           >
             <PlusIcon />

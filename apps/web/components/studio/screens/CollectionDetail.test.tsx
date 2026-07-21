@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 
 import MockStudioProvider from "@/components/studio/screens/MockStudioProvider";
-import { LIKED_SONGS } from "@/components/studio/screens/mock-data";
+import { LIKED_SONGS, MOCK_COLLECTIONS } from "@/components/studio/screens/mock-data";
 import { addMusicHref } from "@/components/studio/shell/routes";
 import CollectionDetail from "./CollectionDetail";
 
@@ -113,6 +113,18 @@ describe("CollectionDetail", () => {
       expect(push).toHaveBeenCalledWith(addMusicHref(LIKED_SONGS.id));
       // No drawer form should ever mount alongside this control any more.
       expect(screen.queryByLabelText("Search tracks to add")).toBeNull();
+    });
+
+    it("routes the add button to addHref when one is given", () => {
+      // The queue passes its own destination; without this the button builds
+      // /playlist/queue/add from the synthetic id and dead-ends.
+      render(
+        <MockStudioProvider>
+          <CollectionDetail collection={MOCK_COLLECTIONS[0]} addHref="/queue/add" />
+        </MockStudioProvider>
+      );
+      fireEvent.click(screen.getByLabelText("Add music"));
+      expect(push).toHaveBeenCalledWith("/queue/add");
     });
   });
 });

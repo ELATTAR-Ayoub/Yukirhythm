@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 
 import MockStudioProvider, {
@@ -8,8 +8,10 @@ import { LIKED_SONGS, getCollectionTracks } from "@/components/studio/screens/mo
 import { HOME } from "@/components/studio/shell/routes";
 import QueueScreen from "./page";
 
+const { push } = vi.hoisted(() => ({ push: vi.fn() }));
+
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: () => {} }),
+  useRouter: () => ({ push }),
 }));
 
 function Seed({ track, source }: { track: string; source: typeof LIKED_SONGS }) {
@@ -19,6 +21,8 @@ function Seed({ track, source }: { track: string; source: typeof LIKED_SONGS }) 
 }
 
 describe("QueueScreen", () => {
+  beforeEach(() => push.mockClear());
+
   it("renders the synthetic Up next queue on a cold session, nothing ever played", () => {
     // Regression guard: an earlier bug made the queue unreachable before
     // anything had played. useQueueCollection()'s fallback must carry this
@@ -59,5 +63,16 @@ describe("QueueScreen", () => {
 
     const back = screen.getByLabelText("Back") as HTMLAnchorElement;
     expect(back.getAttribute("href")).toBe(HOME);
+  });
+
+  it("sends the add button to the queue's own add route, never /playlist/queue/add", () => {
+    render(
+      <MockStudioProvider>
+        <QueueScreen />
+      </MockStudioProvider>
+    );
+    fireEvent.click(screen.getByLabelText("Add music"));
+    expect(push).toHaveBeenCalledWith("/queue/add");
+    expect(push).not.toHaveBeenCalledWith("/playlist/queue/add");
   });
 });

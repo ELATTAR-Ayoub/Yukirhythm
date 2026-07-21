@@ -16,6 +16,11 @@ export const CREATE = `${SCREENS}/create`;
 /** Routed form of the queue, reachable at every width (see NowPlayingRail,
  *  Transport/DevicePlayer/PlaybackBar). */
 export const QUEUE = `${SCREENS}/queue`;
+/** Add-to-queue. Deliberately NOT `/playlist/queue/add`: the queue is not a
+ *  collection, has no id to look up, and adding to it must write to no
+ *  playlist. Routing it through the playlist add screen is what produced the
+ *  "Collection not found" error. */
+export const QUEUE_ADD = `${QUEUE}/add`;
 
 /**
  * Pages that are not music surfaces. On these the shell hides both rails and
