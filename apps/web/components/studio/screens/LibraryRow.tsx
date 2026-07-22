@@ -31,7 +31,12 @@ export function LibraryRowCard({ collection, playable }: LibraryRowCardProps) {
         size="sm"
         playable={playable}
       />
-      {collection.pinned ? (
+      {/* A pin badge promises "you pinned this, you can unpin it." Liked Songs
+          is pinned: true so filterLibrary's ranking still sorts it first, but
+          it's first because it's permanent — a different fact — and
+          CollectionMenu no longer offers Unpin for it. Showing the badge
+          would advertise a control the row doesn't have. */}
+      {collection.pinned && !collection.system ? (
         <DrawingPinFilledIcon
           aria-label="Pinned"
           className="absolute top-2.5 right-2.5 w-3.5 h-3.5 text-primary"

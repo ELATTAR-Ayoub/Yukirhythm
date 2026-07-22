@@ -44,6 +44,10 @@ describe("LibraryRail", () => {
   beforeEach(() => {
     nav.pathname = "/design-system/screens/home";
     push.mockClear();
+    // Needed for CollectionMenu's Radix dropdown, opened via pointerdown.
+    window.HTMLElement.prototype.hasPointerCapture = () => false;
+    window.HTMLElement.prototype.releasePointerCapture = () => {};
+    window.HTMLElement.prototype.scrollIntoView = () => {};
   });
 
   afterEach(() => {
@@ -120,11 +124,21 @@ describe("LibraryRail", () => {
       </MockStudioProvider>
     );
 
-    // Liked Songs is the seeded pinned collection, and the only one.
+    // Liked Songs is seeded pinned: true (so it still sorts first), but it's
+    // a system collection with no Unpin control — a "Pinned" badge would
+    // advertise a state the user can't undo, so it deliberately shows none.
+    expect(screen.queryAllByLabelText("Pinned")).toHaveLength(0);
+
+    // Pin an ordinary collection through the same ⋯ menu the user would use.
+    fireEvent.pointerDown(screen.getByLabelText("More for Cobalt After Hours"), {
+      button: 0,
+    });
+    fireEvent.click(screen.getByText("Pin to top"));
+
     const pins = screen.getAllByLabelText("Pinned");
     expect(pins).toHaveLength(1);
-    const liked = screen.getByRole("link", { name: /liked songs/i });
-    expect(liked.contains(pins[0])).toBe(true);
+    const row = screen.getByRole("link", { name: /cobalt after hours/i });
+    expect(row.contains(pins[0])).toBe(true);
   });
 
   it("narrows the list when a filter chip is picked", () => {
