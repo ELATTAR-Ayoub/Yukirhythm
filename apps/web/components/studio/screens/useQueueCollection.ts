@@ -5,6 +5,13 @@ import { useMemo } from "react";
 import { useMockStudio } from "./MockStudioProvider";
 import { type MockCollection } from "./mock-data";
 
+/** Id of the synthetic "Up next" collection this hook falls back to when
+ *  nothing has ever played. Not a real collection — there is no route that
+ *  resolves it by id — so callers that build a link from a collection's id
+ *  (TrackMenu's Share) must special-case this rather than assume every
+ *  `collection.id` names a real playlist. */
+export const QUEUE_COLLECTION_ID = "queue";
+
 /**
  * The running queue, shaped as a collection so the queue surfaces can reuse
  * the collection components.
@@ -28,7 +35,7 @@ export default function useQueueCollection(): MockCollection {
     return playingCollection
       ? { ...playingCollection, trackIds }
       : {
-          id: "queue",
+          id: QUEUE_COLLECTION_ID,
           title: "Up next",
           desc: "Everything queued from your library.",
           texture: "tx-k-silk",

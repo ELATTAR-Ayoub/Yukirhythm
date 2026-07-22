@@ -18,10 +18,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { PlayerButton } from "@/components/studio/PlayerButton";
-import { playlistHref, LIBRARY } from "@/components/studio/shell/routes";
+import { playlistHref, LIBRARY, QUEUE } from "@/components/studio/shell/routes";
 import ShareDialog, { absoluteUrl } from "./ShareDialog";
 import AddToPlaylistDialog from "./AddToPlaylistDialog";
 import { useMockStudio } from "./MockStudioProvider";
+import { QUEUE_COLLECTION_ID } from "./useQueueCollection";
 import type { MockCollection, MockTrack } from "./mock-data";
 
 interface TrackMenuProps {
@@ -48,8 +49,15 @@ export default function TrackMenu({ track, collection, queueIndex }: TrackMenuPr
   const [adding, setAdding] = useState(false);
   const liked = isLiked(track.id);
 
+  // The synthetic "Up next" collection (id QUEUE_COLLECTION_ID) has no
+  // playlist route — /playlist/queue 404s into "Collection not found" — so
+  // it shares the queue route itself rather than a dead playlist link.
   const url = absoluteUrl(
-    collection ? playlistHref(collection.id) : LIBRARY
+    !collection
+      ? LIBRARY
+      : collection.id === QUEUE_COLLECTION_ID
+        ? QUEUE
+        : playlistHref(collection.id)
   );
 
   return (

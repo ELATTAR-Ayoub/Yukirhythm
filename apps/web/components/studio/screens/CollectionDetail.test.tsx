@@ -1,7 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { useEffect } from "react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 
-import MockStudioProvider from "@/components/studio/screens/MockStudioProvider";
+import MockStudioProvider, {
+  useMockStudio,
+} from "@/components/studio/screens/MockStudioProvider";
 import {
   LIKED_SONGS,
   MOCK_COLLECTIONS,
@@ -165,6 +168,81 @@ describe("CollectionDetail", () => {
         </MockStudioProvider>
       );
       expect(screen.getAllByLabelText(`Play ${dup.title}`)).toHaveLength(2);
+    });
+  });
+
+  describe("playing indicator (positional list)", () => {
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+
+    it("marks only the row at currentIndex as playing when a track is duplicated", () => {
+      // An id-based `playing` check lights up every copy of a duplicated
+      // track. In the positional (queue) case, only the row sitting at the
+      // provider's currentIndex is actually the one playing.
+      const dup = MOCK_TRACKS[0];
+      const other = MOCK_TRACKS[1];
+
+      function Harness() {
+        const { play, enqueue, playAt, queue } = useMockStudio();
+        useEffect(() => {
+          play(dup);
+          enqueue(other, "end");
+          enqueue(dup, "end");
+          // eslint-disable-next-line react-hooks/exhaustive-deps
+        }, []);
+        return (
+          <CollectionDetail
+            collection={MOCK_COLLECTIONS[0]}
+            tracks={queue}
+            onPlayAt={playAt}
+          />
+        );
+      }
+
+      render(
+        <MockStudioProvider>
+          <Harness />
+        </MockStudioProvider>
+      );
+      act(() => vi.advanceTimersByTime(650));
+
+      const dupRows = screen.getAllByLabelText(`Play ${dup.title}`);
+      expect(dupRows).toHaveLength(2);
+
+      // Move the playhead onto the second copy.
+      fireEvent.click(dupRows[1]);
+      act(() => vi.advanceTimersByTime(650));
+
+      expect(within(dupRows[0]).queryByLabelText("Playing")).toBeNull();
+      expect(within(dupRows[1]).queryByLabelText("Playing")).toBeTruthy();
+      expect(screen.getAllByLabelText("Playing")).toHaveLength(1);
+    });
+  });
+
+  describe("shuffle (positional list)", () => {
+    it("reports the picked position, not the first copy of a duplicated track", () => {
+      // play()'s internal findIndex would resolve the picked track back to
+      // its FIRST copy — shuffle must report the position it actually chose.
+      const dup = MOCK_TRACKS[0];
+      const other = MOCK_TRACKS[1];
+      const onPlayAt = vi.fn();
+
+      const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0.99);
+
+      render(
+        <MockStudioProvider>
+          <CollectionDetail
+            collection={MOCK_COLLECTIONS[0]}
+            tracks={[dup, other, dup]}
+            onPlayAt={onPlayAt}
+          />
+        </MockStudioProvider>
+      );
+
+      fireEvent.click(screen.getByLabelText("Shuffle collection"));
+
+      expect(onPlayAt).toHaveBeenCalledWith(2);
+      randomSpy.mockRestore();
     });
   });
 });

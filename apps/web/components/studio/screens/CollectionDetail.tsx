@@ -148,7 +148,7 @@ export default function CollectionDetail({
   tracks: tracksProp,
   onPlayAt,
 }: CollectionDetailProps) {
-  const { play, toggle, nowPlaying, isPlaying } = useMockStudio();
+  const { play, toggle, nowPlaying, isPlaying, currentIndex } = useMockStudio();
   const router = useRouter();
   const [view, setView] = useState<TrackView>("rows");
   const [sort, setSort] = useState<TrackSort>("recent");
@@ -174,6 +174,13 @@ export default function CollectionDetail({
   const activate = (track: (typeof tracks)[number], at: number) =>
     onPlayAt ? onPlayAt(at) : play(track, source);
 
+  // An id match lights up every copy of a duplicated track. In the
+  // positional (queue) case the row that is actually playing is the one at
+  // the provider's currentIndex — ordinary playlists have no such position,
+  // so they keep comparing by id.
+  const isRowPlaying = (track: MockTrack, at: number) =>
+    isPlaying && (onPlayAt ? currentIndex === at : nowPlaying?.id === track.id);
+
   return (
     <>
       <CollectionDesc
@@ -191,10 +198,11 @@ export default function CollectionDetail({
         <PlayerButton
           variant="outline"
           aria-label="Shuffle collection"
-          onClick={() =>
-            tracks.length &&
-            play(tracks[Math.floor(Math.random() * tracks.length)], source)
-          }
+          onClick={() => {
+            if (!tracks.length) return;
+            const at = Math.floor(Math.random() * tracks.length);
+            activate(tracks[at], at);
+          }}
         >
           <ShuffleIcon />
         </PlayerButton>
@@ -263,7 +271,7 @@ export default function CollectionDetail({
                   duration={formatDuration(track.durationSec)}
                   texture={track.texture}
                   artUrl={track.artUrl}
-                  playing={nowPlaying?.id === track.id && isPlaying}
+                  playing={isRowPlaying(track, i)}
                   playable={false}
                   desktop
                   album={collection.title}
@@ -299,7 +307,7 @@ export default function CollectionDetail({
                 texture={track.texture}
                 artUrl={track.artUrl}
                 size="sm"
-                playing={nowPlaying?.id === track.id && isPlaying}
+                playing={isRowPlaying(track, i)}
                 className="w-full"
               />
             </div>
