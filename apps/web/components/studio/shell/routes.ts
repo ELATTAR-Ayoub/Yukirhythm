@@ -47,3 +47,17 @@ export function playlistHref(id: string): string {
 export function addMusicHref(id: string): string {
   return `${playlistHref(id)}/add`;
 }
+
+/**
+ * The playlist id a pathname is inside, or null when it isn't inside one.
+ *
+ * Matches a sub-route too (e.g. the playlist's own add screen at
+ * `/playlist/<id>/add`) — anywhere under a playlist counts as "looking at
+ * that playlist" for the purposes of deciding where a "+" control should
+ * point. Returns the id decoded, undoing `playlistHref`'s encode.
+ */
+export function matchPlaylistId(pathname: string | null | undefined): string | null {
+  if (!pathname) return null;
+  const match = pathname.match(/^\/playlist\/([^/]+)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}

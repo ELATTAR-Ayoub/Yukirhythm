@@ -1,18 +1,19 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { ListBulletIcon } from "@radix-ui/react-icons";
+import Link from "next/link";
+import { useRouter, usePathname } from "next/navigation";
+import { ListBulletIcon, PlusIcon } from "@radix-ui/react-icons";
 
+import { cn } from "@/lib/utils";
 import SectionLabel from "@/components/studio/SectionLabel";
 import TrackRow from "@/components/studio/TrackRow";
 import { PlayerButton } from "@/components/studio/PlayerButton";
 import DevicePlayer from "@/components/studio/screens/DevicePlayer";
-import AddMusicPanel from "@/components/studio/screens/AddMusicPanel";
 import LikeButton from "@/components/studio/screens/LikeButton";
 import TrackMenu from "@/components/studio/screens/TrackMenu";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
 import { formatDuration } from "@/components/studio/screens/mock-data";
-import { QUEUE } from "./routes";
+import { QUEUE, QUEUE_ADD, addMusicHref, matchPlaylistId } from "./routes";
 
 /**
  * A 340px rail has no room for the whole queue before it starts pushing the
@@ -142,27 +143,73 @@ function UpNextSection() {
 }
 
 /**
- * Add to the running queue — the list Up next is previewing directly above.
+ * Where the "+" goes, read from the route rather than from playback state.
  *
- * This is not the add-to-playlist control; that one lives inside a playlist,
- * where the playlist being edited is unambiguous. The rail belongs to
- * playback, so its field works on every route with no playlist open and
- * writes to no playlist: what you add here plays after what's playing.
+ * The control must follow what the user is LOOKING at: someone reading a
+ * playlist while something else plays means to add to the playlist in front
+ * of them, not to the queue running behind it. Everywhere else — home,
+ * search, profile, the queue itself — the queue is the only sensible
+ * destination.
+ */
+function useAddTarget(): { href: string; label: string } {
+  const pathname = usePathname();
+  const { collections } = useMockStudio();
+
+  const id = matchPlaylistId(pathname);
+  if (id) {
+    const open = collections.find((c) => c.id === id);
+    if (open) return { href: addMusicHref(open.id), label: open.title };
+  }
+  return { href: QUEUE_ADD, label: "your queue" };
+}
+
+/**
+ * A compact card carrying a "+", navigating to the add screen for whatever
+ * the user is currently looking at.
+ *
+ * This used to be a permanently-open search field embedded in the rail — in
+ * a 340px column that crowded out the queue preview above it and offered a
+ * cramped result list. The card names its destination in words: a "+" that
+ * could mean either the queue or a playlist is a "+" nobody trusts.
  */
 function AddMusicSection() {
+  const { href, label } = useAddTarget();
+
   return (
     <section
       aria-labelledby="add-to-queue-label"
       className="px-4 pt-5 pb-4 shrink-0"
     >
       <SectionLabel id="add-to-queue-label" className="block mb-2">
-        Add to queue
+        Add music
       </SectionLabel>
-      {/* Carded to match the rails: the field is a control the user acts in,
-          not loose text floating at the bottom of the column. */}
-      <div className="rounded-lg border border-border bg-card/40 p-3">
-        <AddMusicPanel />
-      </div>
+      <Link
+        href={href}
+        aria-label={`Add music to ${label}`}
+        data-signal="add_music_open"
+        className={cn(
+          "group flex items-center justify-between gap-3 rounded-lg border border-border bg-card/40 p-3",
+          "transition-colors duration-base hover:border-primary/50 hover:bg-card/70",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+        )}
+      >
+        <div className="min-w-0">
+          <p className="font-ui text-sm font-medium truncate">Add music</p>
+          <p className="font-label text-[10px] uppercase tracking-wider text-muted-foreground truncate mt-0.5">
+            to {label}
+          </p>
+        </div>
+        <span
+          aria-hidden
+          className={cn(
+            "flex items-center justify-center w-8 h-8 rounded-full shrink-0",
+            "bg-primary text-primary-foreground",
+            "transition-transform duration-base group-hover:scale-105"
+          )}
+        >
+          <PlusIcon className="w-4 h-4" />
+        </span>
+      </Link>
     </section>
   );
 }
