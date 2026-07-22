@@ -108,28 +108,40 @@ export default function StudioProvider({
 
   // ---- load the user + library on sign-in --------------------------------
   const refreshLibrary = useCallback(async () => {
-    const [owned, liked] = await Promise.all([
+    // allSettled, not all: these are independent reads, and the Liked Songs
+    // endpoint needs a composite index that is not deployed yet. One rejection
+    // used to throw out of here, out of the sign-in effect above it, and leave
+    // the user with NO library and libraryLoading stuck true.
+    const [ownedRes, likedRes] = await Promise.allSettled([
       backend.collections.list(),
       backend.me.likes(),
     ]);
-    absorb(liked.tracks);
-    const likedSet = new Set(liked.tracks.map((t) => t.trackId));
+
+    const likedTracks = likedRes.status === "fulfilled" ? likedRes.value.tracks : [];
+    absorb(likedTracks);
+    const likedSet = new Set(likedTracks.map((t) => t.trackId));
     setLikedIds(likedSet);
 
+    // Every user always has Liked Songs, even when the likes call itself
+    // failed — it just starts empty rather than not existing at all.
     const likedCollection: MockCollection = {
       id: LIKED_ID,
       title: "Liked Songs",
       desc: "Everything you liked.",
       texture: "tx-k2-vinyl",
-      trackIds: liked.tracks.map((t) => t.trackId),
+      trackIds: likedTracks.map((t) => t.trackId),
       likes: 0,
       tags: ["liked"],
       kind: "music",
+      system: true,
       pinned: true,
     };
-    const owns = owned.map((c) =>
-      toStudioCollection(c, { pinned: pinnedIds.has(c.collectionId) })
-    );
+    const owns =
+      ownedRes.status === "fulfilled"
+        ? ownedRes.value.map((c) =>
+            toStudioCollection(c, { pinned: pinnedIds.has(c.collectionId) })
+          )
+        : [];
     setCollections([likedCollection, ...owns]);
   }, [backend, absorb, pinnedIds]);
 
@@ -142,22 +154,32 @@ export default function StudioProvider({
         setLibraryLoading(false);
         return;
       }
-      // ensure the user doc exists, then load it
-      const provider =
-        fbUser.providerData[0]?.providerId?.includes("facebook")
-          ? "facebook"
-          : "google";
-      await backend.me.ensure({
-        displayName: fbUser.displayName ?? "",
-        email: fbUser.email ?? "",
-        avatarUrl: fbUser.photoURL ?? null,
-        authProvider: provider,
-      });
-      const me = await backend.me.get();
-      if (!live || !me) return;
-      setUser(toStudioUser(me));
-      await refreshLibrary();
-      if (live) setLibraryLoading(false);
+      try {
+        // ensure the user doc exists, then load it
+        const provider =
+          fbUser.providerData[0]?.providerId?.includes("facebook")
+            ? "facebook"
+            : "google";
+        await backend.me.ensure({
+          displayName: fbUser.displayName ?? "",
+          email: fbUser.email ?? "",
+          avatarUrl: fbUser.photoURL ?? null,
+          authProvider: provider,
+        });
+        const me = await backend.me.get();
+        if (!live || !me) return;
+        setUser(toStudioUser(me));
+        await refreshLibrary();
+      } catch (err) {
+        // ensure()/get() failing is rarer than the likes/collections reads
+        // (already hardened above via allSettled) but must not leave the
+        // sign-in effect throwing out from under the finally below either.
+        console.error("Failed to load user/library", err);
+      } finally {
+        // Must run on every path — success, thrown error, or early return
+        // above — so the user is never left staring at a stuck loading state.
+        if (live) setLibraryLoading(false);
+      }
 
       // Feeds and profile data. Each is independent — one failing rail must not
       // blank the others, so they settle separately.
@@ -423,6 +445,23 @@ export default function StudioProvider({
         else n.add(trackId);
         return n;
       });
+      // Update the Liked Songs collection itself, not just the likedIds set,
+      // so the playlist reflects the like on the click rather than after the
+      // round-trip to the server and back through refreshLibrary. The
+      // endpoint returns newest-first, so a newly liked track goes to the
+      // front here too.
+      setCollections((cs) =>
+        cs.map((c) =>
+          c.id === LIKED_ID
+            ? {
+                ...c,
+                trackIds: wasLiked
+                  ? c.trackIds.filter((id) => id !== trackId)
+                  : [trackId, ...c.trackIds.filter((id) => id !== trackId)],
+              }
+            : c
+        )
+      );
       void backend.me.setTrackState(trackId, { isLiked: !wasLiked }).then(refreshLibrary);
     },
     [backend, likedIds, refreshLibrary]

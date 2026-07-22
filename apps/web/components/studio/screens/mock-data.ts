@@ -107,6 +107,7 @@ export const LIKED_SONGS: MockCollection = {
   likes: 0,
   tags: ["liked"],
   kind: "music",
+  system: true,
   pinned: true,
 };
 
