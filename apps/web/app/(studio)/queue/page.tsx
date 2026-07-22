@@ -14,10 +14,15 @@ import { HOME, QUEUE_ADD } from "@/components/studio/shell/routes";
  *
  * useQueueCollection() falls back to a synthetic "Up next" collection over
  * the whole library when nothing has ever played, so this route renders
- * (rather than 404ing on missing state) even on a cold session.
+ * (rather than 404ing on missing state) even on a cold session. The row list
+ * itself, though, comes straight from the live `queue` array rather than
+ * that collection's `trackIds`: the queue's tracks are already whole objects
+ * (round-tripping through the id registry would drop any that miss), and
+ * rows play by position (`onPlayAt`) so a duplicated track's second copy
+ * doesn't start the first.
  */
 export default function QueueScreen() {
-  const { playingCollection } = useMockStudio();
+  const { playingCollection, queue, playAt } = useMockStudio();
   const collection = useQueueCollection();
 
   return (
@@ -27,6 +32,8 @@ export default function QueueScreen() {
         collection={collection}
         playFrom={playingCollection ?? undefined}
         addHref={QUEUE_ADD}
+        tracks={queue}
+        onPlayAt={playAt}
       />
     </div>
   );

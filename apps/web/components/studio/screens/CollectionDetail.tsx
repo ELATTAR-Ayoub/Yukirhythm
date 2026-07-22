@@ -30,6 +30,7 @@ import {
   formatDuration,
   getCollectionTracks,
   type MockCollection,
+  type MockTrack,
 } from "./mock-data";
 
 /** Track count (vinyl icon) · description — desc clamps to 3 lines, See more expands. */
@@ -122,6 +123,16 @@ interface CollectionDetailProps {
   /** Where the "+" goes. Defaults to this collection's add-music route. The
    *  queue passes its own, because the queue has no id to build one from. */
   addHref?: string;
+  /** Render these rows instead of resolving `collection.trackIds`. The queue
+   *  passes its live `queue` array: its tracks are already whole objects, and
+   *  round-tripping them through the id registry drops any that miss. */
+  tracks?: MockTrack[];
+  /**
+   * Play by position rather than by track. Supplied by the queue, where a row
+   * addresses a queue slot — `play()` would resolve a duplicated track to its
+   * first copy, so clicking the second row would start the first.
+   */
+  onPlayAt?: (index: number) => void;
 }
 
 /**
@@ -134,6 +145,8 @@ export default function CollectionDetail({
   collection,
   playFrom,
   addHref,
+  tracks: tracksProp,
+  onPlayAt,
 }: CollectionDetailProps) {
   const { play, toggle, nowPlaying, isPlaying } = useMockStudio();
   const router = useRouter();
@@ -141,18 +154,25 @@ export default function CollectionDetail({
   const [sort, setSort] = useState<TrackSort>("recent");
 
   const source = playFrom ?? collection;
-  const tracks = sortTracks(getCollectionTracks(collection), sort);
+  // Sorting is suppressed for a positional list: a sorted row index no longer
+  // addresses the underlying slot, and the queue's order IS the content.
+  const rows = tracksProp ?? getCollectionTracks(collection);
+  const tracks = onPlayAt ? rows : sortTracks(rows, sort);
   /** Is the current track one of ours? Then the big button is a pause/resume. */
   const playingHere = tracks.some((t) => t.id === nowPlaying?.id);
 
   /** Enter/Space activation for non-button click targets. */
   const playKeyHandler =
-    (track: (typeof tracks)[number]) => (e: React.KeyboardEvent) => {
+    (track: (typeof tracks)[number], at: number) => (e: React.KeyboardEvent) => {
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
-        play(track, source);
+        if (onPlayAt) onPlayAt(at);
+        else play(track, source);
       }
     };
+
+  const activate = (track: (typeof tracks)[number], at: number) =>
+    onPlayAt ? onPlayAt(at) : play(track, source);
 
   return (
     <>
@@ -196,7 +216,7 @@ export default function CollectionDetail({
       </div>
 
       <div className="flex items-center justify-between gap-3 mt-6 mb-2">
-        <SortControl sort={sort} onChange={setSort} />
+        {onPlayAt ? <span /> : <SortControl sort={sort} onChange={setSort} />}
         <div className="flex items-center gap-2">
           <PlayerButton
             variant="outline"
@@ -225,14 +245,14 @@ export default function CollectionDetail({
         // button — and matching the leading control is what reads.
         <FadeScrollArea className="space-y-1 pr-1">
           {tracks.map((track, i) => (
-            <div key={track.id} className="flex items-center gap-2">
+            <div key={`${track.id}:${i}`} className="flex items-center gap-2">
               <div
                 role="button"
                 tabIndex={0}
                 aria-label={`Play ${track.title}`}
                 className="flex-1 min-w-0 cursor-pointer"
-                onClick={() => play(track, source)}
-                onKeyDown={playKeyHandler(track)}
+                onClick={() => activate(track, i)}
+                onKeyDown={playKeyHandler(track, i)}
               >
                 {/* No play overlay: this row sits inside a role="button" div,
                     and TrackRow's overlay would nest a button inside it. */}
@@ -253,21 +273,25 @@ export default function CollectionDetail({
                   and nesting controls inside it would make each a dead
                   keyboard stop that only works because the click bubbles. */}
               <LikeButton trackId={track.id} trackTitle={track.title} />
-              <TrackMenu track={track} collection={collection} />
+              <TrackMenu
+                track={track}
+                collection={collection}
+                queueIndex={onPlayAt ? i : undefined}
+              />
             </div>
           ))}
         </FadeScrollArea>
       ) : (
         <FadeScrollArea className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 pr-0.5">
-          {tracks.map((track) => (
+          {tracks.map((track, i) => (
             <div
-              key={track.id}
+              key={`${track.id}:${i}`}
               role="button"
               tabIndex={0}
               aria-label={`Play ${track.title}`}
               className="text-left cursor-pointer"
-              onClick={() => play(track, source)}
-              onKeyDown={playKeyHandler(track)}
+              onClick={() => activate(track, i)}
+              onKeyDown={playKeyHandler(track, i)}
             >
               <MediaCard
                 title={track.title}

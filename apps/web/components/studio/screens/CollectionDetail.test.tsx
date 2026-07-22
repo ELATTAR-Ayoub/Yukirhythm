@@ -2,7 +2,11 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 
 import MockStudioProvider from "@/components/studio/screens/MockStudioProvider";
-import { LIKED_SONGS, MOCK_COLLECTIONS } from "@/components/studio/screens/mock-data";
+import {
+  LIKED_SONGS,
+  MOCK_COLLECTIONS,
+  MOCK_TRACKS,
+} from "@/components/studio/screens/mock-data";
 import { addMusicHref } from "@/components/studio/shell/routes";
 import CollectionDetail from "./CollectionDetail";
 
@@ -125,6 +129,42 @@ describe("CollectionDetail", () => {
       );
       fireEvent.click(screen.getByLabelText("Add music"));
       expect(push).toHaveBeenCalledWith("/queue/add");
+    });
+  });
+
+  describe("positional tracks (queue)", () => {
+    it("reports the clicked position when given a tracks override and onPlayAt", () => {
+      // Without a position, play() resolves a duplicated track by findIndex and
+      // starts the FIRST copy — clicking the second row would play the first.
+      const onPlayAt = vi.fn();
+      const dup = MOCK_TRACKS[0];
+
+      render(
+        <MockStudioProvider>
+          <CollectionDetail
+            collection={MOCK_COLLECTIONS[0]}
+            tracks={[dup, MOCK_TRACKS[1], dup]}
+            onPlayAt={onPlayAt}
+          />
+        </MockStudioProvider>
+      );
+
+      fireEvent.click(screen.getAllByLabelText(`Play ${dup.title}`)[1]);
+      expect(onPlayAt).toHaveBeenCalledWith(2);
+    });
+
+    it("renders every copy of a duplicated track", () => {
+      const dup = MOCK_TRACKS[0];
+      render(
+        <MockStudioProvider>
+          <CollectionDetail
+            collection={MOCK_COLLECTIONS[0]}
+            tracks={[dup, MOCK_TRACKS[1], dup]}
+            onPlayAt={() => {}}
+          />
+        </MockStudioProvider>
+      );
+      expect(screen.getAllByLabelText(`Play ${dup.title}`)).toHaveLength(2);
     });
   });
 });
