@@ -5,6 +5,8 @@ import MockStudioProvider, { useMockStudio } from "./MockStudioProvider";
 import { MOCK_COLLECTIONS, MOCK_TRACKS } from "./mock-data";
 import TrackMenu from "./TrackMenu";
 
+
+
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
 }));
@@ -111,5 +113,48 @@ describe("TrackMenu", () => {
         dialog.queryByRole("checkbox", { name: podcast.title })
       ).toBeNull();
     }
+  });
+
+  it("offers Remove from queue only when the row is in the queue", async () => {
+    // Fixture quirk: as this file's own `openMenu` helper documents, Radix
+    // opens its dropdown on pointerdown, not click — a bare `fireEvent.click`
+    // never opens the menu in jsdom, leaving "Like" unfindable regardless of
+    // `queueIndex`. Swapped in the same pointerDown the rest of this file
+    // uses; the assertion's intent (queueIndex absent -> no Remove item) is
+    // unchanged.
+    render(
+      <MockStudioProvider>
+        <TrackMenu track={MOCK_TRACKS[0]} />
+      </MockStudioProvider>
+    );
+    fireEvent.pointerDown(
+      screen.getByLabelText(`More for ${MOCK_TRACKS[0].title}`),
+      { button: 0 }
+    );
+    expect(await screen.findByText("Like")).toBeInTheDocument();
+    expect(screen.queryByText("Remove from queue")).toBeNull();
+  });
+
+  it("removes the exact queue position it was given", async () => {
+    function Probe() {
+      const { queue } = useMockStudio();
+      return <div data-testid="queue-len">{queue.length}</div>;
+    }
+
+    render(
+      <MockStudioProvider>
+        <TrackMenu track={MOCK_TRACKS[0]} queueIndex={0} />
+        <Probe />
+      </MockStudioProvider>
+    );
+    const before = Number(screen.getByTestId("queue-len").textContent);
+
+    fireEvent.pointerDown(
+      screen.getByLabelText(`More for ${MOCK_TRACKS[0].title}`),
+      { button: 0 }
+    );
+    fireEvent.click(await screen.findByText("Remove from queue"));
+
+    expect(Number(screen.getByTestId("queue-len").textContent)).toBe(before - 1);
   });
 });

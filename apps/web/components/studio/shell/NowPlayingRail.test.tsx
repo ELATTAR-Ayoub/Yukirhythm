@@ -6,6 +6,7 @@ import MockStudioProvider, {
 } from "@/components/studio/screens/MockStudioProvider";
 import {
   LIKED_SONGS,
+  MOCK_COLLECTIONS,
   getCollectionTracks,
   type MockCollection,
 } from "@/components/studio/screens/mock-data";
@@ -249,5 +250,106 @@ describe("NowPlayingRail", () => {
         "Topographic Heart"
       );
     });
+  });
+});
+
+describe("up next reads the queue by position", () => {
+  /** Enqueues the same track twice so duplicate handling is exercised. */
+  function SeedDuplicate() {
+    const { play, enqueue } = useMockStudio();
+    const [a, b] = getCollectionTracks(MOCK_COLLECTIONS[0]);
+    return (
+      <button
+        onClick={() => {
+          play(a, MOCK_COLLECTIONS[0]);
+          enqueue(b);
+          enqueue(b);
+        }}
+      >
+        seed-dup
+      </button>
+    );
+  }
+
+  /** Surfaces the queue length so a click can be proven non-destructive. */
+  function QueueProbe() {
+    const { queue } = useMockStudio();
+    return <div data-testid="queue-len">{queue.length}</div>;
+  }
+
+  /**
+   * Moves the playhead straight to a queue position via the context's own
+   * `playAt`, independent of whatever `UpNextSection` renders. This is the
+   * reliable way to land `nowPlaying` on the *last* copy of a duplicated
+   * track: it targets the provider's `currentIndex` directly, so the
+   * assertion exercises exactly the currentIndex-vs-findIndex divergence
+   * described in Bug 1, rather than depending on how a row's own click
+   * handler happens to be wired.
+   */
+  function AdvancePlayhead({ to }: { to: number }) {
+    const { playAt } = useMockStudio();
+    return <button onClick={() => playAt(to)}>advance-playhead</button>;
+  }
+
+  it("renders both copies of a track queued twice", () => {
+    // Keyed by track id, React collapsed and reshuffled these rows — the
+    // "adds and removes music whenever it wants" report.
+    render(
+      <MockStudioProvider>
+        <SeedDuplicate />
+        <NowPlayingRail />
+      </MockStudioProvider>
+    );
+    fireEvent.click(screen.getByText("seed-dup"));
+
+    const [, b] = getCollectionTracks(MOCK_COLLECTIONS[0]);
+    expect(screen.getAllByLabelText(`Play ${b.title}`).length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("keeps every enqueued track when an up-next row is clicked", () => {
+    render(
+      <MockStudioProvider>
+        <SeedDuplicate />
+        <NowPlayingRail />
+        <QueueProbe />
+      </MockStudioProvider>
+    );
+    fireEvent.click(screen.getByText("seed-dup"));
+    const before = screen.getByTestId("queue-len").textContent;
+
+    fireEvent.click(screen.getAllByLabelText(/^Play /)[0]);
+
+    expect(screen.getByTestId("queue-len").textContent).toBe(before);
+  });
+
+  it("previews what follows the playhead, not what precedes it", () => {
+    // Adjusted from the spec's literal version: with SeedDuplicate alone, `a`
+    // (the now-playing track) is never duplicated, so a plain
+    // findIndex(nowPlaying.id) always lands on the right slot for it and
+    // this assertion would pass identically before and after the fix — it
+    // never actually exercises Bug 1. Bug 1 only diverges from the truth
+    // when the *playing* track itself has an earlier duplicate elsewhere in
+    // the queue, so this drives the playhead (via `playAt`, not a row click —
+    // see AdvancePlayhead) onto the LAST copy of the duplicated track `b`.
+    //
+    // Queue after seeding is [t1, t4, t10, t5, t4, t4] (b = t4); index 5 is
+    // the final slot, so nothing should preview as upcoming. A
+    // findIndex-by-id derivation instead resolves nowPlaying's FIRST
+    // occurrence of t4 (index 1) and would wrongly show t10/t5/t4 —
+    // already-played tracks — as "up next".
+    render(
+      <MockStudioProvider>
+        <SeedDuplicate />
+        <AdvancePlayhead to={5} />
+        <NowPlayingRail />
+      </MockStudioProvider>
+    );
+    fireEvent.click(screen.getByText("seed-dup"));
+    fireEvent.click(screen.getByText("advance-playhead"));
+
+    const upNext = within(screen.getByRole("region", { name: "Up next" }));
+    expect(upNext.getByText("Nothing queued yet.")).toBeTruthy();
+    expect(upNext.queryByText("ASCII Rain")).toBeNull();
+    expect(upNext.queryByText("Topographic Heart")).toBeNull();
   });
 });

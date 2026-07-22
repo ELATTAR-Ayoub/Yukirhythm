@@ -5,6 +5,7 @@ import {
   DotsHorizontalIcon,
   HeartFilledIcon,
   HeartIcon,
+  MinusIcon,
   PlusIcon,
   Share1Icon,
 } from "@radix-ui/react-icons";
@@ -32,11 +33,17 @@ interface TrackMenuProps {
    * would 404.
    */
   collection?: MockCollection;
+  /**
+   * This row's position in the running queue, when it is a queue row. A
+   * position, not a boolean: removing must drop the copy the user pointed at,
+   * and a track may sit in the queue more than once.
+   */
+  queueIndex?: number;
 }
 
 /** The ⋯ menu on every track row: like, add to playlists, share. */
-export default function TrackMenu({ track, collection }: TrackMenuProps) {
-  const { isLiked, toggleLike } = useMockStudio();
+export default function TrackMenu({ track, collection, queueIndex }: TrackMenuProps) {
+  const { isLiked, toggleLike, dequeue } = useMockStudio();
   const [sharing, setSharing] = useState(false);
   const [adding, setAdding] = useState(false);
   const liked = isLiked(track.id);
@@ -71,6 +78,11 @@ export default function TrackMenu({ track, collection }: TrackMenuProps) {
           <DropdownMenuItem onClick={() => setAdding(true)}>
             <PlusIcon className="mr-2 h-3.5 w-3.5" /> Add to playlist
           </DropdownMenuItem>
+          {queueIndex !== undefined ? (
+            <DropdownMenuItem onClick={() => dequeue(queueIndex)}>
+              <MinusIcon className="mr-2 h-3.5 w-3.5" /> Remove from queue
+            </DropdownMenuItem>
+          ) : null}
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => setSharing(true)}>
             <Share1Icon className="mr-2 h-3.5 w-3.5" /> Share

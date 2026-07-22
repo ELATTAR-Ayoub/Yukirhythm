@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { ListBulletIcon } from "@radix-ui/react-icons";
 
@@ -10,9 +9,9 @@ import { PlayerButton } from "@/components/studio/PlayerButton";
 import DevicePlayer from "@/components/studio/screens/DevicePlayer";
 import AddMusicPanel from "@/components/studio/screens/AddMusicPanel";
 import LikeButton from "@/components/studio/screens/LikeButton";
+import TrackMenu from "@/components/studio/screens/TrackMenu";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
-import useQueueCollection from "@/components/studio/screens/useQueueCollection";
-import { formatDuration, getCollectionTracks } from "@/components/studio/screens/mock-data";
+import { formatDuration } from "@/components/studio/screens/mock-data";
 import { QUEUE } from "./routes";
 
 /**
@@ -49,29 +48,27 @@ function PlayerSection() {
  * to the full queue page.
  */
 function UpNextSection() {
-  const { nowPlaying, playingCollection, play } = useMockStudio();
+  const { queue, currentIndex, playAt } = useMockStudio();
   const router = useRouter();
-  const collection = useQueueCollection();
 
-  const tracks = useMemo(() => getCollectionTracks(collection), [collection]);
-  const currentIndex = nowPlaying
-    ? tracks.findIndex((t) => t.id === nowPlaying.id)
-    : -1;
-  // Nothing has started yet: the whole queue is "up next". Mid-queue: only
-  // what follows the current track, so the preview never repeats what's
-  // already playing.
-  const upcoming =
-    currentIndex >= 0
-      ? tracks.slice(currentIndex + 1, currentIndex + 1 + UPCOMING_CAP)
-      : tracks.slice(0, UPCOMING_CAP);
+  // Read straight off the queue — not `getCollectionTracks(useQueueCollection())`.
+  // That path degraded the queue's own MockTrack objects to ids, looked them
+  // back up in a global registry, and silently dropped any that missed, so a
+  // queued track could be invisible in the list yet still in the queue.
+  //
+  // The offset is what makes each row addressable: `upcoming[i]` lives at
+  // `start + i` in the queue, and that absolute position — never a findIndex
+  // on the track id — is what a click acts on. A track may sit in the queue
+  // more than once, and id lookup would answer with the wrong copy.
+  const start = currentIndex >= 0 ? currentIndex + 1 : 0;
+  const upcoming = queue.slice(start, start + UPCOMING_CAP);
 
-  const playKeyHandler =
-    (track: (typeof upcoming)[number]) => (e: React.KeyboardEvent) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        play(track, playingCollection ?? undefined);
-      }
-    };
+  const playKeyHandler = (at: number) => (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      playAt(at);
+    }
+  };
 
   return (
     // A named region, taking its name from the label already on screen rather
@@ -104,33 +101,40 @@ function UpNextSection() {
         </p>
       ) : (
         <div className="px-3 pb-2 space-y-1">
-          {upcoming.map((track, i) => (
-            <div key={track.id} className="flex items-center gap-1">
-              <div
-                role="button"
-                tabIndex={0}
-                aria-label={`Play ${track.title}`}
-                className="flex-1 min-w-0 cursor-pointer"
-                onClick={() => play(track, playingCollection ?? undefined)}
-                onKeyDown={playKeyHandler(track)}
-              >
-                {/* No play overlay: this row sits inside a role="button" div,
-                    and TrackRow's overlay would nest a button inside it. */}
-                <TrackRow
-                  index={i + 1}
-                  title={track.title}
-                  artist={track.artist}
-                  duration={formatDuration(track.durationSec)}
-                  texture={track.texture}
-                  artUrl={track.artUrl}
-                  playable={false}
-                />
+          {upcoming.map((track, i) => {
+            const at = start + i;
+            return (
+              // Keyed by POSITION, not by track id. The queue is a list, not a
+              // set: the same track may legitimately appear twice, and two
+              // rows sharing a key is what made them swap and vanish.
+              <div key={`${track.id}:${at}`} className="flex items-center gap-1">
+                <div
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Play ${track.title}`}
+                  className="flex-1 min-w-0 cursor-pointer"
+                  onClick={() => playAt(at)}
+                  onKeyDown={playKeyHandler(at)}
+                >
+                  {/* No play overlay: this row sits inside a role="button" div,
+                      and TrackRow's overlay would nest a button inside it. */}
+                  <TrackRow
+                    index={at + 1}
+                    title={track.title}
+                    artist={track.artist}
+                    duration={formatDuration(track.durationSec)}
+                    texture={track.texture}
+                    artUrl={track.artUrl}
+                    playable={false}
+                  />
+                </div>
+                {/* Siblings of the row, not children — nesting them in the
+                    role="button" wrapper would make each a dead keyboard stop. */}
+                <LikeButton trackId={track.id} trackTitle={track.title} />
+                <TrackMenu track={track} queueIndex={at} />
               </div>
-              {/* Sibling of the row, not a child — nesting it in the
-                  role="button" wrapper would make it a dead keyboard stop. */}
-              <LikeButton trackId={track.id} trackTitle={track.title} />
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </section>
