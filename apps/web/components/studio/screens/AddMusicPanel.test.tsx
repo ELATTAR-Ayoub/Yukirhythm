@@ -85,3 +85,23 @@ describe("AddMusicPanel play affordance", () => {
     expect(screen.queryByRole("button", { name: "Play" })).toBeNull();
   });
 });
+
+describe("AddMusicPanel searching state", () => {
+  it("shows skeleton rows while a search is in flight", async () => {
+    // "No matches" during a request in flight is an answer to a question that
+    // was never asked; a skeleton is a promise that content is coming.
+    render(
+      <MockStudioProvider>
+        <AddMusicPanel />
+      </MockStudioProvider>
+    );
+
+    fireEvent.change(screen.getByLabelText("Search tracks to queue"), {
+      target: { value: "mid" },
+    });
+
+    const list = await screen.findByLabelText("Searching");
+    expect(list).toBeInTheDocument();
+    expect(screen.queryByText("No matches")).toBeNull();
+  });
+});

@@ -50,7 +50,7 @@ export default function AddMusicScreen() {
       {/* Lifted above the texture — it sits at z-0 rather than behind the
           column's opaque background. */}
       <div className="relative z-10">
-        <BackHeader title="Add music" backHref={playlistHref(collection.id)} />
+        <BackHeader title="Search songs" backHref={playlistHref(collection.id)} />
         <p className="type-muted -mt-4 mb-4 truncate">to {collection.title}</p>
         <AddMusicPanel collection={collection} autoFocus />
       </div>

@@ -6,6 +6,7 @@ import { CheckIcon, MagnifyingGlassIcon, PlusIcon } from "@radix-ui/react-icons"
 import { Input } from "@/components/ui/input";
 import TrackRow from "@/components/studio/TrackRow";
 import EmptyState from "@/components/studio/EmptyState";
+import { SkeletonRow } from "@/components/studio/Skeletons";
 import { PlayerButton } from "@/components/studio/PlayerButton";
 import IconSwap from "@/components/studio/IconSwap";
 import { useMockStudio } from "./MockStudioProvider";
@@ -117,8 +118,14 @@ export default function AddMusicPanel({
       ) : searching ? (
         // Not an EmptyState: "no matches" and "still looking" are different
         // answers, and showing the former while a request is in flight reads
-        // as a result the search never gave.
-        <p className="text-sm text-muted-foreground">Searching…</p>
+        // as a result the search never gave. A skeleton is a promise that
+        // content is coming — only this state can honestly make that promise,
+        // so the other three states below stay EmptyState blocks.
+        <div className="space-y-1" role="status" aria-label="Searching">
+          <SkeletonRow />
+          <SkeletonRow />
+          <SkeletonRow />
+        </div>
       ) : results.length === 0 ? (
         <EmptyState
           title="No matches"
