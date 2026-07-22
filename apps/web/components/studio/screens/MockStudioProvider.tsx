@@ -53,6 +53,17 @@ interface MockStudioValue {
   isLoading: boolean;
   progressSec: number;
   play: (track: MockTrack, from?: MockCollection) => void;
+  /** The playhead's position in `queue`. Surfaces that show the queue must
+   *  read this rather than searching for `nowPlaying` by id — a track may
+   *  legitimately sit in the queue more than once, and findIndex would answer
+   *  with the wrong copy. */
+  currentIndex: number;
+  /** Start the track at this exact queue position. The queue is untouched.
+   *  This — not `play` — is what a click on a queue row means. */
+  playAt: (index: number) => void;
+  /** Drop exactly one position from the running queue. Not "remove this
+   *  track": a duplicate must lose only the copy the user pointed at. */
+  dequeue: (index: number) => void;
   /** Put a track into the running queue — what the rail shows under "Up next".
    *  This is playback state, not library state: nothing is written to any
    *  playlist, and no playlist needs to be open for it to work. */
@@ -301,10 +312,27 @@ export default function MockStudioProvider({
     }, 650);
   }, []);
 
+  const playAt = useCallback(
+    (index: number) => {
+      if (index < 0 || index >= queue.length) return;
+      setNavDirection(null);
+      startLoad(index);
+    },
+    [queue.length, startLoad]
+  );
+
   const play = useCallback(
     (track: MockTrack, from?: MockCollection) => {
-      // The queue follows the collection the track was launched from, so the
-      // queue drawer and next/prev both reflect what the user actually opened.
+      // Clicking a row in the queue you are already inside is not a request to
+      // rebuild that queue. Only naming a DIFFERENT collection is.
+      const sameContext = !from || from.id === playingCollection?.id;
+      const at = queue.findIndex((t) => t.id === track.id);
+      if (sameContext && at >= 0) {
+        setNavDirection(null);
+        startLoad(at);
+        return;
+      }
+
       const source = from ?? null;
       const nextQueue = source ? getCollectionTracks(source) : LIBRARY_QUEUE;
       const idx = nextQueue.findIndex((t) => t.id === track.id);
@@ -313,8 +341,20 @@ export default function MockStudioProvider({
       setNavDirection(null);
       startLoad(idx >= 0 ? idx : 0);
     },
-    [startLoad]
+    [startLoad, playingCollection, queue]
   );
+
+  const dequeue = useCallback((index: number) => {
+    setQueue((q) => {
+      if (index < 0 || index >= q.length) return q;
+      return [...q.slice(0, index), ...q.slice(index + 1)];
+    });
+    // Everything above the playhead shifts down by one, so the index has to
+    // follow or a removal would silently change what is playing. Removing the
+    // playing track itself leaves the index put, which now addresses the next
+    // track — dropping what you are hearing means moving on to what follows.
+    setCurrentIndex((i) => (index < i ? i - 1 : i));
+  }, []);
 
   /** Splices into the running queue. Deliberately does not start playback:
    *  queueing something is a statement about what comes later, not now. */
@@ -457,6 +497,9 @@ export default function MockStudioProvider({
     isLoading,
     progressSec,
     play,
+    currentIndex,
+    playAt,
+    dequeue,
     enqueue,
     toggle,
     next,

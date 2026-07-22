@@ -2,7 +2,13 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { act, renderHook } from "@testing-library/react";
 
 import MockStudioProvider, { useMockStudio } from "./MockStudioProvider";
-import { LIKED_SONGS, MOCK_TRACKS, MOCK_USER } from "./mock-data";
+import {
+  LIKED_SONGS,
+  MOCK_COLLECTIONS,
+  MOCK_TRACKS,
+  MOCK_USER,
+  getCollectionTracks,
+} from "./mock-data";
 
 function wrapper({ children }: { children: React.ReactNode }) {
   return <MockStudioProvider>{children}</MockStudioProvider>;
@@ -195,5 +201,117 @@ describe("MockStudioProvider", () => {
     act(() => result.current.seek(-50));
 
     expect(result.current.progressSec).toBe(0);
+  });
+});
+
+describe("the queue is not the playlist", () => {
+  it("keeps enqueued tracks when a row inside the running queue is clicked", () => {
+    // The reported bug: play() resolved the collection and replaced the whole
+    // queue, so clicking any row threw away everything the user had queued.
+    const source = MOCK_COLLECTIONS[0];
+    const { result } = renderHook(() => useMockStudio(), {
+      wrapper: MockStudioProvider,
+    });
+
+    act(() => {
+      result.current.play(getCollectionTracks(source)[0], source);
+    });
+    const extra = MOCK_TRACKS.find((t) => !source.trackIds.includes(t.id))!;
+    act(() => {
+      result.current.enqueue(extra);
+    });
+    expect(result.current.queue.map((t) => t.id)).toContain(extra.id);
+
+    // Click a different row of the same running queue.
+    act(() => {
+      result.current.play(
+        getCollectionTracks(source)[1],
+        result.current.playingCollection ?? undefined
+      );
+    });
+
+    expect(result.current.queue.map((t) => t.id)).toContain(extra.id);
+    expect(result.current.nowPlaying?.id).toBe(getCollectionTracks(source)[1].id);
+  });
+
+  it("rebuilds the queue when a genuinely different collection is played", () => {
+    // Starting another playlist IS an instruction to replace what is queued.
+    const a = MOCK_COLLECTIONS[0];
+    const b = MOCK_COLLECTIONS[1];
+    const { result } = renderHook(() => useMockStudio(), {
+      wrapper: MockStudioProvider,
+    });
+
+    act(() => {
+      result.current.play(getCollectionTracks(a)[0], a);
+    });
+    act(() => {
+      result.current.play(getCollectionTracks(b)[0], b);
+    });
+
+    expect(result.current.playingCollection?.id).toBe(b.id);
+    expect(result.current.queue.map((t) => t.id)).toEqual(b.trackIds);
+  });
+
+  it("playAt addresses a queue position, so a duplicate plays the copy clicked", () => {
+    const { result } = renderHook(() => useMockStudio(), {
+      wrapper: MockStudioProvider,
+    });
+    const dup = MOCK_TRACKS[0];
+
+    act(() => {
+      result.current.play(dup);
+    });
+    act(() => {
+      result.current.enqueue(dup);
+    });
+    const at = result.current.queue.length - 1;
+
+    act(() => {
+      result.current.playAt(at);
+    });
+
+    expect(result.current.currentIndex).toBe(at);
+  });
+
+  it("dequeue removes exactly one position, not every copy of the track", () => {
+    const { result } = renderHook(() => useMockStudio(), {
+      wrapper: MockStudioProvider,
+    });
+    const dup = MOCK_TRACKS[0];
+
+    act(() => {
+      result.current.play(dup);
+    });
+    act(() => {
+      result.current.enqueue(dup);
+    });
+    const before = result.current.queue.length;
+
+    act(() => {
+      result.current.dequeue(before - 1);
+    });
+
+    expect(result.current.queue).toHaveLength(before - 1);
+    expect(result.current.queue.map((t) => t.id)).toContain(dup.id);
+  });
+
+  it("keeps playing the same track when an earlier queue entry is removed", () => {
+    // Removing something above the playhead must not shift what is audible.
+    const { result } = renderHook(() => useMockStudio(), {
+      wrapper: MockStudioProvider,
+    });
+    const source = MOCK_COLLECTIONS[0];
+
+    act(() => {
+      result.current.play(getCollectionTracks(source)[2], source);
+    });
+    const playing = result.current.nowPlaying?.id;
+
+    act(() => {
+      result.current.dequeue(0);
+    });
+
+    expect(result.current.nowPlaying?.id).toBe(playing);
   });
 });

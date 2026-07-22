@@ -217,8 +217,29 @@ export default function StudioProvider({
     listenedRef.current = 0;
   }, []);
 
+  const playAt = useCallback(
+    (index: number) => {
+      if (index < 0 || index >= queue.length) return;
+      flushEvent();
+      setNavDirection(null);
+      startTrack(index);
+    },
+    [queue.length, flushEvent, startTrack]
+  );
+
   const play = useCallback(
     async (track: MockTrack, from?: MockCollection) => {
+      // Clicking a row in the queue you are already inside must not rebuild
+      // that queue — everything enqueued from the rail lives only there.
+      const sameContext = !from || from.id === playingCollection?.id;
+      const at = queue.findIndex((t) => t.id === track.id);
+      if (sameContext && at >= 0) {
+        flushEvent();
+        setNavDirection(null);
+        startTrack(at);
+        return;
+      }
+
       flushEvent();
       let q: MockTrack[];
       if (from) {
@@ -236,7 +257,21 @@ export default function StudioProvider({
       setNavDirection(null);
       startTrack(idx >= 0 ? idx : 0);
     },
-    [backend, absorb, flushEvent, startTrack]
+    [backend, absorb, flushEvent, startTrack, playingCollection, queue]
+  );
+
+  const dequeue = useCallback(
+    (index: number) => {
+      setQueue((q) => {
+        if (index < 0 || index >= q.length) return q;
+        return [...q.slice(0, index), ...q.slice(index + 1)];
+      });
+      setCurrentIndex((i) => (index < i ? i - 1 : i));
+      // Best-effort, same as enqueue: a failed write must not resurrect a row
+      // the user just removed, and the next save() flush re-sends the list.
+      void backend.me.playback.removeFromQueue(index).catch(() => {});
+    },
+    [backend]
   );
 
   /**
@@ -471,6 +506,9 @@ export default function StudioProvider({
       isLoading,
       progressSec,
       play,
+      currentIndex,
+      playAt,
+      dequeue,
       enqueue,
       toggle,
       next,
@@ -510,7 +548,7 @@ export default function StudioProvider({
     }),
     [
       queue, playingCollection, navDirection, nowPlaying, isPlaying, isLoading,
-      progressSec, play, enqueue, toggle, next, prev, seek, user, signIn, signOut,
+      progressSec, play, currentIndex, playAt, dequeue, enqueue, toggle, next, prev, seek, user, signIn, signOut,
       searchResults, searching, hasSearched, search, clearSearch, searchTracks,
       collections,
       libraryLoading, libraryFilter, togglePin, isLiked, toggleLike, toggleTrackInCollection,
