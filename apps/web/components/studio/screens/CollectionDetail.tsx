@@ -213,7 +213,12 @@ export default function CollectionDetail({
           onClick={() => {
             // already on a track from this collection — act as pause/resume
             if (playingHere) return toggle();
-            if (tracks[0]) play(tracks[0], source);
+            // Through `activate`, not `play`, for the same reason as the rows
+            // and shuffle above: on the queue route `play()` re-resolves every
+            // track from the catalogue and drops any whose fetch fails, so the
+            // one control most likely to be pressed was also the one that
+            // could silently lose queued tracks.
+            if (tracks[0]) activate(tracks[0], 0);
           }}
         >
           <IconSwap

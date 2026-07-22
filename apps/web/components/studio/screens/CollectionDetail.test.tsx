@@ -245,4 +245,28 @@ describe("CollectionDetail", () => {
       randomSpy.mockRestore();
     });
   });
+
+  describe("play control (positional list)", () => {
+    it("starts the first queue position rather than re-resolving the track", () => {
+      // The big Play button was the last control still going through play(),
+      // which on the queue route re-fetches every queued track from the
+      // catalogue and drops any that fail — silently losing tracks the user
+      // had queued. It must address position 0 like every other control here.
+      const onPlayAt = vi.fn();
+
+      render(
+        <MockStudioProvider>
+          <CollectionDetail
+            collection={MOCK_COLLECTIONS[0]}
+            tracks={[MOCK_TRACKS[0], MOCK_TRACKS[1]]}
+            onPlayAt={onPlayAt}
+          />
+        </MockStudioProvider>
+      );
+
+      fireEvent.click(screen.getByLabelText("Play collection"));
+
+      expect(onPlayAt).toHaveBeenCalledWith(0);
+    });
+  });
 });
