@@ -2,27 +2,41 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 
 import MockStudioProvider, { useMockStudio } from "./MockStudioProvider";
-import { LIKED_SONGS_ID } from "./mock-data";
+import { LIKED_SONGS, LIKED_SONGS_ID, MOCK_COLLECTIONS } from "./mock-data";
 import CollectionMenu from "./CollectionMenu";
 
 /** Surfaces the store's pinned flag so pinning is asserted as state. */
-function PinProbe() {
+function PinProbe({ collectionId }: { collectionId: string }) {
   const { collections } = useMockStudio();
-  const c = collections.find((x) => x.id === LIKED_SONGS_ID)!;
+  const c = collections.find((x) => x.id === collectionId)!;
   return <span data-testid="pinned">{String(c.pinned)}</span>;
 }
 
-function Harness() {
+function Harness({ collectionId }: { collectionId: string }) {
   const { collections } = useMockStudio();
-  const c = collections.find((x) => x.id === LIKED_SONGS_ID)!;
+  const c = collections.find((x) => x.id === collectionId)!;
   return <CollectionMenu collection={c} />;
 }
 
+/** Liked Songs — used by the share tests below, which only care about the
+ *  share surface and don't touch pinning. */
 function renderMenu() {
   return render(
     <MockStudioProvider>
-      <PinProbe />
-      <Harness />
+      <PinProbe collectionId={LIKED_SONGS_ID} />
+      <Harness collectionId={LIKED_SONGS_ID} />
+    </MockStudioProvider>
+  );
+}
+
+/** An ordinary, non-system collection — used by the pin tests below, since
+ *  Liked Songs no longer offers pin/unpin at all (it is permanent). */
+function renderPinMenu() {
+  const id = MOCK_COLLECTIONS[0].id;
+  return render(
+    <MockStudioProvider>
+      <PinProbe collectionId={id} />
+      <Harness collectionId={id} />
     </MockStudioProvider>
   );
 }
@@ -41,7 +55,11 @@ describe("CollectionMenu", () => {
   afterEach(() => vi.restoreAllMocks());
 
   it("pins and unpins the collection", () => {
-    renderMenu();
+    // Was exercised against Liked Songs; Liked Songs no longer offers pin/
+    // unpin at all now that it's permanent (see the "system collection"
+    // test below), so this now targets an ordinary collection instead — the
+    // toggle behaviour itself is unchanged.
+    renderPinMenu();
     const before = screen.getByTestId("pinned").textContent;
 
     openMenu();
@@ -51,11 +69,12 @@ describe("CollectionMenu", () => {
   });
 
   it("labels the pin item by what it will do", () => {
-    renderMenu();
+    // Was exercised against Liked Songs (seeded pinned, so "Unpin" was
+    // offered); moved to an ordinary collection for the same reason as above.
+    renderPinMenu();
     openMenu();
-    // Liked Songs seeds pinned, so the action offered is Unpin.
-    expect(screen.getByText("Unpin")).toBeTruthy();
-    expect(screen.queryByText("Pin to top")).toBeNull();
+    expect(screen.getByText("Pin to top")).toBeTruthy();
+    expect(screen.queryByText("Unpin")).toBeNull();
   });
 
   it("shows the link before sharing it", () => {
@@ -101,5 +120,34 @@ describe("CollectionMenu", () => {
     expect(x.getAttribute("href")).toContain("x.com/intent");
     expect(x.getAttribute("target")).toBe("_blank");
     expect(x.getAttribute("rel")).toContain("noopener");
+  });
+
+  it("offers no pin or unpin for a system collection", async () => {
+    // Liked Songs is permanent: there is no state in which unpinning it is a
+    // thing the user can mean.
+    render(
+      <MockStudioProvider>
+        <CollectionMenu collection={{ ...LIKED_SONGS, system: true }} />
+      </MockStudioProvider>
+    );
+    fireEvent.pointerDown(screen.getByLabelText(`More for ${LIKED_SONGS.title}`), {
+      button: 0,
+    });
+    expect(await screen.findByText("Share")).toBeInTheDocument();
+    expect(screen.queryByText("Unpin")).toBeNull();
+    expect(screen.queryByText("Pin to top")).toBeNull();
+  });
+
+  it("still offers pin for an ordinary collection", async () => {
+    render(
+      <MockStudioProvider>
+        <CollectionMenu collection={MOCK_COLLECTIONS[0]} />
+      </MockStudioProvider>
+    );
+    fireEvent.pointerDown(
+      screen.getByLabelText(`More for ${MOCK_COLLECTIONS[0].title}`),
+      { button: 0 }
+    );
+    expect(await screen.findByText("Pin to top")).toBeInTheDocument();
   });
 });

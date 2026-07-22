@@ -469,6 +469,8 @@ export default function StudioProvider({
 
   const togglePin = useCallback(
     (id: string) => {
+      // Liked Songs is permanent: nothing can unpin it, no matter what calls in.
+      if (id === LIKED_ID) return;
       const wasPinned = pinnedIds.has(id);
       setPinnedIds((s) => {
         const n = new Set(s);

@@ -20,6 +20,15 @@ describe("filterLibrary", () => {
   it("shows only Liked Songs for the liked filter", () => {
     expect(filterLibrary(ALL, "liked").map((c) => c.id)).toEqual([LIKED_SONGS.id]);
   });
+
+  it("sorts a system collection ahead of pinned ones", () => {
+    const liked = { ...LIKED_SONGS, system: true, pinned: true };
+    const pinned = { ...MOCK_COLLECTIONS[0], pinned: true };
+    const plain = { ...MOCK_COLLECTIONS[1], pinned: false };
+
+    const out = filterLibrary([plain, pinned, liked], "playlists");
+    expect(out[0].id).toBe(liked.id);
+  });
 });
 
 describe("sortTracks", () => {

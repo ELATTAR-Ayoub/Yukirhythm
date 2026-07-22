@@ -210,6 +210,8 @@ export default function MockStudioProvider({
   const [queue, setQueue] = useState<MockTrack[]>(LIBRARY_QUEUE);
 
   const togglePin = useCallback((id: string) => {
+    // Liked Songs is permanent: nothing can unpin it, no matter what calls in.
+    if (id === LIKED_SONGS_ID) return;
     setCollections((cs) =>
       cs.map((c) => (c.id === id ? { ...c, pinned: !c.pinned } : c))
     );

@@ -48,20 +48,27 @@ export default function CollectionMenu({ collection }: CollectionMenuProps) {
           </PlayerButton>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem
-            onClick={() => {
-              togglePin(collection.id);
-              toast(pinned ? "Unpinned" : "Pinned to the top");
-            }}
-          >
-            {pinned ? (
-              <DrawingPinFilledIcon className="mr-2 h-3.5 w-3.5" />
-            ) : (
-              <DrawingPinIcon className="mr-2 h-3.5 w-3.5" />
-            )}
-            {pinned ? "Unpin" : "Pin to top"}
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
+          {/* Liked Songs is permanent — there is no state in which pinning or
+              unpinning it means anything, so the whole item is omitted rather
+              than disabled. */}
+          {!collection.system && (
+            <>
+              <DropdownMenuItem
+                onClick={() => {
+                  togglePin(collection.id);
+                  toast(pinned ? "Unpinned" : "Pinned to the top");
+                }}
+              >
+                {pinned ? (
+                  <DrawingPinFilledIcon className="mr-2 h-3.5 w-3.5" />
+                ) : (
+                  <DrawingPinIcon className="mr-2 h-3.5 w-3.5" />
+                )}
+                {pinned ? "Unpin" : "Pin to top"}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+            </>
+          )}
           <DropdownMenuItem onClick={() => setSharing(true)}>
             <Share1Icon className="mr-2 h-3.5 w-3.5" /> Share
           </DropdownMenuItem>
