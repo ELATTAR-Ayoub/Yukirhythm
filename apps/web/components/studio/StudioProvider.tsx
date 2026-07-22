@@ -22,6 +22,8 @@ import type {
 import type { LibraryFilter } from "@/components/studio/screens/library-utils";
 import {
   insertIntoQueue,
+  isSameContext,
+  removeQueueIndex,
   type EnqueueMode,
 } from "@/components/studio/screens/queue-utils";
 import type { TextureName } from "@/components/studio/Texture";
@@ -230,10 +232,10 @@ export default function StudioProvider({
   const play = useCallback(
     async (track: MockTrack, from?: MockCollection) => {
       // Clicking a row in the queue you are already inside must not rebuild
-      // that queue — everything enqueued from the rail lives only there.
-      const sameContext = !from || from.id === playingCollection?.id;
+      // that queue — everything enqueued from the rail lives only there. See
+      // isSameContext for why `from` omitted (Search, Home) never counts.
       const at = queue.findIndex((t) => t.id === track.id);
-      if (sameContext && at >= 0) {
+      if (isSameContext(from, playingCollection) && at >= 0) {
         flushEvent();
         setNavDirection(null);
         startTrack(at);
@@ -262,16 +264,25 @@ export default function StudioProvider({
 
   const dequeue = useCallback(
     (index: number) => {
-      setQueue((q) => {
-        if (index < 0 || index >= q.length) return q;
-        return [...q.slice(0, index), ...q.slice(index + 1)];
-      });
-      setCurrentIndex((i) => (index < i ? i - 1 : i));
+      // Flush first, same as playAt/play/next/prev: if the removed slot is
+      // the one playing, its accumulated listened-seconds must land under the
+      // track that earned them, not vanish or get attributed to whatever
+      // nowPlaying resolves to afterward.
+      flushEvent();
+      const result = removeQueueIndex(queue, currentIndex, index);
+      setQueue(result.queue);
+      setCurrentIndex(result.currentIndex);
+      // Clamped past the end means the track that was playing just vanished
+      // and nothing replaced it — stop, so a later, unrelated enqueue() can't
+      // silently resurrect playback into the vacated slot.
+      if (result.currentIndex === -1 && currentIndex !== -1) {
+        setIsPlaying(false);
+      }
       // Best-effort, same as enqueue: a failed write must not resurrect a row
       // the user just removed, and the next save() flush re-sends the list.
       void backend.me.playback.removeFromQueue(index).catch(() => {});
     },
-    [backend]
+    [backend, flushEvent, queue, currentIndex]
   );
 
   /**

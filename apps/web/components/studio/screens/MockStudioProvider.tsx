@@ -32,7 +32,12 @@ import {
   type MockUser,
 } from "./mock-data";
 import type { LibraryFilter } from "./library-utils";
-import { insertIntoQueue, type EnqueueMode } from "./queue-utils";
+import {
+  insertIntoQueue,
+  isSameContext,
+  removeQueueIndex,
+  type EnqueueMode,
+} from "./queue-utils";
 import type { TextureName } from "@/components/studio/Texture";
 
 /**
@@ -324,10 +329,10 @@ export default function MockStudioProvider({
   const play = useCallback(
     (track: MockTrack, from?: MockCollection) => {
       // Clicking a row in the queue you are already inside is not a request to
-      // rebuild that queue. Only naming a DIFFERENT collection is.
-      const sameContext = !from || from.id === playingCollection?.id;
+      // rebuild that queue. Only naming the collection currently playing is —
+      // see isSameContext for why `from` omitted never counts.
       const at = queue.findIndex((t) => t.id === track.id);
-      if (sameContext && at >= 0) {
+      if (isSameContext(from, playingCollection) && at >= 0) {
         setNavDirection(null);
         startLoad(at);
         return;
@@ -344,17 +349,20 @@ export default function MockStudioProvider({
     [startLoad, playingCollection, queue]
   );
 
-  const dequeue = useCallback((index: number) => {
-    setQueue((q) => {
-      if (index < 0 || index >= q.length) return q;
-      return [...q.slice(0, index), ...q.slice(index + 1)];
-    });
-    // Everything above the playhead shifts down by one, so the index has to
-    // follow or a removal would silently change what is playing. Removing the
-    // playing track itself leaves the index put, which now addresses the next
-    // track — dropping what you are hearing means moving on to what follows.
-    setCurrentIndex((i) => (index < i ? i - 1 : i));
-  }, []);
+  const dequeue = useCallback(
+    (index: number) => {
+      const result = removeQueueIndex(queue, currentIndex, index);
+      setQueue(result.queue);
+      setCurrentIndex(result.currentIndex);
+      // Clamped past the end means the track that was playing just vanished
+      // and nothing replaced it — stop, so a later, unrelated enqueue() can't
+      // silently resurrect playback into the vacated slot.
+      if (result.currentIndex === -1 && currentIndex !== -1) {
+        setIsPlaying(false);
+      }
+    },
+    [queue, currentIndex]
+  );
 
   /** Splices into the running queue. Deliberately does not start playback:
    *  queueing something is a statement about what comes later, not now. */

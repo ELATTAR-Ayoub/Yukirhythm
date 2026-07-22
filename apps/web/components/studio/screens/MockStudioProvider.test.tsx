@@ -8,6 +8,7 @@ import {
   MOCK_TRACKS,
   MOCK_USER,
   getCollectionTracks,
+  type MockCollection,
 } from "./mock-data";
 
 function wrapper({ children }: { children: React.ReactNode }) {
@@ -313,5 +314,47 @@ describe("the queue is not the playlist", () => {
     });
 
     expect(result.current.nowPlaying?.id).toBe(playing);
+  });
+
+  it("starts a fresh context when a track is played with no source, even if it is already queued", () => {
+    // Search and Home call play(track) with no `from`. Treating that as "same
+    // context" silently kept the listener inside a playlist they had left.
+    const source = MOCK_COLLECTIONS[0];
+    const { result } = renderHook(() => useMockStudio(), { wrapper: MockStudioProvider });
+
+    act(() => { result.current.play(getCollectionTracks(source)[0], source); });
+    expect(result.current.playingCollection?.id).toBe(source.id);
+
+    const alreadyQueued = getCollectionTracks(source)[1];
+    act(() => { result.current.play(alreadyQueued); });
+
+    expect(result.current.playingCollection).toBeNull();
+    expect(result.current.nowPlaying?.id).toBe(alreadyQueued.id);
+  });
+
+  it("clamps the playhead instead of leaving it to resurrect a removed track", () => {
+    // Repro: a solo queue is playing; dequeue() removes the only (and
+    // playing) track. A later, unrelated enqueue() must not silently
+    // resurrect playback — enqueue's own contract is that queueing something
+    // never starts playback, and a stale index would break that promise the
+    // moment the vacated slot is refilled.
+    const solo: MockCollection = {
+      ...MOCK_COLLECTIONS[0],
+      trackIds: [MOCK_TRACKS[0].id],
+    };
+    const { result } = renderHook(() => useMockStudio(), { wrapper: MockStudioProvider });
+
+    act(() => { result.current.play(MOCK_TRACKS[0], solo); });
+    expect(result.current.nowPlaying?.id).toBe(MOCK_TRACKS[0].id);
+
+    act(() => { result.current.dequeue(0); });
+    expect(result.current.queue).toHaveLength(0);
+    expect(result.current.currentIndex).toBe(-1);
+    expect(result.current.isPlaying).toBe(false);
+
+    act(() => { result.current.enqueue(MOCK_TRACKS[1]); });
+
+    expect(result.current.nowPlaying).toBeNull();
+    expect(result.current.isPlaying).toBe(false);
   });
 });
