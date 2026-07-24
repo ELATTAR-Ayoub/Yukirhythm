@@ -96,6 +96,7 @@ export default function StudioProvider({
   const [youMightLike, setYouMightLike] = useState<MockTrack[]>([]);
   const [stats, setStats] = useState<MockStats | null>(null);
   const [recents, setRecents] = useState<MockHistoryEntry[]>([]);
+  const [feedsLoading, setFeedsLoading] = useState(true);
 
   const nowPlaying = currentIndex >= 0 ? (queue[currentIndex] ?? null) : null;
 
@@ -152,8 +153,10 @@ export default function StudioProvider({
         setUser(null);
         setCollections([]);
         setLibraryLoading(false);
+        setFeedsLoading(false);
         return;
       }
+      setFeedsLoading(true);
       try {
         // ensure the user doc exists, then load it
         const provider =
@@ -181,24 +184,36 @@ export default function StudioProvider({
         if (live) setLibraryLoading(false);
       }
 
-      // Feeds and profile data. Each is independent — one failing rail must not
-      // blank the others, so they settle separately.
+      // Feeds and profile data. Each is independent — one failing rail must
+      // not blank the others, so they settle separately. Failures are logged:
+      // a silently-empty shelf is indistinguishable from a broken feed.
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const warn = (name: string) => (err: unknown) =>
+        console.warn(`Feed load failed: ${name}`, err);
       void backend.feed.jumpBackIn().then(
         (r) => live && setJumpBackIn(r.collections.map((c) => toStudioCollection(c))),
-        () => {}
+        warn("jump-back-in")
       );
-      void backend.feed.newReleases().then(
-        (r) => live && setNewReleases(absorb(r.items.map((i) => i.track))),
-        () => {}
-      );
-      void backend.feed.youMightLike().then(
-        (r) => live && setYouMightLike(absorb(r.items.map((i) => i.track))),
-        () => {}
-      );
+      const shelfFeeds = [
+        backend.feed.newReleases().then((r) => {
+          if (live) setNewReleases(absorb(r.items.map((i) => i.track)));
+        }),
+        backend.feed.youMightLike().then((r) => {
+          if (live) setYouMightLike(absorb(r.items.map((i) => i.track)));
+        }),
+      ] as const;
+      void Promise.allSettled(shelfFeeds).then((results) => {
+        results.forEach((r, i) => {
+          if (r.status === "rejected")
+            warn(i === 0 ? "new-releases" : "you-might-like")(r.reason);
+        });
+        // Cleared on success AND failure — a dead feed shows its empty state,
+        // never a skeleton that pulses forever.
+        if (live) setFeedsLoading(false);
+      });
       void backend.me.stats(tz).then(
         (s) => live && setStats(toStudioStats(s)),
-        () => {}
+        warn("stats")
       );
       void backend.me.recents().then(
         (r) => {
@@ -206,7 +221,7 @@ export default function StudioProvider({
           absorb(r.items.map((i) => i.track).filter((t): t is Track => t !== null));
           setRecents(toStudioHistory(r.items, Date.now()));
         },
-        () => {}
+        warn("recents")
       );
     })();
     return () => {
@@ -588,6 +603,7 @@ export default function StudioProvider({
       jumpBackIn,
       newReleases,
       youMightLike,
+      feedsLoading,
       collectionResults,
       stats,
       recents,
@@ -605,7 +621,7 @@ export default function StudioProvider({
       collections,
       libraryLoading, libraryFilter, togglePin, isLiked, toggleLike, toggleTrackInCollection,
       addTrackToCollection, createCollection, playerExpanded, volume, setVolume,
-      toggleMute, jumpBackIn, newReleases, youMightLike, collectionResults,
+      toggleMute, jumpBackIn, newReleases, youMightLike, feedsLoading, collectionResults,
       stats, recents,
     ]
   );

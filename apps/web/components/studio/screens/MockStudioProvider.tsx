@@ -135,6 +135,8 @@ interface MockStudioValue {
   newReleases: MockTrack[];
   /** Search "You might like". */
   youMightLike: MockTrack[];
+  /** True while the home/search shelves' feeds are in flight. */
+  feedsLoading: boolean;
   /** Collections matching the current search query (the caller's own library). */
   collectionResults: MockCollection[];
   /** Listening stats; null while loading or signed out. */
@@ -172,8 +174,15 @@ const LIBRARY_QUEUE = MOCK_TRACKS;
 
 export default function MockStudioProvider({
   children,
+  feeds,
 }: {
   children: React.ReactNode;
+  /** Test/docs override for the feed shelves' data and loading state. */
+  feeds?: {
+    loading?: boolean;
+    youMightLike?: MockTrack[];
+    newReleases?: MockTrack[];
+  };
 }) {
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -489,8 +498,14 @@ export default function MockStudioProvider({
     () => recentCollections(MOCK_HISTORY, collections),
     [collections]
   );
-  const newReleases = useMemo(() => resolve(NEW_RELEASE_IDS), []);
-  const youMightLike = useMemo(() => resolve(YOU_MIGHT_LIKE_IDS), []);
+  const newReleases = useMemo(
+    () => feeds?.newReleases ?? resolve(NEW_RELEASE_IDS),
+    [feeds]
+  );
+  const youMightLike = useMemo(
+    () => feeds?.youMightLike ?? resolve(YOU_MIGHT_LIKE_IDS),
+    [feeds]
+  );
   const collectionResults = useMemo(
     () => (query.trim() ? searchMockCollections(query, collections) : []),
     [query, collections]
@@ -537,6 +552,7 @@ export default function MockStudioProvider({
     jumpBackIn,
     newReleases,
     youMightLike,
+    feedsLoading: feeds?.loading ?? false,
     collectionResults,
     stats,
     recents,
