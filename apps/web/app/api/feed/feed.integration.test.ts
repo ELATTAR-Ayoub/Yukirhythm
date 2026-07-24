@@ -154,6 +154,22 @@ describe("feeds against real Firestore", () => {
     expect(body.items[0].recommendationId).toMatch(/^nr:/);
   });
 
+  it("new-releases surfaces related tracks for a warm listener", async () => {
+    // play the seed enough to make it the top track, same pattern as the
+    // you-might-like warm test above
+    await postEvents(
+      post(token, "/api/events", {
+        events: [{ trackId: "seed", listenedSec: 120, startedAt: Date.now() - 8 * 24 * 60 * 60 * 1000 }],
+      })
+    );
+    const res = await newReleases(auth(token, "/api/feed/new-releases"));
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { items: { trackId: string }[] };
+    const ids = body.items.map((i) => i.trackId);
+    expect(ids).toContain("rel1");
+    expect(ids).toContain("rel2");
+  });
+
   it("excludes tracks already in the user's library", async () => {
     // put rel1 into an owned collection so it is excluded from recommendations
     await adminDb()
