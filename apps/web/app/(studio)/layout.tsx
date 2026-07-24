@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Toaster } from "sonner";
 
 import { cn } from "@/lib/utils";
+import AuthGate from "@/components/studio/shell/AuthGate";
 import StudioProvider from "@/components/studio/StudioProvider";
 import BottomTabBar from "@/components/studio/screens/BottomTabBar";
 import GlobalPlayer from "@/components/studio/screens/GlobalPlayer";
@@ -143,8 +144,11 @@ function Shell({
 }
 
 /**
- * The real app shell: the studio grid on the real backend. Screens read data
- * from the studio context, which StudioProvider fills from the API.
+ * The real app shell: the studio grid on the real backend, behind sign-in.
+ * AuthGate sits OUTSIDE StudioProvider so a signed-out visitor never mounts
+ * the data provider — nothing here should fetch before there is a user to
+ * fetch it for. Screens read data from the studio context, which
+ * StudioProvider fills from the API.
  */
 export default function StudioLayout({
   children,
@@ -152,9 +156,11 @@ export default function StudioLayout({
   children: React.ReactNode;
 }) {
   return (
-    <StudioProvider>
-      <Shell>{children}</Shell>
-      <Toaster />
-    </StudioProvider>
+    <AuthGate>
+      <StudioProvider>
+        <Shell>{children}</Shell>
+        <Toaster />
+      </StudioProvider>
+    </AuthGate>
   );
 }

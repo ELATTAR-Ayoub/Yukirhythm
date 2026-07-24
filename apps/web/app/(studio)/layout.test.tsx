@@ -23,6 +23,12 @@ vi.mock("@/components/studio/StudioProvider", () => ({
   default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
+// The shell suite is about the grid; sign the gate in so it stays out of the
+// way (AuthGate has its own suite).
+vi.mock("@/lib/studio/useAuth", () => ({
+  useAuthState: () => ({ user: { uid: "u1" }, loading: false }),
+}));
+
 vi.mock("next/navigation", () => ({
   usePathname: () => nav.pathname,
   useRouter: () => ({ push: () => {} }),
