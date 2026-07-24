@@ -3,6 +3,7 @@ import { uidFromRequest, unauthorized } from "@/lib/firebase/verify";
 import { getCatalogProvider } from "@/lib/catalog/provider";
 import { ingestTracks } from "@/lib/catalog/ingest";
 import { blendYouMightLike, type BlendInput } from "@/lib/catalog/recommend";
+import { coldStartTracks, YOU_MIGHT_LIKE_QUERIES } from "@/lib/catalog/cold-start";
 import { loadFeedContext } from "../_context";
 import type { Collection, Track, User } from "@/lib/catalog/model";
 
@@ -33,19 +34,43 @@ export async function GET(req: Request): Promise<Response> {
   // Radio: related tracks off the user's most-played seeds (or a cold seed).
   const seeds = personalized && ctx.topPlayed.length ? ctx.topPlayed.slice(0, 3) : [];
   if (seeds.length === 0) {
-    const cold = await coldSeed();
+    // Needs the popularity composite index; an undeployed index must not 500
+    // the feed — the cold-start below covers the gap.
+    const cold = await coldSeed().catch((err) => {
+      console.error("feed/you-might-like: cold seed query failed", err);
+      return null;
+    });
     if (cold) seeds.push(cold);
   }
 
   const radio: BlendInput["radio"] = [];
   for (const seedId of seeds) {
-    const seedDoc = await db.collection("tracks").doc(seedId).get();
-    const seedTitle = seedDoc.exists ? (seedDoc.data() as Track).title : "a track you played";
-    const related = await provider.getRelatedTracks(seedId);
-    const embeddable = related.filter((t) => t.isEmbeddable);
-    if (embeddable.length) await ingestTracks(embeddable);
-    for (const t of embeddable.slice(0, 10)) {
-      radio.push({ trackId: t.providerTrackId, seedTitle });
+    try {
+      const seedDoc = await db.collection("tracks").doc(seedId).get();
+      const seedTitle = seedDoc.exists ? (seedDoc.data() as Track).title : "a track you played";
+      const related = await provider.getRelatedTracks(seedId);
+      const embeddable = related.filter((t) => t.isEmbeddable);
+      if (embeddable.length) await ingestTracks(embeddable);
+      for (const t of embeddable.slice(0, 10)) {
+        radio.push({ trackId: t.providerTrackId, seedTitle });
+      }
+    } catch (err) {
+      // One dead seed must not kill the feed — the cold-start below still
+      // answers, and other seeds may have succeeded.
+      console.error(`feed/you-might-like: radio for seed "${seedId}" failed`, err);
+    }
+  }
+
+  // A brand-new deployment has no seeds at all (empty catalogue), or seeds
+  // whose related-tracks come back empty — prime the radio through the
+  // provider instead. coldStartTracks ingests its results, so the doc
+  // resolution below finds them.
+  if (radio.length === 0) {
+    const cold = await coldStartTracks(YOU_MIGHT_LIKE_QUERIES, 20);
+    for (const t of cold) {
+      if (!ctx.exclude.has(t.providerTrackId)) {
+        radio.push({ trackId: t.providerTrackId, seedTitle: "popular right now" });
+      }
     }
   }
 

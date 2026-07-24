@@ -40,13 +40,19 @@ export async function GET(req: Request): Promise<Response> {
   if (personalized && ctx.topPlayed.length) {
     const provider = await getCatalogProvider();
     for (const seed of ctx.topPlayed.slice(0, 3)) {
-      const related = (await provider.getRelatedTracks(seed)).filter((t) => t.isEmbeddable);
-      if (related.length) await ingestTracks(related);
-      for (const t of related) {
-        const doc = await db.collection("tracks").doc(t.providerTrackId).get();
-        if (doc.exists && !ctx.exclude.has(t.providerTrackId)) {
-          candidates.set(t.providerTrackId, doc.data() as Track);
+      try {
+        const related = (await provider.getRelatedTracks(seed)).filter((t) => t.isEmbeddable);
+        if (related.length) await ingestTracks(related);
+        for (const t of related) {
+          const doc = await db.collection("tracks").doc(t.providerTrackId).get();
+          if (doc.exists && !ctx.exclude.has(t.providerTrackId)) {
+            candidates.set(t.providerTrackId, doc.data() as Track);
+          }
         }
+      } catch (err) {
+        // One dead seed must not kill the feed — the guarded fallbacks below
+        // still answer, and other seeds may have succeeded.
+        console.error(`feed/new-releases: related for seed "${seed}" failed`, err);
       }
     }
   }

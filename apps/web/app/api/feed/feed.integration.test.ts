@@ -217,3 +217,54 @@ describe("new-releases cold start on an empty catalogue", () => {
     }
   });
 });
+
+describe("you-might-like cold start on an empty catalogue", () => {
+  beforeEach(async () => {
+    await clearFirestore();
+    await ensureUser(post(token, "/api/me", {}));
+  });
+
+  it("answers from the provider when the catalogue is empty", async () => {
+    setCatalogProvider({
+      ...stub,
+      async search(query) {
+        return {
+          query,
+          type: "song",
+          tracks: [pt("cold1"), pt("cold2")],
+          artists: [],
+          playlists: [],
+        };
+      },
+    });
+    try {
+      const res = await youMightLike(auth(token, "/api/feed/you-might-like"));
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      const ids = body.items.map((i: { trackId: string }) => i.trackId);
+      expect(ids.length).toBeGreaterThan(0);
+      expect(ids).toContain("cold1");
+      // every item resolves to a real track doc for the UI
+      expect(body.items.every((i: { track: unknown }) => i.track)).toBe(true);
+    } finally {
+      setCatalogProvider(stub);
+    }
+  });
+
+  it("still answers 200 with an empty list when the provider fails too", async () => {
+    setCatalogProvider({
+      ...stub,
+      async search(): Promise<never> {
+        throw new Error("scraper down");
+      },
+    });
+    try {
+      const res = await youMightLike(auth(token, "/api/feed/you-might-like"));
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(Array.isArray(body.items)).toBe(true);
+    } finally {
+      setCatalogProvider(stub);
+    }
+  });
+});
