@@ -5,16 +5,17 @@ import { useRouter } from "next/navigation";
 
 import { useAuthState } from "@/lib/studio/useAuth";
 import { useBackend } from "@/lib/studio/useBackend";
-import { HOME, QUEUE } from "@/components/studio/shell/routes";
+import { AUTH, HOME, SEARCH } from "@/components/studio/shell/routes";
 
 /**
- * The app root is the player. Where it opens depends on whether this user has
- * ever listened to anything.
+ * The app root is the player. Where it opens depends on whether this user is
+ * signed in, and if so, whether they have ever listened to anything.
  *
- * A brand-new account lands on the queue: it is empty, its "+" is the one
- * control that does something useful on a cold account, and sending them to
- * Home instead offers rails that have nothing personal in them yet. Anyone
- * with a queue or a saved track goes to Home, which is what they expect.
+ * A brand-new account lands on Search: the feeds and the search field are
+ * the controls that do something useful on a cold account, where Home's
+ * rails would have nothing personal in them yet. Anyone with a queue or a
+ * saved track goes to Home, which is what they expect. Signed-out visitors
+ * land on the login page.
  *
  * Client-side because that decision needs the user's playback document, which
  * a server redirect cannot read without their token.
@@ -32,10 +33,9 @@ export default function RootPage() {
 
     let live = true;
 
-    // Signed out there is no history by definition, and the queue screen would
-    // only offer a disabled field.
+    // Signed out means the login gate, full stop.
     if (!user) {
-      router.replace(HOME);
+      router.replace(AUTH);
       return;
     }
 
@@ -43,7 +43,7 @@ export default function RootPage() {
       (state) => {
         if (!live) return;
         const cold = !state?.trackId && (state?.queue?.length ?? 0) === 0;
-        router.replace(cold ? QUEUE : HOME);
+        router.replace(cold ? SEARCH : HOME);
       },
       () => {
         // A failed read must not redefine where the app opens.

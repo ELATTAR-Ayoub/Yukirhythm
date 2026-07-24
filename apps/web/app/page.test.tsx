@@ -21,17 +21,17 @@ describe("root landing gate", () => {
     backend.me.playback.get.mockResolvedValue({ queue: [], trackId: null });
   });
 
-  it("sends a signed-out visitor to home", async () => {
+  it("sends a signed-out visitor to the login page", async () => {
     authState.user = null;
     render(<RootPage />);
-    await waitFor(() => expect(replace).toHaveBeenCalledWith("/home"));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/auth"));
   });
 
-  it("sends a brand-new account to the queue", async () => {
-    // Nothing queued and nothing ever played: the first useful thing this user
-    // can do is add music to what will play.
+  it("sends a brand-new account to search", async () => {
+    // Nothing queued and nothing ever played: Search is where the feeds and
+    // the search field give a cold account something to actually do.
     render(<RootPage />);
-    await waitFor(() => expect(replace).toHaveBeenCalledWith("/queue"));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/search"));
   });
 
   it("sends a returning listener to home", async () => {
