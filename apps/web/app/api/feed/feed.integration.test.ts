@@ -162,12 +162,25 @@ describe("feeds against real Firestore", () => {
         events: [{ trackId: "seed", listenedSec: 120, startedAt: Date.now() - 8 * 24 * 60 * 60 * 1000 }],
       })
     );
-    const res = await newReleases(auth(token, "/api/feed/new-releases"));
-    expect(res.status).toBe(200);
-    const body = (await res.json()) as { items: { trackId: string }[] };
-    const ids = body.items.map((i) => i.trackId);
-    expect(ids).toContain("rel1");
-    expect(ids).toContain("rel2");
+    // fresh1/fresh2 are NOT pre-ingested by beforeEach, so they can only reach
+    // the response via the live personalized loop's own ingestTracks — unlike
+    // rel1/rel2, the popular fallback can't accidentally surface them.
+    setCatalogProvider({
+      ...stub,
+      async getRelatedTracks(seed) {
+        return seed === "seed" ? [pt("fresh1"), pt("fresh2")] : [];
+      },
+    });
+    try {
+      const res = await newReleases(auth(token, "/api/feed/new-releases"));
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as { items: { trackId: string }[] };
+      const ids = body.items.map((i) => i.trackId);
+      expect(ids).toContain("fresh1");
+      expect(ids).toContain("fresh2");
+    } finally {
+      setCatalogProvider(stub);
+    }
   });
 
   it("excludes tracks already in the user's library", async () => {
