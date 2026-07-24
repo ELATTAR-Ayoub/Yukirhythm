@@ -55,9 +55,10 @@ describe("root landing gate", () => {
 
   it("waits for auth to settle before deciding, rather than treating unknown as signed out", async () => {
     // If loading:true were treated as "no user", a returning listener on a
-    // cold load would be sent to /home for the wrong reason (misread as
-    // signed-out) before auth ever resolves, and worse, a redirect could fire
-    // a second time once the real user arrives — this proves it waits.
+    // cold load would be sent to /auth (the login page) for the wrong reason
+    // (misread as signed-out) before auth ever resolves, and worse, a
+    // redirect could fire a second time once the real user arrives — this
+    // proves it waits.
     authState.loading = true;
     authState.user = null;
     render(<RootPage />);

@@ -27,8 +27,8 @@ export default function RootPage() {
 
   useEffect(() => {
     // `loading` is true until Firebase's first emit. Treating "not yet known"
-    // as signed out would send every returning user to Home on a cold load,
-    // ahead of the real answer — wait for auth to settle instead.
+    // as signed out would send every returning user to the login page on a
+    // cold load, ahead of the real answer — wait for auth to settle instead.
     if (loading) return;
 
     let live = true;
