@@ -170,7 +170,12 @@ export default function StudioProvider({
           authProvider: provider,
         });
         const me = await backend.me.get();
-        if (!live || !me) return;
+        if (!live || !me) {
+          // Bail-out without the feeds section below — the skeleton must not
+          // pulse forever on a user doc that failed to load.
+          if (live) setFeedsLoading(false);
+          return;
+        }
         setUser(toStudioUser(me));
         await refreshLibrary();
       } catch (err) {
