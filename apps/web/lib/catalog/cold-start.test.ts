@@ -117,4 +117,22 @@ describe("coldStartTracks", () => {
     const got = await coldStartTracks(["a"], 2);
     expect(got).toHaveLength(2);
   });
+
+  it("does not cache an empty provider answer", async () => {
+    setCatalogProvider(
+      stubProvider({ a: [pt("dead", { isEmbeddable: false })] })
+    );
+    const got = await coldStartTracks(["a"], 10);
+    expect(got).toEqual([]);
+    expect(writeCache).not.toHaveBeenCalled();
+  });
+
+  it("still returns tracks when caching fails", async () => {
+    const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    writeCache.mockRejectedValue(new Error("rules"));
+    setCatalogProvider(stubProvider({ a: [pt("t1")] }));
+    const got = await coldStartTracks(["a"], 10);
+    expect(got.map((t) => t.providerTrackId)).toEqual(["t1"]);
+    errSpy.mockRestore();
+  });
 });

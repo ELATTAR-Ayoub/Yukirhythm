@@ -38,8 +38,20 @@ export async function coldStartTracks(
         const provider = await getCatalogProvider();
         const res = await provider.search(q, { type: "song", limit: 20 });
         tracks = res.tracks.filter((t) => t.isEmbeddable);
+        // Ingestion is fatal-per-query on purpose: Task 6's you-might-like
+        // route depends on cold-start results existing as track docs, so a
+        // failed ingest must not be swallowed like a cache miss would be.
         await ingestTracks(tracks);
-        await writeCache(key, tracks);
+        // Caching is best-effort only: a transient write failure must not
+        // discard tracks that were already searched and ingested. And an
+        // empty answer is never cached — the scraper is known-flaky, and
+        // caching a zero-result response would freeze both feed shelves
+        // empty for a full day on one bad response.
+        if (tracks.length > 0) {
+          await writeCache(key, tracks).catch((err) =>
+            console.error(`cold-start: caching "${q}" failed`, err)
+          );
+        }
       }
       for (const t of tracks) {
         if (!out.has(t.providerTrackId)) out.set(t.providerTrackId, t);
