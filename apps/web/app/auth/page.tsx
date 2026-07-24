@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -8,6 +9,7 @@ import { TextureBackground } from "@/components/ui/texture-background";
 import SocialAuthButtons from "@/components/studio/screens/SocialAuthButtons";
 import ScreensFrame from "@/components/studio/screens/ScreensFrame";
 import { SCREENS } from "@/components/studio/shell/routes";
+import { useAuthState } from "@/lib/studio/useAuth";
 
 /** Route base — the app lives at the root (see shell/routes.ts). */
 const BASE = SCREENS;
@@ -15,6 +17,16 @@ const BASE = SCREENS;
 /** One door for everyone — Firebase social sign-in creates accounts on first login. */
 export default function AuthScreen() {
   const router = useRouter();
+  const { user, loading } = useAuthState();
+
+  // The page's only exit: the moment Firebase reports a session — whether the
+  // user just signed in here or arrived already signed in — hand off to the
+  // root, which decides between Search (new account) and Home (returning).
+  // `onAuthed` was the wrong trigger: it fires when the popup OPENS, before
+  // any session exists.
+  useEffect(() => {
+    if (!loading && user) router.replace("/");
+  }, [user, loading, router]);
 
   return (
     <ScreensFrame>
@@ -38,7 +50,7 @@ export default function AuthScreen() {
               One account for everything. Sign in or sign up in a single tap.
             </p>
 
-            <SocialAuthButtons onAuthed={() => router.push(`${BASE}/home`)} />
+            <SocialAuthButtons />
 
             <p className="type-label normal-case tracking-normal font-normal text-muted-foreground text-center">
               By continuing you agree to the mock{" "}
