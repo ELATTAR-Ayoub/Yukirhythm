@@ -168,3 +168,52 @@ describe("feeds against real Firestore", () => {
     expect(body.items.map((i) => i.trackId)).toContain("rel2");
   });
 });
+
+describe("new-releases cold start on an empty catalogue", () => {
+  beforeEach(async () => {
+    await clearFirestore();
+    await ensureUser(post(token, "/api/me", {}));
+  });
+
+  it("answers from the provider when the catalogue is empty", async () => {
+    setCatalogProvider({
+      ...stub,
+      async search(query) {
+        return {
+          query,
+          type: "song",
+          tracks: [pt("cold1"), pt("cold2")],
+          artists: [],
+          playlists: [],
+        };
+      },
+    });
+    try {
+      const res = await newReleases(auth(token, "/api/feed/new-releases"));
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      const ids = body.items.map((i: { trackId: string }) => i.trackId);
+      expect(ids).toContain("cold1");
+      expect(ids).toContain("cold2");
+    } finally {
+      setCatalogProvider(stub);
+    }
+  });
+
+  it("still answers 200 with an empty list when the provider fails too", async () => {
+    setCatalogProvider({
+      ...stub,
+      async search(): Promise<never> {
+        throw new Error("scraper down");
+      },
+    });
+    try {
+      const res = await newReleases(auth(token, "/api/feed/new-releases"));
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(Array.isArray(body.items)).toBe(true);
+    } finally {
+      setCatalogProvider(stub);
+    }
+  });
+});

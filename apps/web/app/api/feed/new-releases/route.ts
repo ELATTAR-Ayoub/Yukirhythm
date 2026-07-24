@@ -1,8 +1,9 @@
 import { adminDb } from "@/lib/firebase/admin";
 import { uidFromRequest, unauthorized } from "@/lib/firebase/verify";
 import { getCatalogProvider } from "@/lib/catalog/provider";
-import { ingestTracks } from "@/lib/catalog/ingest";
+import { ingestTracks, toTrackDoc } from "@/lib/catalog/ingest";
 import { artistAffinityFrom, scoreNewReleases } from "@/lib/catalog/recommend";
+import { coldStartTracks, NEW_RELEASES_QUERIES } from "@/lib/catalog/cold-start";
 import { loadFeedContext } from "../_context";
 import type { Track, User } from "@/lib/catalog/model";
 
@@ -50,17 +51,37 @@ export async function GET(req: Request): Promise<Response> {
     }
   }
 
-  // Cold start / thin candidates: globally popular catalogue tracks.
+  // Cold start / thin candidates: globally popular catalogue tracks. Guarded —
+  // this is the query that needs the (isEmbeddable, stats.viewCount) composite
+  // index, and an undeployed index must degrade to the provider fallback
+  // below, not to a 500.
   if (candidates.size < 6) {
-    const popular = await db
-      .collection("tracks")
-      .where("isEmbeddable", "==", true)
-      .orderBy("stats.viewCount", "desc")
-      .limit(30)
-      .get();
-    for (const doc of popular.docs) {
-      if (!ctx.exclude.has(doc.id) && !candidates.has(doc.id)) {
-        candidates.set(doc.id, doc.data() as Track);
+    try {
+      const popular = await db
+        .collection("tracks")
+        .where("isEmbeddable", "==", true)
+        .orderBy("stats.viewCount", "desc")
+        .limit(30)
+        .get();
+      for (const doc of popular.docs) {
+        if (!ctx.exclude.has(doc.id) && !candidates.has(doc.id)) {
+          candidates.set(doc.id, doc.data() as Track);
+        }
+      }
+    } catch (err) {
+      console.error("feed/new-releases: popular-tracks query failed", err);
+    }
+  }
+
+  // Still thin — a fresh deployment with an empty catalogue. Prime it through
+  // the provider; coldStartTracks ingests what it finds, so this branch stops
+  // running once it has succeeded once.
+  if (candidates.size < 6) {
+    const cold = await coldStartTracks(NEW_RELEASES_QUERIES, 30);
+    for (const t of cold) {
+      const id = t.providerTrackId;
+      if (!ctx.exclude.has(id) && !candidates.has(id)) {
+        candidates.set(id, toTrackDoc(t));
       }
     }
   }
