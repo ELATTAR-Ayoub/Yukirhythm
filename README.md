@@ -2,7 +2,7 @@
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/readme/hero-dark.png">
-  <img src="docs/readme/hero-light.png" alt="Yukirhythm — listen your way" width="100%">
+  <img src="docs/readme/hero-light.png" alt="Yukirhythm, listen your way" width="100%">
 </picture>
 
 <br>
@@ -10,11 +10,11 @@
 
 **Free music, zero ads, zero interruptions.**
 <br>
-Your library, your queue, your volume — all remembered, every time you come back.
+Your library, your queue, your volume. All remembered, every time you come back.
 
 <br>
 
-[![Open Yukirhythm](https://img.shields.io/badge/%E2%96%B6%EF%B8%8E%20%20Open%20Yukirhythm-1450F0?style=for-the-badge&labelColor=191919)](https://yukirhythm-web-elattarayoubs-projects.vercel.app)
+[![Open Yukirhythm](https://img.shields.io/badge/%E2%96%B6%EF%B8%8E%20%20Open%20Yukirhythm-1450F0?style=for-the-badge&labelColor=191919)](https://yukirhythm-web.vercel.app)
 
 <br>
 
@@ -30,7 +30,7 @@ Your library, your queue, your volume — all remembered, every time you come ba
 ## What is this?
 
 Yukirhythm is a music player for people who just want to **press play**. It streams
-from YouTube's endless catalog — every song, every remix, every 3-hour lofi mix —
+from YouTube's endless catalog: every song, every remix, every 3-hour lofi mix, all
 wrapped in a fast, focused player with **no ads, no upsells, and no "premium" nags**.
 
 Sign in once, and the app remembers everything: the song you were on, the second you
@@ -41,9 +41,9 @@ tomorrow, and it's waiting at 2:06.
 
 ## How to use it
 
-<img src="docs/readme/step-01-signin.png" alt="Step 01 — Sign in" width="100%">
+<img src="docs/readme/step-01-signin.png" alt="Step 01, Sign in" width="100%">
 
-One tap. Continue with **Google** or **Facebook** — no forms, no passwords to invent,
+One tap. Continue with **Google** or **Facebook**. No forms, no passwords to invent,
 no email verification scavenger hunt. Signing in is what lets Yukirhythm keep your
 likes, playlists and session across devices.
 
@@ -51,45 +51,45 @@ likes, playlists and session across devices.
 
 <br>
 
-<img src="docs/readme/step-02-search.png" alt="Step 02 — Search" width="100%">
+<img src="docs/readme/step-02-search.png" alt="Step 02, Search" width="100%">
 
 You land straight on **Search**, already filled with music:
 
-1. **You might like** — picks that learn from what you play
-2. **New releases** — fresh drops
-3. **Browse by mood** — one-tap tiles: Lo-fi, Ambient, Focus, Night…
+1. **You might like**, picks that learn from what you play
+2. **New releases**, fresh drops
+3. **Browse by mood**, one-tap tiles: Lo-fi, Ambient, Focus, Night, and more
 
-Type anything — a song, an artist, half a lyric you barely remember — and press
-<kbd>Enter</kbd>. If YouTube has it, you can play it.
+Type anything. A song, an artist, half a lyric you barely remember. Press
+<kbd>Enter</kbd>, and if YouTube has it, you can play it.
 
 > [!TIP]
-> Searching only fires when you press <kbd>Enter</kbd> — type in peace, no flickering
-> results while you think.
+> Searching only fires when you press <kbd>Enter</kbd>. Type in peace, with no
+> flickering results while you think.
 
 <img src="docs/readme/mock-02-search.jpg" alt="Search with the You might like and New releases shelves" width="100%">
 
 <br>
 
-<img src="docs/readme/step-03-play.png" alt="Step 03 — Play" width="100%">
+<img src="docs/readme/step-03-play.png" alt="Step 03, Play" width="100%">
 
-Click any card and it plays — the vinyl starts spinning in the player rail, with your
+Click any card and it plays. The vinyl starts spinning in the player rail, with your
 queue underneath.
 
-- **Seek anywhere** — click any point on the progress bar to jump straight to that second
-- **Like from the player** — the ♥ sits right on the transport, one click while it spins
-- **Queue it up** — add tracks to play next or last, straight from any card's menu
+- **Seek anywhere.** Click any point on the progress bar to jump straight to that second
+- **Like from the player.** The ♥ sits right on the transport, one click while it spins
+- **Queue it up.** Add tracks to play next or last, straight from any card's menu
 
 > [!NOTE]
 > Leave whenever you want. When you come back, your song is restored **paused at the
-> exact second you left**, volume included — press play and continue.
+> exact second you left**, volume included. Press play and continue.
 
 <img src="docs/readme/mock-03-play.jpg" alt="The player spinning a record with the queue rail" width="100%">
 
 <br>
 
-<img src="docs/readme/step-04-library.png" alt="Step 04 — Library" width="100%">
+<img src="docs/readme/step-04-library.png" alt="Step 04, Library" width="100%">
 
-Everything you ♥ lands in **Liked Songs** — a permanent playlist that's always pinned.
+Everything you ♥ lands in **Liked Songs**, a permanent playlist that's always pinned.
 Build your own playlists with the create flow (name, mood tags, cover), and add to
 them from anywhere in the app.
 
@@ -104,7 +104,7 @@ them from anywhere in the app.
 <br>
 
 It's free. No ads, no premium tier, no trial countdown. Yukirhythm is an independent
-project built for the love of it — the music plays through YouTube's own embedded
+project built for the love of it. The music plays through YouTube's own embedded
 player, so artists still get their plays counted.
 
 </details>
@@ -114,7 +114,7 @@ player, so artists still get their plays counted.
 <br>
 
 YouTube. Every track plays through YouTube's official embedded player behind the
-scenes — which is why the catalog is effectively *everything*: releases, live
+scenes, which is why the catalog is effectively everything: releases, live
 versions, remixes, full albums, DJ sets, that one bootleg with 40k views.
 
 </details>
@@ -123,7 +123,7 @@ versions, remixes, full albums, DJ sets, that one bootleg with 40k views.
 <summary><b>Do I need an account?</b></summary>
 <br>
 
-Yes — one tap with Google or Facebook. That's what makes your likes, playlists,
+Yes, one tap with Google or Facebook. That's what makes your likes, playlists,
 queue and session follow you between visits and devices.
 
 </details>
@@ -132,7 +132,7 @@ queue and session follow you between visits and devices.
 <summary><b>Does it work on my phone?</b></summary>
 <br>
 
-Yes. The whole app is responsive — on mobile you get a bottom tab bar, a mini
+Yes. The whole app is responsive. On mobile you get a bottom tab bar, a mini
 player, and a full-screen player with the same spinning vinyl.
 
 </details>
@@ -167,7 +167,7 @@ npm run emulator    # Firebase auth + firestore emulators (terminal 1)
 npm run dev:emu     # the app, pointed at the emulators (terminal 2)
 ```
 
-Then open `http://localhost:3000` — sign-in works against the local auth
+Then open `http://localhost:3000`. Sign-in works against the local auth
 emulator, no production credentials needed.
 
 ```bash
@@ -184,7 +184,7 @@ npm run typecheck && npm run lint && npm run format:check
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/readme/hero-light.png">
-  <img src="docs/readme/hero-dark.png" alt="Yukirhythm — no ads, just music" width="100%">
+  <img src="docs/readme/hero-dark.png" alt="Yukirhythm, no ads, just music" width="100%">
 </picture>
 
 <br>
