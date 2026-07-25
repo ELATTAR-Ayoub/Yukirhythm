@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 
 import MockStudioProvider, { useMockStudio } from "./MockStudioProvider";
 import { MOCK_TRACKS } from "./mock-data";
@@ -62,5 +62,26 @@ describe("Transport leading slot", () => {
       </MockStudioProvider>
     );
     expect(screen.queryByLabelText(/Like/)).toBeNull();
+  });
+
+  it("opens Add to playlist instead of unliking when the loaded track is already liked", () => {
+    render(
+      <MockStudioProvider>
+        <PlayFirst />
+        <Transport leading="like" />
+      </MockStudioProvider>
+    );
+    fireEvent.click(screen.getByText("seed"));
+
+    const like = screen.getByLabelText(`Like ${MOCK_TRACKS[0].title}`);
+    // Like it first so the second click hits the already-liked branch.
+    fireEvent.click(like);
+    expect(like.getAttribute("aria-pressed")).toBe("true");
+
+    fireEvent.click(like);
+
+    const dialog = within(screen.getByRole("dialog"));
+    expect(dialog.getByText("Add to playlist")).toBeTruthy();
+    expect(like.getAttribute("aria-pressed")).toBe("true");
   });
 });

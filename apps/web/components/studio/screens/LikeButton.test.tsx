@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 
 import MockStudioProvider, { useMockStudio } from "./MockStudioProvider";
@@ -72,5 +72,65 @@ describe("LikeButton", () => {
     expect(
       screen.getByRole("button", { name: "Like Midnight Snowfall" })
     ).toBeTruthy();
+  });
+
+  it("without onAlreadyLiked, a second click still unlikes (pinning current behavior)", () => {
+    render(
+      <MockStudioProvider>
+        <LikedProbe />
+        <LikeButton trackId={seeded} trackTitle="Some Track" />
+      </MockStudioProvider>
+    );
+    expect(liked()).toContain(seeded);
+
+    fireEvent.click(screen.getByRole("button", { name: "Like Some Track" }));
+
+    expect(liked()).not.toContain(seeded);
+  });
+
+  it("with onAlreadyLiked, clicking an already-liked track calls it instead of unliking", () => {
+    const onAlreadyLiked = vi.fn();
+    render(
+      <MockStudioProvider>
+        <LikedProbe />
+        <LikeButton
+          trackId={seeded}
+          trackTitle="Some Track"
+          onAlreadyLiked={onAlreadyLiked}
+        />
+      </MockStudioProvider>
+    );
+    expect(liked()).toContain(seeded);
+
+    fireEvent.click(screen.getByRole("button", { name: "Like Some Track" }));
+
+    expect(onAlreadyLiked).toHaveBeenCalledTimes(1);
+    expect(liked()).toContain(seeded);
+    expect(
+      screen.getByRole("button", { name: "Like Some Track" })
+    ).toHaveProperty("ariaPressed", "true");
+  });
+
+  it("with onAlreadyLiked, a not-yet-liked track still likes normally and skips the callback", () => {
+    const onAlreadyLiked = vi.fn();
+    render(
+      <MockStudioProvider>
+        <LikedProbe />
+        <LikeButton
+          trackId={notSeeded}
+          trackTitle="Some Track"
+          onAlreadyLiked={onAlreadyLiked}
+        />
+      </MockStudioProvider>
+    );
+    expect(liked()).not.toContain(notSeeded);
+
+    fireEvent.click(screen.getByRole("button", { name: "Like Some Track" }));
+
+    expect(onAlreadyLiked).not.toHaveBeenCalled();
+    expect(liked()).toContain(notSeeded);
+    expect(
+      screen.getByRole("button", { name: "Like Some Track" })
+    ).toHaveProperty("ariaPressed", "true");
   });
 });

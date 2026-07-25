@@ -18,6 +18,15 @@ interface LikeButtonProps {
   trackTitle: string;
   size?: "sm" | "base";
   className?: string;
+  /**
+   * Once a track is already saved, the heart doubles as the door to
+   * playlists rather than an unlike shortcut — that surface (e.g. the device
+   * player) has no other one-tap way to file a track, and unliking is still
+   * reachable from inside the dialog this opens (its Liked Songs row).
+   * Omitted entirely, the button keeps its plain toggle behavior — every
+   * existing call site (rows, queue, ...) is unaffected.
+   */
+  onAlreadyLiked?: () => void;
 }
 
 /**
@@ -32,6 +41,7 @@ export default function LikeButton({
   trackTitle,
   size = "sm",
   className,
+  onAlreadyLiked,
 }: LikeButtonProps) {
   const { isLiked, toggleLike } = useMockStudio();
   const liked = isLiked(trackId);
@@ -42,7 +52,13 @@ export default function LikeButton({
       size={size}
       aria-label={`Like ${trackTitle}`}
       aria-pressed={liked}
-      onClick={() => toggleLike(trackId)}
+      onClick={() => {
+        if (liked && onAlreadyLiked) {
+          onAlreadyLiked();
+          return;
+        }
+        toggleLike(trackId);
+      }}
       data-signal="track_like"
       className={cn(liked && "text-primary", className)}
     >
