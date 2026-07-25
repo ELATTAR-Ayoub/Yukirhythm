@@ -42,9 +42,14 @@ import type {
   MockHistoryEntry,
   MockStats,
 } from "@/components/studio/screens/mock-data";
+import type { SeekablePlayer } from "@/components/studio/screens/HiddenYouTubePlayer";
 
-// react-player pulls in browser-only globals; load it client-side only.
-const ReactPlayer = dynamic(() => import("react-player"), { ssr: false });
+// react-player pulls in browser-only globals; load it client-side only. The
+// wrapper takes the seek ref as a plain prop — see HiddenYouTubePlayer.
+const HiddenYouTubePlayer = dynamic(
+  () => import("@/components/studio/screens/HiddenYouTubePlayer"),
+  { ssr: false }
+);
 
 const LIKED_ID = "liked";
 
@@ -365,7 +370,7 @@ export default function StudioProvider({
     listenedRef.current = 0;
   }, [queue.length, flushEvent]);
 
-  const playerRef = useRef<{ seekTo: (s: number) => void } | null>(null);
+  const playerRef = useRef<SeekablePlayer | null>(null);
   const seek = useCallback(
     (sec: number) => {
       const max = nowPlaying?.durationSec ?? 0;
@@ -642,21 +647,18 @@ export default function StudioProvider({
       {/* Hidden real audio: the vinyl UI is decorative; sound comes from here. */}
       {nowPlaying && (
         <div style={{ position: "fixed", width: 0, height: 0, overflow: "hidden" }}>
-          <ReactPlayer
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            ref={playerRef as any}
+          <HiddenYouTubePlayer
+            playerRef={playerRef}
             url={`https://www.youtube.com/watch?v=${nowPlaying.id}`}
             playing={isPlaying}
             volume={volume}
             onReady={() => setIsLoading(false)}
             onStart={() => setIsLoading(false)}
-            onProgress={(s: { playedSeconds: number }) => {
+            onProgress={(s) => {
               setProgressSec(Math.floor(s.playedSeconds));
               listenedRef.current = s.playedSeconds;
             }}
             onEnded={() => next()}
-            width="1px"
-            height="1px"
           />
         </div>
       )}
