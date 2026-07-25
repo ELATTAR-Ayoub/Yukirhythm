@@ -65,7 +65,9 @@ describe("HomeScreen", () => {
     renderHome();
 
     const rows = screen.getAllByRole("link", { name: /^Open / });
-    const recents = rows.filter((r) => r.getAttribute("aria-label") !== "Open profile");
+    const recents = rows.filter(
+      (r) => r.getAttribute("aria-label") !== "Open profile"
+    );
     expect(recents.length).toBeGreaterThan(0);
     for (const row of recents) {
       expect(within(row).queryAllByLabelText("Play")).toHaveLength(0);
@@ -90,5 +92,14 @@ describe("HomeScreen", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it("skeletons the New releases shelf while the feeds load", () => {
+    render(
+      <MockStudioProvider feeds={{ loading: true }}>
+        <HomeScreen />
+      </MockStudioProvider>
+    );
+    expect(document.querySelector("section[aria-busy]")).toBeTruthy();
   });
 });

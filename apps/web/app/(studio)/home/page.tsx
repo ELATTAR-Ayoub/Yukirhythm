@@ -9,14 +9,13 @@ import MediaCard from "@/components/studio/MediaCard";
 import { PlayerButton } from "@/components/studio/PlayerButton";
 import PageHeader from "@/components/studio/screens/PageHeader";
 import CollectionArt from "@/components/studio/screens/CollectionArt";
+import FeedShelf from "@/components/studio/screens/FeedShelf";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
 import { useIsDesktop } from "@/components/studio/shell/useBreakpoint";
 import { playlistHref } from "@/components/studio/shell/routes";
-import { formatDuration } from "@/components/studio/screens/mock-data";
 
 export default function HomeScreen() {
-  const { user, nowPlaying, isPlaying, play, jumpBackIn, newReleases } =
-    useMockStudio();
+  const { user, jumpBackIn, newReleases, feedsLoading } = useMockStudio();
   const isDesktop = useIsDesktop();
   /**
    * MediaCard is a fixed-width scroller card (`BOXY_WIDTHS`) by default. The
@@ -26,14 +25,6 @@ export default function HomeScreen() {
    * and only when, the shelf itself is actually in grid shape.
    */
   const shelfCardClassName = isDesktop ? "w-full" : undefined;
-
-  /** Enter/Space activation for non-button click targets. */
-  const playKeyHandler = (fn: () => void) => (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      fn();
-    }
-  };
 
   return (
     <div>
@@ -65,7 +56,9 @@ export default function HomeScreen() {
                 <MediaCard
                   title={c.title}
                   artist={`${c.trackIds.length} tracks`}
-                  art={<CollectionArt collection={c} className="w-full h-full" />}
+                  art={
+                    <CollectionArt collection={c} className="w-full h-full" />
+                  }
                   size="sm"
                   playable={false}
                   className={shelfCardClassName}
@@ -75,32 +68,15 @@ export default function HomeScreen() {
           </RailShelf>
         ) : null}
 
-        <RailShelf label="Fresh drops" title="New releases" grid>
-          {newReleases.map((track) => {
-            return (
-              <div
-                key={track.id}
-                role="button"
-                tabIndex={0}
-                aria-label={`Play ${track.title}`}
-                onClick={() => play(track)}
-                onKeyDown={playKeyHandler(() => play(track))}
-                className="text-left shrink-0 cursor-pointer"
-              >
-                <MediaCard
-                  title={track.title}
-                  artist={track.artist}
-                  texture={track.texture}
-                  artUrl={track.artUrl}
-                  duration={formatDuration(track.durationSec)}
-                  size="md"
-                  playing={nowPlaying?.id === track.id && isPlaying}
-                  className={shelfCardClassName}
-                />
-              </div>
-            );
-          })}
-        </RailShelf>
+        <FeedShelf
+          label="Fresh drops"
+          title="New releases"
+          tracks={newReleases}
+          loading={feedsLoading}
+          grid
+          size="md"
+          cardClassName={shelfCardClassName}
+        />
       </div>
     </div>
   );
