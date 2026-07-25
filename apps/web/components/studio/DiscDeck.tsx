@@ -61,7 +61,12 @@ export default function DiscDeck({ tracks, className }: DiscDeckProps) {
   const n = tracks.length;
 
   useEffect(() => {
-    return () => timers.current.forEach(clearTimeout);
+    // `timers.current` is mutated in place (pushed to, never reassigned), so
+    // copying the array reference here and reading it in cleanup still sees
+    // every timer scheduled up to unmount — same behavior, satisfies the
+    // "ref value may have changed by cleanup time" check.
+    const pending = timers.current;
+    return () => pending.forEach(clearTimeout);
   }, []);
 
   const spinning = phase === "playing";

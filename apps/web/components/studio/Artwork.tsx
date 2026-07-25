@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 
 import { cn } from "@/lib/utils";
 import Texture, { type TextureName } from "@/components/studio/Texture";
@@ -34,9 +34,13 @@ export default function Artwork({
   // Reset during render, not in an effect. A disc face keeps the same element
   // across track changes, so an effect-based reset would paint one frame of
   // the NEW track wearing the OLD track's failure before correcting itself.
-  const lastSrc = useRef(src);
-  if (lastSrc.current !== src) {
-    lastSrc.current = src;
+  // `lastSrc` is state (not a ref) per React's "adjusting state during
+  // render" pattern — refs must not be read during render, and this
+  // conditional setState converges (the guard is false on the re-render it
+  // triggers) so it stays a single synchronous pass, not a render loop.
+  const [lastSrc, setLastSrc] = useState(src);
+  if (lastSrc !== src) {
+    setLastSrc(src);
     if (failed) setFailed(false);
   }
 

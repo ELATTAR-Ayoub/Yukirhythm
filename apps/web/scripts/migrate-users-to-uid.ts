@@ -16,7 +16,6 @@
  *   Dry-run: npm run migrate:users
  *   Apply:   npm run migrate:users -- --apply
  */
-/* eslint-disable no-console -- CLI script: console output is the intended UX */
 import { initializeApp, applicationDefault } from "firebase-admin/app";
 import { getFirestore, type DocumentData } from "firebase-admin/firestore";
 

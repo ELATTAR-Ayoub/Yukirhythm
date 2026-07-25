@@ -314,7 +314,7 @@ export default function MockStudioProvider({
       setCollections((cs) => [...cs, created]);
       return created;
     },
-    [collections.length]
+    []
   );
 
   const nowPlaying = currentIndex >= 0 ? (queue[currentIndex] ?? null) : null;

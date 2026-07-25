@@ -32,7 +32,6 @@ export type YukiAgentState =
 // React 19 resolves intrinsic elements from the `JSX` namespace exported by
 // "react" (React.JSX), not a global one — augment the module, not `global`.
 declare module "react" {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace JSX {
     interface IntrinsicElements {
       "yuki-agent": React.DetailedHTMLProps<

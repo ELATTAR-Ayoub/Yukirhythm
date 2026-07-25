@@ -748,7 +748,6 @@ export default function StudioProvider({
           contentType: input.kind,
           texture: input.texture,
           cover: input.cover,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           trackIds: input.trackIds,
         } as any)
         .then(refreshLibrary);

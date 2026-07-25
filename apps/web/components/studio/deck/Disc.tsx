@@ -18,9 +18,19 @@ export interface DiscHandle {
   spinner: THREE.Group;
 }
 
-/** Procedural vinyl groove bump map (canvas-generated once). */
-export function useGrooveTexture() {
-  return useMemo(() => {
+/**
+ * Procedural vinyl groove bump map (canvas-generated once).
+ *
+ * Building the canvas is a side effect on a DOM node plus a `Math.random`
+ * call, so it cannot run during render (react-hooks/purity) — it runs in an
+ * effect after mount instead, and the disc renders without its bump map for
+ * the first frame or two. That's an acceptable trade for a decorative
+ * groove texture on a 3D deck-lab surface.
+ */
+export function useGrooveTexture(): THREE.Texture | null {
+  const [texture, setTexture] = useState<THREE.CanvasTexture | null>(null);
+
+  useEffect(() => {
     const size = 1024;
     const c = document.createElement("canvas");
     c.width = c.height = size;
@@ -46,8 +56,11 @@ export function useGrooveTexture() {
     }
     const tex = new THREE.CanvasTexture(c);
     tex.anisotropy = 8;
-    return tex;
+    setTexture(tex);
+    return () => tex.dispose();
   }, []);
+
+  return texture;
 }
 
 interface DiscProps {
@@ -55,7 +68,8 @@ interface DiscProps {
   current: number;
   n: number;
   labelMap: THREE.Texture;
-  grooves: THREE.Texture;
+  /** Null until the groove bump map finishes building in an effect. */
+  grooves: THREE.Texture | null;
   playing: boolean;
   register: (index: number, handle: DiscHandle | null) => void;
   onActivate?: (index: number) => void;
@@ -147,7 +161,7 @@ export default function Disc({
                 metalness={0.05}
                 clearcoat={1}
                 clearcoatRoughness={0.25}
-                bumpMap={grooves}
+                bumpMap={grooves ?? undefined}
                 bumpScale={0.02}
               />
             </mesh>
