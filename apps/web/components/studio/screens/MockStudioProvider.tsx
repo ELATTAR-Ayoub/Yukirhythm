@@ -79,7 +79,8 @@ interface MockStudioValue {
   seek: (sec: number) => void;
   // auth
   user: MockUser | null;
-  signIn: () => void;
+  /** Which IDP the popup opens for; defaults to google. */
+  signIn: (provider?: "google" | "facebook") => void;
   signOut: () => void;
   // search
   searchResults: MockTrack[];
@@ -458,6 +459,8 @@ export default function MockStudioProvider({
     };
   }, []);
 
+  // Argument accepted (matches the real provider's signature) and ignored —
+  // the mock has no IDP to pick between, it always just signs in the fixture user.
   const signIn = useCallback(() => setUser(MOCK_USER), []);
   const signOut = useCallback(() => setUser(null), []);
 

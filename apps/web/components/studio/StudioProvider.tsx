@@ -730,7 +730,13 @@ export default function StudioProvider({
     [backend, refreshLibrary]
   );
 
-  const signIn = useCallback(() => void fbSignIn("google"), []);
+  // Defaults to google so any caller that omits the argument (there are
+  // none left post-fix, but the type stays optional-arg compatible with the
+  // mock provider) still gets a sane popup rather than a runtime crash.
+  const signIn = useCallback(
+    (provider: "google" | "facebook" = "google") => void fbSignIn(provider),
+    []
+  );
   const signOut = useCallback(() => void signOutUser(), []);
 
   const value: MockStudioValue = useMemo(
