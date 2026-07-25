@@ -26,23 +26,33 @@ export async function GET(req: Request, { params }: Params): Promise<Response> {
   return Response.json(c);
 }
 
-export async function PATCH(req: Request, { params }: Params): Promise<Response> {
+export async function PATCH(
+  req: Request,
+  { params }: Params
+): Promise<Response> {
   const uid = await uidFromRequest(req);
   if (!uid) return unauthorized();
 
   const { collectionId } = await params;
   const c = await load(collectionId);
   if (!c) return Response.json({ error: "Not found" }, { status: 404 });
-  if (c.ownerId !== uid) return Response.json({ error: "Forbidden" }, { status: 403 });
+  if (c.ownerId !== uid)
+    return Response.json({ error: "Forbidden" }, { status: 403 });
 
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   const patch: Record<string, unknown> = { updatedAt: Timestamp.now() };
-  if (typeof body.title === "string" && body.title.trim()) patch.title = body.title.trim();
-  if (typeof body.description === "string") patch.description = body.description;
+  if (typeof body.title === "string" && body.title.trim())
+    patch.title = body.title.trim();
+  if (typeof body.description === "string")
+    patch.description = body.description;
   if (Array.isArray(body.tags))
     patch.tags = body.tags.filter((t) => typeof t === "string");
   if (typeof body.texture === "string") patch.texture = body.texture;
-  if (body.cover === "texture" || body.cover === "mosaic" || body.cover === "image")
+  if (
+    body.cover === "texture" ||
+    body.cover === "mosaic" ||
+    body.cover === "image"
+  )
     patch.cover = body.cover;
   if (
     body.visibility === "private" ||
@@ -51,23 +61,33 @@ export async function PATCH(req: Request, { params }: Params): Promise<Response>
   )
     patch.visibility = body.visibility;
 
-  await adminDb().collection("collections").doc(collectionId).set(patch, { merge: true });
+  await adminDb()
+    .collection("collections")
+    .doc(collectionId)
+    .set(patch, { merge: true });
   return Response.json((await load(collectionId)) ?? {});
 }
 
-export async function DELETE(req: Request, { params }: Params): Promise<Response> {
+export async function DELETE(
+  req: Request,
+  { params }: Params
+): Promise<Response> {
   const uid = await uidFromRequest(req);
   if (!uid) return unauthorized();
 
   const { collectionId } = await params;
   // Liked Songs is virtual (spec D8) — there is nothing to delete.
   if (collectionId === LIKED_COLLECTION_ID) {
-    return Response.json({ error: "Cannot delete Liked Songs" }, { status: 409 });
+    return Response.json(
+      { error: "Cannot delete Liked Songs" },
+      { status: 409 }
+    );
   }
 
   const c = await load(collectionId);
   if (!c) return Response.json({ error: "Not found" }, { status: 404 });
-  if (c.ownerId !== uid) return Response.json({ error: "Forbidden" }, { status: 403 });
+  if (c.ownerId !== uid)
+    return Response.json({ error: "Forbidden" }, { status: 403 });
 
   const db = adminDb();
   await db.runTransaction(async (tx) => {

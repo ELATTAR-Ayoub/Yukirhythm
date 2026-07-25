@@ -204,7 +204,8 @@ export default function MockStudioProvider({
     LIKED_SONGS,
     ...MOCK_COLLECTIONS,
   ]);
-  const [libraryFilter, setLibraryFilter] = useState<LibraryFilter>("playlists");
+  const [libraryFilter, setLibraryFilter] =
+    useState<LibraryFilter>("playlists");
   const [playerExpanded, setPlayerExpanded] = useState(false);
   const [volume, setVolumeState] = useState(1);
   /** The level to come back to when unmuting. Never 0, so an unmute always
@@ -212,7 +213,9 @@ export default function MockStudioProvider({
   const preMuteVolume = useRef(1);
   const [playingCollection, setPlayingCollection] =
     useState<MockCollection | null>(null);
-  const [navDirection, setNavDirection] = useState<"next" | "prev" | null>(null);
+  const [navDirection, setNavDirection] = useState<"next" | "prev" | null>(
+    null
+  );
 
   /** Held as state, not derived from `playingCollection`: the queue can be
    *  added to on its own (the rail's add-to-queue field), so it has to be able
@@ -397,9 +400,7 @@ export default function MockStudioProvider({
   }, [queue.length]);
 
   const prev = useCallback(() => {
-    setCurrentIndex((i) =>
-      i < 0 ? i : (i - 1 + queue.length) % queue.length
-    );
+    setCurrentIndex((i) => (i < 0 ? i : (i - 1 + queue.length) % queue.length));
     setNavDirection("prev");
     setProgressSec(0);
     setIsPlaying(true);

@@ -62,7 +62,8 @@ export async function PUT(req: Request): Promise<Response> {
   if (typeof body.positionSec === "number" && body.positionSec >= 0)
     patch.positionSec = Math.floor(body.positionSec);
   if (typeof body.isPlaying === "boolean") patch.isPlaying = body.isPlaying;
-  if (typeof body.shuffleMode === "boolean") patch.shuffleMode = body.shuffleMode;
+  if (typeof body.shuffleMode === "boolean")
+    patch.shuffleMode = body.shuffleMode;
   if (REPEAT_MODES.includes(body.repeatMode as PlaybackState["repeatMode"]))
     patch.repeatMode = body.repeatMode as PlaybackState["repeatMode"];
   if (typeof body.volume === "number")
@@ -72,7 +73,8 @@ export async function PUT(req: Request): Promise<Response> {
   const r = ref(uid);
   const snap = await r.get();
   // Seed the full default on first write so a partial PUT yields a complete doc.
-  if (!snap.exists) await r.set({ ...EMPTY_PLAYBACK, updatedAt: Timestamp.now() });
+  if (!snap.exists)
+    await r.set({ ...EMPTY_PLAYBACK, updatedAt: Timestamp.now() });
   await r.set(patch, { merge: true });
 
   return Response.json((await r.get()).data());

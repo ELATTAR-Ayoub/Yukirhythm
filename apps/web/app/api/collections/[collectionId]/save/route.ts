@@ -18,7 +18,11 @@ export async function PUT(req: Request, { params }: Params): Promise<Response> {
   const { collectionId } = await params;
   const db = adminDb();
   const cRef = db.collection("collections").doc(collectionId);
-  const savedRef = db.collection("users").doc(me).collection("savedCollections").doc(collectionId);
+  const savedRef = db
+    .collection("users")
+    .doc(me)
+    .collection("savedCollections")
+    .doc(collectionId);
 
   let status = 200;
   await db.runTransaction(async (tx) => {
@@ -44,21 +48,31 @@ export async function PUT(req: Request, { params }: Params): Promise<Response> {
       savedAt: Timestamp.now(),
       isPinned: false,
     });
-    tx.update(cRef, { stats: { ...c.stats, saveCount: (c.stats?.saveCount ?? 0) + 1 } });
+    tx.update(cRef, {
+      stats: { ...c.stats, saveCount: (c.stats?.saveCount ?? 0) + 1 },
+    });
   });
 
-  if (status !== 200) return Response.json({ error: "Request failed" }, { status });
+  if (status !== 200)
+    return Response.json({ error: "Request failed" }, { status });
   return Response.json({ ok: true, saved: true });
 }
 
-export async function DELETE(req: Request, { params }: Params): Promise<Response> {
+export async function DELETE(
+  req: Request,
+  { params }: Params
+): Promise<Response> {
   const me = await uidFromRequest(req);
   if (!me) return unauthorized();
 
   const { collectionId } = await params;
   const db = adminDb();
   const cRef = db.collection("collections").doc(collectionId);
-  const savedRef = db.collection("users").doc(me).collection("savedCollections").doc(collectionId);
+  const savedRef = db
+    .collection("users")
+    .doc(me)
+    .collection("savedCollections")
+    .doc(collectionId);
 
   await db.runTransaction(async (tx) => {
     // All reads before any write — Firestore transactions require it.
@@ -70,7 +84,10 @@ export async function DELETE(req: Request, { params }: Params): Promise<Response
     if (cSnap.exists) {
       const c = cSnap.data() as Collection;
       tx.update(cRef, {
-        stats: { ...c.stats, saveCount: Math.max(0, (c.stats?.saveCount ?? 0) - 1) },
+        stats: {
+          ...c.stats,
+          saveCount: Math.max(0, (c.stats?.saveCount ?? 0) - 1),
+        },
       });
     }
   });

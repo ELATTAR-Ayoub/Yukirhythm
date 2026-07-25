@@ -9,13 +9,7 @@ import { writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { Innertube } from "youtubei.js";
 
-const DIR = join(
-  process.cwd(),
-  "lib",
-  "catalog",
-  "youtube",
-  "__fixtures__"
-);
+const DIR = join(process.cwd(), "lib", "catalog", "youtube", "__fixtures__");
 
 // Chosen to cover the shapes that break naive mapping:
 //   a5uQMwRMHcs  normal song, album + multiple artists
@@ -37,14 +31,17 @@ async function main(): Promise<void> {
 
   const songs = await yt.music.search(SONG_QUERY, { type: "song" });
   const contents =
-    (songs as unknown as { songs?: { contents?: unknown[] } }).songs?.contents ?? [];
+    (songs as unknown as { songs?: { contents?: unknown[] } }).songs
+      ?.contents ?? [];
   save("music-search-song", contents.slice(0, 5));
 
   save("video-info", (await yt.getInfo(VIDEO_ID)).basic_info);
   save("video-info-long", (await yt.getInfo(LONG_VIDEO_ID)).basic_info);
 
   const artist = await yt.music.getArtist(ARTIST_ID);
-  save("music-artist", { header: (artist as unknown as { header?: unknown }).header });
+  save("music-artist", {
+    header: (artist as unknown as { header?: unknown }).header,
+  });
 
   const playlist = await yt.getPlaylist(PLAYLIST_ID);
   save("playlist", {
@@ -60,7 +57,8 @@ async function main(): Promise<void> {
   // small by hand-trimming after inspecting one raw capture, the same way
   // this one was built.
   const upNext = await yt.music.getUpNext(VIDEO_ID);
-  const upNextRows = (upNext as unknown as { contents?: unknown[] }).contents ?? [];
+  const upNextRows =
+    (upNext as unknown as { contents?: unknown[] }).contents ?? [];
   save(
     "music-up-next",
     upNextRows.slice(0, 4).map((r) => {

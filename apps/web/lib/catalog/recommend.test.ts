@@ -79,7 +79,11 @@ describe("artistAffinityFrom", () => {
       ["t1", track("t1", { artists: [{ artistId: "A", name: "A" }] })],
       ["t2", track("t2", { artists: [{ artistId: "B", name: "B" }] })],
     ]);
-    const events = [ev({ trackId: "t1" }), ev({ trackId: "t1" }), ev({ trackId: "t2" })];
+    const events = [
+      ev({ trackId: "t1" }),
+      ev({ trackId: "t1" }),
+      ev({ trackId: "t2" }),
+    ];
     const aff = artistAffinityFrom(events, tracks);
     expect(aff.get("A")).toBe(1);
     expect(aff.get("B")).toBe(0.5);
@@ -89,8 +93,12 @@ describe("artistAffinityFrom", () => {
 describe("scoreNewReleases", () => {
   it("ranks an affinity artist above an unknown one, all else equal", () => {
     const aff = new Map([["a-known", 1]]);
-    const known = track("known", { artists: [{ artistId: "a-known", name: "Known" }] });
-    const unknown = track("unknown", { artists: [{ artistId: "a-x", name: "X" }] });
+    const known = track("known", {
+      artists: [{ artistId: "a-known", name: "Known" }],
+    });
+    const unknown = track("unknown", {
+      artists: [{ artistId: "a-x", name: "X" }],
+    });
     const ranked = scoreNewReleases([unknown, known], aff, NOW);
     expect(ranked[0].trackId).toBe("known");
     expect(ranked[0].reason).toContain("Known");

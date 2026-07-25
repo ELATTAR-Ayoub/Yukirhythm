@@ -86,7 +86,9 @@ describe("collections against real Firestore", () => {
   });
 
   it("401 without a token", async () => {
-    expect((await createCollection(j({ title: "x" }, "", "POST"))).status).toBe(401);
+    expect((await createCollection(j({ title: "x" }, "", "POST"))).status).toBe(
+      401
+    );
   });
 
   it("creates a playlist with the seven fields and computed stats", async () => {
@@ -134,7 +136,9 @@ describe("collections against real Firestore", () => {
     const created = (await (
       await createCollection(j({ title: "Secret" }, token, "POST"))
     ).json()) as Collection;
-    const params = { params: Promise.resolve({ collectionId: created.collectionId }) };
+    const params = {
+      params: Promise.resolve({ collectionId: created.collectionId }),
+    };
 
     expect((await getCollection(auth(token), params)).status).toBe(200);
     expect((await getCollection(auth(otherToken), params)).status).toBe(403);
@@ -144,7 +148,9 @@ describe("collections against real Firestore", () => {
     const created = (await (
       await createCollection(j({ title: "Temp" }, token, "POST"))
     ).json()) as Collection;
-    const params = { params: Promise.resolve({ collectionId: created.collectionId }) };
+    const params = {
+      params: Promise.resolve({ collectionId: created.collectionId }),
+    };
 
     await deleteCollection(auth(token, "DELETE"), params);
 
@@ -166,7 +172,9 @@ describe("collections against real Firestore", () => {
     const created = (await (
       await createCollection(j({ title: "Old" }, token, "POST"))
     ).json()) as Collection;
-    const params = { params: Promise.resolve({ collectionId: created.collectionId }) };
+    const params = {
+      params: Promise.resolve({ collectionId: created.collectionId }),
+    };
 
     const forbidden = await patchCollection(
       j({ title: "Hacked" }, otherToken, "PATCH"),
@@ -175,7 +183,9 @@ describe("collections against real Firestore", () => {
     expect(forbidden.status).toBe(403);
 
     await patchCollection(j({ title: "New" }, token, "PATCH"), params);
-    const c = (await (await getCollection(auth(token), params)).json()) as Collection;
+    const c = (await (
+      await getCollection(auth(token), params)
+    ).json()) as Collection;
     expect(c.title).toBe("New");
   });
 });
@@ -254,17 +264,18 @@ describe("membership against real Firestore", () => {
     ).data() as Collection;
     const t1AddedAt = before.tracks.find((t) => t.trackId === "t1")!.addedAt;
 
-    const res = await reorder(
-      j({ trackIds: ["t2", "t1"] }, token, "PATCH"),
-      { params: Promise.resolve({ collectionId }) }
-    );
+    const res = await reorder(j({ trackIds: ["t2", "t1"] }, token, "PATCH"), {
+      params: Promise.resolve({ collectionId }),
+    });
     expect(res.status).toBe(200);
 
     const after = (
       await adminDb().collection("collections").doc(collectionId).get()
     ).data() as Collection;
     expect(after.tracks.map((t) => t.trackId)).toEqual(["t2", "t1"]);
-    expect(after.tracks.find((t) => t.trackId === "t1")!.addedAt).toEqual(t1AddedAt);
+    expect(after.tracks.find((t) => t.trackId === "t1")!.addedAt).toEqual(
+      t1AddedAt
+    );
   });
 
   it("rejects a reorder that is not a permutation", async () => {

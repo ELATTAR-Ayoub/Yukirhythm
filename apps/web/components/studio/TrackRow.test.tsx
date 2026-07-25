@@ -13,9 +13,9 @@ describe("TrackRow", () => {
       const button = screen.getByRole("button", { name: "Play", hidden: true });
       expect(button).toBeTruthy();
       expect(button.tabIndex).toBe(-1);
-      expect(button.closest('[aria-hidden="true"]')?.getAttribute("aria-hidden")).toBe(
-        "true"
-      );
+      expect(
+        button.closest('[aria-hidden="true"]')?.getAttribute("aria-hidden")
+      ).toBe("true");
     });
 
     it("omits the hover play button when playable is false", () => {
@@ -35,7 +35,11 @@ describe("TrackRow", () => {
   describe("desktop album column", () => {
     it("does not render an album column by default", () => {
       render(
-        <TrackRow title="Cobalt Dreams" artist="Aoi Waves" album="Liked Songs" />
+        <TrackRow
+          title="Cobalt Dreams"
+          artist="Aoi Waves"
+          album="Liked Songs"
+        />
       );
       expect(screen.queryByText("Liked Songs")).toBeNull();
     });
@@ -44,7 +48,9 @@ describe("TrackRow", () => {
       // No per-track album field exists on MockTrack, so desktop alone must
       // not conjure an empty column — only desktop + an explicit album value.
       render(<TrackRow title="Cobalt Dreams" desktop />);
-      const row = screen.getByText("Cobalt Dreams").closest('[data-signal="row_play"]')!;
+      const row = screen
+        .getByText("Cobalt Dreams")
+        .closest('[data-signal="row_play"]')!;
       expect(row.querySelector(".lg\\:block")).toBeNull();
     });
 
@@ -61,13 +67,7 @@ describe("TrackRow", () => {
     });
 
     it("hides the album column below the lg breakpoint", () => {
-      render(
-        <TrackRow
-          title="Cobalt Dreams"
-          album="Liked Songs"
-          desktop
-        />
-      );
+      render(<TrackRow title="Cobalt Dreams" album="Liked Songs" desktop />);
       const album = screen.getByText("Liked Songs");
       expect(album.closest("div")?.className).toContain("hidden");
       expect(album.closest("div")?.className).toContain("lg:block");
@@ -93,9 +93,7 @@ describe("TrackRow", () => {
     });
 
     it("shows the eq indicator instead of the play button while playing", () => {
-      const { container } = render(
-        <TrackRow title="Cobalt Dreams" playing />
-      );
+      const { container } = render(<TrackRow title="Cobalt Dreams" playing />);
       // Playing rows still expose the hover play button (for pause/resume
       // discoverability) — only `playable={false}` removes it. It's
       // aria-hidden decoration now, so hidden: true is required to find it.
@@ -107,7 +105,11 @@ describe("TrackRow", () => {
 
     it("falls back to the texture when the artwork URL fails to load", () => {
       const { container } = render(
-        <TrackRow title="Realize" artUrl="https://cdn/gone.jpg" texture="tx-k-silk" />
+        <TrackRow
+          title="Realize"
+          artUrl="https://cdn/gone.jpg"
+          texture="tx-k-silk"
+        />
       );
       const img = container.querySelector("img")!;
       expect(img).toBeTruthy();

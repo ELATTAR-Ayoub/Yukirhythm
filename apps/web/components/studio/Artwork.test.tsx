@@ -19,7 +19,9 @@ vi.mock("@/components/studio/Texture", async (importOriginal) => {
 
 describe("Artwork", () => {
   it("renders the image when a src is given", () => {
-    render(<Artwork src="https://cdn/a.jpg" texture="tx-k-silk" alt="Realize" />);
+    render(
+      <Artwork src="https://cdn/a.jpg" texture="tx-k-silk" alt="Realize" />
+    );
     const img = screen.getByRole("img", { name: "Realize" });
     expect(img).toHaveAttribute("src", "https://cdn/a.jpg");
   });
@@ -51,7 +53,9 @@ describe("Artwork", () => {
     fireEvent.error(screen.getByRole("img", { name: "A" }));
     expect(container.querySelector("img")).toBeNull();
 
-    rerender(<Artwork src="https://cdn/good.jpg" texture="tx-k-silk" alt="B" />);
+    rerender(
+      <Artwork src="https://cdn/good.jpg" texture="tx-k-silk" alt="B" />
+    );
     expect(screen.getByRole("img", { name: "B" })).toHaveAttribute(
       "src",
       "https://cdn/good.jpg"
@@ -75,7 +79,9 @@ describe("Artwork", () => {
     fireEvent.error(screen.getByRole("img", { name: "A" }));
     textureSpy.mockClear();
 
-    rerender(<Artwork src="https://cdn/good.jpg" texture="tx-k-silk" alt="B" />);
+    rerender(
+      <Artwork src="https://cdn/good.jpg" texture="tx-k-silk" alt="B" />
+    );
     expect(textureSpy).not.toHaveBeenCalled();
   });
 });

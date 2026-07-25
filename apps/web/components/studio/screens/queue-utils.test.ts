@@ -1,7 +1,15 @@
 import { describe, it, expect } from "vitest";
 
-import { insertIntoQueue, isSameContext, removeQueueIndex } from "./queue-utils";
-import { MOCK_COLLECTIONS, MOCK_TRACKS, type MockCollection } from "./mock-data";
+import {
+  insertIntoQueue,
+  isSameContext,
+  removeQueueIndex,
+} from "./queue-utils";
+import {
+  MOCK_COLLECTIONS,
+  MOCK_TRACKS,
+  type MockCollection,
+} from "./mock-data";
 
 describe("insertIntoQueue", () => {
   it("appends to the end regardless of currentIndex", () => {
@@ -66,19 +74,28 @@ describe("removeQueueIndex", () => {
 
   it("shifts the cursor down when removing something before it", () => {
     const r = removeQueueIndex(queue, 1, 0);
-    expect(r.queue.map((t) => t.id)).toEqual([MOCK_TRACKS[1].id, MOCK_TRACKS[2].id]);
+    expect(r.queue.map((t) => t.id)).toEqual([
+      MOCK_TRACKS[1].id,
+      MOCK_TRACKS[2].id,
+    ]);
     expect(r.currentIndex).toBe(0);
   });
 
   it("leaves the cursor put when removing something after it", () => {
     const r = removeQueueIndex(queue, 0, 2);
-    expect(r.queue.map((t) => t.id)).toEqual([MOCK_TRACKS[0].id, MOCK_TRACKS[1].id]);
+    expect(r.queue.map((t) => t.id)).toEqual([
+      MOCK_TRACKS[0].id,
+      MOCK_TRACKS[1].id,
+    ]);
     expect(r.currentIndex).toBe(0);
   });
 
   it("leaves the cursor's position put when removing the playing track itself, addressing what follows", () => {
     const r = removeQueueIndex(queue, 1, 1);
-    expect(r.queue.map((t) => t.id)).toEqual([MOCK_TRACKS[0].id, MOCK_TRACKS[2].id]);
+    expect(r.queue.map((t) => t.id)).toEqual([
+      MOCK_TRACKS[0].id,
+      MOCK_TRACKS[2].id,
+    ]);
     expect(r.currentIndex).toBe(1);
     expect(r.queue[r.currentIndex].id).toBe(MOCK_TRACKS[2].id);
   });

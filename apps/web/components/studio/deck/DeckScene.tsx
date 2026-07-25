@@ -140,7 +140,10 @@ function Disc({
             <meshStandardMaterial map={labelMap} roughness={0.85} />
           </mesh>
           {/* off-center marker dot — rotation is readable even at a glance */}
-          <mesh position={[DISC_R * 0.72, 0.027, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <mesh
+            position={[DISC_R * 0.72, 0.027, 0]}
+            rotation={[-Math.PI / 2, 0, 0]}
+          >
             <circleGeometry args={[0.055, 20]} />
             <meshStandardMaterial color="#7df08a" roughness={0.5} />
           </mesh>
@@ -174,7 +177,11 @@ function StickFinger({ down }: { down: boolean }) {
       {/* the stick */}
       <mesh position={[0, -1.7, 0]}>
         <cylinderGeometry args={[0.045, 0.045, 3.6, 16]} />
-        <meshStandardMaterial color="#191919" metalness={0.55} roughness={0.35} />
+        <meshStandardMaterial
+          color="#191919"
+          metalness={0.55}
+          roughness={0.35}
+        />
       </mesh>
       {/* the finger (head) */}
       <group position={[0, -3.5, 0]}>
@@ -185,7 +192,11 @@ function StickFinger({ down }: { down: boolean }) {
         {/* needle tip */}
         <mesh position={[0, -0.16, -0.05]}>
           <coneGeometry args={[0.03, 0.14, 12]} />
-          <meshStandardMaterial color="#1450f0" metalness={0.6} roughness={0.3} />
+          <meshStandardMaterial
+            color="#1450f0"
+            metalness={0.6}
+            roughness={0.3}
+          />
         </mesh>
       </group>
     </group>
@@ -220,7 +231,13 @@ function Deck({
       {tracks.map((_t, i) => {
         const o = (((i - current) % n) + n) % n;
         const slot: Slot =
-          o === 0 ? "center" : o === 1 ? "right" : o === n - 1 ? "left" : "hidden";
+          o === 0
+            ? "center"
+            : o === 1
+              ? "right"
+              : o === n - 1
+                ? "left"
+                : "hidden";
         return (
           <Disc
             key={i}

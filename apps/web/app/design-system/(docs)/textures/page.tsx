@@ -104,15 +104,19 @@ export default function TexturesPage() {
 
       <DsSection index="03" title="Static textures">
         <p className="type-muted mb-4 max-w-2xl">
-          The pre-rendered PNG set behind <code className="type-code">Texture</code>
-          . These stay static and are what album art and cards use — the live
-          fields above are reserved for backdrops and the player.
+          The pre-rendered PNG set behind{" "}
+          <code className="type-code">Texture</code>. These stay static and are
+          what album art and cards use — the live fields above are reserved for
+          backdrops and the player.
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4">
           {TEXTURE_NAMES.map((name) => (
             <figure key={name} className="min-w-0">
               <div className="relative aspect-square overflow-hidden rounded-lg border border-border">
-                <Texture name={name} className="absolute inset-0 w-full h-full" />
+                <Texture
+                  name={name}
+                  className="absolute inset-0 w-full h-full"
+                />
               </div>
               <figcaption className="type-label text-muted-foreground mt-2 normal-case tracking-normal truncate">
                 {name}

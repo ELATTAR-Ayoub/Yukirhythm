@@ -50,7 +50,8 @@ export function artistAffinityFrom(
     if (!e.completed) continue;
     const t = tracksById.get(e.trackId);
     if (!t) continue;
-    for (const a of t.artists) plays.set(a.artistId, (plays.get(a.artistId) ?? 0) + 1);
+    for (const a of t.artists)
+      plays.set(a.artistId, (plays.get(a.artistId) ?? 0) + 1);
   }
   const peak = Math.max(0, ...plays.values());
   const out = new Map<string, number>();
@@ -68,7 +69,10 @@ export function scoreNewReleases(
   artistAffinity: Map<string, number>,
   nowMs: number
 ): Recommendation[] {
-  const maxViews = Math.max(1, ...candidates.map((t) => t.stats?.viewCount ?? 0));
+  const maxViews = Math.max(
+    1,
+    ...candidates.map((t) => t.stats?.viewCount ?? 0)
+  );
   return candidates
     .map((t) => {
       const affinity = Math.max(
@@ -80,7 +84,8 @@ export function scoreNewReleases(
         : 0;
       const ageDays = publishedMs ? (nowMs - publishedMs) / DAY : Infinity;
       const recency = ageDays <= 90 ? 1 - ageDays / 90 : 0;
-      const popularity = Math.log1p(t.stats?.viewCount ?? 0) / Math.log1p(maxViews);
+      const popularity =
+        Math.log1p(t.stats?.viewCount ?? 0) / Math.log1p(maxViews);
 
       const score = 0.5 * affinity + 0.3 * recency + 0.2 * popularity;
       const reason =
@@ -113,7 +118,10 @@ export type BlendInput = {
  * and label affinity (0.2). Deduped, excludes the user's own/recent tracks,
  * each item carries the reason it surfaced.
  */
-export function blendYouMightLike(input: BlendInput, cap = 20): Recommendation[] {
+export function blendYouMightLike(
+  input: BlendInput,
+  cap = 20
+): Recommendation[] {
   const scores = new Map<string, { score: number; reason: string }>();
   const bump = (trackId: string, add: number, reason: string) => {
     if (input.exclude.has(trackId)) return;
@@ -122,10 +130,15 @@ export function blendYouMightLike(input: BlendInput, cap = 20): Recommendation[]
     else scores.set(trackId, { score: add, reason });
   };
 
-  for (const r of input.radio) bump(r.trackId, 0.5, `Because you played ${r.seedTitle}`);
+  for (const r of input.radio)
+    bump(r.trackId, 0.5, `Because you played ${r.seedTitle}`);
   const maxCo = Math.max(1, ...input.coListen.map((c) => c.count));
   for (const c of input.coListen)
-    bump(c.trackId, 0.3 * (c.count / maxCo), "Listeners like you also played this");
+    bump(
+      c.trackId,
+      0.3 * (c.count / maxCo),
+      "Listeners like you also played this"
+    );
   for (const l of input.labelMatch) bump(l.trackId, 0.2, `More ${l.label}`);
 
   return [...scores.entries()]

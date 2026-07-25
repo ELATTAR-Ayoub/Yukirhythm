@@ -2,7 +2,10 @@ import { describe, it, expect } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 
 import MockStudioProvider from "@/components/studio/screens/MockStudioProvider";
-import { LIKED_SONGS, MOCK_COLLECTIONS } from "@/components/studio/screens/mock-data";
+import {
+  LIKED_SONGS,
+  MOCK_COLLECTIONS,
+} from "@/components/studio/screens/mock-data";
 import AddMusicPanel from "./AddMusicPanel";
 
 /**
@@ -13,8 +16,8 @@ import AddMusicPanel from "./AddMusicPanel";
  * distinguishes the real component from a lookalike.
  */
 function iconSwapFaces(button: HTMLElement): HTMLElement[] {
-  return Array.from(button.querySelectorAll<HTMLElement>("span")).filter(
-    (el) => el.className.includes("col-start-1")
+  return Array.from(button.querySelectorAll<HTMLElement>("span")).filter((el) =>
+    el.className.includes("col-start-1")
   );
 }
 
@@ -71,7 +74,9 @@ describe("AddMusicPanel play affordance", () => {
   it("renders no play button — these rows only add, they never play", async () => {
     render(
       <MockStudioProvider>
-        <AddMusicPanel collection={MOCK_COLLECTIONS.find((c) => c.id === "c3")!} />
+        <AddMusicPanel
+          collection={MOCK_COLLECTIONS.find((c) => c.id === "c3")!}
+        />
       </MockStudioProvider>
     );
 

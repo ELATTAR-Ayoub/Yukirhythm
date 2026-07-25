@@ -26,7 +26,9 @@ export function LibraryRowCard({ collection, playable }: LibraryRowCardProps) {
       <MediaCard
         title={collection.title}
         artist={`${collection.trackIds.length} tracks · ${collection.kind}`}
-        art={<CollectionArt collection={collection} className="w-full h-full" />}
+        art={
+          <CollectionArt collection={collection} className="w-full h-full" />
+        }
         variant="extended"
         size="sm"
         playable={playable}

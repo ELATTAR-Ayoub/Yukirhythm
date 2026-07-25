@@ -20,7 +20,10 @@ interface FakeTrackState {
 }
 
 let trackStateDocs: FakeTrackState[] = [];
-let tracksById: Record<string, { trackId: string; title: string; durationSec: number }> = {};
+let tracksById: Record<
+  string,
+  { trackId: string; title: string; durationSec: number }
+> = {};
 /** Set to make the ORDERED query throw like a missing composite index. */
 let orderedError: Error | null = null;
 
@@ -67,7 +70,8 @@ const fakeDb = {
       return {
         doc: (_uid: string) => ({
           collection: (sub: string) => {
-            if (sub !== "trackState") throw new Error(`unexpected subcollection ${sub}`);
+            if (sub !== "trackState")
+              throw new Error(`unexpected subcollection ${sub}`);
             return trackStateCollection();
           },
         }),
@@ -132,7 +136,9 @@ describe("GET /api/me/likes", () => {
       t2: { trackId: "t2", title: "Two", durationSec: 100 },
       t4: { trackId: "t4", title: "Four", durationSec: 100 },
     };
-    const err = new Error("9 FAILED_PRECONDITION: The query requires an index.");
+    const err = new Error(
+      "9 FAILED_PRECONDITION: The query requires an index."
+    );
     (err as unknown as { code: number }).code = 9;
     orderedError = err;
 
@@ -161,7 +167,9 @@ describe("GET /api/me/likes", () => {
 
   it("does not swallow a non-index error", async () => {
     trackStateDocs = [{ id: "t1", isLiked: true, likedAt: 1000 }];
-    const err = new Error("PERMISSION_DENIED: missing or insufficient permissions");
+    const err = new Error(
+      "PERMISSION_DENIED: missing or insufficient permissions"
+    );
     (err as unknown as { code: number }).code = 7;
     orderedError = err;
 

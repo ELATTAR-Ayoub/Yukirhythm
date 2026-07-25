@@ -22,7 +22,8 @@ export async function POST(req: Request): Promise<Response> {
     mode?: unknown;
   };
   const trackId = typeof body.trackId === "string" ? body.trackId : "";
-  if (!trackId) return Response.json({ error: "trackId required" }, { status: 400 });
+  if (!trackId)
+    return Response.json({ error: "trackId required" }, { status: 400 });
   const mode = body.mode === "next" ? "next" : "end";
 
   const r = ref(uid);
@@ -30,11 +31,14 @@ export async function POST(req: Request): Promise<Response> {
   await db.runTransaction(async (tx) => {
     const snap = await tx.get(r);
     const state = (
-      snap.exists ? snap.data() : { ...EMPTY_PLAYBACK, updatedAt: Timestamp.now() }
+      snap.exists
+        ? snap.data()
+        : { ...EMPTY_PLAYBACK, updatedAt: Timestamp.now() }
     ) as PlaybackState;
 
     const next: Partial<PlaybackState> = { updatedAt: Timestamp.now() };
-    if (mode === "next") next.manualQueue = [...(state.manualQueue ?? []), trackId];
+    if (mode === "next")
+      next.manualQueue = [...(state.manualQueue ?? []), trackId];
     else next.queue = [...(state.queue ?? []), trackId];
 
     tx.set(r, { ...state, ...next }, { merge: true });

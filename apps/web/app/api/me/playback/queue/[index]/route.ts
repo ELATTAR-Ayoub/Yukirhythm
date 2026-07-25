@@ -17,7 +17,10 @@ const ref = (uid: string) =>
  * slot leaves the index in place — addressing the track that follows — and
  * clamps to -1 if that slot was also the last one left.
  */
-export async function DELETE(req: Request, { params }: Params): Promise<Response> {
+export async function DELETE(
+  req: Request,
+  { params }: Params
+): Promise<Response> {
   const uid = await uidFromRequest(req);
   if (!uid) return unauthorized();
 
@@ -51,7 +54,8 @@ export async function DELETE(req: Request, { params }: Params): Promise<Response
     // means moving on, not rewinding to the previous track. If that slot was
     // also the last one, nothing is left to address: clamp to -1 rather than
     // point one past the end of the shorter queue.
-    let nextIndex = i < state.queueIndex ? state.queueIndex - 1 : state.queueIndex;
+    let nextIndex =
+      i < state.queueIndex ? state.queueIndex - 1 : state.queueIndex;
     if (nextIndex >= nextQueue.length) nextIndex = -1;
 
     tx.update(r, {

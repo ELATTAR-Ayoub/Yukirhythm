@@ -23,7 +23,11 @@ export function localDate(ms: number, tz: string): string {
   }).format(new Date(ms));
 }
 
-function minutesWithin(events: StatEvent[], nowMs: number, windowMs: number): number {
+function minutesWithin(
+  events: StatEvent[],
+  nowMs: number,
+  windowMs: number
+): number {
   const cutoff = nowMs - windowMs;
   let sec = 0;
   for (const e of events) if (e.startedAtMs >= cutoff) sec += e.listenedSec;
@@ -70,8 +74,14 @@ export function computeStats(
   const completed = events.filter((e) => e.completed);
 
   // streak
-  const completedDates = new Set(completed.map((e) => localDate(e.startedAtMs, tz)));
-  const { streakDays, lastListenDate } = computeStreak(completedDates, nowMs, tz);
+  const completedDates = new Set(
+    completed.map((e) => localDate(e.startedAtMs, tz))
+  );
+  const { streakDays, lastListenDate } = computeStreak(
+    completedDates,
+    nowMs,
+    tz
+  );
 
   // top artists + top tracks (by completed play count)
   const artistPlays = new Map<string, { name: string; plays: number }>();

@@ -11,7 +11,10 @@ export default function DesignSystemDocsLayout({
       <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur">
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between gap-4">
           <div className="flex items-baseline gap-3">
-            <Link href="/" className="font-display font-semibold tracking-tight">
+            <Link
+              href="/"
+              className="font-display font-semibold tracking-tight"
+            >
               Yukirhythm
             </Link>
             <span className="font-label text-[11px] uppercase tracking-[0.2em] text-muted-foreground">

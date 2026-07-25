@@ -11,7 +11,10 @@ import { ingestTracks } from "@/lib/catalog/ingest";
 import { mintIdToken } from "@/lib/catalog/__integration__/emulator";
 
 import { POST as ensureUser, PATCH as patchUser } from "@/app/api/me/route";
-import { POST as createCollection, GET as listCollections } from "@/app/api/collections/route";
+import {
+  POST as createCollection,
+  GET as listCollections,
+} from "@/app/api/collections/route";
 import { PATCH as patchCollection } from "@/app/api/collections/[collectionId]/route";
 import { PUT as save } from "@/app/api/collections/[collectionId]/save/route";
 import { PUT as follow } from "@/app/api/users/[uid]/follow/route";
@@ -26,7 +29,11 @@ const auth = (token: string, path = "/x", method = "GET", body?: unknown) =>
   });
 
 const uidOf = async (token: string, name: string): Promise<string> =>
-  ((await (await ensureUser(auth(token, "/api/me", "POST", { displayName: name }))).json()) as User).userId;
+  (
+    (await (
+      await ensureUser(auth(token, "/api/me", "POST", { displayName: name }))
+    ).json()) as User
+  ).userId;
 
 async function main(): Promise<void> {
   const tA = await mintIdToken(`demo-a-${Date.now()}@x.com`);
@@ -35,36 +42,60 @@ async function main(): Promise<void> {
   const uidB = await uidOf(tB, "Yuki");
 
   console.log("\n# Yuki builds a public playlist from live YouTube");
-  const found = await (await getCatalogProvider()).search("daft punk", { type: "song", limit: 3 });
+  const found = await (
+    await getCatalogProvider()
+  ).search("daft punk", { type: "song", limit: 3 });
   const playable = found.tracks.filter((t) => t.isEmbeddable);
   await ingestTracks(playable);
   const c = (await (
-    await createCollection(auth(tB, "/api/collections", "POST", {
-      title: "Yuki's Daft Picks",
-      trackIds: playable.map((t) => t.providerTrackId),
-    }))
+    await createCollection(
+      auth(tB, "/api/collections", "POST", {
+        title: "Yuki's Daft Picks",
+        trackIds: playable.map((t) => t.providerTrackId),
+      })
+    )
   ).json()) as Collection;
   await patchCollection(auth(tB, "/x", "PATCH", { visibility: "public" }), {
     params: Promise.resolve({ collectionId: c.collectionId }),
   });
-  await patchUser(auth(tB, "/api/me", "PATCH", { privacy: { publicProfile: true } }));
+  await patchUser(
+    auth(tB, "/api/me", "PATCH", { privacy: { publicProfile: true } })
+  );
   console.log(`  "${c.title}" (${c.stats.trackCount} tracks), public`);
 
-  console.log("\n# Ayoub views Yuki's public profile, follows, and saves the playlist");
-  const profile = (await (await getProfile(auth(tA), { params: Promise.resolve({ uid: uidB }) })).json()) as PublicProfile;
-  console.log(`  profile: ${profile.displayName} (followers ${profile.counts.followerCount})`);
+  console.log(
+    "\n# Ayoub views Yuki's public profile, follows, and saves the playlist"
+  );
+  const profile = (await (
+    await getProfile(auth(tA), { params: Promise.resolve({ uid: uidB }) })
+  ).json()) as PublicProfile;
+  console.log(
+    `  profile: ${profile.displayName} (followers ${profile.counts.followerCount})`
+  );
 
-  await follow(auth(tA, "/x", "PUT"), { params: Promise.resolve({ uid: uidB }) });
-  await save(auth(tA, "/x", "PUT"), { params: Promise.resolve({ collectionId: c.collectionId }) });
+  await follow(auth(tA, "/x", "PUT"), {
+    params: Promise.resolve({ uid: uidB }),
+  });
+  await save(auth(tA, "/x", "PUT"), {
+    params: Promise.resolve({ collectionId: c.collectionId }),
+  });
 
-  const yukiAfter = (await (await getProfile(auth(tA), { params: Promise.resolve({ uid: uidB }) })).json()) as PublicProfile;
-  console.log(`  after follow: Yuki followers = ${yukiAfter.counts.followerCount}`);
+  const yukiAfter = (await (
+    await getProfile(auth(tA), { params: Promise.resolve({ uid: uidB }) })
+  ).json()) as PublicProfile;
+  console.log(
+    `  after follow: Yuki followers = ${yukiAfter.counts.followerCount}`
+  );
 
   const lib = (await (await listCollections(auth(tA))).json()) as Collection[];
   const saved = lib.find((x) => x.collectionId === c.collectionId);
-  console.log(`  Ayoub's library now includes "${saved?.title}" (owner ${saved?.ownerId === uidB ? "Yuki" : "?"}, saveCount ${saved?.stats.saveCount})`);
+  console.log(
+    `  Ayoub's library now includes "${saved?.title}" (owner ${saved?.ownerId === uidB ? "Yuki" : "?"}, saveCount ${saved?.stats.saveCount})`
+  );
 
-  console.log("\nDONE — real users sharing real music through real routes into real Firestore.\n");
+  console.log(
+    "\nDONE — real users sharing real music through real routes into real Firestore.\n"
+  );
 }
 
 main().catch((e) => {

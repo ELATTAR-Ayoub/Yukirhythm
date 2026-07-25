@@ -13,7 +13,9 @@ export default function StatCard({ label, value, hint }: StatCardProps) {
       <div className="font-label text-[10px] uppercase tracking-wider text-muted-foreground">
         {label}
       </div>
-      <DataText className="block text-2xl text-primary mt-1.5">{value}</DataText>
+      <DataText className="block text-2xl text-primary mt-1.5">
+        {value}
+      </DataText>
       {hint ? (
         <div className="text-xs text-muted-foreground mt-1">{hint}</div>
       ) : null}

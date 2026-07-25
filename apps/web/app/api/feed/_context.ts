@@ -18,24 +18,41 @@ export type FeedContext = {
 export async function loadFeedContext(uid: string): Promise<FeedContext> {
   const db = adminDb();
 
-  const evSnap = await db.collection("playEvents").where("userId", "==", uid).get();
+  const evSnap = await db
+    .collection("playEvents")
+    .where("userId", "==", uid)
+    .get();
   const events: StatEvent[] = evSnap.docs.map((d) => {
     const e = d.data() as PlayEvent;
-    return { ...e, startedAtMs: (e.startedAt as unknown as { toMillis(): number }).toMillis() };
+    return {
+      ...e,
+      startedAtMs: (
+        e.startedAt as unknown as { toMillis(): number }
+      ).toMillis(),
+    };
   });
 
   const now = Date.now();
   const exclude = new Set<string>();
-  for (const e of events) if (e.startedAtMs >= now - 7 * DAY) exclude.add(e.trackId);
+  for (const e of events)
+    if (e.startedAtMs >= now - 7 * DAY) exclude.add(e.trackId);
 
   // library: every track in the user's owned collections
-  const owned = await db.collection("collections").where("ownerId", "==", uid).get();
+  const owned = await db
+    .collection("collections")
+    .where("ownerId", "==", uid)
+    .get();
   for (const doc of owned.docs) {
-    for (const t of (doc.data() as Collection).tracks ?? []) exclude.add(t.trackId);
+    for (const t of (doc.data() as Collection).tracks ?? [])
+      exclude.add(t.trackId);
   }
 
   // overlay: liked + play counts
-  const stateSnap = await db.collection("users").doc(uid).collection("trackState").get();
+  const stateSnap = await db
+    .collection("users")
+    .doc(uid)
+    .collection("trackState")
+    .get();
   const states = stateSnap.docs.map((d) => d.data() as TrackState);
   const likedTrackIds = states.filter((s) => s.isLiked).map((s) => s.trackId);
   for (const id of likedTrackIds) exclude.add(id);

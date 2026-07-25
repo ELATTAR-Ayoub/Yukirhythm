@@ -37,7 +37,11 @@ function Platter() {
     <group position={[0, 0, -0.14]} rotation={[Math.PI / 2, 0, 0]}>
       <mesh>
         <cylinderGeometry args={[DISC_R * 1.16, DISC_R * 1.16, 0.08, 96]} />
-        <meshStandardMaterial color="#232323" metalness={0.85} roughness={0.35} />
+        <meshStandardMaterial
+          color="#232323"
+          metalness={0.85}
+          roughness={0.35}
+        />
       </mesh>
       {/* spindle pin */}
       <mesh position={[0, -0.12, 0]}>
@@ -150,9 +154,21 @@ export default function CarouselDeckScene({
 
       {/* 80s retrotech grade: blue key, cool rim, dim neutral fill */}
       <ambientLight intensity={0.3} />
-      <directionalLight position={[4.5, 5.5, 4]} intensity={2.6} color="#2e5cf2" />
-      <directionalLight position={[-5, 2, -4]} intensity={1.6} color="#9db4ff" />
-      <directionalLight position={[0, 0.5, 8]} intensity={0.55} color="#f7f6f3" />
+      <directionalLight
+        position={[4.5, 5.5, 4]}
+        intensity={2.6}
+        color="#2e5cf2"
+      />
+      <directionalLight
+        position={[-5, 2, -4]}
+        intensity={1.6}
+        color="#9db4ff"
+      />
+      <directionalLight
+        position={[0, 0.5, 8]}
+        intensity={0.55}
+        color="#f7f6f3"
+      />
 
       <Suspense fallback={null}>
         <ParallaxRig>

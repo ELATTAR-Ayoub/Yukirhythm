@@ -62,7 +62,10 @@ interface CollectionArtProps {
  * `className` should carry sizing (w/h) and rounding — it is applied to
  * whichever path renders.
  */
-export default function CollectionArt({ collection, className }: CollectionArtProps) {
+export default function CollectionArt({
+  collection,
+  className,
+}: CollectionArtProps) {
   const cover = collection.cover ?? "texture";
 
   // An uploaded cover wins outright: the owner chose it over any collage.
@@ -77,11 +80,17 @@ export default function CollectionArt({ collection, className }: CollectionArtPr
     );
   }
 
-  const tracks = cover === "mosaic" ? tracksFor(collection.trackIds).slice(0, 4) : [];
+  const tracks =
+    cover === "mosaic" ? tracksFor(collection.trackIds).slice(0, 4) : [];
 
   if (tracks.length === 0) {
     return (
-      <Artwork src="" texture={collection.texture} alt="" className={className} />
+      <Artwork
+        src=""
+        texture={collection.texture}
+        alt=""
+        className={className}
+      />
     );
   }
   if (tracks.length === 1) {
@@ -103,7 +112,9 @@ export default function CollectionArt({ collection, className }: CollectionArtPr
     );
   }
   return (
-    <div className={cn("grid grid-cols-2 grid-rows-2 overflow-hidden", className)}>
+    <div
+      className={cn("grid grid-cols-2 grid-rows-2 overflow-hidden", className)}
+    >
       {tracks.map((t, i) => (
         <Cell key={`${t.id}:${i}`} track={t} className="h-full w-full" />
       ))}

@@ -19,7 +19,8 @@ export async function GET(
 
   const { uid: userId } = await params;
   const snap = await adminDb().collection("users").doc(userId).get();
-  if (!snap.exists) return Response.json({ error: "Not found" }, { status: 404 });
+  if (!snap.exists)
+    return Response.json({ error: "Not found" }, { status: 404 });
 
   const u = snap.data() as User;
   // The caller can always see their own profile; others only if it is public.

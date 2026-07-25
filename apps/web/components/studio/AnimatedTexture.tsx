@@ -75,7 +75,14 @@ function marbleAt(x: number, y: number, t: number, warp = 3): number {
   let a = 1;
   let f = 0.013;
   for (let o = 0; o < 4; o++) {
-    v += a * Math.sin(x * f + warp * Math.sin(y * f * 1.7 + o * 2.1 + t * 0.6) + o * 5 + t * 0.4);
+    v +=
+      a *
+      Math.sin(
+        x * f +
+          warp * Math.sin(y * f * 1.7 + o * 2.1 + t * 0.6) +
+          o * 5 +
+          t * 0.4
+      );
     a *= 0.55;
     f *= 2.1;
   }
@@ -90,7 +97,9 @@ const FIELDS: Record<DitherTextureKind, FieldFn> = {
     const dx = x - S / 2;
     const dy = y - S / 2;
     const r = Math.sqrt(dx * dx + dy * dy);
-    return Math.sin(r * 0.14 - t * 2.2 + marbleAt(x, y, t * 0.3) * 1.2) * 0.5 + 0.5;
+    return (
+      Math.sin(r * 0.14 - t * 2.2 + marbleAt(x, y, t * 0.3) * 1.2) * 0.5 + 0.5
+    );
   },
   vinyl: (x, y, t, S) => {
     const dx = x - S / 2;
@@ -99,18 +108,29 @@ const FIELDS: Record<DitherTextureKind, FieldFn> = {
     const a = Math.atan2(dy, dx);
     return (
       (Math.sin(r * 0.55 - t * 1.5) * 0.5 + 0.5) * 0.35 +
-      (Math.sin(r * 0.06 + Math.sin(a * 3 + t) * 0.5 + marbleAt(x, y, 0) * 0.4) * 0.5 + 0.5) * 0.65
+      (Math.sin(
+        r * 0.06 + Math.sin(a * 3 + t) * 0.5 + marbleAt(x, y, 0) * 0.4
+      ) *
+        0.5 +
+        0.5) *
+        0.65
     );
   },
   bars: (x, y, t, S) => {
     const col = Math.floor(x / (S / 22));
     const hgt =
-      (Math.sin(col * 2.7 + t * 1.8) * 0.5 + 0.5) * 0.6 + 0.18 + Math.sin(col * 13.7 + t * 3.1) * 0.12;
-    return (S - y) / S < hgt ? 0.65 + marbleAt(x * 4, y * 4, t * 0.5) * 0.15 : 0.08;
+      (Math.sin(col * 2.7 + t * 1.8) * 0.5 + 0.5) * 0.6 +
+      0.18 +
+      Math.sin(col * 13.7 + t * 3.1) * 0.12;
+    return (S - y) / S < hgt
+      ? 0.65 + marbleAt(x * 4, y * 4, t * 0.5) * 0.15
+      : 0.08;
   },
   static: (x, y, t) => {
     const row = Math.sin(y * 0.7 + t * 8) * 0.5 + 0.5;
-    let v = Math.random() * 0.55 * row + ((marbleAt(x * 3, y * 0.5, t) + 2) / 4) * 0.45;
+    let v =
+      Math.random() * 0.55 * row +
+      ((marbleAt(x * 3, y * 0.5, t) + 2) / 4) * 0.45;
     if (Math.random() < 0.01) v = 1;
     return v;
   },
@@ -141,14 +161,18 @@ const FIELDS: Record<DitherTextureKind, FieldFn> = {
     const a = Math.atan2(dy, dx);
     return Math.sin(a * 4 + r * 0.18 - t * 2.4) * 0.5 + 0.5;
   },
-  lava: (x, y, t) => (marbleAt(x * 2.4 + t * 14, y * 2.4 - t * 9, t * 0.8, 4.5) + 2) / 4,
+  lava: (x, y, t) =>
+    (marbleAt(x * 2.4 + t * 14, y * 2.4 - t * 9, t * 0.8, 4.5) + 2) / 4,
   scanline: (x, y, t, S) => {
-    const wave = Math.sin(x * 0.06 + marbleAt(x, y, t * 0.4) * 1.4 + t * 1.2) * 0.5 + 0.5;
+    const wave =
+      Math.sin(x * 0.06 + marbleAt(x, y, t * 0.4) * 1.4 + t * 1.2) * 0.5 + 0.5;
     const sweep = Math.max(0, 1 - Math.abs((y / S - ((t * 0.35) % 1.3)) * 6));
     return Math.min(1, wave * 0.65 + sweep * 0.5);
   },
   moire: (x, y, t) => {
-    const a = Math.sin(x * 0.32 + Math.sin(t * 0.7) * 2) * Math.sin(y * 0.32 + Math.cos(t * 0.9) * 2);
+    const a =
+      Math.sin(x * 0.32 + Math.sin(t * 0.7) * 2) *
+      Math.sin(y * 0.32 + Math.cos(t * 0.9) * 2);
     const b = Math.sin((x * Math.cos(t * 0.3) - y * Math.sin(t * 0.3)) * 0.28);
     return (a + b) / 4 + 0.5;
   },
@@ -176,7 +200,10 @@ function makeDitherDraw(
         const dither = (BAYER[y % 8][x % 8] / 64 - 0.5) * 0.16;
         const idx = Math.max(
           0,
-          Math.min(RAMP.length - 1, Math.round((v + dither) * (RAMP.length - 1)))
+          Math.min(
+            RAMP.length - 1,
+            Math.round((v + dither) * (RAMP.length - 1))
+          )
         );
         const [r, g, b] = RAMP[idx];
         const i = (y * SIZE + x) * 4;
@@ -250,11 +277,19 @@ function makeAsciiDraw(
           }
           const fade = 1 - head / dr.l;
           ctx.fillStyle =
-            head < 1 ? "#f7f6f3" : head < 3 ? "#7df08a" : fade > 0.5 ? "#1450f0" : "#10327a";
+            head < 1
+              ? "#f7f6f3"
+              : head < 3
+                ? "#7df08a"
+                : fade > 0.5
+                  ? "#1450f0"
+                  : "#10327a";
           ctx.fillText(
             chars[
-              Math.floor(Math.abs(Math.sin(x * 99 + y * 31 + Math.floor(t * 6))) * chars.length) %
-                chars.length
+              Math.floor(
+                Math.abs(Math.sin(x * 99 + y * 31 + Math.floor(t * 6))) *
+                  chars.length
+              ) % chars.length
             ],
             x * CW,
             y * CH
@@ -280,8 +315,19 @@ function makeAsciiDraw(
             }
             continue;
           }
-          ctx.fillStyle = v > 0.8 ? "#7df08a" : v > 0.55 ? "#1450f0" : v > 0.35 ? "#90a0f8" : "#4a4a48";
-          ctx.fillText(GLYPHS[Math.floor(Math.min(0.999, v) * GLYPHS.length)], x * CW, y * CH);
+          ctx.fillStyle =
+            v > 0.8
+              ? "#7df08a"
+              : v > 0.55
+                ? "#1450f0"
+                : v > 0.35
+                  ? "#90a0f8"
+                  : "#4a4a48";
+          ctx.fillText(
+            GLYPHS[Math.floor(Math.min(0.999, v) * GLYPHS.length)],
+            x * CW,
+            y * CH
+          );
         }
       }
       return;
@@ -295,7 +341,9 @@ function makeAsciiDraw(
           const dy = (y - rows / 2) * CH;
           const r = Math.sqrt(dx * dx + dy * dy);
           const ring = Math.abs(r - ((t * 90) % (rows * CH * 0.9)));
-          let v = Math.max(0, 1 - r / 60) * (0.5 + beat * 0.6) + Math.max(0, 1 - ring / 14) * 0.7;
+          let v =
+            Math.max(0, 1 - r / 60) * (0.5 + beat * 0.6) +
+            Math.max(0, 1 - ring / 14) * 0.7;
           v = Math.min(1, v);
           if (v < 0.08) {
             if ((x * 7 + y * 13) % 39 === 0) {
@@ -304,8 +352,19 @@ function makeAsciiDraw(
             }
             continue;
           }
-          ctx.fillStyle = v > 0.85 ? "#f7f6f3" : v > 0.6 ? "#7df08a" : v > 0.35 ? "#1450f0" : "#10327a";
-          ctx.fillText(GLYPHS[Math.floor(Math.min(0.999, v) * GLYPHS.length)], x * CW, y * CH);
+          ctx.fillStyle =
+            v > 0.85
+              ? "#f7f6f3"
+              : v > 0.6
+                ? "#7df08a"
+                : v > 0.35
+                  ? "#1450f0"
+                  : "#10327a";
+          ctx.fillText(
+            GLYPHS[Math.floor(Math.min(0.999, v) * GLYPHS.length)],
+            x * CW,
+            y * CH
+          );
         }
       }
       return;
@@ -372,7 +431,9 @@ function makeAsciiDraw(
       for (let y = 0; y < rows; y++) {
         const frac = (rows - y) / rows;
         const on = frac < bar;
-        const v = on ? 0.75 + Math.random() * 0.25 : 0.06 + Math.random() * 0.08;
+        const v = on
+          ? 0.75 + Math.random() * 0.25
+          : 0.06 + Math.random() * 0.08;
         ctx.fillStyle = on
           ? frac > bar - 0.09
             ? "#7df08a"
@@ -380,7 +441,11 @@ function makeAsciiDraw(
               ? "#90a0f8"
               : "#1450f0"
           : "#3c3c3a";
-        ctx.fillText(GLYPHS[Math.floor(Math.min(0.999, v) * GLYPHS.length)], x * CW, y * CH);
+        ctx.fillText(
+          GLYPHS[Math.floor(Math.min(0.999, v) * GLYPHS.length)],
+          x * CW,
+          y * CH
+        );
       }
     }
   };
@@ -464,7 +529,10 @@ export default function AnimatedTexture({
   // the escape rule in globals.css).
   return (
     <div data-animated-texture aria-hidden className={className}>
-      <canvas ref={canvasRef} className="block w-full h-full [image-rendering:pixelated]" />
+      <canvas
+        ref={canvasRef}
+        className="block w-full h-full [image-rendering:pixelated]"
+      />
     </div>
   );
 }

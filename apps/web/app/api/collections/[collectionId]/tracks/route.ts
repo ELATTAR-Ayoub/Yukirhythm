@@ -12,7 +12,10 @@ type Params = { params: Promise<{ collectionId: string }> };
  * membership — anything else is a client bug, rejected with 400 rather than
  * silently dropping or inventing tracks. Each entry keeps its addedAt/addedBy.
  */
-export async function PATCH(req: Request, { params }: Params): Promise<Response> {
+export async function PATCH(
+  req: Request,
+  { params }: Params
+): Promise<Response> {
   const uid = await uidFromRequest(req);
   if (!uid) return unauthorized();
 
@@ -21,7 +24,8 @@ export async function PATCH(req: Request, { params }: Params): Promise<Response>
   const order = Array.isArray(body.trackIds)
     ? body.trackIds.filter((t): t is string => typeof t === "string")
     : null;
-  if (!order) return Response.json({ error: "trackIds required" }, { status: 400 });
+  if (!order)
+    return Response.json({ error: "trackIds required" }, { status: 400 });
 
   const db = adminDb();
   const ref = db.collection("collections").doc(collectionId);

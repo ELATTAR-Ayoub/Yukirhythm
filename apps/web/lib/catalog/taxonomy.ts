@@ -20,21 +20,128 @@ export type Label = {
 };
 
 export const TAXONOMY: Label[] = [
-  { labelId: "lofi", kind: "genre", displayName: "Lo-fi", texture: "tx-k-silk", aliases: ["lo-fi", "lo fi", "lofi hip hop", "lofi hiphop", "chillhop", "jazzhop"], isExploreTile: true, sortOrder: 1 },
-  { labelId: "ambient", kind: "genre", displayName: "Ambient", texture: "tx-k2-horizon", aliases: ["ambient music", "drone", "atmospheric"], isExploreTile: true, sortOrder: 2 },
-  { labelId: "retro", kind: "genre", displayName: "Retro", texture: "tx-k2-vinyl", aliases: ["synthwave", "vaporwave", "retrowave", "80s"], isExploreTile: true, sortOrder: 3 },
-  { labelId: "podcasts", kind: "genre", displayName: "Podcasts", texture: "tx-k2-bars", aliases: ["podcast", "talk", "interview"], isExploreTile: true, sortOrder: 4 },
-  { labelId: "night", kind: "mood", displayName: "Night", texture: "tx-k2-topo", aliases: ["late night", "midnight", "nocturnal"], isExploreTile: true, sortOrder: 5 },
-  { labelId: "focus", kind: "mood", displayName: "Focus", texture: "tx-k2-ascii-eq", aliases: ["study", "concentration", "deep work", "study beats"], isExploreTile: true, sortOrder: 6 },
-  { labelId: "morning", kind: "mood", displayName: "Morning", texture: "tx-k-ripple", aliases: ["wake up", "sunrise", "coffee"], isExploreTile: true, sortOrder: 7 },
-  { labelId: "glitch", kind: "genre", displayName: "Glitch", texture: "tx-k-glitch", aliases: ["idm", "breakcore", "experimental"], isExploreTile: true, sortOrder: 8 },
-  { labelId: "electronic", kind: "genre", displayName: "Electronic", texture: "tx-k2-static", aliases: ["electronic music", "edm", "house", "techno"], isExploreTile: false, sortOrder: 9 },
-  { labelId: "hiphop", kind: "genre", displayName: "Hip hop", texture: "tx-k-marble", aliases: ["hip hop music", "hip-hop", "rap"], isExploreTile: false, sortOrder: 10 },
-  { labelId: "jazz", kind: "genre", displayName: "Jazz", texture: "tx-k2-marble-dense", aliases: ["jazz music", "bebop"], isExploreTile: false, sortOrder: 11 },
-  { labelId: "rock", kind: "genre", displayName: "Rock", texture: "tx-k2-checker", aliases: ["rock music", "indie rock", "alternative"], isExploreTile: false, sortOrder: 12 },
+  {
+    labelId: "lofi",
+    kind: "genre",
+    displayName: "Lo-fi",
+    texture: "tx-k-silk",
+    aliases: [
+      "lo-fi",
+      "lo fi",
+      "lofi hip hop",
+      "lofi hiphop",
+      "chillhop",
+      "jazzhop",
+    ],
+    isExploreTile: true,
+    sortOrder: 1,
+  },
+  {
+    labelId: "ambient",
+    kind: "genre",
+    displayName: "Ambient",
+    texture: "tx-k2-horizon",
+    aliases: ["ambient music", "drone", "atmospheric"],
+    isExploreTile: true,
+    sortOrder: 2,
+  },
+  {
+    labelId: "retro",
+    kind: "genre",
+    displayName: "Retro",
+    texture: "tx-k2-vinyl",
+    aliases: ["synthwave", "vaporwave", "retrowave", "80s"],
+    isExploreTile: true,
+    sortOrder: 3,
+  },
+  {
+    labelId: "podcasts",
+    kind: "genre",
+    displayName: "Podcasts",
+    texture: "tx-k2-bars",
+    aliases: ["podcast", "talk", "interview"],
+    isExploreTile: true,
+    sortOrder: 4,
+  },
+  {
+    labelId: "night",
+    kind: "mood",
+    displayName: "Night",
+    texture: "tx-k2-topo",
+    aliases: ["late night", "midnight", "nocturnal"],
+    isExploreTile: true,
+    sortOrder: 5,
+  },
+  {
+    labelId: "focus",
+    kind: "mood",
+    displayName: "Focus",
+    texture: "tx-k2-ascii-eq",
+    aliases: ["study", "concentration", "deep work", "study beats"],
+    isExploreTile: true,
+    sortOrder: 6,
+  },
+  {
+    labelId: "morning",
+    kind: "mood",
+    displayName: "Morning",
+    texture: "tx-k-ripple",
+    aliases: ["wake up", "sunrise", "coffee"],
+    isExploreTile: true,
+    sortOrder: 7,
+  },
+  {
+    labelId: "glitch",
+    kind: "genre",
+    displayName: "Glitch",
+    texture: "tx-k-glitch",
+    aliases: ["idm", "breakcore", "experimental"],
+    isExploreTile: true,
+    sortOrder: 8,
+  },
+  {
+    labelId: "electronic",
+    kind: "genre",
+    displayName: "Electronic",
+    texture: "tx-k2-static",
+    aliases: ["electronic music", "edm", "house", "techno"],
+    isExploreTile: false,
+    sortOrder: 9,
+  },
+  {
+    labelId: "hiphop",
+    kind: "genre",
+    displayName: "Hip hop",
+    texture: "tx-k-marble",
+    aliases: ["hip hop music", "hip-hop", "rap"],
+    isExploreTile: false,
+    sortOrder: 10,
+  },
+  {
+    labelId: "jazz",
+    kind: "genre",
+    displayName: "Jazz",
+    texture: "tx-k2-marble-dense",
+    aliases: ["jazz music", "bebop"],
+    isExploreTile: false,
+    sortOrder: 11,
+  },
+  {
+    labelId: "rock",
+    kind: "genre",
+    displayName: "Rock",
+    texture: "tx-k2-checker",
+    aliases: ["rock music", "indie rock", "alternative"],
+    isExploreTile: false,
+    sortOrder: 12,
+  },
 ];
 
-const norm = (s: string) => s.trim().toLowerCase().replace(/[\s_-]+/g, " ");
+const norm = (s: string) =>
+  s
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]+/g, " ");
 
 const INDEX: Map<string, string> = (() => {
   const m = new Map<string, string>();

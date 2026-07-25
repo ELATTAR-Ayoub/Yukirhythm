@@ -16,7 +16,10 @@ import { Label } from "@/components/ui/label";
 import { PlayerButton } from "@/components/studio/PlayerButton";
 import IconSwap from "@/components/studio/IconSwap";
 import DataText from "@/components/studio/DataText";
-import Texture, { TEXTURE_NAMES, type TextureName } from "@/components/studio/Texture";
+import Texture, {
+  TEXTURE_NAMES,
+  type TextureName,
+} from "@/components/studio/Texture";
 import TrackRow from "@/components/studio/TrackRow";
 import EmptyState from "@/components/studio/EmptyState";
 import { TagChip } from "./TagChip";
@@ -177,11 +180,17 @@ function TagsField({ tags, onChange }: TagsFieldProps) {
             if (e.key === "Enter") {
               e.preventDefault();
               commit();
-            } else if (e.key === "Backspace" && value === "" && tags.length > 0) {
+            } else if (
+              e.key === "Backspace" &&
+              value === "" &&
+              tags.length > 0
+            ) {
               removeTag(tags[tags.length - 1]);
             }
           }}
-          placeholder={tags.length === 0 ? "lofi, night, focus…" : "Add another…"}
+          placeholder={
+            tags.length === 0 ? "lofi, night, focus…" : "Add another…"
+          }
           className="min-w-[96px] flex-1 bg-transparent py-1 text-sm outline-none placeholder:text-muted-foreground/60"
         />
       </div>
@@ -205,9 +214,7 @@ function DetailsStep({ draft, setDraft }: DetailsStepProps) {
           required
           placeholder="Rainy Tapes"
           value={draft.title}
-          onChange={(e) =>
-            setDraft((d) => ({ ...d, title: e.target.value }))
-          }
+          onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
         />
       </div>
 
@@ -244,7 +251,11 @@ function DetailsStep({ draft, setDraft }: DetailsStepProps) {
 
       <div className="space-y-1.5">
         <Label id="pl-cover-label">Cover</Label>
-        <div role="group" aria-labelledby="pl-cover-label" className="space-y-2.5">
+        <div
+          role="group"
+          aria-labelledby="pl-cover-label"
+          className="space-y-2.5"
+        >
           <div className="flex gap-2">
             <TagChip
               label="Texture"
@@ -313,10 +324,7 @@ function AddMusicStep({ trackIds, onToggleTrack }: AddMusicStepProps) {
 
   const results = useMemo(() => (q.trim() ? searchMockTracks(q) : []), [q]);
   const selected = useMemo(
-    () =>
-      trackIds
-        .map(getTrack)
-        .filter((t): t is MockTrack => t !== undefined),
+    () => trackIds.map(getTrack).filter((t): t is MockTrack => t !== undefined),
     [trackIds]
   );
 
@@ -371,7 +379,9 @@ function AddMusicStep({ trackIds, onToggleTrack }: AddMusicStepProps) {
                   <PlayerButton
                     variant={added ? "primary" : "outline"}
                     size="sm"
-                    aria-label={added ? `Remove ${track.title}` : `Add ${track.title}`}
+                    aria-label={
+                      added ? `Remove ${track.title}` : `Add ${track.title}`
+                    }
                     onClick={() => onToggleTrack(track.id)}
                   >
                     <IconSwap
@@ -504,7 +514,9 @@ function ReviewStep({ draft }: { draft: Draft }) {
  * inventing history entries for it. Nothing reaches the store
  * (`useMockStudio().createCollection`) until the review step's confirm.
  */
-export default function CreatePlaylistFlow({ onCreated }: CreatePlaylistFlowProps) {
+export default function CreatePlaylistFlow({
+  onCreated,
+}: CreatePlaylistFlowProps) {
   const { createCollection } = useMockStudio();
   const [step, setStep] = useState<Step>(1);
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);

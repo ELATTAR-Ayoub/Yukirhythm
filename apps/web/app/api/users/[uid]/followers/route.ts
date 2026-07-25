@@ -17,7 +17,10 @@ export async function GET(
 
   const { uid: userId } = await params;
   const sp = new URL(req.url).searchParams;
-  const limit = Math.min(MAX_LIMIT, Math.max(1, Number(sp.get("limit")) || DEFAULT_LIMIT));
+  const limit = Math.min(
+    MAX_LIMIT,
+    Math.max(1, Number(sp.get("limit")) || DEFAULT_LIMIT)
+  );
   const cursor = Number(sp.get("cursor"));
 
   const { Timestamp } = await import("firebase-admin/firestore");
@@ -26,16 +29,20 @@ export async function GET(
     .doc(userId)
     .collection("followers")
     .orderBy("followedAt", "desc");
-  if (Number.isFinite(cursor) && cursor > 0) q = q.startAfter(Timestamp.fromMillis(cursor));
+  if (Number.isFinite(cursor) && cursor > 0)
+    q = q.startAfter(Timestamp.fromMillis(cursor));
 
   const snap = await q.limit(limit).get();
   const items = snap.docs.map((d) => {
     const e = d.data() as FollowEdge;
     return {
       userId: e.userId,
-      followedAtMs: (e.followedAt as unknown as { toMillis(): number }).toMillis(),
+      followedAtMs: (
+        e.followedAt as unknown as { toMillis(): number }
+      ).toMillis(),
     };
   });
-  const nextCursor = items.length === limit ? items[items.length - 1].followedAtMs : null;
+  const nextCursor =
+    items.length === limit ? items[items.length - 1].followedAtMs : null;
   return Response.json({ items, nextCursor });
 }

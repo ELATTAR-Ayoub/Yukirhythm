@@ -21,7 +21,10 @@ export function SkeletonCard({ className }: { className?: string }) {
 export function SkeletonRow({ className }: { className?: string }) {
   return (
     <div
-      className={cn("flex items-center gap-3 px-3 py-2 animate-pulse", className)}
+      className={cn(
+        "flex items-center gap-3 px-3 py-2 animate-pulse",
+        className
+      )}
       aria-hidden
     >
       <div className="w-6 h-3 bg-muted rounded-sm" />

@@ -15,7 +15,10 @@ export async function DELETE(req: Request): Promise<Response> {
   const db = adminDb();
 
   // Delete this user's play events.
-  const events = await db.collection("playEvents").where("userId", "==", uid).get();
+  const events = await db
+    .collection("playEvents")
+    .where("userId", "==", uid)
+    .get();
   let deleted = 0;
   for (const doc of events.docs) {
     await doc.ref.delete();

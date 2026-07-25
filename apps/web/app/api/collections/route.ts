@@ -51,7 +51,8 @@ export async function POST(req: Request): Promise<Response> {
 
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   const title = typeof body.title === "string" ? body.title.trim() : "";
-  if (!title) return Response.json({ error: "Title is required" }, { status: 400 });
+  if (!title)
+    return Response.json({ error: "Title is required" }, { status: 400 });
 
   const db = adminDb();
   const ref = db.collection("collections").doc();

@@ -80,28 +80,181 @@ export function formatDuration(
 }
 
 export const MOCK_TRACKS: MockTrack[] = [
-  { id: "t1", title: "Midnight Snowfall", artist: "Yuki Sato", texture: "tx-k2-vinyl", durationSec: 214 },
-  { id: "t2", title: "Cobalt Dreams", artist: "Aoi Waves", texture: "tx-k-marble", durationSec: 188 },
-  { id: "t3", title: "Static Bloom", artist: "Mint Circuit", texture: "tx-k2-static", durationSec: 262 },
-  { id: "t4", title: "Paper Lanterns", artist: "Rei Kurosawa", texture: "tx-k-silk", durationSec: 201 },
-  { id: "t5", title: "Topographic Heart", artist: "Nori", texture: "tx-k2-topo", durationSec: 176 },
-  { id: "t6", title: "Ripple Theory", artist: "Aoi Waves", texture: "tx-k-ripple", durationSec: 233 },
-  { id: "t7", title: "Glitch Sakura", artist: "Mint Circuit", texture: "tx-k-glitch", durationSec: 197 },
-  { id: "t8", title: "Horizon Line", artist: "Yuki Sato", texture: "tx-k2-horizon", durationSec: 288 },
-  { id: "t9", title: "Checker Room", artist: "8-Bit Monk", texture: "tx-k2-checker", durationSec: 154 },
-  { id: "t10", title: "ASCII Rain", artist: "Nori", texture: "tx-k-ascii-ripple", durationSec: 245 },
-  { id: "t11", title: "Dense Marble", artist: "Rei Kurosawa", texture: "tx-k2-marble-dense", durationSec: 219 },
-  { id: "t12", title: "Equalizer Sunday", artist: "8-Bit Monk", texture: "tx-k2-ascii-eq", durationSec: 208 },
+  {
+    id: "t1",
+    title: "Midnight Snowfall",
+    artist: "Yuki Sato",
+    texture: "tx-k2-vinyl",
+    durationSec: 214,
+  },
+  {
+    id: "t2",
+    title: "Cobalt Dreams",
+    artist: "Aoi Waves",
+    texture: "tx-k-marble",
+    durationSec: 188,
+  },
+  {
+    id: "t3",
+    title: "Static Bloom",
+    artist: "Mint Circuit",
+    texture: "tx-k2-static",
+    durationSec: 262,
+  },
+  {
+    id: "t4",
+    title: "Paper Lanterns",
+    artist: "Rei Kurosawa",
+    texture: "tx-k-silk",
+    durationSec: 201,
+  },
+  {
+    id: "t5",
+    title: "Topographic Heart",
+    artist: "Nori",
+    texture: "tx-k2-topo",
+    durationSec: 176,
+  },
+  {
+    id: "t6",
+    title: "Ripple Theory",
+    artist: "Aoi Waves",
+    texture: "tx-k-ripple",
+    durationSec: 233,
+  },
+  {
+    id: "t7",
+    title: "Glitch Sakura",
+    artist: "Mint Circuit",
+    texture: "tx-k-glitch",
+    durationSec: 197,
+  },
+  {
+    id: "t8",
+    title: "Horizon Line",
+    artist: "Yuki Sato",
+    texture: "tx-k2-horizon",
+    durationSec: 288,
+  },
+  {
+    id: "t9",
+    title: "Checker Room",
+    artist: "8-Bit Monk",
+    texture: "tx-k2-checker",
+    durationSec: 154,
+  },
+  {
+    id: "t10",
+    title: "ASCII Rain",
+    artist: "Nori",
+    texture: "tx-k-ascii-ripple",
+    durationSec: 245,
+  },
+  {
+    id: "t11",
+    title: "Dense Marble",
+    artist: "Rei Kurosawa",
+    texture: "tx-k2-marble-dense",
+    durationSec: 219,
+  },
+  {
+    id: "t12",
+    title: "Equalizer Sunday",
+    artist: "8-Bit Monk",
+    texture: "tx-k2-ascii-eq",
+    durationSec: 208,
+  },
 ];
 
 export const MOCK_COLLECTIONS: MockCollection[] = [
-  { id: "c1", title: "Late Study Lo-Fi", desc: "Quiet loops for deep focus.", texture: "tx-k2-topo", trackIds: ["t1", "t4", "t10", "t5"], likes: 1284, tags: ["lofi", "focus"], kind: "music", pinned: false },
-  { id: "c2", title: "Cobalt After Hours", desc: "Neon-lit night drive. Synth pads, wet asphalt and vending-machine glow — a slow cruise through the sleeping city after everyone else has gone home. Windows down, volume up, nowhere in particular to be until sunrise puts the streetlights to bed.", texture: "tx-k-marble", trackIds: ["t2", "t6", "t8"], likes: 842, tags: ["chill", "night", "drive", "neon", "synth", "city", "cruise", "late", "focus", "retro"], kind: "music", pinned: false },
-  { id: "c3", title: "Pixel Podcasts", desc: "Long-form talks, dithered.", texture: "tx-k2-static", trackIds: ["t3", "t12"], likes: 511, tags: ["podcast"], kind: "podcast", pinned: false },
-  { id: "c4", title: "Mint Mornings", desc: "Bright starts, soft beats.", texture: "tx-k-silk", trackIds: ["t7", "t9", "t11"], likes: 967, tags: ["morning", "chill"], kind: "music", pinned: false },
-  { id: "c5", title: "Static & Snow", desc: "Ambient textures.", texture: "tx-k2-marble-dense", trackIds: ["t5", "t10", "t3", "t1"], likes: 388, tags: ["ambient"], kind: "music", pinned: false },
-  { id: "c6", title: "Retro Arcade", desc: "8-bit nostalgia set.", texture: "tx-k2-checker", trackIds: ["t9", "t12"], likes: 1533, tags: ["retro", "game"], kind: "music", pinned: false },
-  { id: "c7", title: "Night Static Radio", desc: "Late-night talk, tape hiss included.", texture: "tx-k2-ascii-eq", trackIds: ["t12", "t3", "t10"], likes: 204, tags: ["podcast", "night"], kind: "podcast", pinned: false },
+  {
+    id: "c1",
+    title: "Late Study Lo-Fi",
+    desc: "Quiet loops for deep focus.",
+    texture: "tx-k2-topo",
+    trackIds: ["t1", "t4", "t10", "t5"],
+    likes: 1284,
+    tags: ["lofi", "focus"],
+    kind: "music",
+    pinned: false,
+  },
+  {
+    id: "c2",
+    title: "Cobalt After Hours",
+    desc: "Neon-lit night drive. Synth pads, wet asphalt and vending-machine glow — a slow cruise through the sleeping city after everyone else has gone home. Windows down, volume up, nowhere in particular to be until sunrise puts the streetlights to bed.",
+    texture: "tx-k-marble",
+    trackIds: ["t2", "t6", "t8"],
+    likes: 842,
+    tags: [
+      "chill",
+      "night",
+      "drive",
+      "neon",
+      "synth",
+      "city",
+      "cruise",
+      "late",
+      "focus",
+      "retro",
+    ],
+    kind: "music",
+    pinned: false,
+  },
+  {
+    id: "c3",
+    title: "Pixel Podcasts",
+    desc: "Long-form talks, dithered.",
+    texture: "tx-k2-static",
+    trackIds: ["t3", "t12"],
+    likes: 511,
+    tags: ["podcast"],
+    kind: "podcast",
+    pinned: false,
+  },
+  {
+    id: "c4",
+    title: "Mint Mornings",
+    desc: "Bright starts, soft beats.",
+    texture: "tx-k-silk",
+    trackIds: ["t7", "t9", "t11"],
+    likes: 967,
+    tags: ["morning", "chill"],
+    kind: "music",
+    pinned: false,
+  },
+  {
+    id: "c5",
+    title: "Static & Snow",
+    desc: "Ambient textures.",
+    texture: "tx-k2-marble-dense",
+    trackIds: ["t5", "t10", "t3", "t1"],
+    likes: 388,
+    tags: ["ambient"],
+    kind: "music",
+    pinned: false,
+  },
+  {
+    id: "c6",
+    title: "Retro Arcade",
+    desc: "8-bit nostalgia set.",
+    texture: "tx-k2-checker",
+    trackIds: ["t9", "t12"],
+    likes: 1533,
+    tags: ["retro", "game"],
+    kind: "music",
+    pinned: false,
+  },
+  {
+    id: "c7",
+    title: "Night Static Radio",
+    desc: "Late-night talk, tape hiss included.",
+    texture: "tx-k2-ascii-eq",
+    trackIds: ["t12", "t3", "t10"],
+    likes: 204,
+    tags: ["podcast", "night"],
+    kind: "podcast",
+    pinned: false,
+  },
 ];
 
 export const MOCK_USER: MockUser = {
@@ -130,7 +283,11 @@ export const LIKED_SONGS: MockCollection = {
 };
 
 export type HistoryGroup = "Today" | "Yesterday" | "This week";
-export const HISTORY_GROUPS: HistoryGroup[] = ["Today", "Yesterday", "This week"];
+export const HISTORY_GROUPS: HistoryGroup[] = [
+  "Today",
+  "Yesterday",
+  "This week",
+];
 
 export interface MockHistoryEntry {
   trackId: string;
@@ -143,7 +300,12 @@ export interface MockHistoryEntry {
 export const MOCK_HISTORY: MockHistoryEntry[] = [
   { trackId: "t2", collectionId: "c2", group: "Today", timeLabel: "09:12" },
   { trackId: "t1", collectionId: "c1", group: "Today", timeLabel: "08:47" },
-  { trackId: "t5", collectionId: LIKED_SONGS_ID, group: "Today", timeLabel: "08:02" },
+  {
+    trackId: "t5",
+    collectionId: LIKED_SONGS_ID,
+    group: "Today",
+    timeLabel: "08:02",
+  },
   { trackId: "t3", collectionId: "c3", group: "Yesterday", timeLabel: "22:30" },
   { trackId: "t6", collectionId: "c2", group: "Yesterday", timeLabel: "18:15" },
   { trackId: "t7", collectionId: "c4", group: "Yesterday", timeLabel: "07:58" },
@@ -184,7 +346,10 @@ export const MOCK_STATS: MockStats = {
     { name: "Podcast", pct: 19 },
     { name: "Retro", pct: 16 },
   ],
-  byHour: [0.05, 0.02, 0.01, 0.01, 0.02, 0.06, 0.2, 0.55, 0.7, 0.5, 0.35, 0.3, 0.4, 0.35, 0.3, 0.35, 0.45, 0.6, 0.8, 1, 0.9, 0.65, 0.35, 0.15],
+  byHour: [
+    0.05, 0.02, 0.01, 0.01, 0.02, 0.06, 0.2, 0.55, 0.7, 0.5, 0.35, 0.3, 0.4,
+    0.35, 0.3, 0.35, 0.45, 0.6, 0.8, 1, 0.9, 0.65, 0.35, 0.15,
+  ],
 };
 
 export const NEW_RELEASE_IDS = ["t12", "t7", "t3", "t9", "t11", "t6"];

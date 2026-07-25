@@ -228,11 +228,7 @@ export type PlaybackState = {
 export const REPEAT_MODES = ["off", "all", "one"] as const;
 
 export type EventSource =
-  | "collection"
-  | "search"
-  | "library"
-  | "radio"
-  | "recommendation";
+  "collection" | "search" | "library" | "radio" | "recommendation";
 
 /**
  * An append-only play event (spec §5.9). `listenedSec` is actual seconds heard,

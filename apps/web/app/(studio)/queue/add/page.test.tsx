@@ -40,9 +40,7 @@ function Probe() {
 function Seed({ source }: { source: (typeof MOCK_COLLECTIONS)[number] }) {
   const { play } = useMockStudio();
   const first = getCollectionTracks(source)[0];
-  return (
-    <button onClick={() => play(first, source)}>seed</button>
-  );
+  return <button onClick={() => play(first, source)}>seed</button>;
 }
 
 describe("queue add screen", () => {

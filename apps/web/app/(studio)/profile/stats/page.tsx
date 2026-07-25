@@ -52,7 +52,10 @@ export default function StatsScreen() {
         <SectionLabel>Top artists</SectionLabel>
         <div className="mt-2 rounded-lg border border-border bg-card divide-y divide-border">
           {stats.topArtists.map((artist, i) => (
-            <div key={artist.name} className="flex items-center gap-3 px-4 py-2.5">
+            <div
+              key={artist.name}
+              className="flex items-center gap-3 px-4 py-2.5"
+            >
               <DataText className="text-sm text-muted-foreground w-6">
                 {String(i + 1).padStart(2, "0")}
               </DataText>
@@ -136,7 +139,11 @@ export default function StatsScreen() {
           ))}
         </div>
         <div className="flex justify-between mt-1 font-label text-[9px] uppercase tracking-wider text-muted-foreground">
-          <span>00</span><span>06</span><span>12</span><span>18</span><span>23</span>
+          <span>00</span>
+          <span>06</span>
+          <span>12</span>
+          <span>18</span>
+          <span>23</span>
         </div>
       </section>
     </div>

@@ -17,5 +17,7 @@ export default function ScreensFrame({
   children: React.ReactNode;
 }) {
   // top spacing always equals edge spacing — 8px on small screens
-  return <div className="relative max-w-6xl mx-auto p-2 sm:p-6">{children}</div>;
+  return (
+    <div className="relative max-w-6xl mx-auto p-2 sm:p-6">{children}</div>
+  );
 }

@@ -44,7 +44,10 @@ const auth = (token: string, method = "GET", body?: unknown) =>
 
 let token: string;
 
-async function trackState(uid: string, trackId: string): Promise<TrackState | undefined> {
+async function trackState(
+  uid: string,
+  trackId: string
+): Promise<TrackState | undefined> {
   const snap = await adminDb()
     .collection("users")
     .doc(uid)
@@ -74,7 +77,9 @@ describe("POST /api/events against real Firestore", () => {
   });
 
   it("401 without a token", async () => {
-    expect((await postEvents(auth("", "POST", { events: [] }))).status).toBe(401);
+    expect((await postEvents(auth("", "POST", { events: [] }))).status).toBe(
+      401
+    );
   });
 
   it("writes events and rolls counters, scoring completion correctly", async () => {
@@ -82,14 +87,22 @@ describe("POST /api/events against real Firestore", () => {
     await postEvents(
       auth(token, "POST", {
         events: [
-          { trackId: "t1", listenedSec: 120, source: "collection", clientHourOfDay: 9 }, // completed
+          {
+            trackId: "t1",
+            listenedSec: 120,
+            source: "collection",
+            clientHourOfDay: 9,
+          }, // completed
           { trackId: "t1", listenedSec: 5, source: "search" }, // skipped
           { trackId: "t2", listenedSec: 25 }, // completed (>= 20)
         ],
       })
     );
 
-    const events = await adminDb().collection("playEvents").where("userId", "==", uid).get();
+    const events = await adminDb()
+      .collection("playEvents")
+      .where("userId", "==", uid)
+      .get();
     expect(events.size).toBe(3);
 
     const s1 = await trackState(uid, "t1");
@@ -107,10 +120,21 @@ describe("POST /api/events against real Firestore", () => {
     const uid = await currentUid();
     await postEvents(
       auth(token, "POST", {
-        events: [{ trackId: "t1", listenedSec: 60, collectionId: "c9", clientHourOfDay: 23, source: "recommendation", recommendationId: "rec1" }],
+        events: [
+          {
+            trackId: "t1",
+            listenedSec: 60,
+            collectionId: "c9",
+            clientHourOfDay: 23,
+            source: "recommendation",
+            recommendationId: "rec1",
+          },
+        ],
       })
     );
-    const doc = (await adminDb().collection("playEvents").where("userId", "==", uid).get()).docs[0].data() as PlayEvent;
+    const doc = (
+      await adminDb().collection("playEvents").where("userId", "==", uid).get()
+    ).docs[0].data() as PlayEvent;
     expect(doc.collectionId).toBe("c9");
     expect(doc.clientHourOfDay).toBe(23);
     expect(doc.source).toBe("recommendation");
@@ -129,18 +153,28 @@ describe("POST /api/events against real Firestore", () => {
       })
     );
     expect(((await res.json()) as { written: number }).written).toBe(1);
-    const events = await adminDb().collection("playEvents").where("userId", "==", uid).get();
+    const events = await adminDb()
+      .collection("playEvents")
+      .where("userId", "==", uid)
+      .get();
     expect(events.size).toBe(1);
   });
 
   it("writes nothing when saveHistory is off, but still 200s", async () => {
     await patchUser(auth(token, "PATCH", { privacy: { saveHistory: false } }));
     const uid = await currentUid();
-    const res = await postEvents(auth(token, "POST", { events: [{ trackId: "t1", listenedSec: 60 }] }));
+    const res = await postEvents(
+      auth(token, "POST", { events: [{ trackId: "t1", listenedSec: 60 }] })
+    );
     expect(res.status).toBe(200);
     // gate reports it did nothing, and nothing reached the store
-    expect(((await res.json()) as { skipped?: string }).skipped).toBe("saveHistory off");
-    const events = await adminDb().collection("playEvents").where("userId", "==", uid).get();
+    expect(((await res.json()) as { skipped?: string }).skipped).toBe(
+      "saveHistory off"
+    );
+    const events = await adminDb()
+      .collection("playEvents")
+      .where("userId", "==", uid)
+      .get();
     expect(events.size).toBe(0);
   });
 });
@@ -157,11 +191,16 @@ describe("DELETE /api/me/history against real Firestore", () => {
     await likeTrack(auth(token, "PUT", { isLiked: true }), {
       params: Promise.resolve({ trackId: "t1" }),
     });
-    await postEvents(auth(token, "POST", { events: [{ trackId: "t1", listenedSec: 120 }] }));
+    await postEvents(
+      auth(token, "POST", { events: [{ trackId: "t1", listenedSec: 120 }] })
+    );
 
     await clearHistory(auth(token, "DELETE"));
 
-    const events = await adminDb().collection("playEvents").where("userId", "==", uid).get();
+    const events = await adminDb()
+      .collection("playEvents")
+      .where("userId", "==", uid)
+      .get();
     expect(events.size).toBe(0);
 
     const s = await trackState(uid, "t1");

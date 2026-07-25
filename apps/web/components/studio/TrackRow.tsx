@@ -114,7 +114,9 @@ export default function TrackRow({
               </DataText>
             ) : null}
             {index != null && artist ? (
-              <span className="text-muted-foreground text-[10px] shrink-0">·</span>
+              <span className="text-muted-foreground text-[10px] shrink-0">
+                ·
+              </span>
             ) : null}
             {artist ? (
               <span className="font-label text-[10px] uppercase tracking-wider text-muted-foreground truncate">

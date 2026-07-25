@@ -43,7 +43,10 @@ export async function GET(req: Request): Promise<Response> {
   if (!uid) return unauthorized();
 
   const db = adminDb();
-  const trackStateRef = db.collection("users").doc(uid).collection("trackState");
+  const trackStateRef = db
+    .collection("users")
+    .doc(uid)
+    .collection("trackState");
 
   let docs: QueryDocumentSnapshot[];
   try {
@@ -61,7 +64,8 @@ export async function GET(req: Request): Promise<Response> {
     // sort newest-first in memory instead.
     const liked = await trackStateRef.where("isLiked", "==", true).get();
     docs = [...liked.docs].sort(
-      (a, b) => likedAtMillis(b.get("likedAt")) - likedAtMillis(a.get("likedAt"))
+      (a, b) =>
+        likedAtMillis(b.get("likedAt")) - likedAtMillis(a.get("likedAt"))
     );
   }
 

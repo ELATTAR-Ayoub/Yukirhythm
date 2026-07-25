@@ -23,7 +23,9 @@ const API = "/api";
 const enc = encodeURIComponent;
 
 /** Append a query string, dropping empty/undefined values. */
-function qs(params: Record<string, string | number | undefined | null>): string {
+function qs(
+  params: Record<string, string | number | undefined | null>
+): string {
   const usable = Object.entries(params).filter(
     ([, v]) => v !== undefined && v !== null && v !== ""
   );
@@ -55,7 +57,8 @@ export const endpoints = {
     /** Save / unsave another user's public collection. (planned — phase 6) */
     save: (id: string) => `${API}/collections/${enc(id)}/save`,
     /** Another user's public collections. (planned — phase 6) */
-    publicOf: (ownerId: string) => `${API}/collections/public${qs({ ownerId })}`,
+    publicOf: (ownerId: string) =>
+      `${API}/collections/public${qs({ ownerId })}`,
   },
 
   /** The authenticated user — everything scoped to the caller's token. */

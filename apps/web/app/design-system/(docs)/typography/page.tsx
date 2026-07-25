@@ -152,9 +152,7 @@ export default function TypographyPage() {
       {/* ── THE PIXEL RULE ───────────────────────────────────────── */}
       <div className="mb-14 rounded-lg border-2 border-ink dark:border-snow bg-card p-6 max-w-2xl">
         <div className="type-label text-destructive mb-2">HARD RULE</div>
-        <div className="type-h3">
-          OffBit renders numbers. Never words.
-        </div>
+        <div className="type-h3">OffBit renders numbers. Never words.</div>
         <p className="type-p mt-3">
           Timestamps, durations, BPM, counters, stats — pixel. Anything with
           letters — token names, labels, buttons, titles — is Satoshi. The one
@@ -169,7 +167,9 @@ export default function TypographyPage() {
           </span>
           <span>
             <span className="type-label text-destructive mr-2">NO</span>
-            <span className="font-data text-xl line-through opacity-60">radius-sm</span>
+            <span className="font-data text-xl line-through opacity-60">
+              radius-sm
+            </span>
           </span>
         </div>
       </div>
@@ -253,18 +253,16 @@ export default function TypographyPage() {
       {/* ── 03 Specimen — everything together ───────────────────── */}
       <DsSection index="03" title="Specimen">
         <div className="rounded-lg border border-border bg-card p-8 md:p-12 max-w-3xl">
-          <div className="type-label text-primary">
-            YUKI JOURNAL — ISSUE 01
-          </div>
+          <div className="type-label text-primary">YUKI JOURNAL — ISSUE 01</div>
           <h1 className="type-h1 mt-3">The Winter Archive</h1>
           <p className="type-lead mt-4">
-            How a music player learns what you love — and why the songs you
-            keep say more than the songs you skip.
+            How a music player learns what you love — and why the songs you keep
+            say more than the songs you skip.
           </p>
           <p className="type-p mt-6">
             Every library starts as noise. A track from a friend, an opening
-            from a show you watched twice, something the algorithm guessed at
-            2 a.m. Yukirhythm treats each one as a signal — kept, replayed,
+            from a show you watched twice, something the algorithm guessed at 2
+            a.m. Yukirhythm treats each one as a signal — kept, replayed,
             abandoned — and slowly the noise becomes a portrait.
           </p>
           <h2 className="type-h2 mt-10 pb-2 border-b border-border">

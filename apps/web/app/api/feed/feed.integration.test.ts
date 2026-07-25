@@ -93,7 +93,12 @@ async function currentUid(): Promise<string> {
 describe("feeds against real Firestore", () => {
   beforeEach(async () => {
     await clearFirestore();
-    await ingestTracks([pt("seed"), pt("rel1"), pt("rel2"), pt("pop", { viewCount: 999999 })]);
+    await ingestTracks([
+      pt("seed"),
+      pt("rel1"),
+      pt("rel2"),
+      pt("pop", { viewCount: 999999 }),
+    ]);
     await ensureUser(post(token, "/api/me", {}));
     uid = await currentUid();
   });
@@ -105,18 +110,36 @@ describe("feeds against real Firestore", () => {
   });
 
   it("jump-back-in returns recently played collections, newest first", async () => {
-    await adminDb().collection("collections").doc("c1").set({ collectionId: "c1", ownerId: uid, title: "One", tracks: [] });
-    await adminDb().collection("collections").doc("c2").set({ collectionId: "c2", ownerId: uid, title: "Two", tracks: [] });
+    await adminDb()
+      .collection("collections")
+      .doc("c1")
+      .set({ collectionId: "c1", ownerId: uid, title: "One", tracks: [] });
+    await adminDb()
+      .collection("collections")
+      .doc("c2")
+      .set({ collectionId: "c2", ownerId: uid, title: "Two", tracks: [] });
     const now = Date.now();
     await postEvents(
       post(token, "/api/events", {
         events: [
-          { trackId: "seed", listenedSec: 120, collectionId: "c1", startedAt: now - 5000 },
-          { trackId: "seed", listenedSec: 120, collectionId: "c2", startedAt: now },
+          {
+            trackId: "seed",
+            listenedSec: 120,
+            collectionId: "c1",
+            startedAt: now - 5000,
+          },
+          {
+            trackId: "seed",
+            listenedSec: 120,
+            collectionId: "c2",
+            startedAt: now,
+          },
         ],
       })
     );
-    const body = (await (await jumpBackIn(auth(token))).json()) as { collections: Collection[] };
+    const body = (await (await jumpBackIn(auth(token))).json()) as {
+      collections: Collection[];
+    };
     expect(body.collections.map((c) => c.collectionId)).toEqual(["c2", "c1"]);
   });
 
@@ -124,7 +147,13 @@ describe("feeds against real Firestore", () => {
     // play the seed enough to make it the top track
     await postEvents(
       post(token, "/api/events", {
-        events: [{ trackId: "seed", listenedSec: 120, startedAt: Date.now() - 8 * 24 * 60 * 60 * 1000 }],
+        events: [
+          {
+            trackId: "seed",
+            listenedSec: 120,
+            startedAt: Date.now() - 8 * 24 * 60 * 60 * 1000,
+          },
+        ],
       })
     );
     const body = (await (await youMightLike(auth(token))).json()) as {
@@ -159,7 +188,13 @@ describe("feeds against real Firestore", () => {
     // you-might-like warm test above
     await postEvents(
       post(token, "/api/events", {
-        events: [{ trackId: "seed", listenedSec: 120, startedAt: Date.now() - 8 * 24 * 60 * 60 * 1000 }],
+        events: [
+          {
+            trackId: "seed",
+            listenedSec: 120,
+            startedAt: Date.now() - 8 * 24 * 60 * 60 * 1000,
+          },
+        ],
       })
     );
     // fresh1/fresh2 are NOT pre-ingested by beforeEach, so they can only reach
@@ -188,11 +223,30 @@ describe("feeds against real Firestore", () => {
     await adminDb()
       .collection("collections")
       .doc("mine")
-      .set({ collectionId: "mine", ownerId: uid, title: "Mine", tracks: [{ trackId: "rel1", addedAt: new Date(), addedBy: uid }] });
-    await likeTrack(post(token, "/x", { isLiked: true }), { params: Promise.resolve({ trackId: "seed" }) });
-    await postEvents(post(token, "/api/events", { events: [{ trackId: "seed", listenedSec: 120, startedAt: Date.now() - 8 * 24 * 60 * 60 * 1000 }] }));
+      .set({
+        collectionId: "mine",
+        ownerId: uid,
+        title: "Mine",
+        tracks: [{ trackId: "rel1", addedAt: new Date(), addedBy: uid }],
+      });
+    await likeTrack(post(token, "/x", { isLiked: true }), {
+      params: Promise.resolve({ trackId: "seed" }),
+    });
+    await postEvents(
+      post(token, "/api/events", {
+        events: [
+          {
+            trackId: "seed",
+            listenedSec: 120,
+            startedAt: Date.now() - 8 * 24 * 60 * 60 * 1000,
+          },
+        ],
+      })
+    );
 
-    const body = (await (await youMightLike(auth(token))).json()) as { items: { trackId: string }[] };
+    const body = (await (await youMightLike(auth(token))).json()) as {
+      items: { trackId: string }[];
+    };
     expect(body.items.map((i) => i.trackId)).not.toContain("rel1"); // in library
     expect(body.items.map((i) => i.trackId)).toContain("rel2");
   });

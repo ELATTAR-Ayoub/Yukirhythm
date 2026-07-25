@@ -96,13 +96,58 @@ export const SEMANTIC_MAP: {
   light: string;
   dark: string;
 }[] = [
-  { token: "background", usage: "page surface", light: "hsl(45 20% 96%)", dark: "hsl(0 0% 10%)" },
-  { token: "foreground", usage: "text", light: "hsl(0 0% 10%)", dark: "hsl(45 20% 96%)" },
-  { token: "card", usage: "raised surfaces", light: "hsl(40 20% 98%)", dark: "hsl(0 0% 13%)" },
-  { token: "secondary", usage: "quiet fills, hovers", light: "hsl(45 8% 89%)", dark: "hsl(0 0% 16%)" },
-  { token: "muted-foreground", usage: "hints, captions", light: "hsl(0 0% 38%)", dark: "hsl(0 0% 62%)" },
-  { token: "border", usage: "hairlines, inputs", light: "hsl(45 6% 84%)", dark: "hsl(0 0% 19%)" },
-  { token: "primary", usage: "actions, links, focus", light: "hsl(224 88% 51%)", dark: "hsl(224 88% 58%)" },
-  { token: "accent", usage: "success, now playing", light: "hsl(127 79% 72%)", dark: "hsl(127 79% 72%)" },
-  { token: "destructive", usage: "delete, errors — only", light: "hsl(0 84% 60%)", dark: "hsl(0 72% 51%)" },
+  {
+    token: "background",
+    usage: "page surface",
+    light: "hsl(45 20% 96%)",
+    dark: "hsl(0 0% 10%)",
+  },
+  {
+    token: "foreground",
+    usage: "text",
+    light: "hsl(0 0% 10%)",
+    dark: "hsl(45 20% 96%)",
+  },
+  {
+    token: "card",
+    usage: "raised surfaces",
+    light: "hsl(40 20% 98%)",
+    dark: "hsl(0 0% 13%)",
+  },
+  {
+    token: "secondary",
+    usage: "quiet fills, hovers",
+    light: "hsl(45 8% 89%)",
+    dark: "hsl(0 0% 16%)",
+  },
+  {
+    token: "muted-foreground",
+    usage: "hints, captions",
+    light: "hsl(0 0% 38%)",
+    dark: "hsl(0 0% 62%)",
+  },
+  {
+    token: "border",
+    usage: "hairlines, inputs",
+    light: "hsl(45 6% 84%)",
+    dark: "hsl(0 0% 19%)",
+  },
+  {
+    token: "primary",
+    usage: "actions, links, focus",
+    light: "hsl(224 88% 51%)",
+    dark: "hsl(224 88% 58%)",
+  },
+  {
+    token: "accent",
+    usage: "success, now playing",
+    light: "hsl(127 79% 72%)",
+    dark: "hsl(127 79% 72%)",
+  },
+  {
+    token: "destructive",
+    usage: "delete, errors — only",
+    light: "hsl(0 84% 60%)",
+    dark: "hsl(0 72% 51%)",
+  },
 ];

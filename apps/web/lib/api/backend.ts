@@ -145,9 +145,13 @@ export function createBackendClient(getToken: TokenProvider) {
         }),
       /** Save / unsave another user's public collection. */
       save: (id: string) =>
-        request<{ saved: true }>(endpoints.collections.save(id), { method: "PUT" }),
+        request<{ saved: true }>(endpoints.collections.save(id), {
+          method: "PUT",
+        }),
       unsave: (id: string) =>
-        request<{ saved: false }>(endpoints.collections.save(id), { method: "DELETE" }),
+        request<{ saved: false }>(endpoints.collections.save(id), {
+          method: "DELETE",
+        }),
       publicOf: (ownerId: string) =>
         request<Collection[]>(endpoints.collections.publicOf(ownerId)),
     },
@@ -157,9 +161,13 @@ export function createBackendClient(getToken: TokenProvider) {
       profile: (userId: string) =>
         request<PublicProfile>(endpoints.users.profile(userId)),
       follow: (userId: string) =>
-        request<{ following: true }>(endpoints.users.follow(userId), { method: "PUT" }),
+        request<{ following: true }>(endpoints.users.follow(userId), {
+          method: "PUT",
+        }),
       unfollow: (userId: string) =>
-        request<{ following: false }>(endpoints.users.follow(userId), { method: "DELETE" }),
+        request<{ following: false }>(endpoints.users.follow(userId), {
+          method: "DELETE",
+        }),
       followers: (userId: string) =>
         request<{ items: { userId: string }[]; nextCursor: number | null }>(
           endpoints.users.followers(userId)
@@ -173,9 +181,15 @@ export function createBackendClient(getToken: TokenProvider) {
     me: {
       get: () => request<User | null>(endpoints.me.root()),
       ensure: (input: Partial<User>) =>
-        request<User>(endpoints.me.root(), { method: "POST", body: body(input) }),
+        request<User>(endpoints.me.root(), {
+          method: "POST",
+          body: body(input),
+        }),
       update: (patch: Partial<User>) =>
-        request<User>(endpoints.me.root(), { method: "PATCH", body: body(patch) }),
+        request<User>(endpoints.me.root(), {
+          method: "PATCH",
+          body: body(patch),
+        }),
       library: (q: string) =>
         request<{ collections: Collection[]; tracks: Track[] }>(
           endpoints.me.library(q)
@@ -198,9 +212,12 @@ export function createBackendClient(getToken: TokenProvider) {
 
       /** Listening stats, computed for the caller's timezone. */
       stats: (tz?: string) =>
-        request<StatsRollup>(endpoints.me.stats() + (tz ? `?tz=${encodeURIComponent(tz)}` : "")),
+        request<StatsRollup>(
+          endpoints.me.stats() + (tz ? `?tz=${encodeURIComponent(tz)}` : "")
+        ),
       /** History with provenance, paginated by startedAt-millis cursor. */
-      recents: (cursor?: string) => request<RecentsPage>(endpoints.me.recents(cursor)),
+      recents: (cursor?: string) =>
+        request<RecentsPage>(endpoints.me.recents(cursor)),
       /** Clear listening history — deletes events, zeroes counters, keeps likes. */
       clearHistory: () =>
         request<{ ok: true; deletedEvents: number }>(endpoints.me.history(), {

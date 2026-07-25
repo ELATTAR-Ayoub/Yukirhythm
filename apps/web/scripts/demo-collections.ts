@@ -38,10 +38,14 @@ async function main(): Promise<void> {
   const playable = found.tracks.filter((t) => t.isEmbeddable);
   await ingestTracks(playable);
   playable.forEach((t) =>
-    console.log(`  ${t.providerTrackId}  ${t.title} — ${t.artists.map((a) => a.name).join(", ")}`)
+    console.log(
+      `  ${t.providerTrackId}  ${t.title} — ${t.artists.map((a) => a.name).join(", ")}`
+    )
   );
 
-  await createUser(auth(token, "POST", { displayName: "Demo", email: "demo@x.com" }));
+  await createUser(
+    auth(token, "POST", { displayName: "Demo", email: "demo@x.com" })
+  );
 
   console.log("\n# create a playlist with the first two tracks");
   const created = (await (
@@ -52,9 +56,14 @@ async function main(): Promise<void> {
         trackIds: [playable[0].providerTrackId, playable[1].providerTrackId],
       })
     )
-  ).json()) as { collectionId: string; stats: { trackCount: number; totalDurationSec: number } };
+  ).json()) as {
+    collectionId: string;
+    stats: { trackCount: number; totalDurationSec: number };
+  };
   const id = created.collectionId;
-  console.log(`  ${id}  trackCount=${created.stats.trackCount}  totalSec=${created.stats.totalDurationSec}`);
+  console.log(
+    `  ${id}  trackCount=${created.stats.trackCount}  totalSec=${created.stats.totalDurationSec}`
+  );
 
   const params = { params: Promise.resolve({ collectionId: id }) };
   const trackParams = (trackId: string) => ({
@@ -63,17 +72,25 @@ async function main(): Promise<void> {
 
   console.log("\n# add a third, remove the first, then reverse the order");
   await addTrack(auth(token, "PUT"), trackParams(playable[2].providerTrackId));
-  await removeTrack(auth(token, "DELETE"), trackParams(playable[0].providerTrackId));
+  await removeTrack(
+    auth(token, "DELETE"),
+    trackParams(playable[0].providerTrackId)
+  );
 
   let c = (await (await getCollection(auth(token), params)).json()) as {
     tracks: { trackId: string }[];
     stats: { trackCount: number; totalDurationSec: number };
   };
   const remaining = c.tracks.map((t) => t.trackId);
-  await reorder(auth(token, "PATCH", { trackIds: [...remaining].reverse() }), params);
+  await reorder(
+    auth(token, "PATCH", { trackIds: [...remaining].reverse() }),
+    params
+  );
 
   c = (await (await getCollection(auth(token), params)).json()) as typeof c;
-  console.log(`  order: ${c.tracks.map((t) => t.trackId).join(" -> ")}  trackCount=${c.stats.trackCount}`);
+  console.log(
+    `  order: ${c.tracks.map((t) => t.trackId).join(" -> ")}  trackCount=${c.stats.trackCount}`
+  );
 
   console.log("\n# like two tracks, then read the virtual Liked Songs");
   await likeTrack(auth(token, "PUT", { isLiked: true }), {
@@ -87,7 +104,9 @@ async function main(): Promise<void> {
     virtual: boolean;
     tracks: { title: string }[];
   };
-  console.log(`  ${liked.title} (virtual=${liked.virtual}): ${liked.tracks.map((t) => t.title).join(" | ")}`);
+  console.log(
+    `  ${liked.title} (virtual=${liked.virtual}): ${liked.tracks.map((t) => t.title).join(" | ")}`
+  );
 
   console.log("\nDONE — real data through real routes into real Firestore.\n");
 }

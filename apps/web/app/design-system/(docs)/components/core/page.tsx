@@ -71,11 +71,7 @@ function TransportCluster({
       <PlayerButton disabled={disabled}>
         <TrackPreviousIcon />
       </PlayerButton>
-      <PlayerButton
-        variant="primary"
-        size="lg"
-        disabled={disabled || loading}
-      >
+      <PlayerButton variant="primary" size="lg" disabled={disabled || loading}>
         <IconSwap
           active={loading ? "wait" : playing ? "pause" : "play"}
           icons={{
@@ -117,31 +113,83 @@ export default function CoreComponentsPage() {
           views={{
             default: (
               <div className="flex flex-wrap items-start gap-x-6 gap-y-5">
-                <Labeled label="default"><Button>Play now</Button></Labeled>
-                <Labeled label="secondary"><Button variant="secondary">Add to playlist</Button></Labeled>
-                <Labeled label="outline"><Button variant="outline">Follow</Button></Labeled>
-                <Labeled label="ghost"><Button variant="ghost">Skip</Button></Labeled>
-                <Labeled label="link"><Button variant="link">See all</Button></Labeled>
-                <Labeled label="destructive"><Button variant="destructive">Delete</Button></Labeled>
+                <Labeled label="default">
+                  <Button>Play now</Button>
+                </Labeled>
+                <Labeled label="secondary">
+                  <Button variant="secondary">Add to playlist</Button>
+                </Labeled>
+                <Labeled label="outline">
+                  <Button variant="outline">Follow</Button>
+                </Labeled>
+                <Labeled label="ghost">
+                  <Button variant="ghost">Skip</Button>
+                </Labeled>
+                <Labeled label="link">
+                  <Button variant="link">See all</Button>
+                </Labeled>
+                <Labeled label="destructive">
+                  <Button variant="destructive">Delete</Button>
+                </Labeled>
               </div>
             ),
             disabled: (
               <div className="flex flex-wrap items-start gap-x-6 gap-y-5">
-                <Labeled label="default"><Button disabled>Play now</Button></Labeled>
-                <Labeled label="secondary"><Button variant="secondary" disabled>Add to playlist</Button></Labeled>
-                <Labeled label="outline"><Button variant="outline" disabled>Follow</Button></Labeled>
-                <Labeled label="ghost"><Button variant="ghost" disabled>Skip</Button></Labeled>
-                <Labeled label="link"><Button variant="link" disabled>See all</Button></Labeled>
-                <Labeled label="destructive"><Button variant="destructive" disabled>Delete</Button></Labeled>
+                <Labeled label="default">
+                  <Button disabled>Play now</Button>
+                </Labeled>
+                <Labeled label="secondary">
+                  <Button variant="secondary" disabled>
+                    Add to playlist
+                  </Button>
+                </Labeled>
+                <Labeled label="outline">
+                  <Button variant="outline" disabled>
+                    Follow
+                  </Button>
+                </Labeled>
+                <Labeled label="ghost">
+                  <Button variant="ghost" disabled>
+                    Skip
+                  </Button>
+                </Labeled>
+                <Labeled label="link">
+                  <Button variant="link" disabled>
+                    See all
+                  </Button>
+                </Labeled>
+                <Labeled label="destructive">
+                  <Button variant="destructive" disabled>
+                    Delete
+                  </Button>
+                </Labeled>
               </div>
             ),
             sizes: (
               <div className="flex flex-wrap items-start gap-x-6 gap-y-5">
-                <Labeled label="lg"><Button size="lg">Large</Button></Labeled>
-                <Labeled label="default"><Button size="default">Default</Button></Labeled>
-                <Labeled label="sm"><Button size="sm">Small</Button></Labeled>
-                <Labeled label="icon"><Button size="icon" variant="secondary"><span className="icon_clothes"><PlayIcon className="h-3 w-3" /></span></Button></Labeled>
-                <Labeled label="smallIcon"><Button size="smallIcon" variant="outline"><span className="icon_clothes"><PlayIcon className="h-2.5 w-2.5" /></span></Button></Labeled>
+                <Labeled label="lg">
+                  <Button size="lg">Large</Button>
+                </Labeled>
+                <Labeled label="default">
+                  <Button size="default">Default</Button>
+                </Labeled>
+                <Labeled label="sm">
+                  <Button size="sm">Small</Button>
+                </Labeled>
+                <Labeled label="icon">
+                  <Button size="icon" variant="secondary">
+                    <span className="icon_clothes">
+                      <PlayIcon className="h-3 w-3" />
+                    </span>
+                  </Button>
+                </Labeled>
+                <Labeled label="smallIcon">
+                  <Button size="smallIcon" variant="outline">
+                    <span className="icon_clothes">
+                      <PlayIcon className="h-2.5 w-2.5" />
+                    </span>
+                  </Button>
+                </Labeled>
               </div>
             ),
           }}
@@ -153,26 +201,74 @@ export default function CoreComponentsPage() {
           views={{
             variants: (
               <div className="flex flex-wrap items-start gap-x-6 gap-y-5">
-                <Labeled label="primary"><PlayerButton variant="primary" size="lg"><PlayIcon /></PlayerButton></Labeled>
-                <Labeled label="secondary"><PlayerButton><TrackNextIcon /></PlayerButton></Labeled>
-                <Labeled label="outline"><PlayerButton variant="outline"><LoopIcon /></PlayerButton></Labeled>
-                <Labeled label="ghost"><PlayerButton variant="ghost"><ListBulletIcon /></PlayerButton></Labeled>
+                <Labeled label="primary">
+                  <PlayerButton variant="primary" size="lg">
+                    <PlayIcon />
+                  </PlayerButton>
+                </Labeled>
+                <Labeled label="secondary">
+                  <PlayerButton>
+                    <TrackNextIcon />
+                  </PlayerButton>
+                </Labeled>
+                <Labeled label="outline">
+                  <PlayerButton variant="outline">
+                    <LoopIcon />
+                  </PlayerButton>
+                </Labeled>
+                <Labeled label="ghost">
+                  <PlayerButton variant="ghost">
+                    <ListBulletIcon />
+                  </PlayerButton>
+                </Labeled>
               </div>
             ),
             sizes: (
               <div className="flex flex-wrap items-start gap-x-6 gap-y-5">
-                <Labeled label="sm"><PlayerButton size="sm"><PlayIcon /></PlayerButton></Labeled>
-                <Labeled label="base"><PlayerButton size="base"><PlayIcon /></PlayerButton></Labeled>
-                <Labeled label="lg"><PlayerButton size="lg"><PlayIcon /></PlayerButton></Labeled>
-                <Labeled label="xl"><PlayerButton variant="primary" size="xl"><PlayIcon /></PlayerButton></Labeled>
+                <Labeled label="sm">
+                  <PlayerButton size="sm">
+                    <PlayIcon />
+                  </PlayerButton>
+                </Labeled>
+                <Labeled label="base">
+                  <PlayerButton size="base">
+                    <PlayIcon />
+                  </PlayerButton>
+                </Labeled>
+                <Labeled label="lg">
+                  <PlayerButton size="lg">
+                    <PlayIcon />
+                  </PlayerButton>
+                </Labeled>
+                <Labeled label="xl">
+                  <PlayerButton variant="primary" size="xl">
+                    <PlayIcon />
+                  </PlayerButton>
+                </Labeled>
               </div>
             ),
             states: (
               <div className="flex flex-wrap items-start gap-x-6 gap-y-5">
-                <Labeled label="default"><PlayerButton><PlayIcon /></PlayerButton></Labeled>
-                <Labeled label="loading"><PlayerButton loading><PlayIcon /></PlayerButton></Labeled>
-                <Labeled label="active"><PlayerButton variant="outline" active><LoopIcon /></PlayerButton></Labeled>
-                <Labeled label="disabled"><PlayerButton disabled><PlayIcon /></PlayerButton></Labeled>
+                <Labeled label="default">
+                  <PlayerButton>
+                    <PlayIcon />
+                  </PlayerButton>
+                </Labeled>
+                <Labeled label="loading">
+                  <PlayerButton loading>
+                    <PlayIcon />
+                  </PlayerButton>
+                </Labeled>
+                <Labeled label="active">
+                  <PlayerButton variant="outline" active>
+                    <LoopIcon />
+                  </PlayerButton>
+                </Labeled>
+                <Labeled label="disabled">
+                  <PlayerButton disabled>
+                    <PlayIcon />
+                  </PlayerButton>
+                </Labeled>
               </div>
             ),
           }}
@@ -185,11 +281,31 @@ export default function CoreComponentsPage() {
             default: (
               <DiscDeck
                 tracks={[
-                  { title: "literal world", artist: "KISIDAKYOUDAN", texture: "tx-k-ripple" },
-                  { title: "Nightglow", artist: "TANYA CHUA", texture: "tx-k2-horizon" },
-                  { title: "夜盲症", artist: "蔡健雅 TANYA CHUA", texture: "tx-k-silk" },
-                  { title: "A.D. Police Opening", artist: "KISIDAKYOUDAN", texture: "tx-k-glitch" },
-                  { title: "Static Garden", artist: "YUKI WEEKLY", texture: "tx-k2-static" },
+                  {
+                    title: "literal world",
+                    artist: "KISIDAKYOUDAN",
+                    texture: "tx-k-ripple",
+                  },
+                  {
+                    title: "Nightglow",
+                    artist: "TANYA CHUA",
+                    texture: "tx-k2-horizon",
+                  },
+                  {
+                    title: "夜盲症",
+                    artist: "蔡健雅 TANYA CHUA",
+                    texture: "tx-k-silk",
+                  },
+                  {
+                    title: "A.D. Police Opening",
+                    artist: "KISIDAKYOUDAN",
+                    texture: "tx-k-glitch",
+                  },
+                  {
+                    title: "Static Garden",
+                    artist: "YUKI WEEKLY",
+                    texture: "tx-k2-static",
+                  },
                 ]}
               />
             ),
@@ -204,10 +320,10 @@ export default function CoreComponentsPage() {
               <div className="grid gap-5">
                 <IconSwapDemo />
                 <p className="type-muted max-w-xl">
-                  RULE: every control that alternates between icons — play/pause,
-                  mute, like, expand — swaps them through IconSwap. The old icon
-                  rolls up and out, the new one drops down into place. No
-                  crossfades, no instant swaps.
+                  RULE: every control that alternates between icons —
+                  play/pause, mute, like, expand — swaps them through IconSwap.
+                  The old icon rolls up and out, the new one drops down into
+                  place. No crossfades, no instant swaps.
                 </p>
               </div>
             ),
@@ -357,7 +473,9 @@ export default function CoreComponentsPage() {
             default: (
               <div className="flex gap-3">
                 <Avatar>
-                  <AvatarFallback className="font-ui font-bold">YR</AvatarFallback>
+                  <AvatarFallback className="font-ui font-bold">
+                    YR
+                  </AvatarFallback>
                 </Avatar>
                 <Avatar>
                   <AvatarFallback className="bg-cobalt text-snow font-ui font-bold">
@@ -518,12 +636,43 @@ export default function CoreComponentsPage() {
                 title="Recently played"
                 seeAllHref="#"
               >
-                <MediaCard size="sm" title="literal world" artist="Kisidakyoudan" texture="tx-k-ripple" />
-                <MediaCard size="sm" title="Nightglow" artist="Tanya Chua" texture="tx-k2-topo" playing />
-                <MediaCard size="sm" title="Static Garden" artist="Yuki Weekly" texture="tx-k2-static" />
-                <MediaCard size="sm" title="Marble Sea" artist="Aurora Set" texture="tx-k2-marble-dense" />
-                <MediaCard size="sm" title="Checker Club" artist="Soft Club" texture="tx-k2-checker" />
-                <MediaCard size="sm" title="Vinyl Ripple" artist="Deep Cuts" texture="tx-k2-vinyl" />
+                <MediaCard
+                  size="sm"
+                  title="literal world"
+                  artist="Kisidakyoudan"
+                  texture="tx-k-ripple"
+                />
+                <MediaCard
+                  size="sm"
+                  title="Nightglow"
+                  artist="Tanya Chua"
+                  texture="tx-k2-topo"
+                  playing
+                />
+                <MediaCard
+                  size="sm"
+                  title="Static Garden"
+                  artist="Yuki Weekly"
+                  texture="tx-k2-static"
+                />
+                <MediaCard
+                  size="sm"
+                  title="Marble Sea"
+                  artist="Aurora Set"
+                  texture="tx-k2-marble-dense"
+                />
+                <MediaCard
+                  size="sm"
+                  title="Checker Club"
+                  artist="Soft Club"
+                  texture="tx-k2-checker"
+                />
+                <MediaCard
+                  size="sm"
+                  title="Vinyl Ripple"
+                  artist="Deep Cuts"
+                  texture="tx-k2-vinyl"
+                />
               </RailShelf>
             ),
             loading: (
@@ -540,23 +689,79 @@ export default function CoreComponentsPage() {
           views={{
             default: (
               <div className="max-w-2xl">
-                <TrackRow index={1} title="literal world" artist="Kisidakyoudan" texture="tx-k-ripple" duration="3:59" />
-                <TrackRow index={2} title="Nightglow (骗坏3印象曲)" artist="蔡健雅 Tanya Chua" texture="tx-k2-horizon" duration="4:12" />
-                <TrackRow index={3} title="A.D. Police Opening" artist="Kisidakyoudan" texture="tx-k-glitch" duration="2:47" />
+                <TrackRow
+                  index={1}
+                  title="literal world"
+                  artist="Kisidakyoudan"
+                  texture="tx-k-ripple"
+                  duration="3:59"
+                />
+                <TrackRow
+                  index={2}
+                  title="Nightglow (骗坏3印象曲)"
+                  artist="蔡健雅 Tanya Chua"
+                  texture="tx-k2-horizon"
+                  duration="4:12"
+                />
+                <TrackRow
+                  index={3}
+                  title="A.D. Police Opening"
+                  artist="Kisidakyoudan"
+                  texture="tx-k-glitch"
+                  duration="2:47"
+                />
               </div>
             ),
             playing: (
               <div className="max-w-2xl">
-                <TrackRow index={1} title="literal world" artist="Kisidakyoudan" texture="tx-k-ripple" duration="3:59" />
-                <TrackRow index={2} title="Nightglow (骗坏3印象曲)" artist="蔡健雅 Tanya Chua" texture="tx-k2-horizon" duration="4:12" playing />
-                <TrackRow index={3} title="A.D. Police Opening" artist="Kisidakyoudan" texture="tx-k-glitch" duration="2:47" />
+                <TrackRow
+                  index={1}
+                  title="literal world"
+                  artist="Kisidakyoudan"
+                  texture="tx-k-ripple"
+                  duration="3:59"
+                />
+                <TrackRow
+                  index={2}
+                  title="Nightglow (骗坏3印象曲)"
+                  artist="蔡健雅 Tanya Chua"
+                  texture="tx-k2-horizon"
+                  duration="4:12"
+                  playing
+                />
+                <TrackRow
+                  index={3}
+                  title="A.D. Police Opening"
+                  artist="Kisidakyoudan"
+                  texture="tx-k-glitch"
+                  duration="2:47"
+                />
               </div>
             ),
             selected: (
               <div className="max-w-2xl">
-                <TrackRow index={1} title="literal world" artist="Kisidakyoudan" texture="tx-k-ripple" duration="3:59" selected />
-                <TrackRow index={2} title="Nightglow (骗坏3印象曲)" artist="蔡健雅 Tanya Chua" texture="tx-k2-horizon" duration="4:12" />
-                <TrackRow index={3} title="A.D. Police Opening" artist="Kisidakyoudan" texture="tx-k-glitch" duration="2:47" />
+                <TrackRow
+                  index={1}
+                  title="literal world"
+                  artist="Kisidakyoudan"
+                  texture="tx-k-ripple"
+                  duration="3:59"
+                  selected
+                />
+                <TrackRow
+                  index={2}
+                  title="Nightglow (骗坏3印象曲)"
+                  artist="蔡健雅 Tanya Chua"
+                  texture="tx-k2-horizon"
+                  duration="4:12"
+                />
+                <TrackRow
+                  index={3}
+                  title="A.D. Police Opening"
+                  artist="Kisidakyoudan"
+                  texture="tx-k-glitch"
+                  duration="2:47"
+                />
               </div>
             ),
             loading: (

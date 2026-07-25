@@ -78,11 +78,7 @@ const MAIN_BOTTOM_INSET = {
   playing: "pb-[calc(var(--mobile-chrome-h)+0.5rem)]",
 } as const;
 
-function Shell({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const system = isSystemRoute(pathname);
   const { nowPlaying } = useMockStudio();

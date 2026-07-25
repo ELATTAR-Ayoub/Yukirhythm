@@ -80,7 +80,9 @@ describe("MockStudioProvider", () => {
     expect(result.current.libraryFilter).toBe("playlists");
 
     act(() => result.current.togglePin("c1"));
-    expect(result.current.collections.find((c) => c.id === "c1")?.pinned).toBe(true);
+    expect(result.current.collections.find((c) => c.id === "c1")?.pinned).toBe(
+      true
+    );
 
     act(() => result.current.setLibraryFilter("podcasts"));
     expect(result.current.libraryFilter).toBe("podcasts");
@@ -146,10 +148,20 @@ describe("MockStudioProvider", () => {
     const { result } = renderHook(() => useMockStudio(), { wrapper });
 
     act(() => {
-      result.current.createCollection({ title: "A", desc: "", tags: [], kind: "music" });
+      result.current.createCollection({
+        title: "A",
+        desc: "",
+        tags: [],
+        kind: "music",
+      });
     });
     act(() => {
-      result.current.createCollection({ title: "B", desc: "", tags: [], kind: "music" });
+      result.current.createCollection({
+        title: "B",
+        desc: "",
+        tags: [],
+        kind: "music",
+      });
     });
 
     const ids = result.current.collections.map((c) => c.id);
@@ -232,7 +244,9 @@ describe("the queue is not the playlist", () => {
     });
 
     expect(result.current.queue.map((t) => t.id)).toContain(extra.id);
-    expect(result.current.nowPlaying?.id).toBe(getCollectionTracks(source)[1].id);
+    expect(result.current.nowPlaying?.id).toBe(
+      getCollectionTracks(source)[1].id
+    );
   });
 
   it("rebuilds the queue when a genuinely different collection is played", () => {
@@ -320,13 +334,19 @@ describe("the queue is not the playlist", () => {
     // Search and Home call play(track) with no `from`. Treating that as "same
     // context" silently kept the listener inside a playlist they had left.
     const source = MOCK_COLLECTIONS[0];
-    const { result } = renderHook(() => useMockStudio(), { wrapper: MockStudioProvider });
+    const { result } = renderHook(() => useMockStudio(), {
+      wrapper: MockStudioProvider,
+    });
 
-    act(() => { result.current.play(getCollectionTracks(source)[0], source); });
+    act(() => {
+      result.current.play(getCollectionTracks(source)[0], source);
+    });
     expect(result.current.playingCollection?.id).toBe(source.id);
 
     const alreadyQueued = getCollectionTracks(source)[1];
-    act(() => { result.current.play(alreadyQueued); });
+    act(() => {
+      result.current.play(alreadyQueued);
+    });
 
     expect(result.current.playingCollection).toBeNull();
     expect(result.current.nowPlaying?.id).toBe(alreadyQueued.id);
@@ -342,17 +362,25 @@ describe("the queue is not the playlist", () => {
       ...MOCK_COLLECTIONS[0],
       trackIds: [MOCK_TRACKS[0].id],
     };
-    const { result } = renderHook(() => useMockStudio(), { wrapper: MockStudioProvider });
+    const { result } = renderHook(() => useMockStudio(), {
+      wrapper: MockStudioProvider,
+    });
 
-    act(() => { result.current.play(MOCK_TRACKS[0], solo); });
+    act(() => {
+      result.current.play(MOCK_TRACKS[0], solo);
+    });
     expect(result.current.nowPlaying?.id).toBe(MOCK_TRACKS[0].id);
 
-    act(() => { result.current.dequeue(0); });
+    act(() => {
+      result.current.dequeue(0);
+    });
     expect(result.current.queue).toHaveLength(0);
     expect(result.current.currentIndex).toBe(-1);
     expect(result.current.isPlaying).toBe(false);
 
-    act(() => { result.current.enqueue(MOCK_TRACKS[1]); });
+    act(() => {
+      result.current.enqueue(MOCK_TRACKS[1]);
+    });
 
     expect(result.current.nowPlaying).toBeNull();
     expect(result.current.isPlaying).toBe(false);

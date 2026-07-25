@@ -28,7 +28,9 @@ describe("endpoints registry", () => {
   });
 
   it("uses PATCH-on-tracks for reorder, not an /order action segment", () => {
-    expect(endpoints.collections.tracks("c1")).toBe("/api/collections/c1/tracks");
+    expect(endpoints.collections.tracks("c1")).toBe(
+      "/api/collections/c1/tracks"
+    );
     expect(endpoints.collections.track("c1", "t1")).toBe(
       "/api/collections/c1/tracks/t1"
     );

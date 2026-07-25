@@ -1,4 +1,8 @@
-import { LIKED_SONGS_ID, type MockCollection, type MockTrack } from "./mock-data";
+import {
+  LIKED_SONGS_ID,
+  type MockCollection,
+  type MockTrack,
+} from "./mock-data";
 
 export type LibraryFilter = "playlists" | "podcasts" | "liked";
 export type TrackSort = "recent" | "alpha";

@@ -34,13 +34,15 @@ const fakeTx = {
 vi.mock("@/lib/firebase/admin", () => ({
   adminDb: () => ({
     collection: () => chain,
-    runTransaction: async (cb: (tx: typeof fakeTx) => Promise<void>) => cb(fakeTx),
+    runTransaction: async (cb: (tx: typeof fakeTx) => Promise<void>) =>
+      cb(fakeTx),
   }),
 }));
 
 import { DELETE } from "./route";
 
-const req = () => new Request("http://localhost/api/me/playback/queue/0", { method: "DELETE" });
+const req = () =>
+  new Request("http://localhost/api/me/playback/queue/0", { method: "DELETE" });
 const paramsFor = (index: string) => ({ params: Promise.resolve({ index }) });
 
 const seed = (queue: string[], queueIndex: number) => {

@@ -195,10 +195,7 @@ export function mergeTrack(
   };
 }
 
-export function mapMusicArtist(
-  artistId: string,
-  raw: unknown
-): ProviderArtist {
+export function mapMusicArtist(artistId: string, raw: unknown): ProviderArtist {
   const a = asRecord(raw);
   const header = asRecord(a.header);
   const subs = asRecord(header.subscribers);
@@ -253,8 +250,7 @@ export function mapPlaylist(
     title: text(info.title),
     description: text(info.description),
     artwork: mapImages(info.thumbnails),
-    trackCount:
-      typeof info.total_items === "number" ? info.total_items : 0,
+    trackCount: typeof info.total_items === "number" ? info.total_items : 0,
     tracks: asArray(p.videos)
       .map(mapPlaylistItem)
       .filter((t) => t.videoId !== ""),

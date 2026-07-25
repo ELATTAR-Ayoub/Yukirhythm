@@ -22,13 +22,18 @@ export async function GET(req: Request): Promise<Response> {
   const tz = validTz(raw) ? raw : "UTC";
 
   const db = adminDb();
-  const snap = await db.collection("playEvents").where("userId", "==", uid).get();
+  const snap = await db
+    .collection("playEvents")
+    .where("userId", "==", uid)
+    .get();
 
   const events: StatEvent[] = snap.docs.map((d) => {
     const e = d.data() as PlayEvent;
     return {
       ...e,
-      startedAtMs: (e.startedAt as unknown as { toMillis(): number }).toMillis(),
+      startedAtMs: (
+        e.startedAt as unknown as { toMillis(): number }
+      ).toMillis(),
     };
   });
 

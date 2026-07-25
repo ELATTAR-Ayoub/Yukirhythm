@@ -110,11 +110,17 @@ describe("GET /api/catalog/search", () => {
 
     // Search returns the canonical Track shape (trackId), not raw ProviderTrack.
     const body = (await res.json()) as { tracks: { trackId: string }[] };
-    expect(body.tracks.map((t) => t.trackId)).toEqual(["playable1", "playable2"]);
+    expect(body.tracks.map((t) => t.trackId)).toEqual([
+      "playable1",
+      "playable2",
+    ]);
 
     // the blocked track never reached the store
     const stored = await adminDb().collection("tracks").get();
-    expect(stored.docs.map((d) => d.id).sort()).toEqual(["playable1", "playable2"]);
+    expect(stored.docs.map((d) => d.id).sort()).toEqual([
+      "playable1",
+      "playable2",
+    ]);
 
     const one = (
       await adminDb().collection("tracks").doc("playable1").get()
@@ -178,7 +184,9 @@ describe("GET /api/catalog/tracks", () => {
 
 describe("GET /api/catalog/suggest", () => {
   it("401 without a token", async () => {
-    expect((await suggestGET(req("/api/catalog/suggest?q=x"))).status).toBe(401);
+    expect((await suggestGET(req("/api/catalog/suggest?q=x"))).status).toBe(
+      401
+    );
   });
 
   it("returns suggestions for the caller", async () => {

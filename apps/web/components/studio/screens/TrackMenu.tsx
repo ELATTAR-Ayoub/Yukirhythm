@@ -43,7 +43,11 @@ interface TrackMenuProps {
 }
 
 /** The ⋯ menu on every track row: like, add to playlists, share. */
-export default function TrackMenu({ track, collection, queueIndex }: TrackMenuProps) {
+export default function TrackMenu({
+  track,
+  collection,
+  queueIndex,
+}: TrackMenuProps) {
   const { isLiked, toggleLike, dequeue } = useMockStudio();
   const [sharing, setSharing] = useState(false);
   const [adding, setAdding] = useState(false);

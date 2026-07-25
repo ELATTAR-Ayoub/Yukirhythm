@@ -6,11 +6,15 @@ import { clearFirestore } from "./__integration__/emulator";
 
 describe("cacheKey", () => {
   it("normalises case and whitespace so equivalent queries share an entry", () => {
-    expect(cacheKey("  Daft   PUNK ", "song")).toBe(cacheKey("daft punk", "song"));
+    expect(cacheKey("  Daft   PUNK ", "song")).toBe(
+      cacheKey("daft punk", "song")
+    );
   });
 
   it("separates entries by search type", () => {
-    expect(cacheKey("daft punk", "song")).not.toBe(cacheKey("daft punk", "artist"));
+    expect(cacheKey("daft punk", "song")).not.toBe(
+      cacheKey("daft punk", "artist")
+    );
   });
 
   it("produces a firestore-safe document id", () => {

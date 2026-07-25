@@ -65,9 +65,24 @@ describe("GET /api/me/stats against real Firestore", () => {
     await postEvents(
       auth(token, "/api/events", "POST", {
         events: [
-          { trackId: "t1", listenedSec: 180, startedAt: now, clientHourOfDay: 9 },
-          { trackId: "t1", listenedSec: 120, startedAt: now, clientHourOfDay: 9 },
-          { trackId: "t2", listenedSec: 60, startedAt: now, clientHourOfDay: 22 },
+          {
+            trackId: "t1",
+            listenedSec: 180,
+            startedAt: now,
+            clientHourOfDay: 9,
+          },
+          {
+            trackId: "t1",
+            listenedSec: 120,
+            startedAt: now,
+            clientHourOfDay: 9,
+          },
+          {
+            trackId: "t2",
+            listenedSec: 60,
+            startedAt: now,
+            clientHourOfDay: 22,
+          },
         ],
       })
     );
@@ -96,7 +111,10 @@ describe("GET /api/me/stats against real Firestore", () => {
   });
 
   it("produces a genre split from a labelled track", async () => {
-    await adminDb().collection("tracks").doc("t1").set({ labelIds: ["lofi"] }, { merge: true });
+    await adminDb()
+      .collection("tracks")
+      .doc("t1")
+      .set({ labelIds: ["lofi"] }, { merge: true });
     await postEvents(
       auth(token, "/api/events", "POST", {
         events: [{ trackId: "t1", listenedSec: 300, startedAt: Date.now() }],
@@ -125,16 +143,29 @@ describe("GET /api/me/recents against real Firestore", () => {
     await postEvents(
       auth(token, "/api/events", "POST", {
         events: [
-          { trackId: "t1", listenedSec: 100, startedAt: now - 2000, collectionId: "c1" },
+          {
+            trackId: "t1",
+            listenedSec: 100,
+            startedAt: now - 2000,
+            collectionId: "c1",
+          },
           { trackId: "t1", listenedSec: 100, startedAt: now },
         ],
       })
     );
-    const body = (await (await getRecents(auth(token, "/api/me/recents"))).json()) as {
-      items: { startedAtMs: number; collection: { title: string } | null; track: { title: string } | null }[];
+    const body = (await (
+      await getRecents(auth(token, "/api/me/recents"))
+    ).json()) as {
+      items: {
+        startedAtMs: number;
+        collection: { title: string } | null;
+        track: { title: string } | null;
+      }[];
     };
     expect(body.items).toHaveLength(2);
-    expect(body.items[0].startedAtMs).toBeGreaterThan(body.items[1].startedAtMs); // newest first
+    expect(body.items[0].startedAtMs).toBeGreaterThan(
+      body.items[1].startedAtMs
+    ); // newest first
     expect(body.items[0].track?.title).toBe("Track t1");
     expect(body.items[1].collection?.title).toBe("Night Drive");
   });
@@ -143,17 +174,27 @@ describe("GET /api/me/recents against real Firestore", () => {
     const now = Date.now();
     await postEvents(
       auth(token, "/api/events", "POST", {
-        events: [0, 1, 2].map((i) => ({ trackId: "t1", listenedSec: 60, startedAt: now - i * 1000 })),
+        events: [0, 1, 2].map((i) => ({
+          trackId: "t1",
+          listenedSec: 60,
+          startedAt: now - i * 1000,
+        })),
       })
     );
-    const page1 = (await (await getRecents(auth(token, "/api/me/recents?limit=2"))).json()) as {
+    const page1 = (await (
+      await getRecents(auth(token, "/api/me/recents?limit=2"))
+    ).json()) as {
       items: { eventId: string }[];
       nextCursor: number | null;
     };
     expect(page1.items).toHaveLength(2);
     expect(page1.nextCursor).toBeGreaterThan(0);
 
-    const page2 = (await (await getRecents(auth(token, `/api/me/recents?limit=2&cursor=${page1.nextCursor}`))).json()) as {
+    const page2 = (await (
+      await getRecents(
+        auth(token, `/api/me/recents?limit=2&cursor=${page1.nextCursor}`)
+      )
+    ).json()) as {
       items: { eventId: string }[];
     };
     expect(page2.items).toHaveLength(1);

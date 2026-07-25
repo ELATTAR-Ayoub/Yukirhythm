@@ -28,12 +28,17 @@ async function main(): Promise<void> {
   const token = await mintIdToken(`demo-stats-${Date.now()}@x.com`);
   await ensureUser(auth(token, "/api/me", "POST", {}));
 
-  const found = await (await getCatalogProvider()).search("daft punk", { type: "song", limit: 3 });
+  const found = await (
+    await getCatalogProvider()
+  ).search("daft punk", { type: "song", limit: 3 });
   const playable = found.tracks.filter((t) => t.isEmbeddable);
   await ingestTracks(playable);
   const ids = playable.map((t) => t.providerTrackId);
   // label one track so the genre split is non-empty
-  await adminDb().collection("tracks").doc(ids[0]).set({ labelIds: ["electronic"] }, { merge: true });
+  await adminDb()
+    .collection("tracks")
+    .doc(ids[0])
+    .set({ labelIds: ["electronic"] }, { merge: true });
 
   const now = Date.now();
   const DAY = 24 * 60 * 60 * 1000;
@@ -41,32 +46,72 @@ async function main(): Promise<void> {
   await postEvents(
     auth(token, "/api/events", "POST", {
       events: [
-        { trackId: ids[0], listenedSec: 300, startedAt: now, collectionId: "c1", clientHourOfDay: 9 },
-        { trackId: ids[0], listenedSec: 280, startedAt: now - DAY, clientHourOfDay: 9 },
-        { trackId: ids[1], listenedSec: 200, startedAt: now - DAY, clientHourOfDay: 22 },
-        { trackId: ids[2], listenedSec: 190, startedAt: now - 2 * DAY, clientHourOfDay: 22 },
+        {
+          trackId: ids[0],
+          listenedSec: 300,
+          startedAt: now,
+          collectionId: "c1",
+          clientHourOfDay: 9,
+        },
+        {
+          trackId: ids[0],
+          listenedSec: 280,
+          startedAt: now - DAY,
+          clientHourOfDay: 9,
+        },
+        {
+          trackId: ids[1],
+          listenedSec: 200,
+          startedAt: now - DAY,
+          clientHourOfDay: 22,
+        },
+        {
+          trackId: ids[2],
+          listenedSec: 190,
+          startedAt: now - 2 * DAY,
+          clientHourOfDay: 22,
+        },
       ],
     })
   );
 
-  const s = (await (await getStats(auth(token, "/api/me/stats?tz=UTC"))).json()) as StatsRollup;
+  const s = (await (
+    await getStats(auth(token, "/api/me/stats?tz=UTC"))
+  ).json()) as StatsRollup;
   console.log("\n# stats");
-  console.log(`  minutesWeek=${s.minutesWeek} minutesAllTime=${s.minutesAllTime} streakDays=${s.streakDays}`);
-  console.log(`  topArtist=${s.topArtists[0]?.name} (${s.topArtists[0]?.plays} plays)`);
-  console.log(`  genreSplit=${s.genreSplit.map((g) => `${g.label} ${g.pct}%`).join(", ") || "(none)"}`);
-  console.log(`  peak hour bucket: ${s.byHour.indexOf(Math.max(...s.byHour))}:00`);
+  console.log(
+    `  minutesWeek=${s.minutesWeek} minutesAllTime=${s.minutesAllTime} streakDays=${s.streakDays}`
+  );
+  console.log(
+    `  topArtist=${s.topArtists[0]?.name} (${s.topArtists[0]?.plays} plays)`
+  );
+  console.log(
+    `  genreSplit=${s.genreSplit.map((g) => `${g.label} ${g.pct}%`).join(", ") || "(none)"}`
+  );
+  console.log(
+    `  peak hour bucket: ${s.byHour.indexOf(Math.max(...s.byHour))}:00`
+  );
 
-  const recents = (await (await getRecents(auth(token, "/api/me/recents?limit=3"))).json()) as {
-    items: { track: { title: string } | null; collection: { title: string } | null }[];
+  const recents = (await (
+    await getRecents(auth(token, "/api/me/recents?limit=3"))
+  ).json()) as {
+    items: {
+      track: { title: string } | null;
+      collection: { title: string } | null;
+    }[];
     nextCursor: number | null;
   };
   console.log("\n# recents (newest first)");
   recents.items.forEach((it) =>
-    console.log(`  ${it.track?.title}${it.collection ? ` — from ${it.collection.title}` : ""}`)
+    console.log(
+      `  ${it.track?.title}${it.collection ? ` — from ${it.collection.title}` : ""}`
+    )
   );
   console.log(`  nextCursor: ${recents.nextCursor ? "more pages" : "end"}`);
 
-  console.log("\nDONE — stats and recents computed from real events in real Firestore.\n");
+  console.log(
+    "\nDONE — stats and recents computed from real events in real Firestore.\n"
+  );
 }
 
 main().catch((e) => {

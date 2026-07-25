@@ -26,17 +26,24 @@ async function main(): Promise<void> {
   }
 
   const playable = result.tracks.filter((t) => t.isEmbeddable);
-  console.log(`\n# INGEST — writing ${playable.length} tracks to real Firestore\n`);
+  console.log(
+    `\n# INGEST — writing ${playable.length} tracks to real Firestore\n`
+  );
   await ingestTracks(playable);
 
   console.log("# OUTPUT — read straight back from Firestore\n");
   for (const t of playable) {
-    const snap = await adminDb().collection("tracks").doc(t.providerTrackId).get();
+    const snap = await adminDb()
+      .collection("tracks")
+      .doc(t.providerTrackId)
+      .get();
     const d = snap.data() as Track;
     console.log(
       `  ${d.trackId}  ${d.title} — ${d.artists
         .map((a) => a.name)
-        .join(", ")}  texture=${d.texture} artwork=${d.artwork.length} url=${d.source.url}`
+        .join(
+          ", "
+        )}  texture=${d.texture} artwork=${d.artwork.length} url=${d.source.url}`
     );
   }
 

@@ -82,7 +82,10 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  * are relative to now, so they are derived here rather than stored — a play
  * that was "Today" yesterday must read as "Yesterday" tomorrow.
  */
-export function historyGroupOf(startedAtMs: number, nowMs: number): HistoryGroup {
+export function historyGroupOf(
+  startedAtMs: number,
+  nowMs: number
+): HistoryGroup {
   const startOfToday = new Date(nowMs);
   startOfToday.setHours(0, 0, 0, 0);
   if (startedAtMs >= startOfToday.getTime()) return "Today";
@@ -91,7 +94,10 @@ export function historyGroupOf(startedAtMs: number, nowMs: number): HistoryGroup
 }
 
 /** "09:12" for today/yesterday, weekday ("Tue") for older — matches the screen. */
-export function historyTimeLabel(startedAtMs: number, group: HistoryGroup): string {
+export function historyTimeLabel(
+  startedAtMs: number,
+  group: HistoryGroup
+): string {
   const d = new Date(startedAtMs);
   if (group === "This week") {
     return d.toLocaleDateString("en-US", { weekday: "short" });
@@ -100,7 +106,11 @@ export function historyTimeLabel(startedAtMs: number, group: HistoryGroup): stri
 }
 
 export function toStudioHistory(
-  items: { trackId: string; startedAtMs: number; collection: { collectionId: string } | null }[],
+  items: {
+    trackId: string;
+    startedAtMs: number;
+    collection: { collectionId: string } | null;
+  }[],
   nowMs: number
 ): MockHistoryEntry[] {
   return items.map((i) => {

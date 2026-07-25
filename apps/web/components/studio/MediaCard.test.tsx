@@ -11,8 +11,8 @@ import MediaCard from "./MediaCard";
  * distinguishes the real component from a lookalike.
  */
 function iconSwapFaces(button: HTMLElement): HTMLElement[] {
-  return Array.from(button.querySelectorAll<HTMLElement>("span")).filter(
-    (el) => el.className.includes("col-start-1")
+  return Array.from(button.querySelectorAll<HTMLElement>("span")).filter((el) =>
+    el.className.includes("col-start-1")
   );
 }
 
@@ -33,9 +33,9 @@ describe("MediaCard play overlay", () => {
     // Not a phantom tab stop, and pulled out of the a11y tree by an
     // aria-hidden ancestor — see MediaCard.tsx's PlayOverlay for the WHY.
     expect(button.tabIndex).toBe(-1);
-    expect(button.closest('[aria-hidden="true"]')?.getAttribute("aria-hidden")).toBe(
-      "true"
-    );
+    expect(
+      button.closest('[aria-hidden="true"]')?.getAttribute("aria-hidden")
+    ).toBe("true");
   });
 
   it("rolls the strip to the pause face when playing is true", () => {
@@ -49,9 +49,9 @@ describe("MediaCard play overlay", () => {
     expect(faces[1].className).toContain("opacity-100");
     expect(faces[1].getAttribute("aria-hidden")).toBe("false");
     expect(button.tabIndex).toBe(-1);
-    expect(button.closest('[aria-hidden="true"]')?.getAttribute("aria-hidden")).toBe(
-      "true"
-    );
+    expect(
+      button.closest('[aria-hidden="true"]')?.getAttribute("aria-hidden")
+    ).toBe("true");
   });
 
   it("opts out of the overlay entirely when playable is false", () => {
@@ -63,7 +63,11 @@ describe("MediaCard play overlay", () => {
 
   it("falls back to the texture when the artwork URL fails to load", () => {
     const { container } = render(
-      <MediaCard title="Realize" artUrl="https://cdn/gone.jpg" texture="tx-k-silk" />
+      <MediaCard
+        title="Realize"
+        artUrl="https://cdn/gone.jpg"
+        texture="tx-k-silk"
+      />
     );
     const img = container.querySelector("img")!;
     expect(img).toBeTruthy();

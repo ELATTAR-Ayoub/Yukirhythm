@@ -42,7 +42,9 @@ export function TagChip({
         active
           ? "bg-primary text-primary-foreground border-primary"
           : "bg-card text-muted-foreground border-border",
-        onClick && !disabled && "cursor-pointer hover:border-primary hover:text-primary",
+        onClick &&
+          !disabled &&
+          "cursor-pointer hover:border-primary hover:text-primary",
         disabled && "opacity-50 cursor-not-allowed",
         className
       )}

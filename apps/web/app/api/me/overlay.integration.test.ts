@@ -49,7 +49,10 @@ beforeAll(async () => {
 describe("likes overlay + virtual Liked Songs against real Firestore", () => {
   beforeEach(async () => {
     await clearFirestore();
-    await ingestTracks([providerTrack("t1", "First"), providerTrack("t2", "Second")]);
+    await ingestTracks([
+      providerTrack("t1", "First"),
+      providerTrack("t2", "Second"),
+    ]);
   });
 
   it("401 without a token", async () => {
@@ -110,10 +113,16 @@ describe("pin overlay against real Firestore", () => {
   beforeEach(() => clearFirestore());
 
   it("persists a pin and reads it back", async () => {
-    const res = await putCollectionState(auth(token, "PUT", { isPinned: true }), {
-      params: Promise.resolve({ collectionId: "c1" }),
-    });
-    const state = (await res.json()) as { isPinned: boolean; collectionId: string };
+    const res = await putCollectionState(
+      auth(token, "PUT", { isPinned: true }),
+      {
+        params: Promise.resolve({ collectionId: "c1" }),
+      }
+    );
+    const state = (await res.json()) as {
+      isPinned: boolean;
+      collectionId: string;
+    };
     expect(state.isPinned).toBe(true);
     expect(state.collectionId).toBe("c1");
   });

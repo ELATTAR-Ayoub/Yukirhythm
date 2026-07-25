@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckIcon, MagnifyingGlassIcon, PlusIcon } from "@radix-ui/react-icons";
+import {
+  CheckIcon,
+  MagnifyingGlassIcon,
+  PlusIcon,
+} from "@radix-ui/react-icons";
 
 import { Input } from "@/components/ui/input";
 import TrackRow from "@/components/studio/TrackRow";
@@ -10,7 +14,11 @@ import { SkeletonRow } from "@/components/studio/Skeletons";
 import { PlayerButton } from "@/components/studio/PlayerButton";
 import IconSwap from "@/components/studio/IconSwap";
 import { useMockStudio } from "./MockStudioProvider";
-import { formatDuration, type MockCollection, type MockTrack } from "./mock-data";
+import {
+  formatDuration,
+  type MockCollection,
+  type MockTrack,
+} from "./mock-data";
 
 interface AddMusicPanelProps {
   /**
@@ -94,7 +102,9 @@ export default function AddMusicPanel({
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Tracks, artists, tags…"
-          aria-label={toQueue ? "Search tracks to queue" : "Search tracks to add"}
+          aria-label={
+            toQueue ? "Search tracks to queue" : "Search tracks to add"
+          }
           className="pl-9"
           data-signal="add_music_search"
         />

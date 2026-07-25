@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 
 import {
@@ -28,7 +22,11 @@ import {
 } from "@/components/studio/screens/queue-utils";
 import type { TextureName } from "@/components/studio/Texture";
 import { registerStudioTracks } from "@/components/studio/screens/mock-data";
-import { useAuthState, signIn as fbSignIn, signOutUser } from "@/lib/studio/useAuth";
+import {
+  useAuthState,
+  signIn as fbSignIn,
+  signOutUser,
+} from "@/lib/studio/useAuth";
 import { useBackend } from "@/lib/studio/useBackend";
 import {
   toStudioCollection,
@@ -70,7 +68,8 @@ export default function StudioProvider({
   const [collections, setCollections] = useState<MockCollection[]>([]);
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
   const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set());
-  const [libraryFilter, setLibraryFilter] = useState<LibraryFilter>("playlists");
+  const [libraryFilter, setLibraryFilter] =
+    useState<LibraryFilter>("playlists");
   const [libraryLoading, setLibraryLoading] = useState(true);
 
   // playback
@@ -81,7 +80,9 @@ export default function StudioProvider({
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [progressSec, setProgressSec] = useState(0);
-  const [navDirection, setNavDirection] = useState<"next" | "prev" | null>(null);
+  const [navDirection, setNavDirection] = useState<"next" | "prev" | null>(
+    null
+  );
   const [playerExpanded, setPlayerExpanded] = useState(false);
   const [volume, setVolumeState] = useState(1);
   const preMute = useRef(1);
@@ -107,7 +108,9 @@ export default function StudioProvider({
 
   // search
   const [searchResults, setSearchResults] = useState<MockTrack[]>([]);
-  const [collectionResults, setCollectionResults] = useState<MockCollection[]>([]);
+  const [collectionResults, setCollectionResults] = useState<MockCollection[]>(
+    []
+  );
   const [searching, setSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
 
@@ -153,7 +156,8 @@ export default function StudioProvider({
       backend.me.likes(),
     ]);
 
-    const likedTracks = likedRes.status === "fulfilled" ? likedRes.value.tracks : [];
+    const likedTracks =
+      likedRes.status === "fulfilled" ? likedRes.value.tracks : [];
     absorb(likedTracks);
     const likedSet = new Set(likedTracks.map((t) => t.trackId));
     setLikedIds(likedSet);
@@ -194,10 +198,11 @@ export default function StudioProvider({
       setFeedsLoading(true);
       try {
         // ensure the user doc exists, then load it
-        const provider =
-          fbUser.providerData[0]?.providerId?.includes("facebook")
-            ? "facebook"
-            : "google";
+        const provider = fbUser.providerData[0]?.providerId?.includes(
+          "facebook"
+        )
+          ? "facebook"
+          : "google";
         await backend.me.ensure({
           displayName: fbUser.displayName ?? "",
           email: fbUser.email ?? "",
@@ -317,10 +322,14 @@ export default function StudioProvider({
         })
         .catch((err) => console.warn("Playback restore failed", err));
 
-      void backend.feed.jumpBackIn().then(
-        (r) => live && setJumpBackIn(r.collections.map((c) => toStudioCollection(c))),
-        warn("jump-back-in")
-      );
+      void backend.feed
+        .jumpBackIn()
+        .then(
+          (r) =>
+            live &&
+            setJumpBackIn(r.collections.map((c) => toStudioCollection(c))),
+          warn("jump-back-in")
+        );
       const shelfFeeds = [
         backend.feed.newReleases().then((r) => {
           if (live) setNewReleases(absorb(r.items.map((i) => i.track)));
@@ -338,18 +347,16 @@ export default function StudioProvider({
         // never a skeleton that pulses forever.
         if (live) setFeedsLoading(false);
       });
-      void backend.me.stats(tz).then(
-        (s) => live && setStats(toStudioStats(s)),
-        warn("stats")
-      );
-      void backend.me.recents().then(
-        (r) => {
-          if (!live) return;
-          absorb(r.items.map((i) => i.track).filter((t): t is Track => t !== null));
-          setRecents(toStudioHistory(r.items, Date.now()));
-        },
-        warn("recents")
-      );
+      void backend.me
+        .stats(tz)
+        .then((s) => live && setStats(toStudioStats(s)), warn("stats"));
+      void backend.me.recents().then((r) => {
+        if (!live) return;
+        absorb(
+          r.items.map((i) => i.track).filter((t): t is Track => t !== null)
+        );
+        setRecents(toStudioHistory(r.items, Date.now()));
+      }, warn("recents"));
     })();
     return () => {
       live = false;
@@ -466,10 +473,15 @@ export default function StudioProvider({
     [backend, currentIndex]
   );
 
-  const toggle = useCallback(() => setIsPlaying((p) => (nowPlaying ? !p : p)), [nowPlaying]);
+  const toggle = useCallback(
+    () => setIsPlaying((p) => (nowPlaying ? !p : p)),
+    [nowPlaying]
+  );
   const next = useCallback(() => {
     flushEvent();
-    setCurrentIndex((i) => (i < 0 || !queue.length ? i : (i + 1) % queue.length));
+    setCurrentIndex((i) =>
+      i < 0 || !queue.length ? i : (i + 1) % queue.length
+    );
     setNavDirection("next");
     setProgressSec(0);
     setIsPlaying(true);
@@ -526,7 +538,15 @@ export default function StudioProvider({
       });
     }, 10000);
     return () => clearInterval(id);
-  }, [backend, nowPlaying, queue, currentIndex, progressSec, isPlaying, volume]);
+  }, [
+    backend,
+    nowPlaying,
+    queue,
+    currentIndex,
+    progressSec,
+    isPlaying,
+    volume,
+  ]);
 
   // Persist a volume change on its own, debounced ~1s. The interval above
   // only runs `if (nowPlaying)`, so a volume tweak made with nothing loaded
@@ -620,7 +640,10 @@ export default function StudioProvider({
   }, []);
 
   // ---- library mutations -------------------------------------------------
-  const isLiked = useCallback((trackId: string) => likedIds.has(trackId), [likedIds]);
+  const isLiked = useCallback(
+    (trackId: string) => likedIds.has(trackId),
+    [likedIds]
+  );
   const toggleLike = useCallback(
     (trackId: string) => {
       const wasLiked = likedIds.has(trackId);
@@ -647,7 +670,9 @@ export default function StudioProvider({
             : c
         )
       );
-      void backend.me.setTrackState(trackId, { isLiked: !wasLiked }).then(refreshLibrary);
+      void backend.me
+        .setTrackState(trackId, { isLiked: !wasLiked })
+        .then(refreshLibrary);
     },
     [backend, likedIds, refreshLibrary]
   );
@@ -684,7 +709,9 @@ export default function StudioProvider({
   );
   const addTrackToCollection = useCallback(
     (collectionId: string, trackId: string) => {
-      void backend.collections.addTrack(collectionId, trackId).then(refreshLibrary);
+      void backend.collections
+        .addTrack(collectionId, trackId)
+        .then(refreshLibrary);
     },
     [backend, refreshLibrary]
   );
@@ -791,14 +818,51 @@ export default function StudioProvider({
       setPlayerExpanded,
     }),
     [
-      queue, playingCollection, navDirection, nowPlaying, isPlaying, isLoading,
-      progressSec, play, currentIndex, playAt, dequeue, enqueue, toggle, next, prev, seek, user, signIn, signOut,
-      searchResults, searching, hasSearched, search, clearSearch, searchTracks,
+      queue,
+      playingCollection,
+      navDirection,
+      nowPlaying,
+      isPlaying,
+      isLoading,
+      progressSec,
+      play,
+      currentIndex,
+      playAt,
+      dequeue,
+      enqueue,
+      toggle,
+      next,
+      prev,
+      seek,
+      user,
+      signIn,
+      signOut,
+      searchResults,
+      searching,
+      hasSearched,
+      search,
+      clearSearch,
+      searchTracks,
       collections,
-      libraryLoading, libraryFilter, togglePin, isLiked, toggleLike, toggleTrackInCollection,
-      addTrackToCollection, createCollection, playerExpanded, volume, setVolume,
-      toggleMute, jumpBackIn, newReleases, youMightLike, feedsLoading, collectionResults,
-      stats, recents,
+      libraryLoading,
+      libraryFilter,
+      togglePin,
+      isLiked,
+      toggleLike,
+      toggleTrackInCollection,
+      addTrackToCollection,
+      createCollection,
+      playerExpanded,
+      volume,
+      setVolume,
+      toggleMute,
+      jumpBackIn,
+      newReleases,
+      youMightLike,
+      feedsLoading,
+      collectionResults,
+      stats,
+      recents,
     ]
   );
 
@@ -807,7 +871,9 @@ export default function StudioProvider({
       {children}
       {/* Hidden real audio: the vinyl UI is decorative; sound comes from here. */}
       {nowPlaying && (
-        <div style={{ position: "fixed", width: 0, height: 0, overflow: "hidden" }}>
+        <div
+          style={{ position: "fixed", width: 0, height: 0, overflow: "hidden" }}
+        >
           <HiddenYouTubePlayer
             playerRef={playerRef}
             url={`https://www.youtube.com/watch?v=${nowPlaying.id}`}

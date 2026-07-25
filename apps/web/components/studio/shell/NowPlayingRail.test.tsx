@@ -92,9 +92,10 @@ describe("NowPlayingRail", () => {
         </MockStudioProvider>
       );
 
-      expect(
-        screen.getByLabelText("Add music to your queue")
-      ).toHaveAttribute("href", QUEUE_ADD);
+      expect(screen.getByLabelText("Add music to your queue")).toHaveAttribute(
+        "href",
+        QUEUE_ADD
+      );
     });
 
     it("targets the queue, not the playing collection, on a non-playlist route", () => {
@@ -115,9 +116,10 @@ describe("NowPlayingRail", () => {
 
       fireEvent.click(screen.getByText("seed"));
 
-      expect(
-        screen.getByLabelText("Add music to your queue")
-      ).toHaveAttribute("href", QUEUE_ADD);
+      expect(screen.getByLabelText("Add music to your queue")).toHaveAttribute(
+        "href",
+        QUEUE_ADD
+      );
       expect(
         screen.queryByLabelText(`Add music to ${source.title}`)
       ).toBeNull();
@@ -235,7 +237,9 @@ describe("NowPlayingRail", () => {
         "Cobalt Dreams"
       );
 
-      fireEvent.click(screen.getByRole("button", { name: "Play Topographic Heart" }));
+      fireEvent.click(
+        screen.getByRole("button", { name: "Play Topographic Heart" })
+      );
 
       expect(screen.getByTestId("now-playing").textContent).toBe(
         "Topographic Heart"
@@ -289,7 +293,9 @@ describe("add card", () => {
         <NowPlayingRail />
       </MockStudioProvider>
     );
-    expect(screen.getByLabelText("Add music to your queue")).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("Add music to your queue")
+    ).toBeInTheDocument();
   });
 
   it("no longer embeds a search field in the rail", () => {
@@ -353,7 +359,9 @@ describe("up next reads the queue by position", () => {
     fireEvent.click(screen.getByText("seed-dup"));
 
     const [, b] = getCollectionTracks(MOCK_COLLECTIONS[0]);
-    expect(screen.getAllByLabelText(`Play ${b.title}`).length).toBeGreaterThanOrEqual(2);
+    expect(
+      screen.getAllByLabelText(`Play ${b.title}`).length
+    ).toBeGreaterThanOrEqual(2);
   });
 
   it("keeps every enqueued track when an up-next row is clicked", () => {

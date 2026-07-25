@@ -59,11 +59,7 @@ export default function SettingsScreen() {
         </div>
       </section>
 
-      <Button
-        variant="destructive"
-        className="w-full"
-        onClick={handleSignOut}
-      >
+      <Button variant="destructive" className="w-full" onClick={handleSignOut}>
         Sign out
       </Button>
     </div>

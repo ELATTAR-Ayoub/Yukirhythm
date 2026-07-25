@@ -16,10 +16,18 @@ export async function GET(req: Request): Promise<Response> {
   if (!uid) return unauthorized();
 
   const db = adminDb();
-  const snap = await db.collection("playEvents").where("userId", "==", uid).get();
+  const snap = await db
+    .collection("playEvents")
+    .where("userId", "==", uid)
+    .get();
   const events: StatEvent[] = snap.docs.map((d) => {
     const e = d.data() as PlayEvent;
-    return { ...e, startedAtMs: (e.startedAt as unknown as { toMillis(): number }).toMillis() };
+    return {
+      ...e,
+      startedAtMs: (
+        e.startedAt as unknown as { toMillis(): number }
+      ).toMillis(),
+    };
   });
 
   const ids = pickJumpBackIn(events, Date.now());
@@ -31,7 +39,10 @@ export async function GET(req: Request): Promise<Response> {
 
   // Cold pad from owned collections, newest first, skipping ones already shown.
   if (collections.length < 3) {
-    const owned = await db.collection("collections").where("ownerId", "==", uid).get();
+    const owned = await db
+      .collection("collections")
+      .where("ownerId", "==", uid)
+      .get();
     const extra = owned.docs
       .map((d) => d.data() as Collection)
       .filter((c) => !ids.includes(c.collectionId))

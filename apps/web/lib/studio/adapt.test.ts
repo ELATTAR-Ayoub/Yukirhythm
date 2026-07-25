@@ -105,7 +105,9 @@ describe("toStudioCollection", () => {
   });
 
   it("takes pin state from the provider and keeps an image cover as-is", () => {
-    const m = toStudioCollection(collection({ cover: "image" }), { pinned: true });
+    const m = toStudioCollection(collection({ cover: "image" }), {
+      pinned: true,
+    });
     expect(m.pinned).toBe(true);
     expect(m.cover).toBe("image");
   });
@@ -142,7 +144,12 @@ describe("artwork carried onto the studio shapes", () => {
         { url: "https://cdn/small.jpg", width: 120, height: 90 },
         { url: "https://cdn/big.jpg", width: 640, height: 480 },
       ],
-      source: { provider: "youtube", videoId: "abc123", url: "", aliasVideoIds: [] },
+      source: {
+        provider: "youtube",
+        videoId: "abc123",
+        url: "",
+        aliasVideoIds: [],
+      },
     } as unknown as Parameters<typeof toStudioTrack>[0];
 
     expect(toStudioTrack(t).artUrl).toBe("https://cdn/big.jpg");
@@ -156,7 +163,12 @@ describe("artwork carried onto the studio shapes", () => {
       durationSec: 296,
       texture: "tx-k-silk",
       artwork: [],
-      source: { provider: "youtube", videoId: "xyz789", url: "", aliasVideoIds: [] },
+      source: {
+        provider: "youtube",
+        videoId: "xyz789",
+        url: "",
+        aliasVideoIds: [],
+      },
     } as unknown as Parameters<typeof toStudioTrack>[0];
 
     expect(toStudioTrack(t).artUrl).toBe(

@@ -1,9 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 
-import MockStudioProvider, {
-  useMockStudio,
-} from "./MockStudioProvider";
+import MockStudioProvider, { useMockStudio } from "./MockStudioProvider";
 import { LIKED_SONGS, LIKED_SONGS_ID } from "./mock-data";
 import LikeButton from "./LikeButton";
 

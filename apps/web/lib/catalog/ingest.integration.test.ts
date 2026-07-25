@@ -113,7 +113,10 @@ describe("ingestTrack against real Firestore", () => {
     await adminDb()
       .collection("tracks")
       .doc("song1")
-      .set({ stats: { viewCount: 10, likeCount: 2, playCount: 99 } }, { merge: true });
+      .set(
+        { stats: { viewCount: 10, likeCount: 2, playCount: 99 } },
+        { merge: true }
+      );
 
     // force the stale-refresh path
     await adminDb()

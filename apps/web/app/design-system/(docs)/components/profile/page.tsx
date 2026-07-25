@@ -56,7 +56,11 @@ function Demos() {
             default: (
               <div className="grid grid-cols-2 gap-3 max-w-sm">
                 <StatCard label="This week" value="312 min" />
-                <StatCard label="Streak" value="9 days" hint="listened every day" />
+                <StatCard
+                  label="Streak"
+                  value="9 days"
+                  hint="listened every day"
+                />
               </div>
             ),
           }}

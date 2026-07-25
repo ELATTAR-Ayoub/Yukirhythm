@@ -41,7 +41,11 @@ export async function mintIdToken(email: string): Promise<string> {
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password: "password123", returnSecureToken: true }),
+      body: JSON.stringify({
+        email,
+        password: "password123",
+        returnSecureToken: true,
+      }),
     }
   );
   if (!res.ok) {

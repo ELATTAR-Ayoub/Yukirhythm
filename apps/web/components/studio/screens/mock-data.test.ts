@@ -13,7 +13,10 @@ import {
 
 describe("mock-data helpers", () => {
   it("resolves collection tracks and drops unknown ids", () => {
-    const tracks = getCollectionTracks({ ...LIKED_SONGS, trackIds: ["t1", "nope", "t3"] });
+    const tracks = getCollectionTracks({
+      ...LIKED_SONGS,
+      trackIds: ["t1", "nope", "t3"],
+    });
     expect(tracks.map((t) => t.id)).toEqual(["t1", "t3"]);
   });
 
@@ -24,7 +27,9 @@ describe("mock-data helpers", () => {
 
   it("searches collections by title and tag, case-insensitive", () => {
     const all = [LIKED_SONGS, ...MOCK_COLLECTIONS];
-    expect(searchMockCollections("PIXEL", all).map((c) => c.id)).toContain("c3");
+    expect(searchMockCollections("PIXEL", all).map((c) => c.id)).toContain(
+      "c3"
+    );
     expect(searchMockCollections("lofi", all).map((c) => c.id)).toContain("c1");
     expect(searchMockCollections("", all)).toEqual([]);
   });
@@ -48,7 +53,10 @@ describe("mock-data helpers", () => {
   });
 
   it("finds Liked Songs, which a constant-based search could never reach", () => {
-    const hits = searchMockCollections("liked", [LIKED_SONGS, ...MOCK_COLLECTIONS]);
+    const hits = searchMockCollections("liked", [
+      LIKED_SONGS,
+      ...MOCK_COLLECTIONS,
+    ]);
     expect(hits.some((c) => c.id === LIKED_SONGS.id)).toBe(true);
   });
 

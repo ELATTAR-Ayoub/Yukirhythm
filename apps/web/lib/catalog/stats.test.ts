@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { computeStats, computeStreak, localDate, type StatEvent } from "./stats";
+import {
+  computeStats,
+  computeStreak,
+  localDate,
+  type StatEvent,
+} from "./stats";
 import type { Track } from "./model";
 
 const TZ = "UTC";
@@ -55,9 +60,9 @@ describe("localDate", () => {
     // 12:00 UTC is still 2026-07-20 in New York (08:00)
     expect(localDate(NOW, "America/New_York")).toBe("2026-07-20");
     // 00:30 UTC on the 20th is the 19th in New York
-    expect(localDate(Date.parse("2026-07-20T00:30:00Z"), "America/New_York")).toBe(
-      "2026-07-19"
-    );
+    expect(
+      localDate(Date.parse("2026-07-20T00:30:00Z"), "America/New_York")
+    ).toBe("2026-07-19");
   });
 });
 
@@ -98,8 +103,14 @@ describe("computeStreak", () => {
 describe("top artists / tracks", () => {
   it("ranks by completed play count", () => {
     const tracks = new Map<string, Track>([
-      ["t1", track({ trackId: "t1", artists: [{ artistId: "a1", name: "One" }] })],
-      ["t2", track({ trackId: "t2", artists: [{ artistId: "a2", name: "Two" }] })],
+      [
+        "t1",
+        track({ trackId: "t1", artists: [{ artistId: "a1", name: "One" }] }),
+      ],
+      [
+        "t2",
+        track({ trackId: "t2", artists: [{ artistId: "a2", name: "Two" }] }),
+      ],
     ]);
     const events = [
       ev({ trackId: "t1" }),

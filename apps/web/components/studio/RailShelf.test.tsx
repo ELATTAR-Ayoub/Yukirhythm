@@ -14,7 +14,10 @@ function stubMatchMedia(matches: boolean) {
     addEventListener: () => {},
     removeEventListener: () => {},
   };
-  vi.stubGlobal("matchMedia", vi.fn(() => mql));
+  vi.stubGlobal(
+    "matchMedia",
+    vi.fn(() => mql)
+  );
 }
 
 describe("RailShelf", () => {

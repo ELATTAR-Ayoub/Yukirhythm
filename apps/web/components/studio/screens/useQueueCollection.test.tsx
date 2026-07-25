@@ -3,7 +3,11 @@ import { act, renderHook } from "@testing-library/react";
 
 import MockStudioProvider, { useMockStudio } from "./MockStudioProvider";
 import useQueueCollection from "./useQueueCollection";
-import { MOCK_COLLECTIONS, MOCK_TRACKS, getCollectionTracks } from "./mock-data";
+import {
+  MOCK_COLLECTIONS,
+  MOCK_TRACKS,
+  getCollectionTracks,
+} from "./mock-data";
 
 /** Exposes the studio alongside the hook so tests can start playback. */
 function useProbe() {

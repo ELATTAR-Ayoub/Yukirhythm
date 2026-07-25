@@ -13,7 +13,11 @@ import { POST as createCollection } from "../collections/route";
 import { PUT as putTrackState } from "./tracks/[trackId]/route";
 import { GET as librarySearch } from "./library/route";
 
-function providerTrack(id: string, title: string, artist: string): ProviderTrack {
+function providerTrack(
+  id: string,
+  title: string,
+  artist: string
+): ProviderTrack {
   return {
     providerTrackId: id,
     videoId: id,
@@ -61,12 +65,17 @@ describe("GET /api/me/library against real Firestore", () => {
   });
 
   it("401 without a token", async () => {
-    expect((await librarySearch(auth("", "/api/me/library?q=x"))).status).toBe(401);
+    expect((await librarySearch(auth("", "/api/me/library?q=x"))).status).toBe(
+      401
+    );
   });
 
   it("finds the caller's own collection by title", async () => {
     await createCollection(
-      auth(owner, "/api/collections", "POST", { title: "Rainy Tapes", tags: ["rain"] })
+      auth(owner, "/api/collections", "POST", {
+        title: "Rainy Tapes",
+        tags: ["rain"],
+      })
     );
     const res = await librarySearch(auth(owner, "/api/me/library?q=rainy"));
     const body = (await res.json()) as { collections: Collection[] };
@@ -75,7 +84,10 @@ describe("GET /api/me/library against real Firestore", () => {
 
   it("finds a collection by tag, case-insensitively", async () => {
     await createCollection(
-      auth(owner, "/api/collections", "POST", { title: "Untitled", tags: ["Focus"] })
+      auth(owner, "/api/collections", "POST", {
+        title: "Untitled",
+        tags: ["Focus"],
+      })
     );
     const res = await librarySearch(auth(owner, "/api/me/library?q=FOCUS"));
     const body = (await res.json()) as { collections: Collection[] };
@@ -100,7 +112,10 @@ describe("GET /api/me/library against real Firestore", () => {
 
   it("never returns another user's private collection", async () => {
     await createCollection(
-      auth(other, "/api/collections", "POST", { title: "Rainy Secrets", tags: ["rain"] })
+      auth(other, "/api/collections", "POST", {
+        title: "Rainy Secrets",
+        tags: ["rain"],
+      })
     );
     const res = await librarySearch(auth(owner, "/api/me/library?q=rainy"));
     const body = (await res.json()) as { collections: Collection[] };

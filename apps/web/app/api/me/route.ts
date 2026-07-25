@@ -15,7 +15,8 @@ export async function GET(req: Request): Promise<Response> {
   const uid = await uidFromRequest(req);
   if (!uid) return unauthorized();
   const snap = await userRef(uid).get();
-  if (!snap.exists) return Response.json({ error: "Not found" }, { status: 404 });
+  if (!snap.exists)
+    return Response.json({ error: "Not found" }, { status: 404 });
   return Response.json(snap.data());
 }
 
@@ -57,7 +58,8 @@ export async function PATCH(req: Request): Promise<Response> {
 
   const ref = userRef(uid);
   const snap = await ref.get();
-  if (!snap.exists) return Response.json({ error: "Not found" }, { status: 404 });
+  if (!snap.exists)
+    return Response.json({ error: "Not found" }, { status: 404 });
 
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   const patch: Record<string, unknown> = {};
@@ -80,7 +82,8 @@ export async function PATCH(req: Request): Promise<Response> {
     if (Object.keys(settings).length) patch.settings = settings;
   }
 
-  if (typeof body.displayName === "string") patch.displayName = body.displayName;
+  if (typeof body.displayName === "string")
+    patch.displayName = body.displayName;
   if (typeof body.bio === "string") patch.bio = body.bio;
   if (typeof body.handle === "string") patch.handle = body.handle;
 

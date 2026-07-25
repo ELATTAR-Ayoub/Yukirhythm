@@ -24,7 +24,9 @@ describe("SocialAuthButtons", () => {
     const signIn = vi.fn();
     renderWithSignIn(signIn);
 
-    fireEvent.click(screen.getByRole("button", { name: /continue with google/i }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /continue with google/i })
+    );
 
     expect(signIn).toHaveBeenCalledWith("google");
   });
@@ -33,7 +35,9 @@ describe("SocialAuthButtons", () => {
     const signIn = vi.fn();
     renderWithSignIn(signIn);
 
-    fireEvent.click(screen.getByRole("button", { name: /continue with facebook/i }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /continue with facebook/i })
+    );
 
     expect(signIn).toHaveBeenCalledWith("facebook");
   });

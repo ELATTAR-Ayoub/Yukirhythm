@@ -51,9 +51,18 @@ const CHAPTERS = [
     desc: "The branding pack running live — dithered fields and glyph fields.",
     sample: (
       <div className="flex gap-2">
-        <AnimatedTexture kind="marble" className="w-8 h-8 rounded-md overflow-hidden" />
-        <AnimatedTexture kind="ripple" className="w-8 h-8 rounded-md overflow-hidden" />
-        <AnimatedTexture kind="spiral" className="w-8 h-8 rounded-md overflow-hidden" />
+        <AnimatedTexture
+          kind="marble"
+          className="w-8 h-8 rounded-md overflow-hidden"
+        />
+        <AnimatedTexture
+          kind="ripple"
+          className="w-8 h-8 rounded-md overflow-hidden"
+        />
+        <AnimatedTexture
+          kind="spiral"
+          className="w-8 h-8 rounded-md overflow-hidden"
+        />
       </div>
     ),
   },

@@ -9,10 +9,7 @@ import { Slider } from "@/components/ui/slider";
 import Transport from "@/components/studio/screens/Transport";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
 import { formatDuration } from "@/components/studio/screens/mock-data";
-import {
-  IDLE_LABEL,
-  NO_TIME,
-} from "@/components/studio/screens/player-idle";
+import { IDLE_LABEL, NO_TIME } from "@/components/studio/screens/player-idle";
 import { useIsWide } from "./useBreakpoint";
 import PlayerExtras from "./PlayerExtras";
 import { QUEUE } from "./routes";

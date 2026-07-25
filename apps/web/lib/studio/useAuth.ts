@@ -20,7 +20,8 @@ export type AuthState = {
 export function useAuthState(): AuthState {
   const [state, setState] = useState<AuthState>({ user: null, loading: true });
   useEffect(
-    () => onAuthStateChanged(auth, (user) => setState({ user, loading: false })),
+    () =>
+      onAuthStateChanged(auth, (user) => setState({ user, loading: false })),
     []
   );
   return state;
@@ -49,7 +50,10 @@ export function signOutUser(): Promise<void> {
  * migration can be driven headlessly. Creates the account on first use. Never
  * exposed in production (guarded by NEXT_PUBLIC_AUTH_EMULATOR at the call site).
  */
-export async function devSignIn(email: string, password: string): Promise<void> {
+export async function devSignIn(
+  email: string,
+  password: string
+): Promise<void> {
   const { createUserWithEmailAndPassword, signInWithEmailAndPassword } =
     await import("firebase/auth");
   try {

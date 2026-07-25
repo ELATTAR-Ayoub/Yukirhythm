@@ -87,9 +87,9 @@ describe("mapVideoInfo", () => {
 
   it("reports a non-embeddable video, which cannot be played", () => {
     expect(mapVideoInfo({ id: "x", title: "T" }).isEmbeddable).toBe(false);
-    expect(mapVideoInfo({ id: "x", title: "T", embed: true }).isEmbeddable).toBe(
-      true
-    );
+    expect(
+      mapVideoInfo({ id: "x", title: "T", embed: true }).isEmbeddable
+    ).toBe(true);
   });
 
   it("drops a relative date rather than storing an unusable value", () => {
@@ -136,7 +136,9 @@ describe("mapUpNextVideo", () => {
   });
 
   it("defaults to no duration rather than throwing when the row lacks one", () => {
-    expect(mapUpNextVideo({ video_id: "x", title: "T" }).durationSec).toBeNull();
+    expect(
+      mapUpNextVideo({ video_id: "x", title: "T" }).durationSec
+    ).toBeNull();
   });
 });
 

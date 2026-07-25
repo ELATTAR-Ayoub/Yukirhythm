@@ -3,7 +3,10 @@ import { uidFromRequest, unauthorized } from "@/lib/firebase/verify";
 import { getCatalogProvider } from "@/lib/catalog/provider";
 import { ingestTracks } from "@/lib/catalog/ingest";
 import { blendYouMightLike, type BlendInput } from "@/lib/catalog/recommend";
-import { coldStartTracks, YOU_MIGHT_LIKE_QUERIES } from "@/lib/catalog/cold-start";
+import {
+  coldStartTracks,
+  YOU_MIGHT_LIKE_QUERIES,
+} from "@/lib/catalog/cold-start";
 import { loadFeedContext } from "../_context";
 import type { Collection, Track, User } from "@/lib/catalog/model";
 
@@ -25,14 +28,16 @@ export async function GET(req: Request): Promise<Response> {
   if (!uid) return unauthorized();
 
   const db = adminDb();
-  const user = (await db.collection("users").doc(uid).get()).data() as User | undefined;
+  const user = (await db.collection("users").doc(uid).get()).data() as
+    User | undefined;
   const personalized = user?.privacy?.personalization !== false;
 
   const ctx = await loadFeedContext(uid);
   const provider = await getCatalogProvider();
 
   // Radio: related tracks off the user's most-played seeds (or a cold seed).
-  const seeds = personalized && ctx.topPlayed.length ? ctx.topPlayed.slice(0, 3) : [];
+  const seeds =
+    personalized && ctx.topPlayed.length ? ctx.topPlayed.slice(0, 3) : [];
   if (seeds.length === 0) {
     // Needs the popularity composite index; an undeployed index must not 500
     // the feed — the cold-start below covers the gap.
@@ -47,7 +52,9 @@ export async function GET(req: Request): Promise<Response> {
   for (const seedId of seeds) {
     try {
       const seedDoc = await db.collection("tracks").doc(seedId).get();
-      const seedTitle = seedDoc.exists ? (seedDoc.data() as Track).title : "a track you played";
+      const seedTitle = seedDoc.exists
+        ? (seedDoc.data() as Track).title
+        : "a track you played";
       const related = await provider.getRelatedTracks(seedId);
       const embeddable = related.filter((t) => t.isEmbeddable);
       if (embeddable.length) await ingestTracks(embeddable);
@@ -57,7 +64,10 @@ export async function GET(req: Request): Promise<Response> {
     } catch (err) {
       // One dead seed must not kill the feed — the cold-start below still
       // answers, and other seeds may have succeeded.
-      console.error(`feed/you-might-like: radio for seed "${seedId}" failed`, err);
+      console.error(
+        `feed/you-might-like: radio for seed "${seedId}" failed`,
+        err
+      );
     }
   }
 
@@ -69,7 +79,10 @@ export async function GET(req: Request): Promise<Response> {
     const cold = await coldStartTracks(YOU_MIGHT_LIKE_QUERIES, 20);
     for (const t of cold) {
       if (!ctx.exclude.has(t.providerTrackId)) {
-        radio.push({ trackId: t.providerTrackId, seedTitle: "popular right now" });
+        radio.push({
+          trackId: t.providerTrackId,
+          seedTitle: "popular right now",
+        });
       }
     }
   }
@@ -89,16 +102,25 @@ export async function GET(req: Request): Promise<Response> {
       if (c.ownerId === uid) continue;
       const ids = (c.tracks ?? []).map((t) => t.trackId);
       if (!ids.some((id) => likedSet.has(id))) continue;
-      for (const id of ids) if (!likedSet.has(id)) coCount.set(id, (coCount.get(id) ?? 0) + 1);
+      for (const id of ids)
+        if (!likedSet.has(id)) coCount.set(id, (coCount.get(id) ?? 0) + 1);
     }
   }
-  const coListen = [...coCount.entries()].map(([trackId, count]) => ({ trackId, count }));
+  const coListen = [...coCount.entries()].map(([trackId, count]) => ({
+    trackId,
+    count,
+  }));
 
   // Label affinity is a no-op until enrichment populates labelIds; wired so it
   // lights up for free later.
   const labelMatch: BlendInput["labelMatch"] = [];
 
-  const recs = blendYouMightLike({ radio, coListen, labelMatch, exclude: ctx.exclude });
+  const recs = blendYouMightLike({
+    radio,
+    coListen,
+    labelMatch,
+    exclude: ctx.exclude,
+  });
 
   // Resolve to track docs for the UI.
   const items = [];

@@ -15,7 +15,9 @@ interface SocialAuthButtonsProps {
 }
 
 /** The whole auth surface: Google + Facebook. Firebase makes login = signup. */
-export default function SocialAuthButtons({ onAuthed }: SocialAuthButtonsProps) {
+export default function SocialAuthButtons({
+  onAuthed,
+}: SocialAuthButtonsProps) {
   const { signIn } = useMockStudio();
 
   const continueWith = (provider: "google" | "facebook") => {

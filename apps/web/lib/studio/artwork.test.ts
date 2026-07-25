@@ -7,7 +7,12 @@ import type { Collection, Track } from "@/lib/catalog/model";
 function track(over: Partial<Track> = {}): Track {
   return {
     trackId: "abc123",
-    source: { provider: "youtube", videoId: "abc123", url: "", aliasVideoIds: [] },
+    source: {
+      provider: "youtube",
+      videoId: "abc123",
+      url: "",
+      aliasVideoIds: [],
+    },
     artwork: [],
     ...over,
   } as Track;
@@ -54,7 +59,15 @@ describe("trackArtUrl", () => {
   it("derives a YouTube thumbnail when artwork is empty", () => {
     // Most of the catalogue predates enrichment; without this every one of
     // those tracks would fall through to a generated texture.
-    const t = track({ artwork: [], source: { provider: "youtube", videoId: "xyz789", url: "", aliasVideoIds: [] } });
+    const t = track({
+      artwork: [],
+      source: {
+        provider: "youtube",
+        videoId: "xyz789",
+        url: "",
+        aliasVideoIds: [],
+      },
+    });
     expect(trackArtUrl(t)).toBe("https://i.ytimg.com/vi/xyz789/hqdefault.jpg");
   });
 
@@ -74,16 +87,28 @@ describe("trackArtUrl", () => {
 describe("collectionArtUrl", () => {
   it("returns the stored image for an image cover", () => {
     expect(
-      collectionArtUrl(collection({ cover: "image", imageUrl: "https://cdn/c.jpg" }))
+      collectionArtUrl(
+        collection({ cover: "image", imageUrl: "https://cdn/c.jpg" })
+      )
     ).toBe("https://cdn/c.jpg");
   });
 
   it("returns empty for texture and mosaic covers", () => {
-    expect(collectionArtUrl(collection({ cover: "texture", imageUrl: "https://cdn/c.jpg" }))).toBe("");
-    expect(collectionArtUrl(collection({ cover: "mosaic", imageUrl: "https://cdn/c.jpg" }))).toBe("");
+    expect(
+      collectionArtUrl(
+        collection({ cover: "texture", imageUrl: "https://cdn/c.jpg" })
+      )
+    ).toBe("");
+    expect(
+      collectionArtUrl(
+        collection({ cover: "mosaic", imageUrl: "https://cdn/c.jpg" })
+      )
+    ).toBe("");
   });
 
   it("returns empty for an image cover whose upload has not landed yet", () => {
-    expect(collectionArtUrl(collection({ cover: "image", imageUrl: null }))).toBe("");
+    expect(
+      collectionArtUrl(collection({ cover: "image", imageUrl: null }))
+    ).toBe("");
   });
 });

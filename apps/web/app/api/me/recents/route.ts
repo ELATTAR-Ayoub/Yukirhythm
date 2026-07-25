@@ -46,7 +46,10 @@ export async function GET(req: Request): Promise<Response> {
   const snap = await q.limit(limit).get();
 
   const trackCache = new Map<string, Track | null>();
-  const collCache = new Map<string, { collectionId: string; title: string } | null>();
+  const collCache = new Map<
+    string,
+    { collectionId: string; title: string } | null
+  >();
 
   const items: RecentItem[] = [];
   for (const doc of snap.docs) {
@@ -63,7 +66,10 @@ export async function GET(req: Request): Promise<Response> {
         collCache.set(
           e.collectionId,
           c.exists
-            ? { collectionId: e.collectionId, title: (c.data() as Collection).title }
+            ? {
+                collectionId: e.collectionId,
+                title: (c.data() as Collection).title,
+              }
             : null
         );
       }
@@ -73,7 +79,9 @@ export async function GET(req: Request): Promise<Response> {
     items.push({
       eventId: e.eventId,
       trackId: e.trackId,
-      startedAtMs: (e.startedAt as unknown as { toMillis(): number }).toMillis(),
+      startedAtMs: (
+        e.startedAt as unknown as { toMillis(): number }
+      ).toMillis(),
       listenedSec: e.listenedSec,
       track: trackCache.get(e.trackId) ?? null,
       collection,

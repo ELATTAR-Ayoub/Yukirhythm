@@ -44,8 +44,7 @@ export async function POST(req: Request): Promise<Response> {
 
   const db = adminDb();
   const user = (await db.collection("users").doc(uid).get()).data() as
-    | User
-    | undefined;
+    User | undefined;
   if (user?.privacy?.saveHistory === false) {
     return Response.json({ ok: true, written: 0, skipped: "saveHistory off" });
   }
@@ -95,7 +94,8 @@ export async function POST(req: Request): Promise<Response> {
         eventId: eventRef.id,
         userId: uid,
         trackId,
-        collectionId: typeof e.collectionId === "string" ? e.collectionId : null,
+        collectionId:
+          typeof e.collectionId === "string" ? e.collectionId : null,
         startedAt,
         listenedSec,
         completed,

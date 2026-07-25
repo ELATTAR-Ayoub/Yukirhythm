@@ -72,8 +72,12 @@ describe("/api/me against real Firestore", () => {
   });
 
   it("is idempotent — a second POST returns the existing doc", async () => {
-    const first = (await (await POST(req("POST", token, { displayName: "A" }))).json()) as User;
-    const second = (await (await POST(req("POST", token, { displayName: "B" }))).json()) as User;
+    const first = (await (
+      await POST(req("POST", token, { displayName: "A" }))
+    ).json()) as User;
+    const second = (await (
+      await POST(req("POST", token, { displayName: "B" }))
+    ).json()) as User;
     expect(second.displayName).toBe("A");
     expect(second.createdAt).toEqual(first.createdAt);
   });
@@ -94,9 +98,15 @@ describe("/api/me against real Firestore", () => {
   });
 
   it("PATCH cannot change identity fields", async () => {
-    const created = (await (await POST(req("POST", token, { email: "real@x.com" }))).json()) as User;
+    const created = (await (
+      await POST(req("POST", token, { email: "real@x.com" }))
+    ).json()) as User;
     const res = await PATCH(
-      req("PATCH", token, { userId: "hacked", email: "evil@x.com", authProvider: "facebook" })
+      req("PATCH", token, {
+        userId: "hacked",
+        email: "evil@x.com",
+        authProvider: "facebook",
+      })
     );
     const user = (await res.json()) as User;
     expect(user.userId).toBe(created.userId);

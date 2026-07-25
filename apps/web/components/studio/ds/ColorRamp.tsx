@@ -18,7 +18,11 @@ interface ColorRampProps {
 }
 
 /** A shadcn-style color scale row — click any swatch to copy its HSL. */
-export default function ColorRamp({ name, steps, anchors = {} }: ColorRampProps) {
+export default function ColorRamp({
+  name,
+  steps,
+  anchors = {},
+}: ColorRampProps) {
   const [copied, setCopied] = useState<number | null>(null);
 
   const copy = (step: number, hsl: string) => {
@@ -39,10 +43,15 @@ export default function ColorRamp({ name, steps, anchors = {} }: ColorRampProps)
             title={`Copy ${hsl}`}
             className={cn(
               "group text-left rounded-md overflow-hidden border transition-transform duration-fast active:scale-95",
-              anchor ? "border-foreground/60 ring-1 ring-foreground/30" : "border-border"
+              anchor
+                ? "border-foreground/60 ring-1 ring-foreground/30"
+                : "border-border"
             )}
           >
-            <div className="h-16 flex items-end p-1.5" style={{ backgroundColor: hsl }}>
+            <div
+              className="h-16 flex items-end p-1.5"
+              style={{ backgroundColor: hsl }}
+            >
               <span
                 className={cn(
                   "type-data-sm opacity-0 group-hover:opacity-100 transition-opacity duration-fast",
@@ -60,7 +69,9 @@ export default function ColorRamp({ name, steps, anchors = {} }: ColorRampProps)
                 {hsl.replace("hsl(", "").replace(")", "")}
               </div>
               {anchor ? (
-                <div className="type-label text-primary mt-0.5 truncate">{anchor}</div>
+                <div className="type-label text-primary mt-0.5 truncate">
+                  {anchor}
+                </div>
               ) : null}
             </div>
           </button>

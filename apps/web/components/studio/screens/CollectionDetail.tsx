@@ -51,7 +51,10 @@ function CollectionDesc({ count, desc }: { count: number; desc: string }) {
 
   return (
     <div className="mt-2">
-      <p ref={textRef} className={cn("type-muted", !expanded && "line-clamp-3")}>
+      <p
+        ref={textRef}
+        className={cn("type-muted", !expanded && "line-clamp-3")}
+      >
         <span
           aria-label={`${count} tracks`}
           className="inline-flex items-baseline gap-1 mr-1.5 text-muted-foreground"
@@ -163,7 +166,8 @@ export default function CollectionDetail({
 
   /** Enter/Space activation for non-button click targets. */
   const playKeyHandler =
-    (track: (typeof tracks)[number], at: number) => (e: React.KeyboardEvent) => {
+    (track: (typeof tracks)[number], at: number) =>
+    (e: React.KeyboardEvent) => {
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
         if (onPlayAt) onPlayAt(at);
@@ -209,7 +213,9 @@ export default function CollectionDetail({
         <PlayerButton
           variant="primary"
           size="xl"
-          aria-label={playingHere && isPlaying ? "Pause collection" : "Play collection"}
+          aria-label={
+            playingHere && isPlaying ? "Pause collection" : "Play collection"
+          }
           onClick={() => {
             // already on a track from this collection — act as pause/resume
             if (playingHere) return toggle();

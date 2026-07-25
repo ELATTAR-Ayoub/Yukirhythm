@@ -50,9 +50,14 @@ function addTag(input: HTMLElement, raw: string) {
  *  single-texture render puts the style on the root Texture is handed
  *  directly, not on a descendant. */
 function renderedTextures(el: HTMLElement): string[] {
-  const nodes = [el, ...Array.from(el.querySelectorAll<HTMLElement>("[style]"))];
+  const nodes = [
+    el,
+    ...Array.from(el.querySelectorAll<HTMLElement>("[style]")),
+  ];
   return nodes
-    .map((node) => node.style.backgroundImage.match(/textures\/([\w-]+)\.png/)?.[1])
+    .map(
+      (node) => node.style.backgroundImage.match(/textures\/([\w-]+)\.png/)?.[1]
+    )
     .filter((x): x is string => Boolean(x));
 }
 
@@ -129,7 +134,9 @@ describe("CreatePlaylistFlow", () => {
       (screen.getByLabelText("Description") as HTMLInputElement).value
     ).toBe("Tape loops for rain.");
     expect(
-      screen.getByRole("button", { name: "Cover: marble" }).getAttribute("aria-pressed")
+      screen
+        .getByRole("button", { name: "Cover: marble" })
+        .getAttribute("aria-pressed")
     ).toBe("true");
   });
 
@@ -142,12 +149,18 @@ describe("CreatePlaylistFlow", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Add Cobalt Dreams" }));
     expect(screen.getByLabelText("1 track added")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Remove Cobalt Dreams" })).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: "Remove Cobalt Dreams" })
+    ).toBeTruthy();
 
     // remove it back out via the same (now toggled) search-result button
-    fireEvent.click(screen.getByRole("button", { name: "Remove Cobalt Dreams" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Remove Cobalt Dreams" })
+    );
     expect(screen.getByLabelText("0 tracks added")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Add Cobalt Dreams" })).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: "Add Cobalt Dreams" })
+    ).toBeTruthy();
   });
 
   it("writes nothing to the store before the review step confirms", () => {
@@ -221,11 +234,15 @@ describe("CreatePlaylistFlow", () => {
       const input = screen.getByLabelText("Tags");
 
       addTag(input, "   ");
-      expect(screen.queryAllByRole("button", { name: /^Remove / })).toHaveLength(0);
+      expect(
+        screen.queryAllByRole("button", { name: /^Remove / })
+      ).toHaveLength(0);
 
       addTag(input, "chill");
       addTag(input, "Chill");
-      expect(screen.queryAllByRole("button", { name: /^Remove / })).toHaveLength(1);
+      expect(
+        screen.queryAllByRole("button", { name: /^Remove / })
+      ).toHaveLength(1);
       expect(screen.getByText("chill")).toBeTruthy();
     });
 
@@ -300,7 +317,9 @@ describe("CreatePlaylistFlow", () => {
       fireEvent.change(screen.getByLabelText("Search tracks to add"), {
         target: { value: "Cobalt" },
       });
-      fireEvent.click(screen.getByRole("button", { name: "Add Cobalt Dreams" }));
+      fireEvent.click(
+        screen.getByRole("button", { name: "Add Cobalt Dreams" })
+      );
       fireEvent.click(screen.getByRole("button", { name: "Back" })); // -> step 1
 
       const mosaic = screen.getByRole("button", { name: "Mosaic" });
@@ -322,7 +341,9 @@ describe("CreatePlaylistFlow", () => {
       fireEvent.change(screen.getByLabelText("Search tracks to add"), {
         target: { value: "Cobalt" },
       });
-      fireEvent.click(screen.getByRole("button", { name: "Add Cobalt Dreams" })); // t2, tx-k-marble
+      fireEvent.click(
+        screen.getByRole("button", { name: "Add Cobalt Dreams" })
+      ); // t2, tx-k-marble
       fireEvent.click(screen.getByRole("button", { name: "Back" })); // -> step 1
 
       fireEvent.click(screen.getByRole("button", { name: "Mosaic" }));
@@ -331,7 +352,9 @@ describe("CreatePlaylistFlow", () => {
       fireEvent.change(screen.getByLabelText("Search tracks to add"), {
         target: { value: "Midnight" },
       });
-      fireEvent.click(screen.getByRole("button", { name: "Add Midnight Snowfall" })); // t1, tx-k2-vinyl
+      fireEvent.click(
+        screen.getByRole("button", { name: "Add Midnight Snowfall" })
+      ); // t1, tx-k2-vinyl
 
       goToStep3();
 

@@ -2,12 +2,14 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 
 import MockStudioProvider, { useMockStudio } from "./MockStudioProvider";
-import { MOCK_COLLECTIONS, MOCK_TRACKS, type MockCollection } from "./mock-data";
+import {
+  MOCK_COLLECTIONS,
+  MOCK_TRACKS,
+  type MockCollection,
+} from "./mock-data";
 import { QUEUE_COLLECTION_ID } from "./useQueueCollection";
 import { QUEUE } from "@/components/studio/shell/routes";
 import TrackMenu from "./TrackMenu";
-
-
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
@@ -20,9 +22,7 @@ const COLLECTION = MOCK_COLLECTIONS[0];
 function MembershipProbe({ collectionId }: { collectionId: string }) {
   const { collections } = useMockStudio();
   const c = collections.find((x) => x.id === collectionId)!;
-  return (
-    <span data-testid="members">{c.trackIds.join(",")}</span>
-  );
+  return <span data-testid="members">{c.trackIds.join(",")}</span>;
 }
 
 function renderMenu() {
@@ -58,9 +58,7 @@ describe("TrackMenu", () => {
     // A link that resolves: there is no route for a single track, so it
     // points at the playlist holding it.
     expect(
-      dialog.getByText(
-        new RegExp(`/playlist/${COLLECTION.id}`)
-      )
+      dialog.getByText(new RegExp(`/playlist/${COLLECTION.id}`))
     ).toBeTruthy();
     expect(dialog.getByText("Copy link")).toBeTruthy();
   });
@@ -189,6 +187,8 @@ describe("TrackMenu", () => {
     );
     fireEvent.click(await screen.findByText("Remove from queue"));
 
-    expect(Number(screen.getByTestId("queue-len").textContent)).toBe(before - 1);
+    expect(Number(screen.getByTestId("queue-len").textContent)).toBe(
+      before - 1
+    );
   });
 });

@@ -17,7 +17,9 @@ import { GET as newReleases } from "@/app/api/feed/new-releases/route";
 import type { Track } from "@/lib/catalog/model";
 
 const auth = (token: string, path = "/x") =>
-  new Request(`http://localhost${path}`, { headers: { Authorization: `Bearer ${token}` } });
+  new Request(`http://localhost${path}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
 const post = (token: string, path: string, body: unknown) =>
   new Request(`http://localhost${path}`, {
     method: "POST",
@@ -32,30 +34,54 @@ async function main(): Promise<void> {
   await ensureUser(post(token, "/api/me", {}));
 
   console.log("\n# the user plays a Daft Punk track (live YouTube)");
-  const found = await (await getCatalogProvider()).search("daft punk instant crush", { type: "song", limit: 1 });
+  const found = await (
+    await getCatalogProvider()
+  ).search("daft punk instant crush", { type: "song", limit: 1 });
   const seed = found.tracks[0];
   await ingestTracks([seed]);
-  console.log(`  played: ${seed.title} — ${seed.artists.map((a) => a.name).join(", ")}`);
+  console.log(
+    `  played: ${seed.title} — ${seed.artists.map((a) => a.name).join(", ")}`
+  );
   // record a completed play, 8 days ago so it isn't excluded as "recent"
   await postEvents(
     post(token, "/api/events", {
-      events: [{ trackId: seed.providerTrackId, listenedSec: 200, startedAt: Date.now() - 8 * 24 * 60 * 60 * 1000 }],
+      events: [
+        {
+          trackId: seed.providerTrackId,
+          listenedSec: 200,
+          startedAt: Date.now() - 8 * 24 * 60 * 60 * 1000,
+        },
+      ],
     })
   );
 
   console.log("\n# You might like (live YouTube radio off what they played)");
-  const yml = (await (await youMightLike(auth(token))).json()) as { items: Item[] };
-  yml.items.slice(0, 6).forEach((i) =>
-    console.log(`  ${i.track.title} — ${i.track.artists.map((a) => a.name).join(", ")}  [${i.reason}]`)
-  );
+  const yml = (await (await youMightLike(auth(token))).json()) as {
+    items: Item[];
+  };
+  yml.items
+    .slice(0, 6)
+    .forEach((i) =>
+      console.log(
+        `  ${i.track.title} — ${i.track.artists.map((a) => a.name).join(", ")}  [${i.reason}]`
+      )
+    );
 
   console.log("\n# New releases (personalized, cold-padded with popular)");
-  const nr = (await (await newReleases(auth(token))).json()) as { items: Item[] };
-  nr.items.slice(0, 6).forEach((i) =>
-    console.log(`  ${i.track.title} — ${i.track.artists.map((a) => a.name).join(", ")}  [${i.reason}]`)
-  );
+  const nr = (await (await newReleases(auth(token))).json()) as {
+    items: Item[];
+  };
+  nr.items
+    .slice(0, 6)
+    .forEach((i) =>
+      console.log(
+        `  ${i.track.title} — ${i.track.artists.map((a) => a.name).join(", ")}  [${i.reason}]`
+      )
+    );
 
-  console.log("\nDONE — real recommendations from real plays through real routes.\n");
+  console.log(
+    "\nDONE — real recommendations from real plays through real routes.\n"
+  );
 }
 
 main().catch((e) => {

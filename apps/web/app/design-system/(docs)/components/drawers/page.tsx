@@ -41,7 +41,9 @@ function Demos() {
           signal="collection_create"
           views={{
             default: (
-              <Button onClick={() => setCreating(true)}>Open create form</Button>
+              <Button onClick={() => setCreating(true)}>
+                Open create form
+              </Button>
             ),
           }}
         />

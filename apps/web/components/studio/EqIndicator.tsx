@@ -16,7 +16,10 @@ export default function EqIndicator({
 }: EqIndicatorProps) {
   return (
     <span
-      className={cn("inline-flex items-end gap-[2px] h-3.5 text-mint", className)}
+      className={cn(
+        "inline-flex items-end gap-[2px] h-3.5 text-mint",
+        className
+      )}
       aria-label={playing ? "Playing" : "Paused"}
     >
       {[0, 1, 2, 3].map((i) => (

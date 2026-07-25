@@ -108,7 +108,10 @@ function UpNextSection() {
               // Keyed by POSITION, not by track id. The queue is a list, not a
               // set: the same track may legitimately appear twice, and two
               // rows sharing a key is what made them swap and vanish.
-              <div key={`${track.id}:${at}`} className="flex items-center gap-1">
+              <div
+                key={`${track.id}:${at}`}
+                className="flex items-center gap-1"
+              >
                 <div
                   role="button"
                   tabIndex={0}

@@ -18,7 +18,9 @@ describe("filterLibrary", () => {
   });
 
   it("shows only Liked Songs for the liked filter", () => {
-    expect(filterLibrary(ALL, "liked").map((c) => c.id)).toEqual([LIKED_SONGS.id]);
+    expect(filterLibrary(ALL, "liked").map((c) => c.id)).toEqual([
+      LIKED_SONGS.id,
+    ]);
   });
 
   it("sorts a system collection ahead of pinned ones", () => {

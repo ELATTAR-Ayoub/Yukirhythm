@@ -38,7 +38,11 @@ export default function DeckEffects({ glitch }: { glitch: boolean }) {
         radialModulation
         modulationOffset={0.35}
       />
-      <Scanline blendFunction={BlendFunction.OVERLAY} density={1.3} opacity={0.07} />
+      <Scanline
+        blendFunction={BlendFunction.OVERLAY}
+        density={1.3}
+        opacity={0.07}
+      />
       <Noise premultiply blendFunction={BlendFunction.SCREEN} opacity={0.4} />
       <Vignette eskil={false} offset={0.22} darkness={0.78} />
       <Glitch

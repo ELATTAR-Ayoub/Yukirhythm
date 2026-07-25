@@ -65,7 +65,12 @@ function CardArt({
     return <div className={className}>{art}</div>;
   }
   return (
-    <Artwork src={artUrl} texture={texture ?? "tx-k-marble"} alt={title} className={className} />
+    <Artwork
+      src={artUrl}
+      texture={texture ?? "tx-k-marble"}
+      alt={title}
+      className={className}
+    />
   );
 }
 
@@ -134,7 +139,11 @@ export default function MediaCard({
         <div
           className={cn(
             "relative shrink-0 rounded-md overflow-hidden",
-            size === "sm" ? "w-12 h-12" : size === "md" ? "w-16 h-16" : "w-24 h-24"
+            size === "sm"
+              ? "w-12 h-12"
+              : size === "md"
+                ? "w-16 h-16"
+                : "w-24 h-24"
           )}
         >
           <CardArt

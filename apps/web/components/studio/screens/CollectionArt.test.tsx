@@ -42,7 +42,11 @@ describe("CollectionArt", () => {
   it("renders a single full-bleed texture for a one-track mosaic", () => {
     const { container } = render(
       <CollectionArt
-        collection={{ texture: "tx-k-silk", cover: "mosaic", trackIds: [T1.id] }}
+        collection={{
+          texture: "tx-k-silk",
+          cover: "mosaic",
+          trackIds: [T1.id],
+        }}
         className="w-20 h-20"
       />
     );
@@ -52,7 +56,11 @@ describe("CollectionArt", () => {
   it("splits a two-track mosaic into two halves, in track order", () => {
     const { container } = render(
       <CollectionArt
-        collection={{ texture: "tx-k-silk", cover: "mosaic", trackIds: [T2.id, T1.id] }}
+        collection={{
+          texture: "tx-k-silk",
+          cover: "mosaic",
+          trackIds: [T2.id, T1.id],
+        }}
         className="w-20 h-20"
       />
     );
@@ -70,7 +78,11 @@ describe("CollectionArt", () => {
         className="w-20 h-20"
       />
     );
-    expect(renderedTextures(container)).toEqual([T3.texture, T1.texture, T2.texture]);
+    expect(renderedTextures(container)).toEqual([
+      T3.texture,
+      T1.texture,
+      T2.texture,
+    ]);
     const lead = container.querySelector<HTMLElement>("[style]");
     expect(lead?.className).toContain("row-span-2");
   });
@@ -105,33 +117,74 @@ describe("CollectionArt", () => {
         }}
       />
     );
-    expect(container.querySelector('img[src="https://cdn/cover.jpg"]')).toBeTruthy();
+    expect(
+      container.querySelector('img[src="https://cdn/cover.jpg"]')
+    ).toBeTruthy();
   });
 
   it("composes the mosaic from the tracks' real thumbnails", () => {
     registerStudioTracks([
-      { id: "m1", title: "One", artist: "A", texture: "tx-k-silk", durationSec: 1, artUrl: "https://cdn/1.jpg" },
-      { id: "m2", title: "Two", artist: "B", texture: "tx-k-marble", durationSec: 1, artUrl: "https://cdn/2.jpg" },
+      {
+        id: "m1",
+        title: "One",
+        artist: "A",
+        texture: "tx-k-silk",
+        durationSec: 1,
+        artUrl: "https://cdn/1.jpg",
+      },
+      {
+        id: "m2",
+        title: "Two",
+        artist: "B",
+        texture: "tx-k-marble",
+        durationSec: 1,
+        artUrl: "https://cdn/2.jpg",
+      },
     ]);
 
     const { container } = render(
       <CollectionArt
-        collection={{ texture: "tx-k-silk", cover: "mosaic", trackIds: ["m1", "m2"] }}
+        collection={{
+          texture: "tx-k-silk",
+          cover: "mosaic",
+          trackIds: ["m1", "m2"],
+        }}
       />
     );
-    expect(container.querySelector('img[src="https://cdn/1.jpg"]')).toBeTruthy();
-    expect(container.querySelector('img[src="https://cdn/2.jpg"]')).toBeTruthy();
+    expect(
+      container.querySelector('img[src="https://cdn/1.jpg"]')
+    ).toBeTruthy();
+    expect(
+      container.querySelector('img[src="https://cdn/2.jpg"]')
+    ).toBeTruthy();
   });
 
   it("falls back per cell when only some tracks have artwork", () => {
     registerStudioTracks([
-      { id: "m3", title: "Three", artist: "C", texture: "tx-k-silk", durationSec: 1, artUrl: "https://cdn/3.jpg" },
-      { id: "m4", title: "Four", artist: "D", texture: "tx-k-marble", durationSec: 1 },
+      {
+        id: "m3",
+        title: "Three",
+        artist: "C",
+        texture: "tx-k-silk",
+        durationSec: 1,
+        artUrl: "https://cdn/3.jpg",
+      },
+      {
+        id: "m4",
+        title: "Four",
+        artist: "D",
+        texture: "tx-k-marble",
+        durationSec: 1,
+      },
     ]);
 
     const { container } = render(
       <CollectionArt
-        collection={{ texture: "tx-k-silk", cover: "mosaic", trackIds: ["m3", "m4"] }}
+        collection={{
+          texture: "tx-k-silk",
+          cover: "mosaic",
+          trackIds: ["m3", "m4"],
+        }}
       />
     );
     // One real image, one texture cell — not an empty square.

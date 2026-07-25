@@ -57,7 +57,9 @@ function discEl(container: HTMLElement): HTMLElement {
 }
 
 function angleOf(container: HTMLElement): number {
-  const match = discEl(container).style.transform.match(/rotate\(([\d.]+)deg\)/);
+  const match = discEl(container).style.transform.match(
+    /rotate\(([\d.]+)deg\)/
+  );
   return match ? Number(match[1]) : 0;
 }
 
@@ -151,8 +153,15 @@ describe("SpinningDisc", () => {
   });
 
   it("short-circuits under prefers-reduced-motion: no loop is ever scheduled", () => {
-    const mql = { matches: true, addEventListener: () => {}, removeEventListener: () => {} };
-    vi.stubGlobal("matchMedia", vi.fn(() => mql));
+    const mql = {
+      matches: true,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    };
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn(() => mql)
+    );
 
     const { container, rerender } = render(
       <SpinningDisc texture="tx-k-marble" spinning />
@@ -176,7 +185,9 @@ describe("SpinningDisc", () => {
   });
 
   it("survives rapid on/off/on toggling without ever leaving the loop dead while spinning", () => {
-    const { rerender } = render(<SpinningDisc texture="tx-k-marble" spinning={false} />);
+    const { rerender } = render(
+      <SpinningDisc texture="tx-k-marble" spinning={false} />
+    );
     // Mount-time tick immediately parks (spinning false, velocity starts at 0).
     frame(100);
     expect(raf.pendingCount()).toBe(0);
@@ -184,7 +195,9 @@ describe("SpinningDisc", () => {
     act(() => rerender(<SpinningDisc texture="tx-k-marble" spinning />));
     expect(raf.pendingCount()).toBe(1);
 
-    act(() => rerender(<SpinningDisc texture="tx-k-marble" spinning={false} />));
+    act(() =>
+      rerender(<SpinningDisc texture="tx-k-marble" spinning={false} />)
+    );
     // Still coasting — must not have parked instantly.
     expect(raf.pendingCount()).toBe(1);
 

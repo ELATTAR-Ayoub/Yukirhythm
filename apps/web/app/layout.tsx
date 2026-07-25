@@ -42,9 +42,7 @@ export default function RootLayout({
       {/* Plain block, full bleed. The old `flex justify-start items-start`
           belonged to the marketing landing and shrank every child to its
           content width; the app shell needs the whole viewport. */}
-      <body
-        className="relative bg-background h-screen overflow-x-hidden"
-      >
+      <body className="relative bg-background h-screen overflow-x-hidden">
         <Providers>{children}</Providers>
       </body>
     </html>

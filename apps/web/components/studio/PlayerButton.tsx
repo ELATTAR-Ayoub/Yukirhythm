@@ -65,7 +65,15 @@ export interface PlayerButtonProps
 
 const PlayerButton = React.forwardRef<HTMLButtonElement, PlayerButtonProps>(
   (
-    { className, variant, size, loading = false, active = false, children, ...props },
+    {
+      className,
+      variant,
+      size,
+      loading = false,
+      active = false,
+      children,
+      ...props
+    },
     ref
   ) => {
     return (

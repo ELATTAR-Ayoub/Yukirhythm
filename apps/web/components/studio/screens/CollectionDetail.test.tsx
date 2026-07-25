@@ -27,8 +27,8 @@ vi.mock("next/navigation", () => ({
  * distinguishes the real component from a lookalike.
  */
 function iconSwapFaces(button: HTMLElement): HTMLElement[] {
-  return Array.from(button.querySelectorAll<HTMLElement>("span")).filter(
-    (el) => el.className.includes("col-start-1")
+  return Array.from(button.querySelectorAll<HTMLElement>("span")).filter((el) =>
+    el.className.includes("col-start-1")
   );
 }
 
@@ -93,7 +93,9 @@ describe("CollectionDetail", () => {
         </MockStudioProvider>
       );
 
-      fireEvent.click(screen.getByRole("button", { name: "Play Cobalt Dreams" }));
+      fireEvent.click(
+        screen.getByRole("button", { name: "Play Cobalt Dreams" })
+      );
       act(() => vi.advanceTimersByTime(650));
 
       const button = screen.getByRole("button", { name: "Pause collection" });
@@ -127,7 +129,10 @@ describe("CollectionDetail", () => {
       // /playlist/queue/add from the synthetic id and dead-ends.
       render(
         <MockStudioProvider>
-          <CollectionDetail collection={MOCK_COLLECTIONS[0]} addHref="/queue/add" />
+          <CollectionDetail
+            collection={MOCK_COLLECTIONS[0]}
+            addHref="/queue/add"
+          />
         </MockStudioProvider>
       );
       fireEvent.click(screen.getByLabelText("Add music"));

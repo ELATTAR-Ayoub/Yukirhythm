@@ -56,7 +56,9 @@ export function addMusicHref(id: string): string {
  * that playlist" for the purposes of deciding where a "+" control should
  * point. Returns the id decoded, undoing `playlistHref`'s encode.
  */
-export function matchPlaylistId(pathname: string | null | undefined): string | null {
+export function matchPlaylistId(
+  pathname: string | null | undefined
+): string | null {
   if (!pathname) return null;
   const match = pathname.match(/^\/playlist\/([^/]+)/);
   return match ? decodeURIComponent(match[1]) : null;

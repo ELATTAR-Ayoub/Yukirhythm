@@ -21,8 +21,16 @@ export async function PUT(req: Request, { params }: Params): Promise<Response> {
   }
 
   const db = adminDb();
-  const myEdge = db.collection("users").doc(me).collection("following").doc(target);
-  const theirEdge = db.collection("users").doc(target).collection("followers").doc(me);
+  const myEdge = db
+    .collection("users")
+    .doc(me)
+    .collection("following")
+    .doc(target);
+  const theirEdge = db
+    .collection("users")
+    .doc(target)
+    .collection("followers")
+    .doc(me);
 
   await db.runTransaction(async (tx) => {
     const exists = (await tx.get(myEdge)).exists;
@@ -46,18 +54,32 @@ export async function PUT(req: Request, { params }: Params): Promise<Response> {
   return Response.json({ ok: true, following: true });
 }
 
-export async function DELETE(req: Request, { params }: Params): Promise<Response> {
+export async function DELETE(
+  req: Request,
+  { params }: Params
+): Promise<Response> {
   const me = await uidFromRequest(req);
   if (!me) return unauthorized();
 
   const { uid: target } = await params;
   if (target === me) {
-    return Response.json({ error: "Cannot unfollow yourself" }, { status: 400 });
+    return Response.json(
+      { error: "Cannot unfollow yourself" },
+      { status: 400 }
+    );
   }
 
   const db = adminDb();
-  const myEdge = db.collection("users").doc(me).collection("following").doc(target);
-  const theirEdge = db.collection("users").doc(target).collection("followers").doc(me);
+  const myEdge = db
+    .collection("users")
+    .doc(me)
+    .collection("following")
+    .doc(target);
+  const theirEdge = db
+    .collection("users")
+    .doc(target)
+    .collection("followers")
+    .doc(me);
 
   await db.runTransaction(async (tx) => {
     const exists = (await tx.get(myEdge)).exists;

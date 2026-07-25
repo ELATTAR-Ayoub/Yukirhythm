@@ -6,11 +6,17 @@ import MockStudioProvider from "@/components/studio/screens/MockStudioProvider";
 import { DsSection } from "@/components/studio/ds/blocks";
 import StatePanel from "@/components/studio/ds/StatePanel";
 import { TagChip, FilterChipRow } from "@/components/studio/screens/TagChip";
-import ViewToggle, { type TrackView } from "@/components/studio/screens/ViewToggle";
+import ViewToggle, {
+  type TrackView,
+} from "@/components/studio/screens/ViewToggle";
 import SortControl from "@/components/studio/screens/SortControl";
 import TrackMenu from "@/components/studio/screens/TrackMenu";
 import { MOCK_TRACKS } from "@/components/studio/screens/mock-data";
-import { LIBRARY_FILTERS, type LibraryFilter, type TrackSort } from "@/components/studio/screens/library-utils";
+import {
+  LIBRARY_FILTERS,
+  type LibraryFilter,
+  type TrackSort,
+} from "@/components/studio/screens/library-utils";
 
 function Demos() {
   const [filter, setFilter] = useState<LibraryFilter>("playlists");

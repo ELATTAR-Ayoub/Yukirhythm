@@ -124,7 +124,9 @@ export default function SpinningDisc({
   }, [spinning]);
 
   return (
-    <span className={cn("relative block overflow-hidden rounded-full", className)}>
+    <span
+      className={cn("relative block overflow-hidden rounded-full", className)}
+    >
       <span ref={ref} className="absolute inset-0 block will-change-transform">
         {art ?? (
           <Artwork

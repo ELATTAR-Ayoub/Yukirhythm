@@ -31,9 +31,9 @@ export default function SpacePage() {
       <div className="mb-14">
         <h1 className="type-h1">Space &amp; Motion</h1>
         <p className="type-lead mt-3 max-w-2xl">
-          How far apart things sit, how high they float, and how they move.
-          The app is a machine: surfaces cast real shadows, controls click,
-          content springs.
+          How far apart things sit, how high they float, and how they move. The
+          app is a machine: surfaces cast real shadows, controls click, content
+          springs.
         </p>
       </div>
 
@@ -85,9 +85,9 @@ export default function SpacePage() {
       {/* ── 02 Elevation ────────────────────────────────────────── */}
       <DsSection index="02" title="Elevation — realistic shadows">
         <p className="type-p mb-6 max-w-2xl">
-          Every shadow has two parts, like the real world: a tight dark
-          contact shadow where the object meets the surface, and a soft
-          ambient falloff that grows with height.
+          Every shadow has two parts, like the real world: a tight dark contact
+          shadow where the object meets the surface, and a soft ambient falloff
+          that grows with height.
         </p>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
           {ELEVATIONS.map((e) => (

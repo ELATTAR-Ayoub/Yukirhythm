@@ -4,7 +4,10 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import MockStudioProvider, {
   useMockStudio,
 } from "@/components/studio/screens/MockStudioProvider";
-import { LIKED_SONGS, getCollectionTracks } from "@/components/studio/screens/mock-data";
+import {
+  LIKED_SONGS,
+  getCollectionTracks,
+} from "@/components/studio/screens/mock-data";
 import { HOME } from "@/components/studio/shell/routes";
 import QueueScreen from "./page";
 
@@ -14,7 +17,13 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push }),
 }));
 
-function Seed({ track, source }: { track: string; source: typeof LIKED_SONGS }) {
+function Seed({
+  track,
+  source,
+}: {
+  track: string;
+  source: typeof LIKED_SONGS;
+}) {
   const { play } = useMockStudio();
   const found = getCollectionTracks(source).find((t) => t.id === track)!;
   return <button onClick={() => play(found, source)}>seed</button>;

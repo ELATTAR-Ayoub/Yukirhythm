@@ -49,7 +49,13 @@ describe("MiniPlayerBar", () => {
         </MockStudioProvider>
       );
 
-      for (const name of ["Expand player", "Previous", "Play", "Next", "Seek"]) {
+      for (const name of [
+        "Expand player",
+        "Previous",
+        "Play",
+        "Next",
+        "Seek",
+      ]) {
         expect(screen.queryByLabelText(name)).toBeNull();
       }
       expect(onExpand).not.toHaveBeenCalled();
@@ -84,10 +90,14 @@ describe("MiniPlayerBar", () => {
       seed();
 
       for (const name of ["Previous", "Next"]) {
-        expect(screen.getByLabelText(name).hasAttribute("disabled")).toBe(false);
+        expect(screen.getByLabelText(name).hasAttribute("disabled")).toBe(
+          false
+        );
       }
       // Playing, so the 3-face IconSwap is showing Pause rather than Play.
-      expect(screen.getByLabelText("Pause").hasAttribute("disabled")).toBe(false);
+      expect(screen.getByLabelText("Pause").hasAttribute("disabled")).toBe(
+        false
+      );
       expect(screen.getByLabelText("Seek").getAttribute("aria-disabled")).toBe(
         "false"
       );

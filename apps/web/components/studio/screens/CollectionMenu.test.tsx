@@ -103,9 +103,7 @@ describe("CollectionMenu", () => {
     fireEvent.click(screen.getByText("Copy link"));
 
     expect(writeText).toHaveBeenCalledTimes(1);
-    expect(writeText.mock.calls[0][0]).toContain(
-      "/playlist/liked"
-    );
+    expect(writeText.mock.calls[0][0]).toContain("/playlist/liked");
   });
 
   it("offers share targets that open rather than post", () => {
@@ -130,9 +128,12 @@ describe("CollectionMenu", () => {
         <CollectionMenu collection={{ ...LIKED_SONGS, system: true }} />
       </MockStudioProvider>
     );
-    fireEvent.pointerDown(screen.getByLabelText(`More for ${LIKED_SONGS.title}`), {
-      button: 0,
-    });
+    fireEvent.pointerDown(
+      screen.getByLabelText(`More for ${LIKED_SONGS.title}`),
+      {
+        button: 0,
+      }
+    );
     expect(await screen.findByText("Share")).toBeInTheDocument();
     expect(screen.queryByText("Unpin")).toBeNull();
     expect(screen.queryByText("Pin to top")).toBeNull();

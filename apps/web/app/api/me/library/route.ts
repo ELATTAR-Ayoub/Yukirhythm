@@ -19,7 +19,10 @@ export async function GET(req: Request): Promise<Response> {
 
   const db = adminDb();
 
-  const owned = await db.collection("collections").where("ownerId", "==", uid).get();
+  const owned = await db
+    .collection("collections")
+    .where("ownerId", "==", uid)
+    .get();
   const collections = owned.docs
     .map((d) => d.data() as Collection)
     .filter(

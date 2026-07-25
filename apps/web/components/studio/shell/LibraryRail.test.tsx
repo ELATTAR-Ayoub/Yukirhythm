@@ -130,9 +130,12 @@ describe("LibraryRail", () => {
     expect(screen.queryAllByLabelText("Pinned")).toHaveLength(0);
 
     // Pin an ordinary collection through the same ⋯ menu the user would use.
-    fireEvent.pointerDown(screen.getByLabelText("More for Cobalt After Hours"), {
-      button: 0,
-    });
+    fireEvent.pointerDown(
+      screen.getByLabelText("More for Cobalt After Hours"),
+      {
+        button: 0,
+      }
+    );
     fireEvent.click(screen.getByText("Pin to top"));
 
     const pins = screen.getAllByLabelText("Pinned");

@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor, fireEvent, act } from "@testing-library/react";
+import {
+  render,
+  screen,
+  waitFor,
+  fireEvent,
+  act,
+} from "@testing-library/react";
 
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
 import { LIKED_SONGS_ID } from "@/components/studio/screens/mock-data";
@@ -11,13 +17,20 @@ const { backend, authState, hiddenPlayer } = vi.hoisted(() => ({
     // Latest props StudioProvider passed to the (mocked-away) hidden
     // react-player, so a test can simulate onReady the same way the real
     // player would fire it — including firing it again on a track change.
-    props: null as null | { onReady: () => void; playerRef?: { current: unknown } },
+    props: null as null | {
+      onReady: () => void;
+      playerRef?: { current: unknown };
+    },
     seekTo: vi.fn(),
   },
   backend: {
     me: {
       ensure: vi.fn().mockResolvedValue({}),
-      get: vi.fn().mockResolvedValue({ userId: "u1", displayName: "Yuki", email: "y@x.dev" }),
+      get: vi.fn().mockResolvedValue({
+        userId: "u1",
+        displayName: "Yuki",
+        email: "y@x.dev",
+      }),
       likes: vi.fn(),
       stats: vi.fn().mockRejectedValue(new Error("no")),
       recents: vi.fn().mockRejectedValue(new Error("no")),
@@ -42,7 +55,10 @@ const { backend, authState, hiddenPlayer } = vi.hoisted(() => ({
   },
   authState: {
     user: {
-      uid: "u1", displayName: "Yuki", email: "y@x.dev", photoURL: null,
+      uid: "u1",
+      displayName: "Yuki",
+      email: "y@x.dev",
+      photoURL: null,
       providerData: [{ providerId: "google.com" }],
     },
   },
@@ -65,7 +81,8 @@ vi.mock("next/dynamic", () => ({
     () =>
     (props: { playerRef?: { current: unknown }; onReady: () => void }) => {
       hiddenPlayer.props = props;
-      if (props.playerRef) props.playerRef.current = { seekTo: hiddenPlayer.seekTo };
+      if (props.playerRef)
+        props.playerRef.current = { seekTo: hiddenPlayer.seekTo };
       return null;
     },
 }));
@@ -124,7 +141,9 @@ function PlaybackProbe() {
       <div data-testid="collections-count">{collections.length}</div>
       <button onClick={() => setVolume(0.7)}>set-volume</button>
       <button
-        onClick={() => play(toStudioTrack(track({ trackId: "u1", title: "User Pick" })))}
+        onClick={() =>
+          play(toStudioTrack(track({ trackId: "u1", title: "User Pick" })))
+        }
       >
         play-user-track
       </button>
@@ -153,8 +172,14 @@ describe("StudioProvider library load", () => {
   });
 
   it("gives a brand-new account a Liked Songs playlist", async () => {
-    render(<StudioProvider><Probe /></StudioProvider>);
-    await waitFor(() => expect(screen.getByTestId("loading").textContent).toBe("false"));
+    render(
+      <StudioProvider>
+        <Probe />
+      </StudioProvider>
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId("loading").textContent).toBe("false")
+    );
     expect(screen.getByTestId("liked").textContent).toBe("Liked Songs");
     expect(screen.getByTestId("liked-system").textContent).toBe("true");
   });
@@ -164,15 +189,27 @@ describe("StudioProvider library load", () => {
     // rejected promise used to take the ENTIRE library down with it — the
     // user saw no playlists at all, and libraryLoading never cleared.
     backend.me.likes.mockRejectedValue(new Error("FAILED_PRECONDITION: index"));
-    render(<StudioProvider><Probe /></StudioProvider>);
-    await waitFor(() => expect(screen.getByTestId("loading").textContent).toBe("false"));
+    render(
+      <StudioProvider>
+        <Probe />
+      </StudioProvider>
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId("loading").textContent).toBe("false")
+    );
     expect(screen.getByTestId("liked").textContent).toBe("Liked Songs");
   });
 
   it("still builds the library when the collections call fails", async () => {
     backend.collections.list.mockRejectedValue(new Error("boom"));
-    render(<StudioProvider><Probe /></StudioProvider>);
-    await waitFor(() => expect(screen.getByTestId("loading").textContent).toBe("false"));
+    render(
+      <StudioProvider>
+        <Probe />
+      </StudioProvider>
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId("loading").textContent).toBe("false")
+    );
     expect(screen.getByTestId("liked").textContent).toBe("Liked Songs");
   });
 
@@ -185,12 +222,18 @@ describe("StudioProvider library load", () => {
       return (
         <>
           <button onClick={() => toggleLike("brand-new-track")}>like</button>
-          <div data-testid="liked-tracks">{liked?.trackIds.join(",") ?? ""}</div>
+          <div data-testid="liked-tracks">
+            {liked?.trackIds.join(",") ?? ""}
+          </div>
         </>
       );
     }
 
-    render(<StudioProvider><LikeProbe /></StudioProvider>);
+    render(
+      <StudioProvider>
+        <LikeProbe />
+      </StudioProvider>
+    );
     await waitFor(() =>
       expect(screen.getByTestId("liked-tracks")).toBeInTheDocument()
     );
@@ -363,7 +406,10 @@ describe("StudioProvider playback session restore", () => {
       expect(screen.getByTestId("collections-count").textContent).toBe("1")
     );
     await waitFor(() =>
-      expect(warn).toHaveBeenCalledWith("Playback restore failed", expect.any(Error))
+      expect(warn).toHaveBeenCalledWith(
+        "Playback restore failed",
+        expect.any(Error)
+      )
     );
     expect(screen.getByTestId("now-playing").textContent).toBe("none");
 

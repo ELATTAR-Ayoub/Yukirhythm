@@ -109,7 +109,11 @@ describe("VinylDisc artwork", () => {
         onToggle={() => {}}
       />
     );
-    expect(container.querySelector('img[src="https://cdn/two.jpg"]')).toBeTruthy();
-    expect(container.querySelector('img[src="https://cdn/one.jpg"]')).toBeNull();
+    expect(
+      container.querySelector('img[src="https://cdn/two.jpg"]')
+    ).toBeTruthy();
+    expect(
+      container.querySelector('img[src="https://cdn/one.jpg"]')
+    ).toBeNull();
   });
 });

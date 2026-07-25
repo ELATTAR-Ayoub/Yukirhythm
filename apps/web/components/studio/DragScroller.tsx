@@ -53,7 +53,8 @@ export default function DragScroller({
       if (!dragging) return;
       dragging = false;
       delete el.dataset.dragging;
-      if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId);
+      if (el.hasPointerCapture(e.pointerId))
+        el.releasePointerCapture(e.pointerId);
     };
 
     // swallow the click that ends a drag so cards don't navigate

@@ -16,7 +16,8 @@ import { SCREENS } from "@/components/studio/shell/routes";
 const BASE = SCREENS;
 
 export default function RecentsScreen() {
-  const { user, collections, play, nowPlaying, isPlaying, recents } = useMockStudio();
+  const { user, collections, play, nowPlaying, isPlaying, recents } =
+    useMockStudio();
   if (!user) return <SignInPrompt />;
 
   /** Enter/Space activation for non-button click targets. */
