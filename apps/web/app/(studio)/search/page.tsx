@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { MagnifyingGlassIcon } from "@radix-ui/react-icons";
 
-import RailShelf from "@/components/studio/RailShelf";
+import FeedShelf from "@/components/studio/screens/FeedShelf";
 import MediaCard from "@/components/studio/MediaCard";
 import TrackRow from "@/components/studio/TrackRow";
 import EmptyState from "@/components/studio/EmptyState";
@@ -19,7 +19,6 @@ import { playlistHref } from "@/components/studio/shell/routes";
 import {
   EXPLORE_TILES,
   formatDuration,
-  type MockTrack,
 } from "@/components/studio/screens/mock-data";
 
 /** Enter/Space activation for non-button click targets. */
@@ -29,45 +28,6 @@ const playKeyHandler = (fn: () => void) => (e: React.KeyboardEvent) => {
     fn();
   }
 };
-
-function TrackShelf({
-  label,
-  title,
-  tracks,
-}: {
-  label: string;
-  title: string;
-  tracks: MockTrack[];
-}) {
-  const { play, nowPlaying, isPlaying } = useMockStudio();
-  return (
-    <RailShelf label={label} title={title}>
-      {tracks.map((track) => {
-        return (
-          <div
-            key={track.id}
-            role="button"
-            tabIndex={0}
-            aria-label={`Play ${track.title}`}
-            onClick={() => play(track)}
-            onKeyDown={playKeyHandler(() => play(track))}
-            className="text-left shrink-0 cursor-pointer"
-          >
-            <MediaCard
-              title={track.title}
-              artist={track.artist}
-              texture={track.texture}
-              artUrl={track.artUrl}
-              duration={formatDuration(track.durationSec)}
-              size="sm"
-              playing={nowPlaying?.id === track.id && isPlaying}
-            />
-          </div>
-        );
-      })}
-    </RailShelf>
-  );
-}
 
 export default function SearchScreen() {
   const {
@@ -81,11 +41,20 @@ export default function SearchScreen() {
     isPlaying,
     youMightLike,
     newReleases,
+    feedsLoading,
     collectionResults,
   } = useMockStudio();
   const [q, setQ] = useState("");
 
+  // Typing only edits the field; the search fires on submit (Enter, or the
+  // mobile keyboard's Search key). Emptying the field abandons the results.
   const onChange = (value: string) => {
+    setQ(value);
+    if (!value.trim()) clearSearch();
+  };
+
+  /** One explicit act — Enter or a mood tile — is what runs a search. */
+  const submit = (value: string) => {
     setQ(value);
     if (value.trim()) search(value);
     else clearSearch();
@@ -94,29 +63,49 @@ export default function SearchScreen() {
   // Collection results come from the provider (the caller's own library), so
   // Liked Songs and anything the create wizard made are findable.
   const collectionHits = collectionResults;
-  const idle = !q.trim();
+  // Idle = no submitted search on foot. Editing the field around a submitted
+  // search keeps its results on screen until the next submit or a clear.
+  const idle = !hasSearched;
 
   return (
     <div>
       <PageHeader title="Search" />
 
-      <div className="relative mb-8">
+      <form
+        role="search"
+        aria-label="Track search"
+        onSubmit={(e) => {
+          e.preventDefault();
+          submit(q);
+        }}
+        className="relative mb-8"
+      >
         <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
           value={q}
           onChange={(e) => onChange(e.target.value)}
+          type="search"
+          enterKeyHint="search"
           placeholder="Tracks, artists, collections…"
           aria-label="Search"
           className="pl-9"
         />
-      </div>
+      </form>
 
       {idle ? (
         <div className="space-y-10">
-          <TrackShelf
+          <FeedShelf
             label="For you"
             title="You might like"
             tracks={youMightLike}
+            loading={feedsLoading}
+          />
+
+          <FeedShelf
+            label="Fresh drops"
+            title="New releases"
+            tracks={newReleases}
+            loading={feedsLoading}
           />
 
           <section>
@@ -129,7 +118,7 @@ export default function SearchScreen() {
                 <button
                   key={tile.label}
                   type="button"
-                  onClick={() => onChange(tile.label)}
+                  onClick={() => submit(tile.label)}
                   className="group relative h-24 rounded-lg overflow-hidden border border-border text-left hover:shadow-e3 hover:-translate-y-0.5 transition-all duration-base"
                 >
                   <Texture
@@ -143,12 +132,6 @@ export default function SearchScreen() {
               ))}
             </div>
           </section>
-
-          <TrackShelf
-            label="Fresh drops"
-            title="New releases"
-            tracks={newReleases}
-          />
         </div>
       ) : (
         <div className="space-y-8" aria-live="polite" aria-busy={searching}>
@@ -208,7 +191,12 @@ export default function SearchScreen() {
                         <MediaCard
                           title={c.title}
                           artist={`${c.trackIds.length} tracks`}
-                          art={<CollectionArt collection={c} className="w-full h-full" />}
+                          art={
+                            <CollectionArt
+                              collection={c}
+                              className="w-full h-full"
+                            />
+                          }
                           variant="extended"
                           size="sm"
                           playable={false}
