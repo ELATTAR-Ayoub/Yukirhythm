@@ -84,8 +84,13 @@ export function mapMusicSong(raw: unknown): ProviderTrack {
     title: text(s.title),
     artists: mapArtists(s.artists),
     album: mapAlbum(s.album),
+    // A missing lengthText parses (via youtubei.js's timeToSeconds on "N/A")
+    // to NaN rather than throwing — Number.isFinite keeps that from leaking
+    // out as a fake duration.
     durationSec:
-      typeof duration.seconds === "number" ? duration.seconds : null,
+      typeof duration.seconds === "number" && Number.isFinite(duration.seconds)
+        ? duration.seconds
+        : null,
     artwork: mapImages(s.thumbnail ?? s.thumbnails),
     // Music search does not report embeddability; getInfo does. Assume
     // playable and let enrichment correct it, rather than hiding everything.
@@ -98,6 +103,23 @@ export function mapMusicSong(raw: unknown): ProviderTrack {
     keywords: [],
     categoryName: null,
   };
+}
+
+/**
+ * A row from Music's up-next/radio panel (`music.getUpNext`, the cold-start
+ * recommender's source). Unlike a bare search row, youtubei.js has *already*
+ * parsed the panel's `lengthText` ("3:54") into `duration.seconds` for us —
+ * so this is mapMusicSong plus forwarding the field the caller previously
+ * dropped, not a new mm:ss parser.
+ */
+export function mapUpNextVideo(raw: unknown): ProviderTrack {
+  const r = asRecord(raw);
+  return mapMusicSong({
+    id: r.video_id,
+    title: r.title,
+    artists: r.artists,
+    duration: r.duration,
+  });
 }
 
 function toIso(v: unknown): string | null {

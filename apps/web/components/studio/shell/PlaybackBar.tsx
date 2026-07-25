@@ -124,7 +124,11 @@ export default function PlaybackBar({ onExpand }: PlaybackBarProps) {
         <Transport size="base" onQueue={() => router.push(QUEUE)} />
         <div className="w-full flex items-center gap-2">
           <DataText className="text-xs text-muted-foreground shrink-0">
-            {nowPlaying ? formatDuration(progressSec) : NO_TIME}
+            {/* zeroIsKnown: 0s elapsed at the start of a track is real,
+                unlike a 0/null duration — see formatDuration's doc. */}
+            {nowPlaying
+              ? formatDuration(progressSec, { zeroIsKnown: true })
+              : NO_TIME}
           </DataText>
           <Slider
             value={[

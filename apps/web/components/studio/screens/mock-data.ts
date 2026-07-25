@@ -50,8 +50,26 @@ export interface MockUser {
   following: number;
 }
 
-/** m:ss, or h:mm:ss past an hour — always fed through DataText (OffBit). */
-export function formatDuration(totalSec: number): string {
+/**
+ * m:ss, or h:mm:ss past an hour — always fed through DataText (OffBit).
+ *
+ * A track's real length is never 0 — a 0/null/NaN `totalSec` means the
+ * provider hasn't told us the duration yet (e.g. a related-tracks radio
+ * hit before enrichment), so it renders as unknown ("--:--", matching the
+ * idle-player vocabulary in player-idle.ts) rather than the misleading
+ * "0:00". The one caller for whom 0 IS a real, common value — elapsed
+ * playback position at the start of a track — opts back in with
+ * `zeroIsKnown`.
+ */
+export function formatDuration(
+  totalSec: number | null | undefined,
+  opts: { zeroIsKnown?: boolean } = {}
+): string {
+  const unknown =
+    totalSec == null ||
+    !Number.isFinite(totalSec) ||
+    (totalSec <= 0 && !opts.zeroIsKnown);
+  if (unknown) return "--:--";
   const s = Math.max(0, Math.floor(totalSec));
   const h = Math.floor(s / 3600);
   const m = Math.floor((s % 3600) / 60);

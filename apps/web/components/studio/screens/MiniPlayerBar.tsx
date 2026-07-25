@@ -67,7 +67,9 @@ export default function MiniPlayerBar({ onExpand }: MiniPlayerBarProps) {
         </button>
         <div className="hidden sm:flex flex-1 items-center gap-3 min-w-0">
           <DataText className="text-xs text-muted-foreground shrink-0">
-            {formatDuration(progressSec)}
+            {/* zeroIsKnown: 0s elapsed at the start of a track is real,
+                unlike a 0/null duration — see formatDuration's doc. */}
+            {formatDuration(progressSec, { zeroIsKnown: true })}
           </DataText>
           <Slider
             value={[Math.min(progressSec, nowPlaying.durationSec)]}

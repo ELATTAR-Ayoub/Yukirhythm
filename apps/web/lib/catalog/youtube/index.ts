@@ -11,6 +11,7 @@ import {
   mapMusicArtist,
   mapMusicSong,
   mapPlaylist,
+  mapUpNextVideo,
   mapVideoInfo,
 } from "./map";
 
@@ -122,18 +123,10 @@ export class YoutubeCatalogProvider implements CatalogProvider {
         const row = r as { video_id?: string };
         return row.video_id && row.video_id !== providerTrackId;
       });
-      return mapSafe(rows, (r) => {
-        const row = r as {
-          video_id?: string;
-          title?: unknown;
-          artists?: unknown;
-        };
-        return mapMusicSong({
-          id: row.video_id,
-          title: row.title,
-          artists: row.artists,
-        });
-      });
+      // mapUpNextVideo (not mapMusicSong directly) — the panel row carries a
+      // `duration` field mapMusicSong knows how to read, but a search row's
+      // shape does not, so building the wrong object here silently drops it.
+      return mapSafe(rows, mapUpNextVideo);
     } catch {
       return [];
     }

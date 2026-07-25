@@ -189,7 +189,11 @@ export default function DevicePlayer({
             />
             <div className="flex items-center justify-between mt-2">
               <DataText className="text-xs text-muted-foreground">
-                {nowPlaying ? formatDuration(progressSec) : NO_TIME}
+                {/* zeroIsKnown: 0s elapsed at the start of a track is real,
+                    unlike a 0/null duration — see formatDuration's doc. */}
+                {nowPlaying
+                  ? formatDuration(progressSec, { zeroIsKnown: true })
+                  : NO_TIME}
               </DataText>
               <DataText className="text-xs text-muted-foreground">
                 {nowPlaying ? formatDuration(nowPlaying.durationSec) : NO_TIME}

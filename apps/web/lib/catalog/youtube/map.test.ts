@@ -5,11 +5,13 @@ import videoInfo from "./__fixtures__/video-info.json";
 import videoInfoLong from "./__fixtures__/video-info-long.json";
 import artistFixture from "./__fixtures__/music-artist.json";
 import playlistFixture from "./__fixtures__/playlist.json";
+import upNextFixture from "./__fixtures__/music-up-next.json";
 
 import {
   mapMusicArtist,
   mapMusicSong,
   mapPlaylist,
+  mapUpNextVideo,
   mapVideoInfo,
   mergeTrack,
 } from "./map";
@@ -104,6 +106,37 @@ describe("mapVideoInfo", () => {
       start_timestamp: "2013-12-06T08:00:01Z",
     });
     expect(t.publishedAt).toBe("2013-12-06T08:00:01.000Z");
+  });
+});
+
+describe("mapUpNextVideo", () => {
+  // Regression for the you-might-like shelf rendering "0:00" on every card:
+  // the related-tracks path built its own row object and forgot `duration`.
+  it("keeps the real duration from the up-next/radio panel, not 0 or null", () => {
+    const t = mapUpNextVideo(upNextFixture[1]); // "Get Lucky", lengthText "3:58"
+    expect(t.durationSec).not.toBeNull();
+    expect(t.durationSec).toBeGreaterThan(0);
+    expect(t.durationSec).toBe(238);
+  });
+
+  it("parses a plausible duration for every related row in the fixture", () => {
+    for (const row of upNextFixture) {
+      const t = mapUpNextVideo(row);
+      expect(t.durationSec).not.toBeNull();
+      expect(t.durationSec).toBeGreaterThan(0);
+    }
+  });
+
+  it("still carries id, title and artists", () => {
+    const t = mapUpNextVideo(upNextFixture[2]); // "Dracula" / Tame Impala
+    expect(t.providerTrackId).toBe("xnP7qKxwzjg");
+    expect(t.title).toBe("Dracula");
+    expect(t.artists[0]?.name).toBe("Tame Impala");
+    expect(t.durationSec).toBe(234); // lengthText "3:54"
+  });
+
+  it("defaults to no duration rather than throwing when the row lacks one", () => {
+    expect(mapUpNextVideo({ video_id: "x", title: "T" }).durationSec).toBeNull();
   });
 });
 

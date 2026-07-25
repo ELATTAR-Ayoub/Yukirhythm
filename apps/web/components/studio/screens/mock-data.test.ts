@@ -4,6 +4,7 @@ import {
   LIKED_SONGS,
   MOCK_COLLECTIONS,
   MOCK_HISTORY,
+  formatDuration,
   getCollectionTracks,
   getTrack,
   recentCollections,
@@ -57,5 +58,37 @@ describe("mock-data helpers", () => {
     const ids = recents.map((c) => c.id);
     expect(new Set(ids).size).toBe(ids.length);
     expect(ids[0]).toBe(MOCK_HISTORY[0].collectionId);
+  });
+});
+
+describe("formatDuration", () => {
+  it("formats m:ss", () => {
+    expect(formatDuration(214)).toBe("3:34");
+  });
+
+  it("formats h:mm:ss past an hour", () => {
+    expect(formatDuration(3661)).toBe("1:01:01");
+  });
+
+  // A track's real length is never 0 — an unknown duration must not claim
+  // "0:00" (observed live on the you-might-like shelf before ingestion
+  // carried real durations).
+  it("renders a zero duration as unknown, not a fake 0:00", () => {
+    expect(formatDuration(0)).toBe("--:--");
+  });
+
+  it("renders a null/undefined duration as unknown", () => {
+    expect(formatDuration(null)).toBe("--:--");
+    expect(formatDuration(undefined)).toBe("--:--");
+  });
+
+  it("renders a non-finite duration as unknown rather than throwing", () => {
+    expect(formatDuration(NaN)).toBe("--:--");
+  });
+
+  // Elapsed playback position is legitimately 0 at the start of a track —
+  // unlike a track's total duration, that is real data, not an unknown.
+  it("keeps a real 0:00 when the caller opts in with zeroIsKnown", () => {
+    expect(formatDuration(0, { zeroIsKnown: true })).toBe("0:00");
   });
 });

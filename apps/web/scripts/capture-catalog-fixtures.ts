@@ -51,6 +51,40 @@ async function main(): Promise<void> {
     info: playlist.info,
     videos: (playlist.videos ?? []).slice(0, 5),
   });
+
+  // Unlike the fixtures above, saved trimmed to just the fields map.ts reads
+  // (video_id, title, artists, duration, thumbnail, selected) rather than
+  // the raw row — a raw PlaylistPanelVideo row carries a multi-hundred-line
+  // `menu` (queue/like/share/report actions) that adds nothing to the test
+  // and bloats the fixture ~100x for no coverage gained. Keep new entries
+  // small by hand-trimming after inspecting one raw capture, the same way
+  // this one was built.
+  const upNext = await yt.music.getUpNext(VIDEO_ID);
+  const upNextRows = (upNext as unknown as { contents?: unknown[] }).contents ?? [];
+  save(
+    "music-up-next",
+    upNextRows.slice(0, 4).map((r) => {
+      const row = r as {
+        video_id?: string;
+        title?: unknown;
+        thumbnail?: unknown;
+        selected?: boolean;
+        duration?: unknown;
+        author?: string;
+        artists?: unknown;
+      };
+      return {
+        type: "PlaylistPanelVideo",
+        title: row.title,
+        thumbnail: row.thumbnail,
+        selected: row.selected,
+        video_id: row.video_id,
+        duration: row.duration,
+        author: row.author,
+        artists: row.artists,
+      };
+    })
+  );
 }
 
 main().catch((e) => {

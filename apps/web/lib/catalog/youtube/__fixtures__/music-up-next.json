@@ -1,0 +1,60 @@
+[
+  {
+    "type": "PlaylistPanelVideo",
+    "title": { "text": "Instant Crush (feat. Julian Casablancas)" },
+    "thumbnail": [
+      {
+        "url": "https://i.ytimg.com/vi/a5uQMwRMHcs/hq720.jpg",
+        "width": 853,
+        "height": 479
+      }
+    ],
+    "selected": true,
+    "video_id": "a5uQMwRMHcs",
+    "duration": { "text": "5:40", "seconds": 340 },
+    "author": "Daft Punk",
+    "artists": [
+      { "name": "Daft Punk", "channel_id": "UCRr1xG_2WIDs18a6cIiCxeA" }
+    ]
+  },
+  {
+    "type": "PlaylistPanelVideo",
+    "title": {
+      "text": "Get Lucky (Radio Edit - feat. Pharrell Williams and Nile Rodgers)"
+    },
+    "thumbnail": [
+      {
+        "url": "https://i.ytimg.com/vi/TnQsZPk93FA/hq720.jpg",
+        "width": 853,
+        "height": 479
+      }
+    ],
+    "selected": false,
+    "video_id": "TnQsZPk93FA",
+    "duration": { "text": "3:58", "seconds": 238 },
+    "author": "Nile Rodgers, Pharrell, & Daft Punk",
+    "artists": [
+      { "name": "Nile Rodgers", "channel_id": "UCThde8ccpEr6sP8dIHZ-ceQ" },
+      { "name": "Pharrell", "channel_id": "UCJw8VyO6e3v6S0327AsgwcQ" },
+      { "name": "Daft Punk", "channel_id": "UCRr1xG_2WIDs18a6cIiCxeA" }
+    ]
+  },
+  {
+    "type": "PlaylistPanelVideo",
+    "title": { "text": "Dracula" },
+    "thumbnail": [
+      {
+        "url": "https://i.ytimg.com/vi/xnP7qKxwzjg/hq720.jpg",
+        "width": 853,
+        "height": 479
+      }
+    ],
+    "selected": false,
+    "video_id": "xnP7qKxwzjg",
+    "duration": { "text": "3:54", "seconds": 234 },
+    "author": "Tame Impala",
+    "artists": [
+      { "name": "Tame Impala", "channel_id": "UCGz-eguN8tcic5kUG4s1ZgA" }
+    ]
+  }
+]
