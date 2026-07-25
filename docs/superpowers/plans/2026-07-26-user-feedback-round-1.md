@@ -25,6 +25,7 @@ Commit: `feat(player): a liked track's heart opens Add to playlist`
 **Files:** `screens/AddToPlaylistDialog.tsx`, its test; possibly `MockStudioProvider.tsx`/`StudioProvider.tsx` if toggle functions need to return promises.
 
 - Every playlist row's check control shows a pending state while its mutation is in flight (row-scoped spinner replacing the checkbox, control disabled) and settles to the new state. `toggleTrackInCollection`/`toggleLike` in StudioProvider currently fire-and-forget → make them return the promise (context type update in MockStudioValue; mock provider resolves immediately). Row tracks its own pending id set.
+- **Owner directive:** the Add-to-playlist surface must be the shadcn **Dialog** (`components/ui/dialog`) on every viewport — if it currently renders as (or falls back to) a Drawer/sheet anywhere, convert it. Not a drawer.
 - Mobile: the dialog must fit 375×812 — constrain (`max-h-[80dvh]`, internal scroll list, `w-[calc(100vw-2rem)] max-w-md`), verify no horizontal overflow. Check both this dialog AND `PlaylistDrawer` (bug 3 says "the actual playlist dialogue on mobile ... way overflowing") — read PlaylistDrawer and apply the same discipline (drawer content taller than viewport → internal scroll).
 - Tests: pending state appears on click and resolves (deferred mock promise); a second row can be toggled while the first is pending.
 
@@ -61,15 +62,28 @@ Commit: `fix(create): navigate to the playlist the server actually created`
 
 Commit: `fix(queue): loose plays join the queue instead of wiping it`
 
-### Task B6: Transport disables at the queue's edges
+### Task B6: Playback semantics — smart Prev, wrapping Next, working Shuffle
 
-**Files:** `StudioProvider.tsx` + `MockStudioProvider.tsx` (`next`/`prev` stop wrapping; expose `hasNext`/`hasPrev` on the context — type in MockStudioValue), `screens/Transport.tsx` (+ MiniPlayerBar if it renders its own prev/next — check), tests.
+**SUPERSEDES the original bug 7 ("disable at edges") per owner items 12–14 (2026-07-26): Next wraps, Prev is smart, nothing disables while a queue is loaded.**
 
-- `hasNext = currentIndex >= 0 && currentIndex < queue.length - 1`; `hasPrev = currentIndex > 0`. `next()`/`prev()` become no-ops beyond the edge (and `onEnded` at the last track stops playback instead of wrapping — set isPlaying false, position stays at end).
-- Transport: Next disabled when `!hasNext`, Previous disabled when `!hasPrev` (on top of the existing no-track disable).
-- Tests: single-track queue → both disabled; at index 0 of 3 → prev disabled, next enabled; at last → next disabled; onEnded at last stops.
+**Files:** `StudioProvider.tsx` + `MockStudioProvider.tsx` (+ `MockStudioValue` type), `screens/queue-utils.ts` (pure helpers + tests), `screens/Transport.tsx` only if wiring changes, `screens/CollectionDetail.tsx` + the queue page (`app/(studio)/queue/page.tsx`) for shuffle triggers, tests throughout.
 
-Commit: `fix(player): next and previous honor the ends of the queue`
+- **Smart Prev (item 12):** `prev()` — if `progressSec >= 5`, seek to 0 of the current track (keep playing, flush the listen event as a restart? keep simple: seek(0), do not change index). If `progressSec < 5`, go to the previous track; at index 0 with <5s, wrap to the LAST track (mirror of wrapping next).
+- **Wrapping Next (item 13):** `next()` at the last index goes to index 0 (the modulo behavior — verify it still does; `onEnded` uses next() so a finished playlist restarts from the top).
+- **Shuffle that works (item 14):** context gains `shuffled: boolean` and `toggleShuffle()`. On enable: Fisher–Yates the queue with the CURRENT track moved to position 0 (playback never interrupts), remember the pre-shuffle order in a ref; the wrap order IS the shuffled order (next from last shuffled → first shuffled). On disable: restore the remembered order (current track keeps playing; index re-derived by id). Persist the ACTIVE order via the existing playback save (the queue array saved is whatever order is live). Pure reorder helpers live in `queue-utils.ts` with exhaustive unit tests (shuffle keeps current first, is a permutation; restore maps index correctly even after dequeues — on dequeue while shuffled, drop the id from both orders).
+- **Triggers:** the queue page and `CollectionDetail`'s existing shuffle buttons (read them — CollectionDetail's shuffle currently plays the collection; it should play the collection then enable shuffle, i.e. shuffled from the start) wire to `toggleShuffle`/shuffled state (button shows active state). PlaybackBar's Loop button is untouched.
+- Tests: prev at 6s seeks 0 same index; prev at 3s index 2 → index 1; prev at 3s index 0 → last; next at last → 0; toggleShuffle keeps nowPlaying, produces permutation, active flag; disable restores order; onEnded at last wraps to first.
+
+Commit: `feat(player): smart previous, wrap-around next, and shuffle that actually shuffles`
+
+### Task B10: Back buttons go back (owner item 11)
+
+**Files:** `screens/BackHeader.tsx` (read it — likely takes an href), every page using it (`app/(studio)/queue/page.tsx` "Up next", queue/add, playlist add, profile subpages — grep `BackHeader`), tests.
+
+- Every back control meant as "go back" must perform `router.back()` — with a fallback: if there is no in-app history (the page was a direct load, `window.history.length <= 1` or Next's back would leave the app), fall back to the page's current hardcoded destination (keep it as `fallbackHref`). Implement once in BackHeader (`href` becomes `fallbackHref`; button click → `router.back()` when safe, else `router.push(fallbackHref)`); update call sites' prop name. Grep for OTHER ad-hoc back arrows outside BackHeader and give them the same treatment.
+- Tests: BackHeader test — with history, clicking calls router.back; without, pushes the fallback.
+
+Commit: `fix(nav): back buttons return to the previous page, not home`
 
 ### Task B7: Independent feeds + client cache + Refresh buttons + Home parity + Liked in Jump back in
 
