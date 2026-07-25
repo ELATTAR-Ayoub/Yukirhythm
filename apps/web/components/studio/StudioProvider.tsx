@@ -521,32 +521,53 @@ export default function StudioProvider({
     []
   );
 
-  // Persist playback state, throttled to ~10s. Note: a restored session sets
-  // nowPlaying (queue/currentIndex) with isPlaying false, so this interval
-  // starts right back up and saves that same restored state again — harmless
-  // and idempotent, not a fight with the restore.
-  useEffect(() => {
-    if (!nowPlaying) return;
-    const id = setInterval(() => {
-      void backend.me.playback.save({
-        trackId: nowPlaying.id,
-        queue: queue.map((t) => t.id),
-        queueIndex: currentIndex,
-        positionSec: progressSec,
-        isPlaying,
-        volume,
-      });
-    }, 10000);
-    return () => clearInterval(id);
-  }, [
-    backend,
+  // Latest playback snapshot for the persistence interval below. The interval
+  // must NOT list fast-changing state (progressSec ticks ~1s) in its own deps
+  // — that tore the timer down and recreated it on every tick, so the "10s"
+  // save only actually fired when ticks stalled (throttled tab, buffering).
+  // The interval reads this ref instead; the no-deps effect keeps it current
+  // on every render.
+  const persistSnapshotRef = useRef({
     nowPlaying,
     queue,
     currentIndex,
     progressSec,
     isPlaying,
     volume,
-  ]);
+  });
+  useEffect(() => {
+    persistSnapshotRef.current = {
+      nowPlaying,
+      queue,
+      currentIndex,
+      progressSec,
+      isPlaying,
+      volume,
+    };
+  });
+
+  // Persist playback state, throttled to ~10s. Keyed on "is a track loaded"
+  // alone so the timer survives progress ticks and track changes. Note: a
+  // restored session sets nowPlaying (queue/currentIndex) with isPlaying
+  // false, so this interval starts right back up and saves that same restored
+  // state again — harmless and idempotent, not a fight with the restore.
+  const hasTrack = nowPlaying !== null;
+  useEffect(() => {
+    if (!hasTrack) return;
+    const id = setInterval(() => {
+      const s = persistSnapshotRef.current;
+      if (!s.nowPlaying) return;
+      void backend.me.playback.save({
+        trackId: s.nowPlaying.id,
+        queue: s.queue.map((t) => t.id),
+        queueIndex: s.currentIndex,
+        positionSec: s.progressSec,
+        isPlaying: s.isPlaying,
+        volume: s.volume,
+      });
+    }, 10000);
+    return () => clearInterval(id);
+  }, [backend, hasTrack]);
 
   // Persist a volume change on its own, debounced ~1s. The interval above
   // only runs `if (nowPlaying)`, so a volume tweak made with nothing loaded

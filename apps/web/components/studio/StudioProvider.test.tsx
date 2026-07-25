@@ -19,6 +19,7 @@ const { backend, authState, hiddenPlayer } = vi.hoisted(() => ({
     // player would fire it — including firing it again on a track change.
     props: null as null | {
       onReady: () => void;
+      onProgress?: (s: { playedSeconds: number }) => void;
       playerRef?: { current: unknown };
     },
     seekTo: vi.fn(),
@@ -599,6 +600,60 @@ describe("StudioProvider playback session restore", () => {
       expect(backend.me.playback.save).toHaveBeenCalledWith(
         expect.objectContaining({ volume: 0.7 })
       );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("saves at the 10s mark even while progress ticks every second", async () => {
+    // The persistence interval used to list progressSec (and other
+    // fast-changing state) in its effect deps, so every ~1s progress tick
+    // tore the 10s timer down and recreated it — it only ever fired when
+    // ticks stalled (throttled tab, buffering). A playing track that reports
+    // progress every second must still hit the server on the 10s cadence.
+    render(
+      <StudioProvider>
+        <PlaybackProbe />
+      </StudioProvider>
+    );
+    // Let sign-in settle under real timers first: an interval created before
+    // useFakeTimers() would be a real one, invisible to advanceTimersByTime.
+    await waitFor(() =>
+      expect(screen.getByTestId("collections-count").textContent).toBe("1")
+    );
+
+    vi.useFakeTimers();
+    try {
+      // Starting the track only now means the persistence interval is
+      // scheduled on the fake clock.
+      fireEvent.click(screen.getByText("play-user-track"));
+      expect(screen.getByTestId("now-playing").textContent).toBe("u1");
+
+      // Nine seconds of playback, a progress tick each second.
+      for (let sec = 1; sec <= 9; sec++) {
+        act(() => {
+          vi.advanceTimersByTime(1000);
+          hiddenPlayer.props?.onProgress?.({ playedSeconds: sec });
+        });
+      }
+      // 10s cadence, not faster — nothing saved during the first nine.
+      expect(backend.me.playback.save).not.toHaveBeenCalled();
+
+      // The tenth second crosses the 10s mark: the save must fire despite
+      // every one of those ticks having re-rendered the provider.
+      act(() => {
+        vi.advanceTimersByTime(1000);
+      });
+      expect(backend.me.playback.save).toHaveBeenCalledTimes(1);
+      expect(backend.me.playback.save).toHaveBeenCalledWith({
+        trackId: "u1",
+        queue: ["u1"],
+        queueIndex: 0,
+        // Latest reported progress, not the 0 the track started from.
+        positionSec: 9,
+        isPlaying: true,
+        volume: 1,
+      });
     } finally {
       vi.useRealTimers();
     }
