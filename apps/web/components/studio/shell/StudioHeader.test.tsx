@@ -159,4 +159,28 @@ describe("StudioHeader search field", () => {
     fireEvent.focus(searchField());
     expect(push).toHaveBeenCalledWith(SEARCH);
   });
+
+  it("abandons the search when navigating off the search page", () => {
+    const { rerender } = render(
+      <MockStudioProvider>
+        <StudioHeader />
+        <SearchProbe />
+      </MockStudioProvider>
+    );
+
+    fireEvent.change(searchField(), { target: { value: "cobalt" } });
+    fireEvent.submit(screen.getByRole("search", { name: "Site search" }));
+    expect(screen.getByTestId("has-searched").textContent).toBe("true");
+
+    nav.pathname = HOME;
+    rerender(
+      <MockStudioProvider>
+        <StudioHeader />
+        <SearchProbe />
+      </MockStudioProvider>
+    );
+
+    expect(searchField().value).toBe("");
+    expect(screen.getByTestId("has-searched").textContent).toBe("false");
+  });
 });
