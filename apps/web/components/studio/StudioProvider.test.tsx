@@ -3,9 +3,17 @@ import { render, screen, waitFor, fireEvent, act } from "@testing-library/react"
 
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
 import { LIKED_SONGS_ID } from "@/components/studio/screens/mock-data";
+import { toStudioTrack } from "@/lib/studio/adapt";
 import type { Track } from "@/lib/catalog/model";
 
-const { backend, authState } = vi.hoisted(() => ({
+const { backend, authState, hiddenPlayer } = vi.hoisted(() => ({
+  hiddenPlayer: {
+    // Latest props StudioProvider passed to the (mocked-away) hidden
+    // react-player, so a test can simulate onReady the same way the real
+    // player would fire it — including firing it again on a track change.
+    props: null as null | { onReady: () => void; playerRef?: { current: unknown } },
+    seekTo: vi.fn(),
+  },
   backend: {
     me: {
       ensure: vi.fn().mockResolvedValue({}),
@@ -46,7 +54,21 @@ vi.mock("@/lib/studio/useAuth", () => ({
   signIn: vi.fn(),
   signOutUser: vi.fn(),
 }));
-vi.mock("next/dynamic", () => ({ default: () => () => null }));
+// Stands in for the real HiddenYouTubePlayer: captures whatever props
+// StudioProvider passes it (so a test can call onReady directly, the same
+// way react-player would) and fakes the ref-attach so playerRef.current
+// resolves to a spyable seekTo — without this, StudioProvider's own
+// onReady/seek logic (the thing under test for the restore fixes) would be
+// unreachable from a test.
+vi.mock("next/dynamic", () => ({
+  default:
+    () =>
+    (props: { playerRef?: { current: unknown }; onReady: () => void }) => {
+      hiddenPlayer.props = props;
+      if (props.playerRef) props.playerRef.current = { seekTo: hiddenPlayer.seekTo };
+      return null;
+    },
+}));
 
 import StudioProvider from "./StudioProvider";
 
@@ -78,10 +100,20 @@ function track(over: Partial<Track> = {}): Track {
 }
 
 /** Exposes the playback slice of the context plus a way to trigger a volume
- *  change, for the restore/persistence tests below. */
+ *  change, a user-initiated play, and next(), for the restore/persistence
+ *  tests below. */
 function PlaybackProbe() {
-  const { queue, nowPlaying, progressSec, volume, isPlaying, collections, setVolume } =
-    useMockStudio();
+  const {
+    queue,
+    nowPlaying,
+    progressSec,
+    volume,
+    isPlaying,
+    collections,
+    setVolume,
+    play,
+    next,
+  } = useMockStudio();
   return (
     <>
       <div data-testid="queue-length">{queue.length}</div>
@@ -91,6 +123,12 @@ function PlaybackProbe() {
       <div data-testid="is-playing">{String(isPlaying)}</div>
       <div data-testid="collections-count">{collections.length}</div>
       <button onClick={() => setVolume(0.7)}>set-volume</button>
+      <button
+        onClick={() => play(toStudioTrack(track({ trackId: "u1", title: "User Pick" })))}
+      >
+        play-user-track
+      </button>
+      <button onClick={() => next()}>next</button>
     </>
   );
 }
@@ -268,6 +306,12 @@ describe("StudioProvider playback session restore", () => {
   beforeEach(() => {
     backend.collections.list.mockResolvedValue([]);
     backend.me.likes.mockResolvedValue({ trackIds: [], tracks: [] });
+    // save's call history is shared across every `it` in this file (the mock
+    // is created once, hoisted) — several tests below assert
+    // not.toHaveBeenCalled(), which would trivially fail from a PRIOR test's
+    // calls without this.
+    backend.me.playback.save.mockClear();
+    hiddenPlayer.seekTo.mockClear();
   });
 
   it("restores queue, current track, position and volume, paused", async () => {
@@ -298,6 +342,9 @@ describe("StudioProvider playback session restore", () => {
     // Restored PAUSED — browsers block un-gestured autoplay, so a saved
     // isPlaying: true must not be honored on restore.
     expect(screen.getByTestId("is-playing").textContent).toBe("false");
+    // The restore itself must never echo the value it just read straight
+    // back to the server — pins the skip-ref, not just its visible effect.
+    expect(backend.me.playback.save).not.toHaveBeenCalled();
   });
 
   it("a failed playback read leaves the player cold and the rest of sign-in intact", async () => {
@@ -323,9 +370,11 @@ describe("StudioProvider playback session restore", () => {
     warn.mockRestore();
   });
 
-  it("clamps an out-of-range queueIndex", async () => {
+  it("clamps an out-of-range queueIndex when the saved track can't be re-anchored", async () => {
     backend.me.playback.get.mockResolvedValueOnce({
-      trackId: "t1",
+      // No trackId to re-anchor to, so this exercises the pure range-clamp
+      // fallback rather than the trackId-first lookup.
+      trackId: null,
       queue: ["t1", "t2"],
       queueIndex: 9,
       positionSec: 10,
@@ -350,6 +399,165 @@ describe("StudioProvider playback session restore", () => {
     expect(screen.getByTestId("now-playing").textContent).toBe("t1");
   });
 
+  it("re-anchors the restored index to the saved trackId when an earlier queue entry fails to resolve", async () => {
+    // Saved queue was [a, b, c] with b playing at index 1. `a` no longer
+    // resolves (deleted/unembeddable) — resolved becomes [b, c], so a raw
+    // range-clamp of queueIndex=1 would land on c, the wrong track.
+    backend.me.playback.get.mockResolvedValueOnce({
+      trackId: "b",
+      queue: ["a", "b", "c"],
+      queueIndex: 1,
+      positionSec: 5,
+      isPlaying: false,
+      volume: 0.5,
+    });
+    backend.catalog.track.mockImplementation((id: string) =>
+      id === "a"
+        ? Promise.reject(new Error("gone"))
+        : Promise.resolve(track({ trackId: id, title: id }))
+    );
+
+    render(
+      <StudioProvider>
+        <PlaybackProbe />
+      </StudioProvider>
+    );
+
+    await waitFor(() =>
+      expect(screen.getByTestId("queue-length").textContent).toBe("2")
+    );
+    expect(screen.getByTestId("now-playing").textContent).toBe("b");
+  });
+
+  it("does not clobber a session the user already started before the restore lands", async () => {
+    let resolveGet: (state: unknown) => void = () => {};
+    backend.me.playback.get.mockImplementationOnce(
+      () => new Promise((res) => (resolveGet = res))
+    );
+    backend.catalog.track.mockImplementation((id: string) =>
+      Promise.resolve(track({ trackId: id, title: id }))
+    );
+
+    render(
+      <StudioProvider>
+        <PlaybackProbe />
+      </StudioProvider>
+    );
+
+    // Let sign-in progress far enough to actually issue the playback read —
+    // only then is `resolveGet` wired to the real in-flight promise (before
+    // that, resolving it early would be a no-op and this test would pass
+    // for the wrong reason: the restore never having run yet at all).
+    await waitFor(() => expect(backend.me.playback.get).toHaveBeenCalled());
+
+    // The user starts their own playback while that read is still pending.
+    fireEvent.click(screen.getByText("play-user-track"));
+    expect(screen.getByTestId("now-playing").textContent).toBe("u1");
+    expect(screen.getByTestId("queue-length").textContent).toBe("1");
+
+    // The restore now lands, describing a completely different saved
+    // session. It must yield rather than clobber what the user just started.
+    await act(async () => {
+      resolveGet({
+        trackId: "t2",
+        queue: ["t1", "t2"],
+        queueIndex: 1,
+        positionSec: 42,
+        isPlaying: true,
+        volume: 0.4,
+      });
+      // Let the restore's resolveTrackIds() awaits and .then chain drain.
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(screen.getByTestId("now-playing").textContent).toBe("u1");
+    expect(screen.getByTestId("queue-length").textContent).toBe("1");
+    // play() -> startTrack() sets isPlaying true; restore must not have
+    // touched it (it doesn't get to write anything at all here).
+    expect(screen.getByTestId("is-playing").textContent).toBe("true");
+  });
+
+  it("drops a stale restored seek target when the track changes before its onReady ever fires", async () => {
+    backend.me.playback.get.mockResolvedValueOnce({
+      trackId: "t1",
+      queue: ["t1", "t2"],
+      queueIndex: 0,
+      positionSec: 55,
+      isPlaying: false,
+      volume: 0.5,
+    });
+    backend.catalog.track.mockImplementation((id: string) =>
+      Promise.resolve(track({ trackId: id, title: id, durationSec: 200 }))
+    );
+
+    render(
+      <StudioProvider>
+        <PlaybackProbe />
+      </StudioProvider>
+    );
+
+    await waitFor(() =>
+      expect(screen.getByTestId("now-playing").textContent).toBe("t1")
+    );
+
+    // Move on before t1's own onReady ever fired — next()/prev() don't clear
+    // pendingSeekRef the way startTrack() does.
+    fireEvent.click(screen.getByText("next"));
+    await waitFor(() =>
+      expect(screen.getByTestId("now-playing").textContent).toBe("t2")
+    );
+
+    // react-player re-fires onReady on every track change (cueVideoById ->
+    // CUED -> onReady) — this is t2's onReady, not t1's.
+    act(() => {
+      hiddenPlayer.props?.onReady();
+    });
+
+    expect(hiddenPlayer.seekTo).not.toHaveBeenCalled();
+  });
+
+  it("does not swallow the next real volume change when the restored volume matches the current default", async () => {
+    backend.me.playback.get.mockResolvedValueOnce({
+      trackId: "t1",
+      queue: ["t1"],
+      queueIndex: 0,
+      positionSec: 0,
+      isPlaying: false,
+      // Same as the untouched default (1) — setVolumeState is a no-op here,
+      // so an unconditionally-armed skip-ref would never get consumed.
+      volume: 1,
+    });
+    backend.catalog.track.mockImplementation((id: string) =>
+      Promise.resolve(track({ trackId: id, title: id }))
+    );
+
+    render(
+      <StudioProvider>
+        <PlaybackProbe />
+      </StudioProvider>
+    );
+
+    await waitFor(() =>
+      expect(screen.getByTestId("now-playing").textContent).toBe("t1")
+    );
+
+    vi.useFakeTimers();
+    try {
+      fireEvent.click(screen.getByText("set-volume"));
+      expect(screen.getByTestId("volume").textContent).toBe("0.7");
+
+      act(() => {
+        vi.advanceTimersByTime(1100);
+      });
+
+      expect(backend.me.playback.save).toHaveBeenCalledWith(
+        expect.objectContaining({ volume: 0.7 })
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("persists a volume change after the debounce", async () => {
     render(
       <StudioProvider>
@@ -366,6 +574,8 @@ describe("StudioProvider playback session restore", () => {
     try {
       fireEvent.click(screen.getByText("set-volume"));
       expect(screen.getByTestId("volume").textContent).toBe("0.7");
+      // Debounced, not immediate — nothing saved yet.
+      expect(backend.me.playback.save).not.toHaveBeenCalled();
 
       act(() => {
         vi.advanceTimersByTime(1100);

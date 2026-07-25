@@ -89,13 +89,21 @@ export default function StudioProvider({
   const listenedRef = useRef<number>(0);
   /** Set once by the sign-in restore below; consumed by the hidden player's
    *  onReady so a resumed session continues from the saved position instead
-   *  of 0:00. */
-  const pendingSeekRef = useRef<number | null>(null);
+   *  of 0:00. Target-aware (tagged with the track it belongs to) because
+   *  react-player re-fires onReady on every track change, not just once for
+   *  the restored track — an untagged ref would re-apply a stale seek onto
+   *  whatever track happens to be current when onReady next fires. */
+  const pendingSeekRef = useRef<{ trackId: string; sec: number } | null>(null);
   /** Guards the volume-persistence effect further down: true across its very
    *  first run (nothing to save yet) AND right after sign-in restore sets
    *  volume from a saved session (that value is already on the server — no
    *  need to echo it straight back). */
   const skipNextVolumeSaveRef = useRef(true);
+  /** Flips true the moment the user starts playback themselves (startTrack).
+   *  The sign-in restore reads this right before it writes anything, so a
+   *  restore that lands late — after the user already picked their own song
+   *  — yields instead of clobbering an active session. */
+  const userStartedRef = useRef(false);
 
   // search
   const [searchResults, setSearchResults] = useState<MockTrack[]>([]);
@@ -246,19 +254,57 @@ export default function StudioProvider({
           // Every id failed to resolve (e.g. deleted/unembeddable videos) —
           // restore nothing rather than seat the player on an empty queue.
           if (resolved.length === 0) return;
+          // The user may have started playing something themselves while
+          // this read was in flight. `currentIndex` in THIS closure is
+          // always the effect's original -1 (the sign-in effect only re-runs
+          // on [fbUser], so this async continuation never sees a fresher
+          // render) — a live ref is the only way to see a start that
+          // happened after this effect was created. A late restore must
+          // yield, not clobber an active session.
+          if (userStartedRef.current) return;
+
+          // Prefer landing on the exact saved track: queue ids can fail to
+          // resolve (deleted/unembeddable videos), which shifts every index
+          // after the gap — a raw range-clamp of the saved queueIndex could
+          // then land on a completely different track. Only fall back to
+          // the (clamped) saved index when the saved track itself didn't
+          // survive resolution.
+          const byTrackId = state.trackId
+            ? resolved.findIndex((t) => t.id === state.trackId)
+            : -1;
+          const savedIndex = state.queueIndex ?? -1;
+          const finalIndex =
+            byTrackId >= 0
+              ? byTrackId
+              : savedIndex >= 0 && savedIndex < resolved.length
+                ? savedIndex
+                : 0;
 
           setQueue(resolved);
-          const savedIndex = state.queueIndex ?? -1;
-          setCurrentIndex(
-            savedIndex >= 0 && savedIndex < resolved.length ? savedIndex : 0
-          );
+          setCurrentIndex(finalIndex);
           setProgressSec(state.positionSec ?? 0);
-          pendingSeekRef.current = state.positionSec ?? 0;
+          // Target-aware: onReady fires again on every track change
+          // (react-player re-cues), not just once for the restored track.
+          // Tagging the seek with the track it belongs to means a later,
+          // unrelated track change (next(), prev(), a fresh play()) can
+          // never inherit this stale position.
+          const restoredTrackId = resolved[finalIndex]?.id;
+          if (restoredTrackId) {
+            pendingSeekRef.current = {
+              trackId: restoredTrackId,
+              sec: state.positionSec ?? 0,
+            };
+          }
           const restoredVolume = Math.min(1, Math.max(0, state.volume ?? 1));
-          // The volume-persistence effect below must not immediately echo
-          // this restored value straight back to the server.
-          skipNextVolumeSaveRef.current = true;
-          setVolumeState(restoredVolume);
+          setVolumeState((v) => {
+            // Only arm the skip if this actually changes anything.
+            // setVolumeState bails out (no re-render, no effect run) when
+            // the value is unchanged — arming unconditionally would leave
+            // the flag stuck "on" until the user's NEXT real change, which
+            // would then be the one silently dropped instead of this no-op.
+            if (v !== restoredVolume) skipNextVolumeSaveRef.current = true;
+            return restoredVolume;
+          });
           // A restored 0 should still unmute to something audible later, so
           // preMute is only updated on an audible restore — leave it at its
           // default otherwise.
@@ -335,10 +381,14 @@ export default function StudioProvider({
     setIsPlaying(true);
     startedAtRef.current = Date.now();
     listenedRef.current = 0;
+    // Marks that the user (not the sign-in restore) owns playback from here
+    // on — a restore landing later must yield rather than clobber this.
+    userStartedRef.current = true;
     // A pending restore-seek belongs to whichever track was current when
     // sign-in restored the session. Starting a different track (before the
     // hidden player for the restored one ever fired onReady) must not carry
-    // that stale seek target over onto the new one.
+    // that stale seek target over onto the new one. (onReady's own trackId
+    // check below covers next()/prev(), which don't call startTrack.)
     pendingSeekRef.current = null;
   }, []);
 
@@ -493,14 +543,16 @@ export default function StudioProvider({
       return;
     }
     const id = setTimeout(() => {
-      void backend.me.playback.save({
-        trackId: nowPlaying?.id ?? null,
-        queue: queue.map((t) => t.id),
-        queueIndex: currentIndex,
-        positionSec: progressSec,
-        isPlaying,
-        volume,
-      });
+      void backend.me.playback
+        .save({
+          trackId: nowPlaying?.id ?? null,
+          queue: queue.map((t) => t.id),
+          queueIndex: currentIndex,
+          positionSec: progressSec,
+          isPlaying,
+          volume,
+        })
+        .catch((err) => console.warn("Volume persist failed", err));
     }, 1000);
     return () => clearTimeout(id);
     // Deliberately only `volume` — this effect debounces volume changes
@@ -757,11 +809,17 @@ export default function StudioProvider({
             volume={volume}
             onReady={() => {
               setIsLoading(false);
-              // Consume a restored position exactly once — after this,
-              // progress comes from the player's own onProgress events, the
-              // same as any other track.
-              if (pendingSeekRef.current !== null) {
-                playerRef.current?.seekTo(pendingSeekRef.current);
+              // react-player re-fires onReady on every track change
+              // (cueVideoById -> CUED -> onReady), not just once for the
+              // track the seek was meant for — so this only applies it when
+              // it still targets whatever is actually current now. A
+              // mismatch means the target track isn't playing anymore; the
+              // seek is dead either way, so it's cleared regardless.
+              const pending = pendingSeekRef.current;
+              if (pending) {
+                if (pending.trackId === nowPlaying?.id) {
+                  playerRef.current?.seekTo(pending.sec);
+                }
                 pendingSeekRef.current = null;
               }
             }}
