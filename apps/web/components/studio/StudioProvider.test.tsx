@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent, act } from "@testing-library/react";
 
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
 import { LIKED_SONGS_ID } from "@/components/studio/screens/mock-data";
@@ -75,6 +75,24 @@ function track(over: Partial<Track> = {}): Track {
     schemaVersion: 1,
     ...over,
   } as Track;
+}
+
+/** Exposes the playback slice of the context plus a way to trigger a volume
+ *  change, for the restore/persistence tests below. */
+function PlaybackProbe() {
+  const { queue, nowPlaying, progressSec, volume, isPlaying, collections, setVolume } =
+    useMockStudio();
+  return (
+    <>
+      <div data-testid="queue-length">{queue.length}</div>
+      <div data-testid="now-playing">{nowPlaying?.id ?? "none"}</div>
+      <div data-testid="progress">{progressSec}</div>
+      <div data-testid="volume">{volume}</div>
+      <div data-testid="is-playing">{String(isPlaying)}</div>
+      <div data-testid="collections-count">{collections.length}</div>
+      <button onClick={() => setVolume(0.7)}>set-volume</button>
+    </>
+  );
 }
 
 function Probe() {
@@ -243,5 +261,121 @@ describe("StudioProvider search seq-ticket", () => {
 
     expect(screen.getByTestId("results").textContent).toBe("");
     expect(screen.getByTestId("has-searched").textContent).toBe("false");
+  });
+});
+
+describe("StudioProvider playback session restore", () => {
+  beforeEach(() => {
+    backend.collections.list.mockResolvedValue([]);
+    backend.me.likes.mockResolvedValue({ trackIds: [], tracks: [] });
+  });
+
+  it("restores queue, current track, position and volume, paused", async () => {
+    backend.me.playback.get.mockResolvedValueOnce({
+      trackId: "t2",
+      queue: ["t1", "t2"],
+      queueIndex: 1,
+      positionSec: 42,
+      isPlaying: true,
+      volume: 0.4,
+    });
+    backend.catalog.track.mockImplementation((id: string) =>
+      Promise.resolve(track({ trackId: id, title: id }))
+    );
+
+    render(
+      <StudioProvider>
+        <PlaybackProbe />
+      </StudioProvider>
+    );
+
+    await waitFor(() =>
+      expect(screen.getByTestId("now-playing").textContent).toBe("t2")
+    );
+    expect(screen.getByTestId("queue-length").textContent).toBe("2");
+    expect(screen.getByTestId("progress").textContent).toBe("42");
+    expect(screen.getByTestId("volume").textContent).toBe("0.4");
+    // Restored PAUSED — browsers block un-gestured autoplay, so a saved
+    // isPlaying: true must not be honored on restore.
+    expect(screen.getByTestId("is-playing").textContent).toBe("false");
+  });
+
+  it("a failed playback read leaves the player cold and the rest of sign-in intact", async () => {
+    backend.me.playback.get.mockRejectedValueOnce(new Error("boom"));
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    render(
+      <StudioProvider>
+        <PlaybackProbe />
+      </StudioProvider>
+    );
+
+    // The rest of sign-in (library/collections) is unaffected by the
+    // rejected playback read.
+    await waitFor(() =>
+      expect(screen.getByTestId("collections-count").textContent).toBe("1")
+    );
+    await waitFor(() =>
+      expect(warn).toHaveBeenCalledWith("Playback restore failed", expect.any(Error))
+    );
+    expect(screen.getByTestId("now-playing").textContent).toBe("none");
+
+    warn.mockRestore();
+  });
+
+  it("clamps an out-of-range queueIndex", async () => {
+    backend.me.playback.get.mockResolvedValueOnce({
+      trackId: "t1",
+      queue: ["t1", "t2"],
+      queueIndex: 9,
+      positionSec: 10,
+      isPlaying: false,
+      volume: 0.6,
+    });
+    backend.catalog.track.mockImplementation((id: string) =>
+      Promise.resolve(track({ trackId: id, title: id }))
+    );
+
+    render(
+      <StudioProvider>
+        <PlaybackProbe />
+      </StudioProvider>
+    );
+
+    await waitFor(() =>
+      expect(screen.getByTestId("queue-length").textContent).toBe("2")
+    );
+    // Out of bounds for the 2 resolved tracks — falls back to index 0, not a
+    // crash and not an empty nowPlaying.
+    expect(screen.getByTestId("now-playing").textContent).toBe("t1");
+  });
+
+  it("persists a volume change after the debounce", async () => {
+    render(
+      <StudioProvider>
+        <PlaybackProbe />
+      </StudioProvider>
+    );
+    // Let sign-in (and the volume effect's skipped first run) settle under
+    // real timers before switching to fake ones for the debounce itself.
+    await waitFor(() =>
+      expect(screen.getByTestId("collections-count").textContent).toBe("1")
+    );
+
+    vi.useFakeTimers();
+    try {
+      fireEvent.click(screen.getByText("set-volume"));
+      expect(screen.getByTestId("volume").textContent).toBe("0.7");
+
+      act(() => {
+        vi.advanceTimersByTime(1100);
+      });
+
+      expect(backend.me.playback.save).toHaveBeenCalledWith(
+        expect.objectContaining({ volume: 0.7 })
+      );
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

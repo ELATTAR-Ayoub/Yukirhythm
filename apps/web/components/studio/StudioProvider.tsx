@@ -87,6 +87,15 @@ export default function StudioProvider({
   const preMute = useRef(1);
   const startedAtRef = useRef<number>(0);
   const listenedRef = useRef<number>(0);
+  /** Set once by the sign-in restore below; consumed by the hidden player's
+   *  onReady so a resumed session continues from the saved position instead
+   *  of 0:00. */
+  const pendingSeekRef = useRef<number | null>(null);
+  /** Guards the volume-persistence effect further down: true across its very
+   *  first run (nothing to save yet) AND right after sign-in restore sets
+   *  volume from a saved session (that value is already on the server — no
+   *  need to echo it straight back). */
+  const skipNextVolumeSaveRef = useRef(true);
 
   // search
   const [searchResults, setSearchResults] = useState<MockTrack[]>([]);
@@ -110,6 +119,20 @@ export default function StudioProvider({
     registerStudioTracks(mocks);
     return mocks;
   }, []);
+
+  /** Resolve track ids to real catalogue tracks and absorb them, silently
+   *  dropping any that fail to fetch. Shared by play() (a queue built from a
+   *  collection's trackIds) and the sign-in restore below (a queue built from
+   *  persisted playback) — same resolution, two different sources of ids. */
+  const resolveTrackIds = useCallback(
+    async (ids: string[]): Promise<MockTrack[]> => {
+      const resolved = await Promise.all(
+        ids.map((id) => backend.catalog.track(id).catch(() => null))
+      );
+      return absorb(resolved.filter((t): t is Track => t !== null));
+    },
+    [backend, absorb]
+  );
 
   // ---- load the user + library on sign-in --------------------------------
   const refreshLibrary = useCallback(async () => {
@@ -199,6 +222,55 @@ export default function StudioProvider({
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
       const warn = (name: string) => (err: unknown) =>
         console.warn(`Feed load failed: ${name}`, err);
+
+      // Restore the session that was playing before the reload. Deliberately
+      // independent of the feed fetches below — a failed read here must not
+      // affect user/collections/feeds, so it gets its own catch and nothing
+      // else.
+      void backend.me.playback
+        .get()
+        .then(async (state) => {
+          if (!live || !state) return;
+          // Nothing was ever playing (fresh account, or an already-empty
+          // saved state) — leave the player cold rather than "restoring" a
+          // no-op.
+          const ids = state.queue?.length
+            ? state.queue
+            : state.trackId
+              ? [state.trackId]
+              : [];
+          if (ids.length === 0) return;
+
+          const resolved = await resolveTrackIds(ids);
+          if (!live) return;
+          // Every id failed to resolve (e.g. deleted/unembeddable videos) —
+          // restore nothing rather than seat the player on an empty queue.
+          if (resolved.length === 0) return;
+
+          setQueue(resolved);
+          const savedIndex = state.queueIndex ?? -1;
+          setCurrentIndex(
+            savedIndex >= 0 && savedIndex < resolved.length ? savedIndex : 0
+          );
+          setProgressSec(state.positionSec ?? 0);
+          pendingSeekRef.current = state.positionSec ?? 0;
+          const restoredVolume = Math.min(1, Math.max(0, state.volume ?? 1));
+          // The volume-persistence effect below must not immediately echo
+          // this restored value straight back to the server.
+          skipNextVolumeSaveRef.current = true;
+          setVolumeState(restoredVolume);
+          // A restored 0 should still unmute to something audible later, so
+          // preMute is only updated on an audible restore — leave it at its
+          // default otherwise.
+          if (restoredVolume > 0) preMute.current = restoredVolume;
+          // Restored PAUSED, never playing: browsers block un-gestured audio
+          // autoplay, and a player that claims "playing" while the audio is
+          // actually blocked is worse than an honest paused one. The user
+          // presses play to actually start sound, from pendingSeekRef's
+          // position rather than 0:00.
+        })
+        .catch((err) => console.warn("Playback restore failed", err));
+
       void backend.feed.jumpBackIn().then(
         (r) => live && setJumpBackIn(r.collections.map((c) => toStudioCollection(c))),
         warn("jump-back-in")
@@ -263,6 +335,11 @@ export default function StudioProvider({
     setIsPlaying(true);
     startedAtRef.current = Date.now();
     listenedRef.current = 0;
+    // A pending restore-seek belongs to whichever track was current when
+    // sign-in restored the session. Starting a different track (before the
+    // hidden player for the restored one ever fired onReady) must not carry
+    // that stale seek target over onto the new one.
+    pendingSeekRef.current = null;
   }, []);
 
   const playAt = useCallback(
@@ -289,23 +366,14 @@ export default function StudioProvider({
       }
 
       flushEvent();
-      let q: MockTrack[];
-      if (from) {
-        // resolve the collection's tracks to real objects
-        const resolved = await Promise.all(
-          from.trackIds.map((id) => backend.catalog.track(id).catch(() => null))
-        );
-        q = absorb(resolved.filter((t): t is Track => t !== null));
-      } else {
-        q = [track];
-      }
+      const q = from ? await resolveTrackIds(from.trackIds) : [track];
       const idx = q.findIndex((t) => t.id === track.id);
       setPlayingCollection(from ?? null);
       setQueue(q.length ? q : [track]);
       setNavDirection(null);
       startTrack(idx >= 0 ? idx : 0);
     },
-    [backend, absorb, flushEvent, startTrack, playingCollection, queue]
+    [resolveTrackIds, flushEvent, startTrack, playingCollection, queue]
   );
 
   const dequeue = useCallback(
@@ -391,7 +459,10 @@ export default function StudioProvider({
     []
   );
 
-  // persist playback state, throttled to ~10s
+  // Persist playback state, throttled to ~10s. Note: a restored session sets
+  // nowPlaying (queue/currentIndex) with isPlaying false, so this interval
+  // starts right back up and saves that same restored state again — harmless
+  // and idempotent, not a fight with the restore.
   useEffect(() => {
     if (!nowPlaying) return;
     const id = setInterval(() => {
@@ -406,6 +477,38 @@ export default function StudioProvider({
     }, 10000);
     return () => clearInterval(id);
   }, [backend, nowPlaying, queue, currentIndex, progressSec, isPlaying, volume]);
+
+  // Persist a volume change on its own, debounced ~1s. The interval above
+  // only runs `if (nowPlaying)`, so a volume tweak made with nothing loaded
+  // (or right after a track ends) would otherwise never reach the server.
+  // `trackId: null` here is valid — the PUT route (app/api/me/playback/
+  // route.ts) explicitly accepts a null trackId — so this saves the full
+  // current snapshot, not volume in isolation.
+  useEffect(() => {
+    if (skipNextVolumeSaveRef.current) {
+      // Covers both the initial mount (nothing to save yet) and the moment
+      // sign-in restore just set this same value from the server — either
+      // way, nothing here needs writing back.
+      skipNextVolumeSaveRef.current = false;
+      return;
+    }
+    const id = setTimeout(() => {
+      void backend.me.playback.save({
+        trackId: nowPlaying?.id ?? null,
+        queue: queue.map((t) => t.id),
+        queueIndex: currentIndex,
+        positionSec: progressSec,
+        isPlaying,
+        volume,
+      });
+    }, 1000);
+    return () => clearTimeout(id);
+    // Deliberately only `volume` — this effect debounces volume changes
+    // specifically. nowPlaying/queue/etc. are read as a snapshot of
+    // "whatever else is true right now", the same as the 10s interval above;
+    // listing them here would re-debounce on every seek/track-change too.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [volume]);
 
   // ---- search ------------------------------------------------------------
   // Monotonic ticket: a stale response (or one landing after a clear) must
@@ -652,7 +755,16 @@ export default function StudioProvider({
             url={`https://www.youtube.com/watch?v=${nowPlaying.id}`}
             playing={isPlaying}
             volume={volume}
-            onReady={() => setIsLoading(false)}
+            onReady={() => {
+              setIsLoading(false);
+              // Consume a restored position exactly once — after this,
+              // progress comes from the player's own onProgress events, the
+              // same as any other track.
+              if (pendingSeekRef.current !== null) {
+                playerRef.current?.seekTo(pendingSeekRef.current);
+                pendingSeekRef.current = null;
+              }
+            }}
             onStart={() => setIsLoading(false)}
             onProgress={(s) => {
               setProgressSec(Math.floor(s.playedSeconds));
