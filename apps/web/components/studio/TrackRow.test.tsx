@@ -7,7 +7,15 @@ describe("TrackRow", () => {
   describe("play overlay (playable)", () => {
     it("renders the hover play button by default", () => {
       render(<TrackRow title="Cobalt Dreams" />);
-      expect(screen.getByRole("button", { name: "Play" })).toBeTruthy();
+      // The overlay is aria-hidden decoration (the row's own role="button"
+      // wrapper is the real control), so it needs hidden: true to be found,
+      // and it must not be a real tab stop — see TrackRow.tsx for the WHY.
+      const button = screen.getByRole("button", { name: "Play", hidden: true });
+      expect(button).toBeTruthy();
+      expect(button.tabIndex).toBe(-1);
+      expect(button.closest('[aria-hidden="true"]')?.getAttribute("aria-hidden")).toBe(
+        "true"
+      );
     });
 
     it("omits the hover play button when playable is false", () => {
@@ -89,8 +97,11 @@ describe("TrackRow", () => {
         <TrackRow title="Cobalt Dreams" playing />
       );
       // Playing rows still expose the hover play button (for pause/resume
-      // discoverability) — only `playable={false}` removes it.
-      expect(screen.getByRole("button", { name: "Play" })).toBeTruthy();
+      // discoverability) — only `playable={false}` removes it. It's
+      // aria-hidden decoration now, so hidden: true is required to find it.
+      expect(
+        screen.getByRole("button", { name: "Play", hidden: true })
+      ).toBeTruthy();
       expect(container.querySelector("svg")).toBeTruthy();
     });
 

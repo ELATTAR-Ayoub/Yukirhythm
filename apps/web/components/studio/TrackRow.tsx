@@ -74,10 +74,20 @@ export default function TrackRow({
           </span>
         ) : null}
         {playable ? (
-          <span className="absolute inset-0 flex items-center justify-center bg-ink/40 opacity-0 group-hover:opacity-100 transition-opacity duration-fast">
+          // The row's own role="button" wrapper (supplied by every consumer
+          // that isn't already interactive) is the accessible control — this
+          // overlay is hover-reveal decoration, so aria-hidden pulls it out
+          // of the a11y tree. Only valid because PlayerButton is
+          // tabIndex={-1} below: aria-hidden over a still-focusable element
+          // would trap keyboard focus on an invisible node.
+          <span
+            aria-hidden="true"
+            className="absolute inset-0 flex items-center justify-center bg-ink/40 opacity-0 group-hover:opacity-100 transition-opacity duration-fast"
+          >
             <PlayerButton
               variant="ghost"
               size="sm"
+              tabIndex={-1}
               aria-label="Play"
               data-signal="row_play"
               className="text-snow"

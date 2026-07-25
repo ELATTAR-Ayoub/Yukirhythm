@@ -20,25 +20,38 @@ describe("MediaCard play overlay", () => {
   it("renders the hover play control through IconSwap when not playing", () => {
     render(<MediaCard title="Cobalt Dreams" artist="Aoi Waves" />);
 
-    const button = screen.getByRole("button", { name: "Play" });
+    // The overlay is aria-hidden decoration now (the card's own role="button"
+    // wrapper is the real control), so it must be queried explicitly via
+    // hidden: true — it no longer shows up in the default a11y tree query.
+    const button = screen.getByRole("button", { name: "Play", hidden: true });
     const faces = iconSwapFaces(button);
     expect(faces).toHaveLength(2);
     expect(faces[0].className).toContain("opacity-100");
     expect(faces[0].getAttribute("aria-hidden")).toBe("false");
     expect(faces[1].className).toContain("opacity-0");
     expect(faces[1].getAttribute("aria-hidden")).toBe("true");
+    // Not a phantom tab stop, and pulled out of the a11y tree by an
+    // aria-hidden ancestor — see MediaCard.tsx's PlayOverlay for the WHY.
+    expect(button.tabIndex).toBe(-1);
+    expect(button.closest('[aria-hidden="true"]')?.getAttribute("aria-hidden")).toBe(
+      "true"
+    );
   });
 
   it("rolls the strip to the pause face when playing is true", () => {
     render(<MediaCard title="Cobalt Dreams" artist="Aoi Waves" playing />);
 
-    const button = screen.getByRole("button", { name: "Pause" });
+    const button = screen.getByRole("button", { name: "Pause", hidden: true });
     const faces = iconSwapFaces(button);
     expect(faces).toHaveLength(2);
     expect(faces[0].className).toContain("opacity-0");
     expect(faces[0].getAttribute("aria-hidden")).toBe("true");
     expect(faces[1].className).toContain("opacity-100");
     expect(faces[1].getAttribute("aria-hidden")).toBe("false");
+    expect(button.tabIndex).toBe(-1);
+    expect(button.closest('[aria-hidden="true"]')?.getAttribute("aria-hidden")).toBe(
+      "true"
+    );
   });
 
   it("opts out of the overlay entirely when playable is false", () => {

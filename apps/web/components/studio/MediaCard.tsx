@@ -71,7 +71,15 @@ function CardArt({
 
 function PlayOverlay({ playing }: { playing: boolean }) {
   return (
+    // Every consumer (FeedShelf, search results, queue rows) already wraps
+    // the card in its own role="button" element — that wrapper is the
+    // accessible control. This overlay is hover-reveal decoration, so it's
+    // pulled out of the a11y tree with aria-hidden. That's only valid
+    // because the PlayerButton below is tabIndex={-1}: aria-hidden on a
+    // container that still held a focusable element would trap keyboard
+    // focus on an invisible node.
     <span
+      aria-hidden="true"
       className={cn(
         "absolute inset-0 flex items-center justify-center bg-ink/0 opacity-0",
         "group-hover:opacity-100 group-hover:bg-ink/30 transition-all duration-base"
@@ -82,6 +90,7 @@ function PlayOverlay({ playing }: { playing: boolean }) {
         <PlayerButton
           variant="primary"
           size="lg"
+          tabIndex={-1}
           aria-label={playing ? "Pause" : "Play"}
           data-signal="card_play"
         >
