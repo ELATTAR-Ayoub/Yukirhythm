@@ -57,3 +57,9 @@ next-env.d.ts
 firestore-debug.log
 firebase-debug.log
 ui-debug.log
+
+.vercel
+.env*
+
+# local README asset workbench (originals; compressed copies live in docs/readme)
+docs/readme-assets/
