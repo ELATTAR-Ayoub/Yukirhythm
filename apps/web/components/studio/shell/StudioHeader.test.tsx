@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { useEffect } from "react";
-import { render, screen, fireEvent, act } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 
 import MockStudioProvider, {
   useMockStudio,
@@ -20,14 +20,11 @@ vi.mock("next/navigation", () => ({
   usePathname: () => nav.pathname,
 }));
 
-/** Surfaces the context's search state so tests can assert on it. */
+/** Surfaces the context's hasSearched flag so tests can assert a search fired
+ *  (or didn't) without depending on the shape of the results themselves. */
 function SearchProbe() {
-  const { searchResults } = useMockStudio();
-  return (
-    <div data-testid="results">
-      {searchResults.map((t) => t.title).join(",")}
-    </div>
-  );
+  const { hasSearched } = useMockStudio();
+  return <div data-testid="has-searched">{String(hasSearched)}</div>;
 }
 
 /** Empties the seeded user so the signed-out branch can be rendered. */
@@ -117,10 +114,15 @@ describe("StudioHeader", () => {
     expect(screen.getByText("Sign in")).toBeTruthy();
     expect(screen.queryByLabelText("Account menu")).toBeNull();
   });
+});
 
-  it("drives the studio search as the field changes, and clears on empty", () => {
-    vi.useFakeTimers();
+describe("StudioHeader search field", () => {
+  beforeEach(() => {
+    push.mockClear();
     nav.pathname = SEARCH;
+  });
+
+  it("does not search while typing", () => {
     render(
       <MockStudioProvider>
         <StudioHeader />
@@ -128,39 +130,33 @@ describe("StudioHeader", () => {
       </MockStudioProvider>
     );
 
-    fireEvent.change(searchField(), { target: { value: "cobalt" } });
-    // The mock provider debounces its search by 550ms.
-    act(() => void vi.advanceTimersByTime(600));
-    expect(screen.getByTestId("results").textContent).toContain("Cobalt Dreams");
-
-    fireEvent.change(searchField(), { target: { value: "" } });
-    act(() => void vi.advanceTimersByTime(600));
-    expect(screen.getByTestId("results").textContent).toBe("");
+    fireEvent.change(searchField(), { target: { value: "lofi" } });
+    expect(screen.getByTestId("has-searched").textContent).toBe("false");
   });
 
-  it("abandons the search when navigating off the search page", () => {
-    vi.useFakeTimers();
-    nav.pathname = SEARCH;
-    const { rerender } = render(
+  it("searches on submit", () => {
+    render(
       <MockStudioProvider>
         <StudioHeader />
         <SearchProbe />
       </MockStudioProvider>
     );
 
-    fireEvent.change(searchField(), { target: { value: "cobalt" } });
-    act(() => void vi.advanceTimersByTime(600));
-    expect(screen.getByTestId("results").textContent).toContain("Cobalt Dreams");
+    fireEvent.change(searchField(), { target: { value: "lofi" } });
+    fireEvent.submit(screen.getByRole("search", { name: "Site search" }));
+    expect(screen.getByTestId("has-searched").textContent).toBe("true");
+  });
 
+  it("still routes to the search page on focus from elsewhere", () => {
     nav.pathname = HOME;
-    rerender(
+    render(
       <MockStudioProvider>
         <StudioHeader />
         <SearchProbe />
       </MockStudioProvider>
     );
 
-    expect(searchField().value).toBe("");
-    expect(screen.getByTestId("results").textContent).toBe("");
+    fireEvent.focus(searchField());
+    expect(push).toHaveBeenCalledWith(SEARCH);
   });
 });

@@ -202,7 +202,10 @@ tiles keep searching immediately on click (a click is an explicit act).
 searched per keystroke. Once no caller fires per keystroke it is pure added
 latency — the plan verifies the remaining callers (`PlayerSearchDrawer`,
 `AddMusicPanel` use `searchTracks`, which is separate) and then removes the
-timer, keeping the async shape.
+timer, keeping the async shape. The desktop header's search field gets the
+same treatment — it routes to /search on focus as before, but only searches
+on Enter; the provider-side 550 ms debounce is removed outright since no
+caller fires per keystroke anymore.
 
 ---
 

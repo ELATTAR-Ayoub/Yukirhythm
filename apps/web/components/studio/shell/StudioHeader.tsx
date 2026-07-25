@@ -32,7 +32,8 @@ const MENU = [
 /**
  * The shell's fixed top bar. The search field is the only way into the search
  * page on desktop — focusing it routes there, so typing never happens on a
- * screen that cannot show results.
+ * screen that cannot show results. The field itself only searches on Enter
+ * (form submit); typing alone never fires a search.
  */
 export default function StudioHeader() {
   const router = useRouter();
@@ -59,11 +60,7 @@ export default function StudioHeader() {
 
   const onChange = (value: string) => {
     setQ(value);
-    if (value.trim()) {
-      search(value);
-    } else {
-      clearSearch();
-    }
+    if (!value.trim()) clearSearch();
   };
 
   return (
@@ -93,11 +90,22 @@ export default function StudioHeader() {
         >
           <HomeIcon className="w-4 h-4" />
         </Link>
-        <div className="relative w-full max-w-[480px]">
+        <form
+          role="search"
+          aria-label="Site search"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (q.trim()) search(q);
+            else clearSearch();
+          }}
+          className="relative w-full max-w-[480px]"
+        >
           <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             value={q}
             aria-label="Search"
+            type="search"
+            enterKeyHint="search"
             placeholder="What do you want to play?"
             className="pl-9 rounded-full"
             data-signal="shell_search"
@@ -108,7 +116,7 @@ export default function StudioHeader() {
             }}
             onChange={(e) => onChange(e.target.value)}
           />
-        </div>
+        </form>
       </div>
 
       <div className="shrink-0">

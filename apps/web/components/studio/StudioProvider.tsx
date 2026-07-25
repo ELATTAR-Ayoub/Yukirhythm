@@ -88,7 +88,6 @@ export default function StudioProvider({
   const [collectionResults, setCollectionResults] = useState<MockCollection[]>([]);
   const [searching, setSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
-  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // feeds + profile data
   const [jumpBackIn, setJumpBackIn] = useState<MockCollection[]>([]);
@@ -404,18 +403,24 @@ export default function StudioProvider({
   }, [backend, nowPlaying, queue, currentIndex, progressSec, isPlaying, volume]);
 
   // ---- search ------------------------------------------------------------
+  // Monotonic ticket: a stale response (or one landing after a clear) must
+  // not overwrite newer state. This replaces the old 550ms keystroke
+  // debounce — search now only fires on an explicit submit, so delaying it
+  // would be pure latency.
+  const searchSeq = useRef(0);
   const search = useCallback(
     (query: string) => {
       setHasSearched(true);
       setSearching(true);
-      if (searchTimer.current) clearTimeout(searchTimer.current);
-      searchTimer.current = setTimeout(async () => {
+      const seq = ++searchSeq.current;
+      void (async () => {
         // Catalogue (YouTube) and the caller's own library are separate
         // surfaces on the Search screen, so both are fetched.
         const [cat, lib] = await Promise.allSettled([
           backend.catalog.search(query, "song"),
           backend.me.library(query),
         ]);
+        if (seq !== searchSeq.current) return;
         setSearchResults(
           cat.status === "fulfilled" ? absorb(cat.value.tracks) : []
         );
@@ -425,7 +430,7 @@ export default function StudioProvider({
             : []
         );
         setSearching(false);
-      }, 550);
+      })();
     },
     [backend, absorb]
   );
@@ -447,7 +452,7 @@ export default function StudioProvider({
   );
 
   const clearSearch = useCallback(() => {
-    if (searchTimer.current) clearTimeout(searchTimer.current);
+    searchSeq.current++;
     setSearchResults([]);
     setCollectionResults([]);
     setSearching(false);
