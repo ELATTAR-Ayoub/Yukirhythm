@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { useEffect } from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 
@@ -46,10 +46,6 @@ describe("StudioHeader", () => {
     window.HTMLElement.prototype.hasPointerCapture = () => false;
     window.HTMLElement.prototype.releasePointerCapture = () => {};
     window.HTMLElement.prototype.scrollIntoView = () => {};
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
   });
 
   it("routes to the search page when the field is focused", () => {

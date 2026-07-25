@@ -95,7 +95,7 @@ export default function StudioHeader() {
           aria-label="Site search"
           onSubmit={(e) => {
             e.preventDefault();
-            if (q.trim()) search(q);
+            if (q.trim()) search(q.trim());
             else clearSearch();
           }}
           className="relative w-full max-w-[480px]"

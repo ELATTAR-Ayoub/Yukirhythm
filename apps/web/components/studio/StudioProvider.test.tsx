@@ -3,6 +3,7 @@ import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
 import { LIKED_SONGS_ID } from "@/components/studio/screens/mock-data";
+import type { Track } from "@/lib/catalog/model";
 
 const { backend, authState } = vi.hoisted(() => ({
   backend: {
@@ -48,6 +49,33 @@ vi.mock("@/lib/studio/useAuth", () => ({
 vi.mock("next/dynamic", () => ({ default: () => () => null }));
 
 import StudioProvider from "./StudioProvider";
+
+/** Minimal catalog Track fixture — mirrors the one in adapt.test.ts. Only the
+ *  fields toStudioTrack actually reads need real values. */
+function track(over: Partial<Track> = {}): Track {
+  return {
+    trackId: "t1",
+    type: "track",
+    title: "Instant Crush",
+    artists: [{ artistId: "a1", name: "Daft Punk" }],
+    album: null,
+    durationSec: 180,
+    artwork: [],
+    texture: "tx-k-silk",
+    source: { provider: "youtube", videoId: "t1", url: "", aliasVideoIds: [] },
+    isEmbeddable: true,
+    isLive: false,
+    isFamilySafe: true,
+    stats: { viewCount: 0, likeCount: 0, playCount: 0 },
+    publishedAt: null,
+    labels: [],
+    labelIds: [],
+    keywords: [],
+    enrichedAt: null,
+    schemaVersion: 1,
+    ...over,
+  } as Track;
+}
 
 function Probe() {
   const { collections, libraryLoading } = useMockStudio();
@@ -119,5 +147,101 @@ describe("StudioProvider library load", () => {
     expect(screen.getByTestId("liked-tracks").textContent).toBe(
       "brand-new-track"
     );
+  });
+});
+
+describe("StudioProvider search seq-ticket", () => {
+  beforeEach(() => {
+    backend.collections.list.mockResolvedValue([]);
+    backend.me.likes.mockResolvedValue({ trackIds: [], tracks: [] });
+  });
+
+  /** Advances past every pending microtask (and any zero-delay macrotask)
+   *  without asserting anything first — used after resolving a response that
+   *  is EXPECTED to be dropped, where the "after" state is identical to the
+   *  "before" state and there is no real transition for waitFor to key off. */
+  const flush = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+  /** Exposes search/clearSearch as buttons and the search state as text, so
+   *  a test can drive concurrent searches and read what actually landed. */
+  function SearchProbe() {
+    const { searchResults, searching, hasSearched, search, clearSearch } =
+      useMockStudio();
+    return (
+      <>
+        <button onClick={() => search("query-a")}>search-a</button>
+        <button onClick={() => search("query-b")}>search-b</button>
+        <button onClick={() => clearSearch()}>clear</button>
+        <div data-testid="results">
+          {searchResults.map((t) => t.title).join(",")}
+        </div>
+        <div data-testid="searching">{String(searching)}</div>
+        <div data-testid="has-searched">{String(hasSearched)}</div>
+      </>
+    );
+  }
+
+  it("a stale search response cannot overwrite a newer one", async () => {
+    // Two manually-controlled deferreds stand in for the network: resolving
+    // them out of call order is exactly the race the seq ticket guards.
+    let resolveA: (v: { tracks: Track[] }) => void = () => {};
+    let resolveB: (v: { tracks: Track[] }) => void = () => {};
+    backend.catalog.search
+      .mockImplementationOnce(() => new Promise((res) => (resolveA = res)))
+      .mockImplementationOnce(() => new Promise((res) => (resolveB = res)));
+
+    render(
+      <StudioProvider>
+        <SearchProbe />
+      </StudioProvider>
+    );
+
+    fireEvent.click(screen.getByText("search-a"));
+    fireEvent.click(screen.getByText("search-b"));
+
+    // The newer search (B) answers first.
+    resolveB({ tracks: [track({ trackId: "b1", title: "Track B" })] });
+    await waitFor(() =>
+      expect(screen.getByTestId("results").textContent).toBe("Track B")
+    );
+
+    // A's response — the stale one — lands after. It must be dropped, not
+    // overwrite B's already-rendered results. Nothing here changes state, so
+    // there is no transition for waitFor to key off — flush and check.
+    resolveA({ tracks: [track({ trackId: "a1", title: "Track A" })] });
+    await flush();
+    expect(screen.getByTestId("results").textContent).toBe("Track B");
+    expect(screen.getByTestId("searching").textContent).toBe("false");
+  });
+
+  it("a response landing after clearSearch is discarded", async () => {
+    let resolveA: (v: { tracks: Track[] }) => void = () => {};
+    backend.catalog.search.mockImplementationOnce(
+      () => new Promise((res) => (resolveA = res))
+    );
+
+    render(
+      <StudioProvider>
+        <SearchProbe />
+      </StudioProvider>
+    );
+
+    fireEvent.click(screen.getByText("search-a"));
+    await waitFor(() =>
+      expect(screen.getByTestId("has-searched").textContent).toBe("true")
+    );
+
+    fireEvent.click(screen.getByText("clear"));
+    expect(screen.getByTestId("has-searched").textContent).toBe("false");
+
+    // The in-flight response for the abandoned search shows up late — it
+    // must not resurrect results the user already cleared. Both fields are
+    // already at their expected values, so flush rather than waitFor: there
+    // is no transition to key off, only the absence of one.
+    resolveA({ tracks: [track({ trackId: "a1", title: "Track A" })] });
+    await flush();
+
+    expect(screen.getByTestId("results").textContent).toBe("");
+    expect(screen.getByTestId("has-searched").textContent).toBe("false");
   });
 });

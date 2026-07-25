@@ -56,7 +56,7 @@ export default function SearchScreen() {
   /** One explicit act — Enter or a mood tile — is what runs a search. */
   const submit = (value: string) => {
     setQ(value);
-    if (value.trim()) search(value);
+    if (value.trim()) search(value.trim());
     else clearSearch();
   };
 
