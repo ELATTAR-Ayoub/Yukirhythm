@@ -8,17 +8,20 @@ import {
   TrackNextIcon,
   TrackPreviousIcon,
   ListBulletIcon,
+  HeartIcon,
 } from "@radix-ui/react-icons";
-
 
 import { PlayerButton, CircleSpinner } from "@/components/studio/PlayerButton";
 import IconSwap from "@/components/studio/IconSwap";
 import { useMockStudio } from "./MockStudioProvider";
+import LikeButton from "./LikeButton";
 
 /**
  * The transport cluster from the DS spec, wired to the mock player.
- * Left→right: loop · prev · play/pause/wait (3-face IconSwap) · next · queue.
- * `compact` drops loop and queue — the compressed bar carries transport only.
+ * Left→right: leading slot (loop or like) · prev · play/pause/wait (3-face
+ * IconSwap) · next · queue.
+ * `compact` drops the leading slot and queue — the compressed bar carries
+ * transport only.
  *
  * With no track loaded the playback controls — prev, play/pause, next and
  * Loop — are all disabled. The bars now render permanently in an idle
@@ -29,11 +32,16 @@ import { useMockStudio } from "./MockStudioProvider";
 export default function Transport({
   size = "lg",
   compact = false,
+  leading = "loop",
   onQueue,
 }: {
   size?: "base" | "lg";
-  /** Compressed player — prev/play/next only, no loop or queue. */
+  /** Compressed player — prev/play/next only, no leading slot or queue. */
   compact?: boolean;
+  /** What occupies the leading slot: the Loop toggle (default), or a Like
+   *  control for the loaded track — the device player's choice, so a track
+   *  can be liked right where it is playing. */
+  leading?: "loop" | "like";
   onQueue?: () => void;
 }) {
   const { nowPlaying, isPlaying, isLoading, toggle, next, prev } =
@@ -43,7 +51,21 @@ export default function Transport({
 
   return (
     <div className="flex items-center gap-3">
-      {compact ? null : (
+      {compact ? null : leading === "like" ? (
+        nowPlaying ? (
+          <LikeButton
+            trackId={nowPlaying.id}
+            trackTitle={nowPlaying.title}
+            size="base"
+          />
+        ) : (
+          // Inert placeholder so the cluster keeps its footprint while idle —
+          // matching how prev/play/next render disabled rather than vanish.
+          <PlayerButton variant="outline" disabled aria-label="Like">
+            <HeartIcon />
+          </PlayerButton>
+        )
+      ) : (
         <PlayerButton
           variant={looping ? "primary" : "outline"}
           active={looping}

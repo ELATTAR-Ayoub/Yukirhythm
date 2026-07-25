@@ -30,7 +30,10 @@ function stubMatchMedia(matches: boolean) {
     addEventListener: () => {},
     removeEventListener: () => {},
   };
-  vi.stubGlobal("matchMedia", vi.fn(() => mql));
+  vi.stubGlobal(
+    "matchMedia",
+    vi.fn(() => mql)
+  );
 }
 
 describe("PlaybackBar", () => {
@@ -72,9 +75,9 @@ describe("PlaybackBar", () => {
         expect(screen.getByLabelText(name).hasAttribute("disabled")).toBe(true);
       }
       // Radix marks a disabled Slider on the root, not via the disabled attr.
-      expect(
-        screen.getByLabelText("Seek").getAttribute("aria-disabled")
-      ).toBe("true");
+      expect(screen.getByLabelText("Seek").getAttribute("aria-disabled")).toBe(
+        "true"
+      );
     });
 
     it("shows no seek position — not a real 0:00 in a track that isn't there", () => {
@@ -161,6 +164,16 @@ describe("PlaybackBar", () => {
 
     fireEvent.keyDown(slider, { key: "ArrowRight" });
     expect(slider.getAttribute("aria-valuenow")).toBe("11");
+  });
+
+  it("keeps the Loop control in the bottom bar", () => {
+    stubMatchMedia(false);
+    render(
+      <MockStudioProvider>
+        <PlaybackBar onExpand={() => {}} />
+      </MockStudioProvider>
+    );
+    expect(screen.getByLabelText("Loop")).toBeTruthy();
   });
 
   it("navigates to the routed queue page from the transport's queue control", () => {

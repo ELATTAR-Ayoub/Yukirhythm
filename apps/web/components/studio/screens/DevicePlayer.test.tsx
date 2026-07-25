@@ -16,7 +16,6 @@ describe("DevicePlayer", () => {
     push.mockClear();
   });
 
-
   it("shows a collapse control when given onCollapse", () => {
     render(
       <MockStudioProvider>
@@ -73,6 +72,16 @@ describe("DevicePlayer", () => {
     // assertion would read 0 either way — the class is the only observable
     // signal that the 340px cap was lifted.
     expect(root.className).not.toContain("max-w-[340px]");
+  });
+
+  it("shows a Like control instead of Loop in its transport", () => {
+    render(
+      <MockStudioProvider>
+        <DevicePlayer docked />
+      </MockStudioProvider>
+    );
+    expect(screen.queryByLabelText("Loop")).toBeNull();
+    expect(screen.getByLabelText(/^Like/)).toBeTruthy();
   });
 
   describe("transport queue control", () => {

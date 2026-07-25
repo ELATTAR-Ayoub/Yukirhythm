@@ -38,7 +38,10 @@ interface DevicePlayerProps {
  * way), and the scrub block renders in both states rather than being
  * omitted when idle. The rail must not jump when playback starts.
  */
-export default function DevicePlayer({ onCollapse, docked = false }: DevicePlayerProps) {
+export default function DevicePlayer({
+  onCollapse,
+  docked = false,
+}: DevicePlayerProps) {
   const { nowPlaying, isPlaying, progressSec, seek, navDirection } =
     useMockStudio();
   const router = useRouter();
@@ -94,109 +97,115 @@ export default function DevicePlayer({ onCollapse, docked = false }: DevicePlaye
           "rounded-[42px] sm:rounded-[52px] flex flex-col items-center"
         )}
       >
-      {!docked && onCollapse ? (
-        <PlayerButton
-          variant="ghost"
-          size="sm"
-          aria-label="Collapse player"
-          onClick={onCollapse}
-          className="absolute top-4 right-4 z-30"
-        >
-          <ChevronDownIcon />
-        </PlayerButton>
-      ) : null}
+        {!docked && onCollapse ? (
+          <PlayerButton
+            variant="ghost"
+            size="sm"
+            aria-label="Collapse player"
+            onClick={onCollapse}
+            className="absolute top-4 right-4 z-30"
+          >
+            <ChevronDownIcon />
+          </PlayerButton>
+        ) : null}
 
-      {nowPlaying ? (
-        <VinylDisc
-          texture={nowPlaying.texture}
-          artUrl={nowPlaying.artUrl}
-          trackKey={nowPlaying.id}
-          direction={navDirection}
-          spinning={isPlaying}
-          expanded={discExpanded}
-          onToggle={() => setDiscExpanded((e) => !e)}
-        >
-          <span className="block font-label text-[11px] uppercase tracking-[0.2em] text-ink-50/80 truncate">
-            {nowPlaying.artist}
-          </span>
-          <span className="block font-ui font-semibold text-ink-50 truncate">
-            {nowPlaying.title}
-          </span>
-        </VinylDisc>
-      ) : (
-        // The empty art well. Same absolute geometry as VinylDisc's own
-        // button (half off the top, clipped by the card) so the silhouette
-        // and the footprint are identical — just no record in it. Not a
-        // button: there is nothing to expand.
-        <span
-          aria-hidden
-          className={cn(
-            "absolute z-10 left-1/2 top-0 w-[112%] aspect-square",
-            "-translate-x-1/2 -translate-y-1/2 rounded-full",
-            "border border-dashed border-border bg-secondary/40"
-          )}
-        />
-      )}
-
-      {/* reserves the disc's visible half — 112% card width, so 56% for half */}
-      <div aria-hidden className="w-full pt-[56%] shrink-0" />
-
-      <div
-        className={cn(
-          "w-full px-7 transition-opacity duration-500",
-          discExpanded && "opacity-0 pointer-events-none"
+        {nowPlaying ? (
+          <VinylDisc
+            texture={nowPlaying.texture}
+            artUrl={nowPlaying.artUrl}
+            trackKey={nowPlaying.id}
+            direction={navDirection}
+            spinning={isPlaying}
+            expanded={discExpanded}
+            onToggle={() => setDiscExpanded((e) => !e)}
+          >
+            <span className="block font-label text-[11px] uppercase tracking-[0.2em] text-ink-50/80 truncate">
+              {nowPlaying.artist}
+            </span>
+            <span className="block font-ui font-semibold text-ink-50 truncate">
+              {nowPlaying.title}
+            </span>
+          </VinylDisc>
+        ) : (
+          // The empty art well. Same absolute geometry as VinylDisc's own
+          // button (half off the top, clipped by the card) so the silhouette
+          // and the footprint are identical — just no record in it. Not a
+          // button: there is nothing to expand.
+          <span
+            aria-hidden
+            className={cn(
+              "absolute z-10 left-1/2 top-0 w-[112%] aspect-square",
+              "-translate-x-1/2 -translate-y-1/2 rounded-full",
+              "border border-dashed border-border bg-secondary/40"
+            )}
+          />
         )}
-      >
-        <div className="text-center mt-2">
-          {/* Idle keeps both lines so the block is the same height either
+
+        {/* reserves the disc's visible half — 112% card width, so 56% for half */}
+        <div aria-hidden className="w-full pt-[56%] shrink-0" />
+
+        <div
+          className={cn(
+            "w-full px-7 transition-opacity duration-500",
+            discExpanded && "opacity-0 pointer-events-none"
+          )}
+        >
+          <div className="text-center mt-2">
+            {/* Idle keeps both lines so the block is the same height either
               way — the artist slot holds a non-breaking space rather than
               collapsing, and the title slot states the player's state
               instead of naming a track that isn't loaded. */}
-          <div
-            aria-hidden={!nowPlaying}
-            className="font-label text-[11px] uppercase tracking-[0.2em] text-primary truncate"
-          >
-            {nowPlaying ? nowPlaying.artist : " "}
+            <div
+              aria-hidden={!nowPlaying}
+              className="font-label text-[11px] uppercase tracking-[0.2em] text-primary truncate"
+            >
+              {nowPlaying ? nowPlaying.artist : " "}
+            </div>
+            <div
+              className={cn(
+                "font-ui font-semibold text-lg truncate mt-1",
+                !nowPlaying && "text-muted-foreground"
+              )}
+            >
+              {nowPlaying ? nowPlaying.title : IDLE_LABEL}
+            </div>
           </div>
-          <div
-            className={cn(
-              "font-ui font-semibold text-lg truncate mt-1",
-              !nowPlaying && "text-muted-foreground"
-            )}
-          >
-            {nowPlaying ? nowPlaying.title : IDLE_LABEL}
-          </div>
-        </div>
 
-        {/* Scrub bar — drag to jump to any second in the track. Rendered in
+          {/* Scrub bar — drag to jump to any second in the track. Rendered in
             both states (disabled and reading --:-- when idle) so the chassis
             keeps one height; omitting it made the empty rail player shorter
             than a loaded one and the whole column jumped on first play. */}
-        <div className="mt-6">
-          <Slider
-            value={[nowPlaying ? Math.min(progressSec, nowPlaying.durationSec) : 0]}
-            max={nowPlaying ? nowPlaying.durationSec : 1}
-            step={1}
-            disabled={!nowPlaying}
-            onValueChange={(v) => seek(v[0])}
-            aria-label="Seek"
-            data-signal="seek"
-          />
-          <div className="flex items-center justify-between mt-2">
-            <DataText className="text-xs text-muted-foreground">
-              {nowPlaying ? formatDuration(progressSec) : NO_TIME}
-            </DataText>
-            <DataText className="text-xs text-muted-foreground">
-              {nowPlaying ? formatDuration(nowPlaying.durationSec) : NO_TIME}
-            </DataText>
+          <div className="mt-6">
+            <Slider
+              value={[
+                nowPlaying ? Math.min(progressSec, nowPlaying.durationSec) : 0,
+              ]}
+              max={nowPlaying ? nowPlaying.durationSec : 1}
+              step={1}
+              disabled={!nowPlaying}
+              onValueChange={(v) => seek(v[0])}
+              aria-label="Seek"
+              data-signal="seek"
+            />
+            <div className="flex items-center justify-between mt-2">
+              <DataText className="text-xs text-muted-foreground">
+                {nowPlaying ? formatDuration(progressSec) : NO_TIME}
+              </DataText>
+              <DataText className="text-xs text-muted-foreground">
+                {nowPlaying ? formatDuration(nowPlaying.durationSec) : NO_TIME}
+              </DataText>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* stays above the expanded disc so the controls never get covered */}
-      <div className="relative z-20 mt-7">
-        <Transport size="lg" onQueue={() => router.push(QUEUE)} />
-      </div>
+        {/* stays above the expanded disc so the controls never get covered */}
+        <div className="relative z-20 mt-7">
+          <Transport
+            size="lg"
+            leading="like"
+            onQueue={() => router.push(QUEUE)}
+          />
+        </div>
 
         <div aria-hidden className="w-full pb-8" />
       </section>
