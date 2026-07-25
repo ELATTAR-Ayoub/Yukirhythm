@@ -7,6 +7,7 @@
   },
   "scripts": {
     "dev": "next dev",
+    "dev:emu": "set NEXT_PUBLIC_AUTH_EMULATOR=localhost:9099&& set NEXT_PUBLIC_PROJECTID=demo-yukirhythm&& set FIRESTORE_EMULATOR_HOST=127.0.0.1:8080&& set FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099&& set GCLOUD_PROJECT=demo-yukirhythm&& next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
