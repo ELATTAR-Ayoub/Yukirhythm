@@ -109,10 +109,10 @@ describe("TrackMenu", () => {
     const dialog = within(screen.getByRole("dialog"));
     expect(dialog.getAllByRole("checkbox").length).toBeGreaterThan(1);
     expect(screen.getByRole("dialog").className).toContain(
-      "max-h-[calc(100dvh-2rem)]",
+      "max-h-[calc(100dvh-2rem)]"
     );
     expect(screen.getByRole("dialog").className).toContain(
-      "w-[calc(100vw-2rem)]",
+      "w-[calc(100vw-2rem)]"
     );
   });
 

@@ -44,22 +44,22 @@ describe("Transport queue availability", () => {
     );
 
     fireEvent.click(screen.getByText("play solo"));
-    expect((screen.getByLabelText("Previous") as HTMLButtonElement).disabled).toBe(
-      true
-    );
+    expect(
+      (screen.getByLabelText("Previous") as HTMLButtonElement).disabled
+    ).toBe(true);
     expect((screen.getByLabelText("Next") as HTMLButtonElement).disabled).toBe(
       true
     );
 
     fireEvent.click(screen.getByText("seek five"));
-    expect((screen.getByLabelText("Previous") as HTMLButtonElement).disabled).toBe(
-      false
-    );
+    expect(
+      (screen.getByLabelText("Previous") as HTMLButtonElement).disabled
+    ).toBe(false);
 
     fireEvent.click(screen.getByText("play tail"));
-    expect((screen.getByLabelText("Previous") as HTMLButtonElement).disabled).toBe(
-      false
-    );
+    expect(
+      (screen.getByLabelText("Previous") as HTMLButtonElement).disabled
+    ).toBe(false);
     expect((screen.getByLabelText("Next") as HTMLButtonElement).disabled).toBe(
       false
     );
