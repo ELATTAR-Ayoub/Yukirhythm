@@ -6,10 +6,14 @@ import { CREATE, playlistHref } from "@/components/studio/shell/routes";
 import { LIKED_SONGS } from "@/components/studio/screens/mock-data";
 import LibraryScreen from "./page";
 
-const { push } = vi.hoisted(() => ({ push: vi.fn() }));
+const { push, replace } = vi.hoisted(() => ({
+  push: vi.fn(),
+  replace: vi.fn(),
+}));
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push }),
+  useRouter: () => ({ push, replace }),
+  useSearchParams: () => new URLSearchParams(window.location.search),
 }));
 
 function renderLibrary() {
@@ -21,7 +25,12 @@ function renderLibrary() {
 }
 
 describe("LibraryScreen", () => {
-  beforeEach(() => push.mockClear());
+  beforeEach(() => {
+    push.mockClear();
+    replace.mockClear();
+    window.sessionStorage.clear();
+    window.history.replaceState({}, "", "/library");
+  });
 
   it("shows Liked Songs first and filters by type chip", () => {
     renderLibrary();
@@ -58,5 +67,32 @@ describe("LibraryScreen", () => {
     push.mockClear();
     fireEvent.click(screen.getByText("Create playlist"));
     expect(push).toHaveBeenCalledWith(CREATE);
+  });
+
+  it("opens Spotify import from the tile below create playlist", () => {
+    renderLibrary();
+
+    const createTile = screen.getByText("Create playlist");
+    const importTile = screen.getByText("Import Spotify playlist");
+    expect(
+      createTile.compareDocumentPosition(importTile) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+
+    fireEvent.click(importTile);
+    expect(
+      screen.getByRole("dialog", { name: "Import Spotify playlist" })
+    ).toBeVisible();
+    expect(screen.getByText(/no Spotify audio is copied/i)).toBeVisible();
+  });
+
+  it("opens Spotify import when the desktop rail routes to its query", () => {
+    window.history.replaceState({}, "", "/library?spotifyImport=1");
+
+    renderLibrary();
+
+    expect(
+      screen.getByRole("dialog", { name: "Import Spotify playlist" })
+    ).toBeVisible();
   });
 });

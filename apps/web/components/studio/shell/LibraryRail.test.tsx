@@ -6,7 +6,7 @@ import MockStudioProvider, {
   useMockStudio,
 } from "@/components/studio/screens/MockStudioProvider";
 import LibraryRail from "./LibraryRail";
-import { CREATE, playlistHref } from "./routes";
+import { CREATE, SPOTIFY_IMPORT, playlistHref } from "./routes";
 
 const { push, nav } = vi.hoisted(() => ({
   push: vi.fn(),
@@ -195,6 +195,24 @@ describe("LibraryRail", () => {
 
       expect(push).toHaveBeenCalledWith(CREATE);
     });
+  });
+
+  it("opens Spotify import from the tile directly below create playlist", () => {
+    render(
+      <MockStudioProvider>
+        <LibraryRail />
+      </MockStudioProvider>
+    );
+
+    const createTile = screen.getByText("Create playlist");
+    const importTile = screen.getByText("Import Spotify playlist");
+    expect(
+      createTile.compareDocumentPosition(importTile) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+
+    fireEvent.click(importTile);
+    expect(push).toHaveBeenCalledWith(SPOTIFY_IMPORT);
   });
 
   it("prompts sign-in when signed out", () => {

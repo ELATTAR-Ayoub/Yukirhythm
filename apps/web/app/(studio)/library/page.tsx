@@ -1,7 +1,8 @@
 "use client";
 
+import { Suspense, useCallback, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { PlusIcon } from "@radix-ui/react-icons";
 
 import { PlayerButton } from "@/components/studio/PlayerButton";
@@ -16,9 +17,43 @@ import {
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
 import {
   CreatePlaylistTile,
+  ImportSpotifyPlaylistTile,
   LibraryRowCard,
 } from "@/components/studio/screens/LibraryRow";
-import { CREATE, playlistHref } from "@/components/studio/shell/routes";
+import SpotifyImportDialog from "@/components/studio/screens/SpotifyImportDialog";
+import {
+  CREATE,
+  LIBRARY,
+  playlistHref,
+} from "@/components/studio/shell/routes";
+
+function SpotifyImportSurface({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const requestedByRoute = searchParams.get("spotifyImport") === "1";
+  const handleOpenChange = useCallback(
+    (nextOpen: boolean) => {
+      onOpenChange(nextOpen);
+      if (!nextOpen && requestedByRoute) {
+        router.replace(LIBRARY, { scroll: false });
+      }
+    },
+    [onOpenChange, requestedByRoute, router]
+  );
+
+  return (
+    <SpotifyImportDialog
+      open={open || requestedByRoute}
+      onOpenChange={handleOpenChange}
+    />
+  );
+}
 
 /**
  * The routed library screen. Rows navigate to the playlist route and the
@@ -30,6 +65,7 @@ export default function LibraryScreen() {
   const { user, collections, libraryFilter, setLibraryFilter } =
     useMockStudio();
   const router = useRouter();
+  const [spotifyImportOpen, setSpotifyImportOpen] = useState(false);
 
   if (!user) {
     return (
@@ -88,7 +124,15 @@ export default function LibraryScreen() {
         ))}
 
         <CreatePlaylistTile onClick={openCreate} />
+        <ImportSpotifyPlaylistTile onClick={() => setSpotifyImportOpen(true)} />
       </div>
+
+      <Suspense fallback={null}>
+        <SpotifyImportSurface
+          open={spotifyImportOpen}
+          onOpenChange={setSpotifyImportOpen}
+        />
+      </Suspense>
     </div>
   );
 }

@@ -13,6 +13,10 @@ export const TERMS = `${SCREENS}/terms`;
 /** Routed form of the create-playlist flow, reachable at every width (see
  *  LibraryRail and the mobile library page). */
 export const CREATE = `${SCREENS}/create`;
+/** Opens the Spotify import dialog on the routed Library screen. Keeping the
+ * dialog page-owned avoids mounting two OAuth callback handlers on desktop,
+ * where LibraryRail and LibraryScreen are visible at the same time. */
+export const SPOTIFY_IMPORT = `${LIBRARY}?spotifyImport=1`;
 /** Routed form of the queue, reachable at every width (see NowPlayingRail,
  *  Transport/DevicePlayer/PlaybackBar). */
 export const QUEUE = `${SCREENS}/queue`;

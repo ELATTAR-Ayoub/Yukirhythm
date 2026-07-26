@@ -43,6 +43,16 @@ import {
 } from "./queue-utils";
 import type { TextureName } from "@/components/studio/Texture";
 
+export type CreateStudioCollectionInput = {
+  title: string;
+  desc: string;
+  tags: string[];
+  kind: CollectionKind;
+  texture?: TextureName;
+  cover?: "texture" | "mosaic";
+  trackIds?: string[];
+};
+
 /**
  * Scoped fake studio state for the /design-system/screens previews:
  * an in-memory player, auth and search. Persists across screens while you
@@ -137,15 +147,13 @@ interface MockStudioValue {
    *  wizard builds the whole collection in a single atomic call rather than
    *  create-then-patch (which would leave a half-built playlist visible if a
    *  later call failed). */
-  createCollection: (input: {
-    title: string;
-    desc: string;
-    tags: string[];
-    kind: CollectionKind;
-    texture?: TextureName;
-    cover?: "texture" | "mosaic";
-    trackIds?: string[];
-  }) => MockCollection;
+  createCollection: (input: CreateStudioCollectionInput) => MockCollection;
+  /** Awaitable create used by import flows. Unlike the routed wizard's
+   * optimistic create, success is not reported until the playlist and every
+   * initial membership row have actually reached the backend. */
+  createCollectionAsync: (
+    input: CreateStudioCollectionInput
+  ) => Promise<MockCollection>;
   // feeds & profile data (phase 8). Both providers supply these — the mock one
   // from fixtures, the real one from /api/feed, /api/me/stats and /api/me/recents
   // — so the screens read one shape and never import fixtures directly.
@@ -305,15 +313,7 @@ export default function MockStudioProvider({
   );
 
   const createCollection = useCallback(
-    (input: {
-      title: string;
-      desc: string;
-      tags: string[];
-      kind: CollectionKind;
-      texture?: TextureName;
-      cover?: "texture" | "mosaic";
-      trackIds?: string[];
-    }): MockCollection => {
+    (input: CreateStudioCollectionInput): MockCollection => {
       // Built from the `collections` closure (not a setState functional
       // updater) so the id and full object are available to return
       // immediately — a functional updater only runs when React processes
@@ -338,6 +338,11 @@ export default function MockStudioProvider({
       return created;
     },
     []
+  );
+  const createCollectionAsync = useCallback(
+    async (input: CreateStudioCollectionInput): Promise<MockCollection> =>
+      createCollection(input),
+    [createCollection]
   );
 
   const nowPlaying = currentIndex >= 0 ? (queue[currentIndex] ?? null) : null;
@@ -660,6 +665,7 @@ export default function MockStudioProvider({
     toggleTrackInCollection,
     addTrackToCollection,
     createCollection,
+    createCollectionAsync,
     jumpBackIn,
     newReleases,
     youMightLike,

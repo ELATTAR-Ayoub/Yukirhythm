@@ -5,10 +5,10 @@ import dynamic from "next/dynamic";
 
 import {
   MockStudioContext,
+  type CreateStudioCollectionInput,
   type MockStudioValue,
 } from "@/components/studio/screens/MockStudioProvider";
 import type {
-  CollectionKind,
   MockCollection,
   MockTrack,
   MockUser,
@@ -23,7 +23,6 @@ import {
   shuffleOrder,
   type EnqueueMode,
 } from "@/components/studio/screens/queue-utils";
-import type { TextureName } from "@/components/studio/Texture";
 import { registerStudioTracks } from "@/components/studio/screens/mock-data";
 import {
   useAuthState,
@@ -847,15 +846,7 @@ export default function StudioProvider({
   );
 
   const createCollection = useCallback(
-    (input: {
-      title: string;
-      desc: string;
-      tags: string[];
-      kind: CollectionKind;
-      texture?: TextureName;
-      cover?: "texture" | "mosaic";
-      trackIds?: string[];
-    }): MockCollection => {
+    (input: CreateStudioCollectionInput): MockCollection => {
       // optimistic local object; the server issues the real id asynchronously
       const optimistic: MockCollection = {
         id: `pending-${crypto.randomUUID()}`,
@@ -893,6 +884,26 @@ export default function StudioProvider({
           );
         });
       return optimistic;
+    },
+    [backend]
+  );
+  const createCollectionAsync = useCallback(
+    async (input: CreateStudioCollectionInput): Promise<MockCollection> => {
+      const persisted = await backend.collections.create({
+        title: input.title,
+        description: input.desc,
+        tags: input.tags,
+        contentType: input.kind,
+        texture: input.texture,
+        cover: input.cover,
+        trackIds: input.trackIds,
+      } as any);
+      const created = toStudioCollection(persisted);
+      setCollections((current) => [
+        ...current.filter((collection) => collection.id !== created.id),
+        created,
+      ]);
+      return created;
     },
     [backend]
   );
@@ -948,6 +959,7 @@ export default function StudioProvider({
       toggleTrackInCollection,
       addTrackToCollection,
       createCollection,
+      createCollectionAsync,
       jumpBackIn,
       newReleases,
       youMightLike,
@@ -1000,6 +1012,7 @@ export default function StudioProvider({
       toggleTrackInCollection,
       addTrackToCollection,
       createCollection,
+      createCollectionAsync,
       playerExpanded,
       volume,
       setVolume,
