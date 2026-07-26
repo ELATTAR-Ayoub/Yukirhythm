@@ -35,7 +35,10 @@ import type { LibraryFilter } from "./library-utils";
 import {
   insertIntoQueue,
   isSameContext,
+  joinAdHocQueue,
   removeQueueIndex,
+  restoreOrder,
+  shuffleOrder,
   type EnqueueMode,
 } from "./queue-utils";
 import type { TextureName } from "@/components/studio/Texture";
@@ -74,9 +77,25 @@ interface MockStudioValue {
    *  playlist, and no playlist needs to be open for it to work. */
   enqueue: (track: MockTrack, mode?: EnqueueMode) => void;
   toggle: () => void;
+  /** There is always a next track when a multi-track queue is active because
+   *  advancing from the tail wraps to the first track. */
+  canNext: boolean;
+  /** Previous either restarts the current track after five seconds or moves
+   *  to an earlier queue position. */
+  canPrev: boolean;
   next: () => void;
+  /** `progressSec >= 5` restarts the current track (seek 0); earlier than
+   *  that goes to the previous track, wrapping to the last one from index 0. */
   prev: () => void;
   seek: (sec: number) => void;
+  /** True while the queue is in its shuffled order. */
+  shuffled: boolean;
+  /** Flip shuffle. Enabling reorders the queue (current track first,
+   *  everything else permuted) without touching playback; disabling restores
+   *  the order shuffle started from. */
+  toggleShuffle: () => void;
+  /** Start a collection (or an ad-hoc queue) in a remembered shuffled order. */
+  playShuffled: (tracks: MockTrack[], from?: MockCollection) => void;
   // auth
   user: MockUser | null;
   /** Which IDP the popup opens for; defaults to google. */
@@ -216,6 +235,10 @@ export default function MockStudioProvider({
   const [navDirection, setNavDirection] = useState<"next" | "prev" | null>(
     null
   );
+  const [shuffled, setShuffled] = useState(false);
+  /** The order the queue was in right before shuffle was turned on —
+   *  meaningful only while `shuffled` is true. */
+  const preShuffleOrderRef = useRef<MockTrack[] | null>(null);
 
   /** Held as state, not derived from `playingCollection`: the queue can be
    *  added to on its own (the rail's add-to-queue field), so it has to be able
@@ -353,22 +376,48 @@ export default function MockStudioProvider({
         return;
       }
 
+      // A loose play (no `from`) while the user's own ad-hoc queue is
+      // running (no collection context) joins that queue instead of
+      // replacing it — mirrors the real provider (see B5's joinAdHocQueue).
+      if (!from && playingCollection === null && queue.length > 0) {
+        const joined = joinAdHocQueue(queue, track);
+        setQueue(joined.queue);
+        setNavDirection(null);
+        startLoad(joined.index);
+        return;
+      }
+
       const source = from ?? null;
-      const nextQueue = source ? getCollectionTracks(source) : LIBRARY_QUEUE;
+      const nextQueue = source ? getCollectionTracks(source) : [track];
       const idx = nextQueue.findIndex((t) => t.id === track.id);
       setPlayingCollection(source);
       setQueue(nextQueue);
       setNavDirection(null);
       startLoad(idx >= 0 ? idx : 0);
+      // A genuinely fresh queue invalidates whatever shuffle was doing to the
+      // previous one.
+      if (shuffled) {
+        setShuffled(false);
+        preShuffleOrderRef.current = null;
+      }
     },
-    [startLoad, playingCollection, queue]
+    [startLoad, playingCollection, queue, shuffled]
   );
 
   const dequeue = useCallback(
     (index: number) => {
+      const removedId = queue[index]?.id;
       const result = removeQueueIndex(queue, currentIndex, index);
       setQueue(result.queue);
       setCurrentIndex(result.currentIndex);
+      // Dropping the same slot from the remembered pre-shuffle order too —
+      // otherwise turning shuffle back off would resurrect a removed track.
+      if (shuffled && removedId && preShuffleOrderRef.current) {
+        const saved = [...preShuffleOrderRef.current];
+        const savedIndex = saved.findIndex((t) => t.id === removedId);
+        if (savedIndex >= 0) saved.splice(savedIndex, 1);
+        preShuffleOrderRef.current = saved;
+      }
       // Clamped past the end means the track that was playing just vanished
       // and nothing replaced it — stop, so a later, unrelated enqueue() can't
       // silently resurrect playback into the vacated slot.
@@ -376,7 +425,7 @@ export default function MockStudioProvider({
         setIsPlaying(false);
       }
     },
-    [queue, currentIndex]
+    [queue, currentIndex, shuffled]
   );
 
   /** Splices into the running queue. Deliberately does not start playback:
@@ -393,15 +442,13 @@ export default function MockStudioProvider({
   }, [nowPlaying]);
 
   const next = useCallback(() => {
-    setCurrentIndex((i) => (i < 0 ? i : (i + 1) % queue.length));
+    // The wrap IS the point: the auto-advance effect below calls next() with
+    // nothing else special-cased, so a finished queue — shuffled or not —
+    // restarts from the top instead of stopping dead at the last track.
+    setCurrentIndex((i) =>
+      i < 0 || !queue.length ? i : (i + 1) % queue.length
+    );
     setNavDirection("next");
-    setProgressSec(0);
-    setIsPlaying(true);
-  }, [queue.length]);
-
-  const prev = useCallback(() => {
-    setCurrentIndex((i) => (i < 0 ? i : (i - 1 + queue.length) % queue.length));
-    setNavDirection("prev");
     setProgressSec(0);
     setIsPlaying(true);
   }, [queue.length]);
@@ -418,6 +465,61 @@ export default function MockStudioProvider({
       setProgressSec(Math.min(max, Math.max(0, Math.floor(sec))));
     },
     [nowPlaying]
+  );
+
+  /**
+   * Smart previous: a "restart this track" gesture past a threshold, a real
+   * "go back" gesture before it. At the first queue position there is no
+   * previous track, so the transport disables this action until five seconds
+   * have elapsed (at which point it can restart the current track).
+   */
+  const prev = useCallback(() => {
+    if (progressSec >= 5) {
+      seek(0);
+      return;
+    }
+    setCurrentIndex((i) => (i <= 0 ? i : i - 1));
+    setNavDirection("prev");
+    setProgressSec(0);
+    setIsPlaying(true);
+  }, [progressSec, seek]);
+
+  /**
+   * Enable: remember today's order, Fisher–Yates the rest with whatever is
+   * currently playing pinned to the front — playback itself never
+   * interrupts. Disable: restore the remembered order (minus anything
+   * dequeued meanwhile) and re-derive the playhead by the id that's actually
+   * playing.
+   */
+  const toggleShuffle = useCallback(() => {
+    if (!shuffled) {
+      preShuffleOrderRef.current = queue;
+      const result = shuffleOrder(queue, currentIndex, Math.random);
+      setQueue(result.queue);
+      setCurrentIndex(result.currentIndex);
+      setShuffled(true);
+      return;
+    }
+    const saved = preShuffleOrderRef.current ?? queue;
+    const result = restoreOrder(saved, queue, nowPlaying?.id ?? null);
+    setQueue(result.queue);
+    setCurrentIndex(result.currentIndex);
+    preShuffleOrderRef.current = null;
+    setShuffled(false);
+  }, [shuffled, queue, currentIndex, nowPlaying]);
+
+  const playShuffled = useCallback(
+    (tracks: MockTrack[], from?: MockCollection) => {
+      if (!tracks.length) return;
+      const result = shuffleOrder(tracks, -1, Math.random);
+      preShuffleOrderRef.current = tracks;
+      setPlayingCollection(from ?? null);
+      setQueue(result.queue);
+      setNavDirection(null);
+      setShuffled(true);
+      startLoad(0);
+    },
+    [startLoad]
   );
 
   const setVolume = useCallback((next: number) => {
@@ -531,9 +633,14 @@ export default function MockStudioProvider({
     dequeue,
     enqueue,
     toggle,
+    canNext: currentIndex >= 0 && queue.length > 1,
+    canPrev: currentIndex > 0 || (currentIndex >= 0 && progressSec >= 5),
     next,
     prev,
     seek,
+    shuffled,
+    toggleShuffle,
+    playShuffled,
     user,
     signIn,
     signOut,

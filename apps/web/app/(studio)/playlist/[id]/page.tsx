@@ -1,16 +1,19 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useEffect } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 
 import BackHeader from "@/components/studio/screens/BackHeader";
 import EmptyState from "@/components/studio/EmptyState";
 import CollectionDetail from "@/components/studio/screens/CollectionDetail";
 import PlaylistHero from "@/components/studio/screens/PlaylistHero";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
-import { LIBRARY } from "@/components/studio/shell/routes";
+import { LIBRARY, playlistHref } from "@/components/studio/shell/routes";
 
 export default function PlaylistScreen() {
   const { collections, libraryLoading } = useMockStudio();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   // next-env.d.ts pulls in next/navigation-types/compat/navigation, which
   // types useParams() as `T | null` for pages/-router back-compat even
   // though the app router never actually returns null here — so this guard
@@ -22,7 +25,22 @@ export default function PlaylistScreen() {
       : params.id
     : undefined;
   const id = rawId ? decodeURIComponent(rawId) : undefined;
-  const collection = id ? collections.find((c) => c.id === id) : undefined;
+  const createdTitle = searchParams.get("created");
+  const collection = id
+    ? (collections.find((c) => c.id === id) ??
+      (id.startsWith("pending-") && createdTitle
+        ? [...collections].reverse().find((c) => c.title === createdTitle)
+        : undefined))
+    : undefined;
+
+  // Once the refreshed library exposes the server-issued id, canonicalise
+  // the optimistic URL. Until then `collection` keeps the detail page
+  // rendered, so users never fall through to the not-found state.
+  useEffect(() => {
+    if (id?.startsWith("pending-") && collection && collection.id !== id) {
+      router.replace(playlistHref(collection.id));
+    }
+  }, [collection, id, router]);
 
   // The library loads asynchronously; an empty list on the first render is
   // "not loaded yet", not "missing". Claiming not-found here flashed a false
@@ -47,7 +65,7 @@ export default function PlaylistScreen() {
           real exit, and on a phone there is no library rail to fall back to.
           The hero deliberately has no title of its own so this is the page's
           single heading. */}
-      <BackHeader title={collection.title} backHref={LIBRARY} />
+      <BackHeader title={collection.title} fallbackHref={LIBRARY} />
 
       <PlaylistHero collection={collection} />
       <div className="px-1 mt-4">

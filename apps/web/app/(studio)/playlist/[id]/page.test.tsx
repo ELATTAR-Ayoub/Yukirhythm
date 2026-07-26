@@ -4,19 +4,27 @@ import { render, screen } from "@testing-library/react";
 import MockStudioProvider from "@/components/studio/screens/MockStudioProvider";
 import PlaylistScreen from "./page";
 
-const nav = vi.hoisted(() => ({ id: "liked" }));
+const nav = vi.hoisted(() => ({
+  id: "liked",
+  created: null as string | null,
+  replace: vi.fn(),
+}));
 
 vi.mock("next/navigation", () => ({
   useParams: () => ({ id: nav.id }),
+  useSearchParams: () =>
+    new URLSearchParams(nav.created ? { created: nav.created } : undefined),
   usePathname: () => `/design-system/screens/playlist/${nav.id}`,
   // CollectionDetail's Add-music control calls useRouter() unconditionally
   // now (it routes at every width); none of these tests exercise that click.
-  useRouter: () => ({ push: () => {} }),
+  useRouter: () => ({ push: () => {}, replace: nav.replace }),
 }));
 
 describe("PlaylistScreen", () => {
   beforeEach(() => {
     nav.id = "liked";
+    nav.created = null;
+    nav.replace.mockClear();
   });
 
   it("renders the collection title and description", () => {
@@ -52,6 +60,22 @@ describe("PlaylistScreen", () => {
       </MockStudioProvider>
     );
     expect(screen.getByText(/Collection not found/i)).toBeTruthy();
+  });
+
+  it("keeps a just-created pending route rendered and replaces it with the server id", () => {
+    nav.id = "pending-create-id";
+    nav.created = "Liked Songs";
+    render(
+      <MockStudioProvider>
+        <PlaylistScreen />
+      </MockStudioProvider>
+    );
+
+    expect(
+      screen.getByRole("heading", { name: "Liked Songs", level: 1 })
+    ).toBeTruthy();
+    expect(nav.replace).toHaveBeenCalledWith("/playlist/liked");
+    expect(screen.queryByText(/Collection not found/i)).toBeNull();
   });
 
   // No test for decoding a url-encoded id: every collection id reachable from

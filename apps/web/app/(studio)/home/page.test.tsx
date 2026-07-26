@@ -8,10 +8,18 @@ import { playlistHref } from "@/components/studio/shell/routes";
 import HomeScreen from "./page";
 
 const { push } = vi.hoisted(() => ({ push: vi.fn() }));
+const feedApi = vi.hoisted(() => ({
+  newReleases: vi.fn(),
+  youMightLike: vi.fn(),
+}));
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push }),
   usePathname: () => "/design-system/screens/home",
+}));
+
+vi.mock("@/lib/studio/useBackend", () => ({
+  useBackend: () => ({ feed: feedApi }),
 }));
 
 /** Surfaces nowPlaying so tests can prove a click did (or didn't) start playback. */
@@ -30,7 +38,10 @@ function renderHome() {
 }
 
 describe("HomeScreen", () => {
-  beforeEach(() => push.mockClear());
+  beforeEach(() => {
+    push.mockClear();
+    window.localStorage.clear();
+  });
 
   it("links each recently-played collection to its playlist route", () => {
     renderHome();
@@ -94,9 +105,20 @@ describe("HomeScreen", () => {
     }
   });
 
+  it("includes Liked Songs in Jump back in and both independently refreshable feeds", () => {
+    renderHome();
+
+    expect(screen.getByRole("link", { name: "Open Liked Songs" })).toBeTruthy();
+    expect(screen.getByText("New releases")).toBeTruthy();
+    expect(screen.getByText("You might like")).toBeTruthy();
+    expect(screen.getAllByRole("button", { name: "Refresh" })).toHaveLength(2);
+  });
+
   it("skeletons the New releases shelf while the feeds load", () => {
     render(
-      <MockStudioProvider feeds={{ loading: true }}>
+      <MockStudioProvider
+        feeds={{ loading: true, newReleases: [], youMightLike: [] }}
+      >
         <HomeScreen />
       </MockStudioProvider>
     );

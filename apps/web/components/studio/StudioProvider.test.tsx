@@ -45,7 +45,7 @@ const { backend, authState, hiddenPlayer } = vi.hoisted(() => ({
         removeFromQueue: vi.fn().mockResolvedValue({}),
       },
     },
-    collections: { list: vi.fn() },
+    collections: { list: vi.fn(), create: vi.fn() },
     feed: {
       jumpBackIn: vi.fn().mockRejectedValue(new Error("no")),
       newReleases: vi.fn().mockRejectedValue(new Error("no")),
@@ -247,6 +247,78 @@ describe("StudioProvider library load", () => {
     expect(screen.getByTestId("liked-tracks").textContent).toBe(
       "brand-new-track"
     );
+  });
+
+  it("replaces a newly-created pending collection with the POST response without a list refresh", async () => {
+    function CreateProbe() {
+      const { collections, createCollection, libraryLoading } = useMockStudio();
+      return (
+        <>
+          <div data-testid="create-loading">{String(libraryLoading)}</div>
+          <button
+            onClick={() =>
+              createCollection({
+                title: "Rainy Tapes",
+                desc: "Tape loops",
+                tags: ["rain"],
+                kind: "music",
+                trackIds: [],
+              })
+            }
+          >
+            create
+          </button>
+          <div data-testid="created-ids">
+            {collections
+              .filter((c) => c.title === "Rainy Tapes")
+              .map((c) => c.id)
+              .join(",")}
+          </div>
+        </>
+      );
+    }
+
+    backend.collections.create.mockResolvedValueOnce({
+      collectionId: "server-rainy-tapes",
+      ownerId: "u1",
+      role: "playlist",
+      contentType: "music",
+      title: "Rainy Tapes",
+      description: "Tape loops",
+      tags: ["rain"],
+      cover: "texture",
+      texture: "tx-k-silk",
+      imageUrl: null,
+      tracks: [],
+      visibility: "private",
+      stats: {
+        trackCount: 0,
+        totalDurationSec: 0,
+        saveCount: 0,
+        playCount: 0,
+      },
+      createdAt: null,
+      updatedAt: null,
+    });
+
+    render(
+      <StudioProvider>
+        <CreateProbe />
+      </StudioProvider>
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId("create-loading").textContent).toBe("false")
+    );
+    const listCallsAfterLoad = backend.collections.list.mock.calls.length;
+
+    fireEvent.click(screen.getByText("create"));
+    expect(screen.getByTestId("created-ids").textContent).toMatch(/^pending-/);
+    await waitFor(() =>
+      expect(screen.getByTestId("created-ids").textContent).toBe(
+        "server-rainy-tapes"
+      )
+    );
+    expect(backend.collections.list).toHaveBeenCalledTimes(listCallsAfterLoad);
   });
 });
 

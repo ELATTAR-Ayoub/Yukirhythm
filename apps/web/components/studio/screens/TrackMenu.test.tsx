@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 
 import MockStudioProvider, { useMockStudio } from "./MockStudioProvider";
 import {
@@ -102,9 +108,15 @@ describe("TrackMenu", () => {
 
     const dialog = within(screen.getByRole("dialog"));
     expect(dialog.getAllByRole("checkbox").length).toBeGreaterThan(1);
+    expect(screen.getByRole("dialog").className).toContain(
+      "max-h-[calc(100dvh-2rem)]",
+    );
+    expect(screen.getByRole("dialog").className).toContain(
+      "w-[calc(100vw-2rem)]",
+    );
   });
 
-  it("adds and removes the track from a playlist", () => {
+  it("adds and removes the track from a playlist with visible pending feedback", async () => {
     renderMenu();
     openMenu();
     fireEvent.click(screen.getByText("Add to playlist"));
@@ -116,7 +128,9 @@ describe("TrackMenu", () => {
 
     fireEvent.click(row);
     expect(members().includes(TRACK.id)).toBe(!startsIn);
+    expect(row.getAttribute("aria-busy")).toBe("true");
 
+    await waitFor(() => expect(row).not.toBeDisabled());
     fireEvent.click(row);
     expect(members().includes(TRACK.id)).toBe(startsIn);
   });

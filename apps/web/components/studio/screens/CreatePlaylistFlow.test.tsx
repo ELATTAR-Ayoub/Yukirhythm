@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 import MockStudioProvider, { useMockStudio } from "./MockStudioProvider";
 import { MOCK_COLLECTIONS } from "./mock-data";
@@ -40,6 +40,13 @@ function goToStep3() {
 function addTag(input: HTMLElement, raw: string) {
   fireEvent.change(input, { target: { value: raw } });
   fireEvent.keyDown(input, { key: "Enter" });
+}
+
+async function searchAndAdd(query: string, title: string) {
+  fireEvent.change(screen.getByLabelText("Search tracks to add"), {
+    target: { value: query },
+  });
+  fireEvent.click(await screen.findByRole("button", { name: `Add ${title}` }));
 }
 
 /** Pulls the `/textures/NAME.png` name out of every element's inline
@@ -100,7 +107,7 @@ describe("CreatePlaylistFlow", () => {
     expect(defaultCover.getAttribute("aria-pressed")).toBe("false");
   });
 
-  it("carries the draft forward and back across all three steps", () => {
+  it("carries the draft forward and back across all three steps", async () => {
     renderFlow();
 
     fireEvent.change(screen.getByLabelText("Name"), {
@@ -112,10 +119,7 @@ describe("CreatePlaylistFlow", () => {
     fireEvent.click(screen.getByRole("button", { name: "Cover: marble" }));
     fireEvent.click(screen.getByRole("button", { name: "Next" })); // -> step 2
 
-    fireEvent.change(screen.getByLabelText("Search tracks to add"), {
-      target: { value: "Cobalt" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Add Cobalt Dreams" }));
+    await searchAndAdd("Cobalt", "Cobalt Dreams");
     expect(screen.getByLabelText("1 track added")).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Next" })); // -> step 3
@@ -140,40 +144,36 @@ describe("CreatePlaylistFlow", () => {
     ).toBe("true");
   });
 
-  it("lets a track be removed again from the draft", () => {
+  it("lets a track be removed again from the draft", async () => {
     renderFlow();
     goToStep2();
 
-    fireEvent.change(screen.getByLabelText("Search tracks to add"), {
-      target: { value: "Cobalt" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Add Cobalt Dreams" }));
+    await searchAndAdd("Cobalt", "Cobalt Dreams");
     expect(screen.getByLabelText("1 track added")).toBeTruthy();
     expect(
       screen.getByRole("button", { name: "Remove Cobalt Dreams" })
     ).toBeTruthy();
 
     // remove it back out via the same (now toggled) search-result button
-    fireEvent.click(
-      screen.getByRole("button", { name: "Remove Cobalt Dreams" })
-    );
+    const remove = screen.getByRole("button", {
+      name: "Remove Cobalt Dreams",
+    });
+    await waitFor(() => expect(remove).not.toBeDisabled());
+    fireEvent.click(remove);
     expect(screen.getByLabelText("0 tracks added")).toBeTruthy();
     expect(
       screen.getByRole("button", { name: "Add Cobalt Dreams" })
     ).toBeTruthy();
   });
 
-  it("writes nothing to the store before the review step confirms", () => {
+  it("writes nothing to the store before the review step confirms", async () => {
     renderFlow();
     expect(storeCount()).toBe(String(BASELINE_COUNT));
 
     goToStep2("Rainy Tapes");
     expect(storeCount()).toBe(String(BASELINE_COUNT));
 
-    fireEvent.change(screen.getByLabelText("Search tracks to add"), {
-      target: { value: "Cobalt" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Add Cobalt Dreams" }));
+    await searchAndAdd("Cobalt", "Cobalt Dreams");
     expect(storeCount()).toBe(String(BASELINE_COUNT));
 
     goToStep3();
@@ -184,7 +184,7 @@ describe("CreatePlaylistFlow", () => {
     expect(storeCount()).toBe(String(BASELINE_COUNT + 1));
   });
 
-  it("confirms with the chosen texture and tracks, and hands the new collection to onCreated", () => {
+  it("confirms with the chosen texture and tracks, and hands the new collection to onCreated", async () => {
     const onCreated = renderFlow();
 
     fireEvent.change(screen.getByLabelText("Name"), {
@@ -193,10 +193,7 @@ describe("CreatePlaylistFlow", () => {
     fireEvent.click(screen.getByRole("button", { name: "Cover: marble" }));
     fireEvent.click(screen.getByRole("button", { name: "Next" })); // -> step 2
 
-    fireEvent.change(screen.getByLabelText("Search tracks to add"), {
-      target: { value: "Cobalt" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Add Cobalt Dreams" }));
+    await searchAndAdd("Cobalt", "Cobalt Dreams");
     fireEvent.click(screen.getByRole("button", { name: "Next" })); // -> step 3
 
     fireEvent.click(screen.getByRole("button", { name: "Create playlist" }));
@@ -311,15 +308,10 @@ describe("CreatePlaylistFlow", () => {
       ).toBeTruthy();
     });
 
-    it("enables Mosaic once a track exists, and confirming persists cover: mosaic", () => {
+    it("enables Mosaic once a track exists, and confirming persists cover: mosaic", async () => {
       const onCreated = renderFlow();
       goToStep2("Rainy Tapes");
-      fireEvent.change(screen.getByLabelText("Search tracks to add"), {
-        target: { value: "Cobalt" },
-      });
-      fireEvent.click(
-        screen.getByRole("button", { name: "Add Cobalt Dreams" })
-      );
+      await searchAndAdd("Cobalt", "Cobalt Dreams");
       fireEvent.click(screen.getByRole("button", { name: "Back" })); // -> step 1
 
       const mosaic = screen.getByRole("button", { name: "Mosaic" });
@@ -335,26 +327,16 @@ describe("CreatePlaylistFlow", () => {
       expect(onCreated.mock.calls[0][0].cover).toBe("mosaic");
     });
 
-    it("reflects a track added after mosaic was chosen — review shows both, in order", () => {
+    it("reflects a track added after mosaic was chosen — review shows both, in order", async () => {
       renderFlow();
       goToStep2("Rainy Tapes");
-      fireEvent.change(screen.getByLabelText("Search tracks to add"), {
-        target: { value: "Cobalt" },
-      });
-      fireEvent.click(
-        screen.getByRole("button", { name: "Add Cobalt Dreams" })
-      ); // t2, tx-k-marble
+      await searchAndAdd("Cobalt", "Cobalt Dreams"); // t2, tx-k-marble
       fireEvent.click(screen.getByRole("button", { name: "Back" })); // -> step 1
 
       fireEvent.click(screen.getByRole("button", { name: "Mosaic" }));
       fireEvent.click(screen.getByRole("button", { name: "Next" })); // -> step 2
 
-      fireEvent.change(screen.getByLabelText("Search tracks to add"), {
-        target: { value: "Midnight" },
-      });
-      fireEvent.click(
-        screen.getByRole("button", { name: "Add Midnight Snowfall" })
-      ); // t1, tx-k2-vinyl
+      await searchAndAdd("Midnight", "Midnight Snowfall"); // t1, tx-k2-vinyl
 
       goToStep3();
 

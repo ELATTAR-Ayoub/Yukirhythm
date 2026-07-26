@@ -48,7 +48,7 @@ export default function PrivacyScreen() {
 
   return (
     <div className="space-y-6">
-      <BackHeader title="Privacy" backHref={`${BASE}/profile`} />
+      <BackHeader title="Privacy" fallbackHref={`${BASE}/profile`} />
 
       <p className="type-small text-muted-foreground">
         Yukirhythm learns from what you play to shape recommendations. You

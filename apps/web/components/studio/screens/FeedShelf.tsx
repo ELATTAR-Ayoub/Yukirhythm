@@ -1,7 +1,11 @@
 "use client";
 
+import { ReloadIcon } from "@radix-ui/react-icons";
+
 import RailShelf from "@/components/studio/RailShelf";
 import MediaCard from "@/components/studio/MediaCard";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { useMockStudio } from "./MockStudioProvider";
 import { formatDuration, type MockTrack } from "./mock-data";
 
@@ -22,6 +26,8 @@ interface FeedShelfProps {
   grid?: boolean;
   size?: "sm" | "md";
   cardClassName?: string;
+  onRefresh?: () => void;
+  refreshing?: boolean;
 }
 
 /**
@@ -38,8 +44,25 @@ export default function FeedShelf({
   grid = false,
   size = "sm",
   cardClassName,
+  onRefresh,
+  refreshing = false,
 }: FeedShelfProps) {
   const { play, nowPlaying, isPlaying } = useMockStudio();
+  const refreshAction = onRefresh ? (
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
+      onClick={onRefresh}
+      disabled={refreshing}
+      aria-busy={refreshing}
+    >
+      <ReloadIcon
+        className={cn("mr-1.5 h-3.5 w-3.5", refreshing && "animate-spin")}
+      />
+      Refresh
+    </Button>
+  ) : null;
 
   if (loading) {
     return <RailShelf label={label} title={title} grid={grid} loading />;
@@ -47,7 +70,7 @@ export default function FeedShelf({
 
   if (tracks.length === 0) {
     return (
-      <RailShelf label={label} title={title}>
+      <RailShelf label={label} title={title} headerAction={refreshAction}>
         {/* One quiet line, not an EmptyState block — an unfilled feed is a
             normal cold-account state, and it must not dominate the page. */}
         <p className="text-sm text-muted-foreground py-2">
@@ -58,7 +81,12 @@ export default function FeedShelf({
   }
 
   return (
-    <RailShelf label={label} title={title} grid={grid}>
+    <RailShelf
+      label={label}
+      title={title}
+      grid={grid}
+      headerAction={refreshAction}
+    >
       {tracks.map((track) => (
         <div
           key={track.id}

@@ -13,6 +13,8 @@ interface RailShelfProps {
   label: string;
   title: string;
   seeAllHref?: string;
+  /** Optional control aligned opposite the shelf title. */
+  headerAction?: React.ReactNode;
   /** Skeletons everything — header, see-all and cards. */
   loading?: boolean;
   /**
@@ -49,6 +51,7 @@ export default function RailShelf({
   label,
   title,
   seeAllHref,
+  headerAction,
   loading = false,
   grid = false,
   children,
@@ -84,7 +87,9 @@ export default function RailShelf({
             {title}
           </h2>
         </div>
-        {seeAllHref ? (
+        {headerAction ? (
+          <div className="shrink-0">{headerAction}</div>
+        ) : seeAllHref ? (
           <Button variant="ghost" size="sm" asChild className="shrink-0">
             <Link href={seeAllHref} data-signal="shelf_see_all">
               See all

@@ -30,7 +30,7 @@ export default function RecentsScreen() {
 
   return (
     <div>
-      <BackHeader title="Recents" backHref={`${BASE}/profile`} />
+      <BackHeader title="Recents" fallbackHref={`${BASE}/profile`} />
       {recents.length === 0 ? (
         <EmptyState
           title="Nothing played yet"

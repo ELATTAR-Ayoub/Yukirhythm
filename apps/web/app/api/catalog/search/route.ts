@@ -13,7 +13,10 @@ type SearchResponse = {
 };
 
 const MAX_QUERY_LEN = 200;
-const DEFAULT_LIMIT = 20;
+// Fetch two UI pages in one provider call. Search initially renders only 20;
+// its explicit "See more" action reveals the next 20 without repeating the
+// same remote search or allowing a later response to reorder page one.
+const DEFAULT_LIMIT = 40;
 const TYPES: CatalogSearchType[] = ["song", "album", "artist", "playlist"];
 
 export async function GET(req: Request): Promise<Response> {
@@ -31,7 +34,9 @@ export async function GET(req: Request): Promise<Response> {
     ? (rawType as CatalogSearchType)
     : "song";
 
-  const key = cacheKey(q, type);
+  // Version the cache entry with the result-window size so older 20-result
+  // payloads do not suppress the new second page for up to the cache TTL.
+  const key = cacheKey(`${q} result-window-${DEFAULT_LIMIT}`, type);
   const cached = await readCache<SearchResponse>(key);
   if (cached) return Response.json(cached);
 

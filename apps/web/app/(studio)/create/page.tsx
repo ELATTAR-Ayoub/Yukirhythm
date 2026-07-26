@@ -32,11 +32,19 @@ export default function CreatePlaylistScreen() {
           column's opaque background. */}
       <div className="relative z-10 flex min-h-0 flex-1 flex-col">
         <div className="shrink-0">
-          <BackHeader title="Create playlist" backHref={LIBRARY} />
+          <BackHeader title="Create playlist" fallbackHref={LIBRARY} />
         </div>
         <div className="min-h-0 flex-1">
           <CreatePlaylistFlow
-            onCreated={(collection) => router.push(playlistHref(collection.id))}
+            onCreated={(collection) => {
+              // Production creation starts with an optimistic `pending-*` id
+              // and replaces it with the server id after the library refresh.
+              // Carry the title as a short-lived correlation key so the
+              // detail route can make that handoff without flashing
+              // "Collection not found".
+              const created = encodeURIComponent(collection.title);
+              router.push(`${playlistHref(collection.id)}?created=${created}`);
+            }}
           />
         </div>
       </div>

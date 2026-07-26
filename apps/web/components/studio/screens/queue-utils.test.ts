@@ -4,6 +4,8 @@ import {
   insertIntoQueue,
   isSameContext,
   removeQueueIndex,
+  restoreOrder,
+  shuffleOrder,
 } from "./queue-utils";
 import {
   MOCK_COLLECTIONS,
@@ -112,5 +114,46 @@ describe("removeQueueIndex", () => {
   it("leaves currentIndex at -1 when nothing was playing", () => {
     const r = removeQueueIndex(queue, -1, 2);
     expect(r.currentIndex).toBe(-1);
+  });
+});
+
+describe("shuffle queue order", () => {
+  it("pins the current track and deterministically shuffles everything else", () => {
+    const queue = [MOCK_TRACKS[0], MOCK_TRACKS[1], MOCK_TRACKS[2]];
+    const result = shuffleOrder(queue, 1, () => 0);
+
+    expect(result.currentIndex).toBe(0);
+    expect(result.queue.map((track) => track.id)).toEqual([
+      MOCK_TRACKS[1].id,
+      MOCK_TRACKS[2].id,
+      MOCK_TRACKS[0].id,
+    ]);
+  });
+
+  it("restores duplicate positions by count rather than resurrecting copies", () => {
+    const duplicate = MOCK_TRACKS[0];
+    const saved = [duplicate, MOCK_TRACKS[1], duplicate];
+    const live = [MOCK_TRACKS[1], duplicate];
+    const result = restoreOrder(saved, live, duplicate.id);
+
+    expect(result.queue.map((track) => track.id)).toEqual([
+      duplicate.id,
+      MOCK_TRACKS[1].id,
+    ]);
+    expect(result.currentIndex).toBe(0);
+  });
+
+  it("appends newly queued duplicate positions when restoring", () => {
+    const duplicate = MOCK_TRACKS[0];
+    const saved = [duplicate, MOCK_TRACKS[1]];
+    const live = [MOCK_TRACKS[1], duplicate, duplicate];
+    const result = restoreOrder(saved, live, MOCK_TRACKS[1].id);
+
+    expect(result.queue.map((track) => track.id)).toEqual([
+      duplicate.id,
+      MOCK_TRACKS[1].id,
+      duplicate.id,
+    ]);
+    expect(result.currentIndex).toBe(1);
   });
 });

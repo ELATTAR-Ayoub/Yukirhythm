@@ -8,10 +8,18 @@ import { playlistHref } from "@/components/studio/shell/routes";
 import SearchScreen from "./page";
 
 const { push } = vi.hoisted(() => ({ push: vi.fn() }));
+const feedApi = vi.hoisted(() => ({
+  newReleases: vi.fn(),
+  youMightLike: vi.fn(),
+}));
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push }),
   usePathname: () => "/design-system/screens/search",
+}));
+
+vi.mock("@/lib/studio/useBackend", () => ({
+  useBackend: () => ({ feed: feedApi }),
 }));
 
 /** Surfaces nowPlaying so tests can prove a click did (or didn't) start playback. */
@@ -42,6 +50,7 @@ describe("SearchScreen", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     push.mockClear();
+    window.localStorage.clear();
   });
   afterEach(() => vi.useRealTimers());
 
@@ -129,7 +138,9 @@ describe("SearchScreen", () => {
 
   it("skeletons both shelves while the feeds load", () => {
     render(
-      <MockStudioProvider feeds={{ loading: true }}>
+      <MockStudioProvider
+        feeds={{ loading: true, youMightLike: [], newReleases: [] }}
+      >
         <SearchScreen />
       </MockStudioProvider>
     );

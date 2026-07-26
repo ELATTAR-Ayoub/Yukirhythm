@@ -151,7 +151,17 @@ export default function CollectionDetail({
   tracks: tracksProp,
   onPlayAt,
 }: CollectionDetailProps) {
-  const { play, toggle, nowPlaying, isPlaying, currentIndex } = useMockStudio();
+  const {
+    play,
+    toggle,
+    nowPlaying,
+    isPlaying,
+    currentIndex,
+    playingCollection,
+    shuffled,
+    toggleShuffle,
+    playShuffled,
+  } = useMockStudio();
   const router = useRouter();
   const [view, setView] = useState<TrackView>("rows");
   const [sort, setSort] = useState<TrackSort>("recent");
@@ -200,12 +210,27 @@ export default function CollectionDetail({
           ))}
         </DragScrollRow>
         <PlayerButton
-          variant="outline"
+          variant={playingHere && shuffled ? "primary" : "outline"}
+          active={playingHere && shuffled}
           aria-label="Shuffle collection"
           onClick={() => {
             if (!tracks.length) return;
-            const at = Math.floor(Math.random() * tracks.length);
-            activate(tracks[at], at);
+            // The queue route is already the live queue, and a playlist that
+            // is already playing must shuffle that same live order (including
+            // anything added to it). A different playlist starts directly in
+            // a shuffled order and remembers it for every subsequent Next.
+            if (onPlayAt && currentIndex < 0) {
+              playShuffled(tracks, playingCollection ?? undefined);
+              return;
+            }
+            if (
+              onPlayAt ||
+              (playingHere && playingCollection?.id === source.id)
+            ) {
+              toggleShuffle();
+              return;
+            }
+            playShuffled(tracks, source);
           }}
         >
           <ShuffleIcon />

@@ -45,8 +45,16 @@ export default function Transport({
   leading?: "loop" | "like";
   onQueue?: () => void;
 }) {
-  const { nowPlaying, isPlaying, isLoading, toggle, next, prev } =
-    useMockStudio();
+  const {
+    nowPlaying,
+    isPlaying,
+    isLoading,
+    toggle,
+    canNext,
+    canPrev,
+    next,
+    prev,
+  } = useMockStudio();
   const [looping, setLooping] = useState(false);
   // Add-to-playlist dialog for the loaded track — opened when the heart is
   // clicked on a track that's already liked (see LikeButton's onAlreadyLiked).
@@ -84,7 +92,7 @@ export default function Transport({
       )}
       <PlayerButton
         onClick={prev}
-        disabled={disabled}
+        disabled={disabled || !canPrev}
         aria-label="Previous"
         data-signal="disc_prev"
       >
@@ -109,7 +117,7 @@ export default function Transport({
       </PlayerButton>
       <PlayerButton
         onClick={next}
-        disabled={disabled}
+        disabled={disabled || !canNext}
         aria-label="Next"
         data-signal="disc_next"
       >

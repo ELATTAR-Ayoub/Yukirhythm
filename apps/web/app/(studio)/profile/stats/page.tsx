@@ -32,7 +32,7 @@ export default function StatsScreen() {
   return (
     <div className="space-y-10">
       <div>
-        <BackHeader title="Listening stats" backHref={`${BASE}/profile`} />
+        <BackHeader title="Listening stats" fallbackHref={`${BASE}/profile`} />
         <div className="grid grid-cols-2 gap-3">
           <StatCard label="This week" value={`${stats.minutesWeek} min`} />
           <StatCard label="This month" value={`${stats.minutesMonth} min`} />

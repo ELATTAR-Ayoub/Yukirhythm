@@ -23,7 +23,7 @@ export default function QueueAddScreen() {
       {/* Lifted above the texture — it sits at z-0 rather than behind the
           column's opaque background. */}
       <div className="relative z-10">
-        <BackHeader title="Search songs" backHref={QUEUE} />
+        <BackHeader title="Search songs" fallbackHref={QUEUE} />
         <p className="type-muted -mt-4 mb-4 truncate">to your queue</p>
         <AddMusicPanel autoFocus />
       </div>

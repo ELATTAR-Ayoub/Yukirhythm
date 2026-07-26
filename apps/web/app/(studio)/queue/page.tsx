@@ -27,7 +27,7 @@ export default function QueueScreen() {
 
   return (
     <div className="pb-8">
-      <BackHeader title={collection.title} backHref={HOME} />
+      <BackHeader title={collection.title} fallbackHref={HOME} />
       <CollectionDetail
         collection={collection}
         playFrom={playingCollection ?? undefined}

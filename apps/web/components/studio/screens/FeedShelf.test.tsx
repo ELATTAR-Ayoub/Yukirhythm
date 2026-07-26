@@ -60,4 +60,40 @@ describe("FeedShelf", () => {
       MOCK_TRACKS[0].title
     );
   });
+
+  it("shows a named refresh control with progress feedback", () => {
+    const refresh = vi.fn();
+    const { rerender } = render(
+      <MockStudioProvider>
+        <FeedShelf
+          label="Fresh drops"
+          title="New releases"
+          tracks={MOCK_TRACKS.slice(0, 2)}
+          loading={false}
+          onRefresh={refresh}
+        />
+      </MockStudioProvider>
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Refresh" }));
+    expect(refresh).toHaveBeenCalledTimes(1);
+
+    rerender(
+      <MockStudioProvider>
+        <FeedShelf
+          label="Fresh drops"
+          title="New releases"
+          tracks={MOCK_TRACKS.slice(0, 2)}
+          loading={false}
+          onRefresh={refresh}
+          refreshing
+        />
+      </MockStudioProvider>
+    );
+    expect(screen.getByRole("button", { name: "Refresh" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Refresh" })).toHaveAttribute(
+      "aria-busy",
+      "true"
+    );
+  });
 });

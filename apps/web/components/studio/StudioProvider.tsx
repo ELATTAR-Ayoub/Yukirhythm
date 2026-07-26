@@ -17,7 +17,10 @@ import type { LibraryFilter } from "@/components/studio/screens/library-utils";
 import {
   insertIntoQueue,
   isSameContext,
+  joinAdHocQueue,
   removeQueueIndex,
+  restoreOrder,
+  shuffleOrder,
   type EnqueueMode,
 } from "@/components/studio/screens/queue-utils";
 import type { TextureName } from "@/components/studio/Texture";
@@ -83,6 +86,11 @@ export default function StudioProvider({
   const [navDirection, setNavDirection] = useState<"next" | "prev" | null>(
     null
   );
+  const [shuffled, setShuffled] = useState(false);
+  /** The order the queue was in right before shuffle was turned on — restored
+   *  verbatim (minus anything dequeued meanwhile) when it's turned back off.
+   *  Meaningful only while `shuffled` is true. */
+  const preShuffleOrderRef = useRef<MockTrack[] | null>(null);
   const [playerExpanded, setPlayerExpanded] = useState(false);
   const [volume, setVolumeState] = useState(1);
   const preMute = useRef(1);
@@ -422,6 +430,28 @@ export default function StudioProvider({
         return;
       }
 
+      // A loose play (no `from`) while the user's own ad-hoc queue is running
+      // (no collection context) JOINS that queue instead of wiping it —
+      // already-queued track gets a jump, not a duplicate; otherwise it lands
+      // on the end. A collection playing, or a genuinely cold queue, falls
+      // through to the replace-with-a-fresh-queue branch below unchanged.
+      if (!from && playingCollection === null && queue.length > 0) {
+        const joined = joinAdHocQueue(queue, track);
+        const appended = joined.index === queue.length;
+        flushEvent();
+        if (appended) registerStudioTracks([track]);
+        setQueue(joined.queue);
+        setNavDirection(null);
+        startTrack(joined.index);
+        if (appended) {
+          // Best-effort, same as enqueue: a failed write must not undo the
+          // queue the user is looking at, and the next save() flush re-sends
+          // the whole list.
+          void backend.me.playback.enqueue(track.id, "end").catch(() => {});
+        }
+        return;
+      }
+
       flushEvent();
       const q = from ? await resolveTrackIds(from.trackIds) : [track];
       const idx = q.findIndex((t) => t.id === track.id);
@@ -429,8 +459,23 @@ export default function StudioProvider({
       setQueue(q.length ? q : [track]);
       setNavDirection(null);
       startTrack(idx >= 0 ? idx : 0);
+      // A genuinely fresh queue invalidates whatever shuffle was doing to the
+      // PREVIOUS one — leaving it on here would show "shuffled" active over
+      // an order that was never actually shuffled.
+      if (shuffled) {
+        setShuffled(false);
+        preShuffleOrderRef.current = null;
+      }
     },
-    [resolveTrackIds, flushEvent, startTrack, playingCollection, queue]
+    [
+      resolveTrackIds,
+      flushEvent,
+      startTrack,
+      playingCollection,
+      queue,
+      backend,
+      shuffled,
+    ]
   );
 
   const dequeue = useCallback(
@@ -440,9 +485,19 @@ export default function StudioProvider({
       // track that earned them, not vanish or get attributed to whatever
       // nowPlaying resolves to afterward.
       flushEvent();
+      const removedId = queue[index]?.id;
       const result = removeQueueIndex(queue, currentIndex, index);
       setQueue(result.queue);
       setCurrentIndex(result.currentIndex);
+      // Dropping the same slot from the remembered pre-shuffle order too —
+      // otherwise turning shuffle back off would resurrect a track the user
+      // just removed.
+      if (shuffled && removedId && preShuffleOrderRef.current) {
+        const saved = [...preShuffleOrderRef.current];
+        const savedIndex = saved.findIndex((t) => t.id === removedId);
+        if (savedIndex >= 0) saved.splice(savedIndex, 1);
+        preShuffleOrderRef.current = saved;
+      }
       // Clamped past the end means the track that was playing just vanished
       // and nothing replaced it — stop, so a later, unrelated enqueue() can't
       // silently resurrect playback into the vacated slot.
@@ -453,7 +508,7 @@ export default function StudioProvider({
       // the user just removed, and the next save() flush re-sends the list.
       void backend.me.playback.removeFromQueue(index).catch(() => {});
     },
-    [backend, flushEvent, queue, currentIndex]
+    [backend, flushEvent, queue, currentIndex, shuffled]
   );
 
   /**
@@ -479,21 +534,13 @@ export default function StudioProvider({
   );
   const next = useCallback(() => {
     flushEvent();
+    // The wrap IS the point: onEnded() calls next() with nothing else
+    // special-cased, so a finished queue — shuffled or not — restarts from
+    // the top instead of stopping dead at the last track.
     setCurrentIndex((i) =>
       i < 0 || !queue.length ? i : (i + 1) % queue.length
     );
     setNavDirection("next");
-    setProgressSec(0);
-    setIsPlaying(true);
-    startedAtRef.current = Date.now();
-    listenedRef.current = 0;
-  }, [queue.length, flushEvent]);
-  const prev = useCallback(() => {
-    flushEvent();
-    setCurrentIndex((i) =>
-      i < 0 || !queue.length ? i : (i - 1 + queue.length) % queue.length
-    );
-    setNavDirection("prev");
     setProgressSec(0);
     setIsPlaying(true);
     startedAtRef.current = Date.now();
@@ -509,6 +556,68 @@ export default function StudioProvider({
       playerRef.current?.seekTo(clamped);
     },
     [nowPlaying]
+  );
+
+  /**
+   * Smart previous: a "restart this track" gesture past a threshold, a real
+   * "go back" gesture before it. At the first queue position there is no
+   * previous track, so the transport disables this action until five seconds
+   * have elapsed (at which point it can restart the current track).
+   */
+  const prev = useCallback(() => {
+    if (progressSec >= 5) {
+      seek(0);
+      return;
+    }
+    flushEvent();
+    setCurrentIndex((i) => (i <= 0 ? i : i - 1));
+    setNavDirection("prev");
+    setProgressSec(0);
+    setIsPlaying(true);
+    startedAtRef.current = Date.now();
+    listenedRef.current = 0;
+  }, [flushEvent, progressSec, seek]);
+
+  /**
+   * Enable: remember today's order, Fisher–Yates the rest with whatever is
+   * currently playing pinned to the front — playback itself never
+   * interrupts (no startTrack, index/queue only). Disable: restore the
+   * remembered order, dropping anything dequeued in the meantime, and
+   * re-derive the playhead by the id that's actually playing (not the
+   * carried-over index — the same track can sit at a different slot in
+   * either order).
+   */
+  const toggleShuffle = useCallback(() => {
+    if (!shuffled) {
+      preShuffleOrderRef.current = queue;
+      const result = shuffleOrder(queue, currentIndex, Math.random);
+      setQueue(result.queue);
+      setCurrentIndex(result.currentIndex);
+      setShuffled(true);
+      return;
+    }
+    const saved = preShuffleOrderRef.current ?? queue;
+    const result = restoreOrder(saved, queue, nowPlaying?.id ?? null);
+    setQueue(result.queue);
+    setCurrentIndex(result.currentIndex);
+    preShuffleOrderRef.current = null;
+    setShuffled(false);
+  }, [shuffled, queue, currentIndex, nowPlaying]);
+
+  const playShuffled = useCallback(
+    (tracks: MockTrack[], from?: MockCollection) => {
+      if (!tracks.length) return;
+      flushEvent();
+      registerStudioTracks(tracks);
+      const result = shuffleOrder(tracks, -1, Math.random);
+      preShuffleOrderRef.current = tracks;
+      setPlayingCollection(from ?? null);
+      setQueue(result.queue);
+      setNavDirection(null);
+      setShuffled(true);
+      startTrack(0);
+    },
+    [flushEvent, startTrack]
   );
 
   const setVolume = useCallback((v: number) => {
@@ -771,10 +880,21 @@ export default function StudioProvider({
           cover: input.cover,
           trackIds: input.trackIds,
         } as any)
-        .then(refreshLibrary);
+        .then((persisted) => {
+          // Replace this exact optimistic row with the POST response. A full
+          // list refresh here raced Firestore visibility for some users and
+          // could temporarily remove the pending row while its detail route
+          // was already open, producing "Collection not found".
+          const created = toStudioCollection(persisted);
+          setCollections((current) =>
+            current.map((collection) =>
+              collection.id === optimistic.id ? created : collection
+            )
+          );
+        });
       return optimistic;
     },
-    [backend, refreshLibrary]
+    [backend]
   );
 
   // Defaults to google so any caller that omits the argument (there are
@@ -801,9 +921,14 @@ export default function StudioProvider({
       dequeue,
       enqueue,
       toggle,
+      canNext: currentIndex >= 0 && queue.length > 1,
+      canPrev: currentIndex > 0 || (currentIndex >= 0 && progressSec >= 5),
       next,
       prev,
       seek,
+      shuffled,
+      toggleShuffle,
+      playShuffled,
       user,
       signIn,
       signOut,
@@ -854,6 +979,9 @@ export default function StudioProvider({
       next,
       prev,
       seek,
+      shuffled,
+      toggleShuffle,
+      playShuffled,
       user,
       signIn,
       signOut,
