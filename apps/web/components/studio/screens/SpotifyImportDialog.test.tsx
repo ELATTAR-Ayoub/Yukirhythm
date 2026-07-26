@@ -34,8 +34,8 @@ const matchedTrack: MockTrack = {
 
 const createdCollection: MockCollection = {
   id: "imported-playlist",
-  title: "Snow",
-  desc: "Imported",
+  title: "Liked Songs",
+  desc: "Songs saved to your Spotify library.",
   texture: "tx-k2-vinyl",
   cover: "mosaic",
   trackIds: [matchedTrack.id],
@@ -73,29 +73,16 @@ describe("SpotifyImportDialog", () => {
       searchTracks,
       createCollectionAsync,
     } as unknown as MockStudioValue;
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(
-        json({
+    const fetchMock = vi.fn(async (input: string | URL | Request) => {
+      const url = String(input);
+      if (url.includes("/me/tracks?limit=1")) {
+        return json({ items: [], total: 8, next: null });
+      }
+      if (url.includes("/me/tracks?limit=50")) {
+        return json({
           items: [
             {
-              id: "spotify-playlist",
-              name: "Snow",
-              description: "Imported",
-              items: { total: 1 },
-              external_urls: {
-                spotify: "https://open.spotify.com/playlist/spotify-playlist",
-              },
-            },
-          ],
-          next: null,
-        })
-      )
-      .mockResolvedValueOnce(
-        json({
-          items: [
-            {
-              item: {
+              track: {
                 id: "spotify-track",
                 type: "track",
                 name: "Midnight Snowfall",
@@ -108,8 +95,26 @@ describe("SpotifyImportDialog", () => {
             },
           ],
           next: null,
-        })
-      );
+        });
+      }
+      if (url.includes("/me/playlists")) {
+        return json({
+          items: [
+            {
+              id: "spotify-playlist",
+              name: "Snow",
+              description: "Imported",
+              items: { total: 1 },
+              external_urls: {
+                spotify: "https://open.spotify.com/playlist/spotify-playlist",
+              },
+            },
+          ],
+          next: null,
+        });
+      }
+      return json({ error: { message: "Unexpected request" } });
+    });
     vi.stubGlobal("fetch", fetchMock);
 
     render(
@@ -125,16 +130,29 @@ describe("SpotifyImportDialog", () => {
       "overflow-hidden"
     );
 
-    const playlist = await screen.findByRole("button", {
+    await screen.findByRole("button", {
       name: /Snow.*Select to match tracks/i,
     });
+    const sourceList = screen.getByRole("list", {
+      name: "Spotify playlists",
+    });
+    expect(sourceList).toHaveClass(
+      "overflow-y-auto",
+      "overscroll-contain",
+      "max-h-[min(50dvh,28rem)]"
+    );
+    expect(screen.getAllByRole("listitem")[0]).toHaveTextContent("Liked Songs");
     expect(screen.getByRole("status")).toHaveTextContent(
-      "Loaded 1 Spotify playlist"
+      "Loaded 2 Spotify playlists"
     );
 
-    fireEvent.click(playlist);
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Liked Songs.*Select to match tracks/i,
+      })
+    );
     expect(screen.getByRole("status")).toHaveTextContent(
-      "Reading “Snow” from Spotify"
+      "Reading “Liked Songs” from Spotify"
     );
 
     const importButton = await screen.findByRole("button", {
@@ -158,7 +176,7 @@ describe("SpotifyImportDialog", () => {
 
     fireEvent.click(importButton);
     expect(screen.getByRole("status")).toHaveTextContent(
-      "Creating “Snow” and saving 1 tracks"
+      "Creating “Liked Songs” and saving 1 tracks"
     );
     expect(
       screen.getByRole("progressbar", {
@@ -169,7 +187,7 @@ describe("SpotifyImportDialog", () => {
 
     expect(createCollectionAsync).toHaveBeenCalledWith(
       expect.objectContaining({
-        title: "Snow",
+        title: "Liked Songs",
         trackIds: [matchedTrack.id],
         tags: ["spotify-import"],
       })
@@ -190,7 +208,7 @@ describe("SpotifyImportDialog", () => {
       expect(screen.getByText("Import complete")).toBeVisible()
     );
     expect(screen.getByRole("status")).toHaveTextContent(
-      "Imported “Snow” with 1 tracks successfully"
+      "Imported “Liked Songs” with 1 tracks successfully"
     );
     expect(createCollectionAsync).toHaveBeenCalledTimes(2);
   });

@@ -27,8 +27,9 @@ import {
   SPOTIFY_IMPORT_TOKEN_KEY,
   createSpotifyOAuthRequest,
   exchangeSpotifyCode,
+  fetchSpotifyImportSources,
+  fetchSpotifyLikedSongsTracks,
   fetchSpotifyPlaylistTracks,
-  fetchSpotifyPlaylists,
   pickBestSpotifyMatch,
   spotifySearchQuery,
   type SpotifyImportToken,
@@ -195,7 +196,7 @@ export default function SpotifyImportDialog({
       setStatus("Loading your Spotify playlists…");
       setProgress({ current: 0, total: 0 });
       try {
-        const next = await fetchSpotifyPlaylists(activeToken.accessToken);
+        const next = await fetchSpotifyImportSources(activeToken.accessToken);
         if (runId.current !== thisRun) return;
         setPlaylists(next);
         setPhase("playlists");
@@ -343,10 +344,10 @@ export default function SpotifyImportDialog({
     setProgress({ current: 0, total: playlist.itemCount });
 
     try {
-      const source = await fetchSpotifyPlaylistTracks(
-        playlist.id,
-        token.accessToken
-      );
+      const source =
+        playlist.source === "liked-songs"
+          ? await fetchSpotifyLikedSongsTracks(token.accessToken)
+          : await fetchSpotifyPlaylistTracks(playlist.id, token.accessToken);
       if (runId.current !== thisRun) return;
       setSkipped(source.skipped);
       setProgress({ current: 0, total: source.tracks.length });
@@ -606,9 +607,9 @@ export default function SpotifyImportDialog({
               <div className="rounded-lg border border-border bg-card p-4">
                 <h3 className="font-ui font-semibold">Connect Spotify</h3>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  You’ll approve read-only access to your private and
-                  collaborative playlists. Yukirhythm never receives your
-                  Spotify password.
+                  You’ll approve read-only access to Liked Songs, private
+                  playlists, and collaborative playlists. Yukirhythm never
+                  receives your Spotify password.
                 </p>
               </div>
               <Button className="w-full" onClick={() => void connect()}>
@@ -626,34 +627,46 @@ export default function SpotifyImportDialog({
           ) : null}
 
           {phase === "playlists" ? (
-            <div className="space-y-3">
-              {playlists.length ? (
-                playlists.map((playlist) => (
-                  <div
-                    key={playlist.id}
-                    className="rounded-lg border border-border bg-card p-3"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => void selectPlaylist(playlist)}
-                      className="w-full text-left"
+            <div className="flex min-h-0 flex-col gap-3">
+              <div
+                role="list"
+                aria-label="Spotify playlists"
+                className="max-h-[min(50dvh,28rem)] min-h-0 space-y-3 overflow-y-auto overscroll-contain pr-1"
+              >
+                {playlists.length ? (
+                  playlists.map((playlist) => (
+                    <div
+                      role="listitem"
+                      key={`${playlist.source}:${playlist.id}`}
+                      className={cn(
+                        "rounded-lg border bg-card p-3",
+                        playlist.source === "liked-songs"
+                          ? "border-[#1DB954]/60"
+                          : "border-border"
+                      )}
                     >
-                      <span className="block truncate font-ui font-medium">
-                        {playlist.name}
-                      </span>
-                      <span className="block text-xs text-muted-foreground">
-                        {playlist.itemCount} items · Select to match tracks
-                      </span>
-                    </button>
-                    <SpotifyAttributionLink href={playlist.externalUrl} />
+                      <button
+                        type="button"
+                        onClick={() => void selectPlaylist(playlist)}
+                        className="w-full max-w-full text-left"
+                      >
+                        <span className="block font-ui font-medium break-words">
+                          {playlist.name}
+                        </span>
+                        <span className="block text-xs text-muted-foreground break-words">
+                          {playlist.itemCount} items · Select to match tracks
+                        </span>
+                      </button>
+                      <SpotifyAttributionLink href={playlist.externalUrl} />
+                    </div>
+                  ))
+                ) : (
+                  <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+                    No playlists were returned for this Spotify account.
                   </div>
-                ))
-              ) : (
-                <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-                  No playlists were returned for this Spotify account.
-                </div>
-              )}
-              <div className="flex flex-col gap-2 sm:flex-row">
+                )}
+              </div>
+              <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
                 <Button
                   variant="outline"
                   className="flex-1"
@@ -728,10 +741,10 @@ export default function SpotifyImportDialog({
                           <CrossCircledIcon className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
                         )}
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium">
+                          <p className="text-sm font-medium break-words">
                             {result.source.title}
                           </p>
-                          <p className="truncate text-xs text-muted-foreground">
+                          <p className="text-xs text-muted-foreground break-words">
                             {result.source.artists.join(", ")}
                           </p>
                           <SpotifyAttributionLink

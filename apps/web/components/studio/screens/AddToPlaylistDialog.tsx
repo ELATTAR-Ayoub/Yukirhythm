@@ -84,8 +84,8 @@ export default function AddToPlaylistDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="grid max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-lg grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden p-4 sm:p-6">
         <DialogHeader>
-          <DialogTitle className="truncate">Add to playlist</DialogTitle>
-          <DialogDescription className="truncate">
+          <DialogTitle>Add to playlist</DialogTitle>
+          <DialogDescription>
             {track.title} — {track.artist}
           </DialogDescription>
         </DialogHeader>
@@ -124,10 +124,10 @@ export default function AddToPlaylistDialog({
                   <CollectionArt collection={c} className="w-full h-full" />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block font-ui font-medium text-sm truncate">
+                  <span className="block font-ui font-medium text-sm break-words">
                     {c.title}
                   </span>
-                  <span className="block font-label text-[10px] uppercase tracking-wider text-muted-foreground truncate">
+                  <span className="block font-label text-[10px] uppercase tracking-wider text-muted-foreground break-words">
                     {c.trackIds.length} tracks
                   </span>
                 </span>

@@ -2,7 +2,10 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { MockTrack } from "@/components/studio/screens/mock-data";
 import {
+  SPOTIFY_IMPORT_SCOPES,
   SpotifyImportError,
+  fetchSpotifyImportSources,
+  fetchSpotifyLikedSongsTracks,
   fetchSpotifyPlaylistTracks,
   fetchSpotifyPlaylists,
   pickBestSpotifyMatch,
@@ -18,6 +21,34 @@ const json = (body: unknown, status = 200, headers?: HeadersInit) =>
   });
 
 describe("Spotify playlist import helpers", () => {
+  it("always puts Liked Songs before Spotify playlists", async () => {
+    const fetchMock = vi.fn(async (input: string | URL | Request) => {
+      const url = String(input);
+      if (url.includes("/me/tracks?limit=1")) {
+        return json({ items: [], total: 73, next: null });
+      }
+      if (url.includes("/me/playlists")) {
+        return json({
+          items: [{ id: "playlist", name: "Night drive", items: { total: 4 } }],
+          next: null,
+        });
+      }
+      return json({ error: { message: "Unexpected request" } }, 500);
+    });
+
+    const sources = await fetchSpotifyImportSources("access", fetchMock);
+
+    expect(sources.map((source) => source.name)).toEqual([
+      "Liked Songs",
+      "Night drive",
+    ]);
+    expect(sources[0]).toMatchObject({
+      source: "liked-songs",
+      itemCount: 73,
+    });
+    expect(SPOTIFY_IMPORT_SCOPES).toContain("user-library-read");
+  });
+
   it("loads every playlist page and accepts the current items count shape", async () => {
     const fetchMock = vi
       .fn()
@@ -117,6 +148,61 @@ describe("Spotify playlist import helpers", () => {
     expect(result.tracks.map((track) => track.position)).toEqual([0, 1]);
     expect(result.tracks[0]?.durationSec).toBe(201);
     expect(result.skipped).toBe(3);
+  });
+
+  it("loads every Liked Songs page and skips unavailable saved tracks", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        json({
+          items: [
+            {
+              track: {
+                id: "liked-1",
+                type: "track",
+                name: "Midnight Snowfall",
+                duration_ms: 214000,
+                artists: [{ name: "Yuki Sato" }],
+              },
+            },
+            {
+              track: {
+                id: "local",
+                type: "track",
+                is_local: true,
+                name: "Local",
+                artists: [{ name: "Someone" }],
+              },
+            },
+          ],
+          next: "https://api.spotify.com/v1/me/tracks?limit=50&offset=50",
+        })
+      )
+      .mockResolvedValueOnce(
+        json({
+          items: [
+            {
+              item: {
+                id: "liked-2",
+                type: "track",
+                name: "Paper Lanterns",
+                artists: [{ name: "Rei Kurosawa" }],
+              },
+            },
+          ],
+          next: null,
+        })
+      );
+
+    const result = await fetchSpotifyLikedSongsTracks("access", fetchMock);
+
+    expect(result.tracks.map((track) => track.id)).toEqual([
+      "liked-1",
+      "liked-2",
+    ]);
+    expect(result.tracks.map((track) => track.position)).toEqual([0, 2]);
+    expect(result.skipped).toBe(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it("returns an actionable error for a followed playlist Spotify will not expose", async () => {
