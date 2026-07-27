@@ -1,7 +1,7 @@
-import Loader from "@/components/Loader";
+import { RootPageSkeleton } from "@/components/studio/screens/RouteSkeletons";
 
 const Loading = () => {
-  return <Loader />;
+  return <RootPageSkeleton />;
 };
 
 export default Loading;

@@ -6,6 +6,7 @@ import EmptyState from "@/components/studio/EmptyState";
 import BackHeader from "@/components/studio/screens/BackHeader";
 import AddMusicPanel from "@/components/studio/screens/AddMusicPanel";
 import PageTexture from "@/components/studio/screens/PageTexture";
+import { PlaylistAddMusicPageSkeleton } from "@/components/studio/screens/RouteSkeletons";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
 import { playlistHref } from "@/components/studio/shell/routes";
 
@@ -32,7 +33,7 @@ export default function AddMusicScreen() {
   // The library loads asynchronously; an empty list on the first render is
   // "not loaded yet", not "missing". Claiming not-found here flashed a false
   // error on every direct navigation.
-  if (libraryLoading) return null;
+  if (libraryLoading) return <PlaylistAddMusicPageSkeleton />;
 
   if (!collection) {
     return (

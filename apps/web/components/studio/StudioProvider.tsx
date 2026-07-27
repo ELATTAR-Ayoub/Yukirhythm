@@ -151,6 +151,9 @@ export default function StudioProvider({
   const [youMightLike, setYouMightLike] = useState<MockTrack[]>([]);
   const [stats, setStats] = useState<MockStats | null>(null);
   const [recents, setRecents] = useState<MockHistoryEntry[]>([]);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [recentsLoading, setRecentsLoading] = useState(true);
+  const [playbackLoading, setPlaybackLoading] = useState(true);
   const [newReleasesLoading, setNewReleasesLoading] = useState(true);
   const [youMightLikeLoading, setYouMightLikeLoading] = useState(true);
   const feedsLoading = newReleasesLoading || youMightLikeLoading;
@@ -225,6 +228,9 @@ export default function StudioProvider({
         setUser(null);
         setCollections([]);
         setLibraryLoading(false);
+        setStatsLoading(false);
+        setRecentsLoading(false);
+        setPlaybackLoading(false);
         setNewReleasesLoading(false);
         setYouMightLikeLoading(false);
         return;
@@ -235,6 +241,11 @@ export default function StudioProvider({
       // backend profile document is still in flight.
       setUser(firebaseUserSnapshot(fbUser));
       setLibraryLoading(true);
+      setStats(null);
+      setRecents([]);
+      setStatsLoading(true);
+      setRecentsLoading(true);
+      setPlaybackLoading(true);
       setNewReleases([]);
       setYouMightLike([]);
       setNewReleasesLoading(true);
@@ -392,7 +403,10 @@ export default function StudioProvider({
           // presses play to actually start sound, from pendingSeekRef's
           // position rather than 0:00.
         })
-        .catch((err) => console.warn("Playback restore failed", err));
+        .catch((err) => console.warn("Playback restore failed", err))
+        .finally(() => {
+          if (live) setPlaybackLoading(false);
+        });
 
       void backend.feed
         .jumpBackIn()
@@ -404,14 +418,22 @@ export default function StudioProvider({
         );
       void backend.me
         .stats(tz)
-        .then((s) => live && setStats(toStudioStats(s)), warn("stats"));
-      void backend.me.recents().then((r) => {
-        if (!live) return;
-        absorb(
-          r.items.map((i) => i.track).filter((t): t is Track => t !== null)
-        );
-        setRecents(toStudioHistory(r.items, Date.now()));
-      }, warn("recents"));
+        .then((s) => live && setStats(toStudioStats(s)), warn("stats"))
+        .finally(() => {
+          if (live) setStatsLoading(false);
+        });
+      void backend.me
+        .recents()
+        .then((r) => {
+          if (!live) return;
+          absorb(
+            r.items.map((i) => i.track).filter((t): t is Track => t !== null)
+          );
+          setRecents(toStudioHistory(r.items, Date.now()));
+        }, warn("recents"))
+        .finally(() => {
+          if (live) setRecentsLoading(false);
+        });
     })();
     return () => {
       live = false;
@@ -1016,7 +1038,10 @@ export default function StudioProvider({
       youMightLikeLoading,
       collectionResults,
       stats,
+      statsLoading,
       recents,
+      recentsLoading,
+      playbackLoading,
       playerExpanded,
       volume,
       setVolume,
@@ -1075,7 +1100,10 @@ export default function StudioProvider({
       youMightLikeLoading,
       collectionResults,
       stats,
+      statsLoading,
       recents,
+      recentsLoading,
+      playbackLoading,
     ]
   );
 

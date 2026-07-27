@@ -173,8 +173,12 @@ interface MockStudioValue {
   collectionResults: MockCollection[];
   /** Listening stats; null while loading or signed out. */
   stats: MockStats | null;
+  statsLoading: boolean;
   /** Play history, newest first, grouped for the Recents screen. */
   recents: MockHistoryEntry[];
+  recentsLoading: boolean;
+  /** True until persisted playback has either restored or settled empty. */
+  playbackLoading: boolean;
   // player surface
   playerExpanded: boolean;
   setPlayerExpanded: (open: boolean) => void;
@@ -680,7 +684,10 @@ export default function MockStudioProvider({
     youMightLikeLoading: feeds?.youMightLikeLoading ?? feeds?.loading ?? false,
     collectionResults,
     stats,
+    statsLoading: false,
     recents,
+    recentsLoading: false,
+    playbackLoading: false,
     playerExpanded,
     volume,
     setVolume,

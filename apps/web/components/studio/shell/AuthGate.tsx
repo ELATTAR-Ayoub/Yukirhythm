@@ -19,9 +19,11 @@ import { AUTH } from "./routes";
  */
 export default function AuthGate({
   children,
+  fallback,
 }: {
   children:
     React.ReactNode | ((authenticatedUser: FirebaseUser) => React.ReactNode);
+  fallback?: React.ReactNode;
 }) {
   const { user, loading } = useAuthState();
   const router = useRouter();
@@ -30,6 +32,6 @@ export default function AuthGate({
     if (!loading && !user) router.replace(AUTH);
   }, [user, loading, router]);
 
-  if (loading || !user) return <Loader />;
+  if (loading || !user) return <>{fallback ?? <Loader />}</>;
   return <>{typeof children === "function" ? children(user) : children}</>;
 }

@@ -5,6 +5,7 @@ import SignInPrompt from "@/components/studio/screens/SignInPrompt";
 import SectionLabel from "@/components/studio/SectionLabel";
 import TrackRow from "@/components/studio/TrackRow";
 import EmptyState from "@/components/studio/EmptyState";
+import { RecentsPageSkeleton } from "@/components/studio/screens/RouteSkeletons";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
 import {
   HISTORY_GROUPS,
@@ -16,9 +17,17 @@ import { SCREENS } from "@/components/studio/shell/routes";
 const BASE = SCREENS;
 
 export default function RecentsScreen() {
-  const { user, collections, play, nowPlaying, isPlaying, recents } =
-    useMockStudio();
+  const {
+    user,
+    collections,
+    play,
+    nowPlaying,
+    isPlaying,
+    recents,
+    recentsLoading,
+  } = useMockStudio();
   if (!user) return <SignInPrompt />;
+  if (recentsLoading) return <RecentsPageSkeleton />;
 
   /** Enter/Space activation for non-button click targets. */
   const playKeyHandler = (fn: () => void) => (e: React.KeyboardEvent) => {

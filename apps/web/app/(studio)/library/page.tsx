@@ -21,6 +21,7 @@ import {
   LibraryRowCard,
 } from "@/components/studio/screens/LibraryRow";
 import SpotifyImportDialog from "@/components/studio/screens/SpotifyImportDialog";
+import { LibraryPageSkeleton } from "@/components/studio/screens/RouteSkeletons";
 import {
   CREATE,
   LIBRARY,
@@ -62,10 +63,12 @@ function SpotifyImportSurface({
  * (LibraryRail itself is CSS-hidden below `md`).
  */
 export default function LibraryScreen() {
-  const { user, collections, libraryFilter, setLibraryFilter } =
+  const { user, collections, libraryFilter, setLibraryFilter, libraryLoading } =
     useMockStudio();
   const router = useRouter();
   const [spotifyImportOpen, setSpotifyImportOpen] = useState(false);
+
+  if (libraryLoading) return <LibraryPageSkeleton />;
 
   if (!user) {
     return (

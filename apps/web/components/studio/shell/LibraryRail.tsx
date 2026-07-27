@@ -20,6 +20,7 @@ import {
 } from "@/components/studio/screens/library-utils";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
 import { CREATE, SPOTIFY_IMPORT, playlistHref } from "./routes";
+import { LibraryRailSkeleton } from "@/components/studio/screens/RouteSkeletons";
 
 /**
  * The left column: the library, permanently docked. Rows navigate to the
@@ -28,13 +29,15 @@ import { CREATE, SPOTIFY_IMPORT, playlistHref } from "./routes";
  * place in the list.
  */
 export default function LibraryRail() {
-  const { user, collections, libraryFilter, setLibraryFilter } =
+  const { user, collections, libraryFilter, setLibraryFilter, libraryLoading } =
     useMockStudio();
   const pathname = usePathname();
   const router = useRouter();
 
   const openCreate = () => router.push(CREATE);
   const openSpotifyImport = () => router.push(SPOTIFY_IMPORT);
+
+  if (libraryLoading) return <LibraryRailSkeleton />;
 
   if (!user) {
     return (

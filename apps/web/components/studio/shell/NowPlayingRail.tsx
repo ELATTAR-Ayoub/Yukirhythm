@@ -14,6 +14,7 @@ import TrackMenu from "@/components/studio/screens/TrackMenu";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
 import { formatDuration } from "@/components/studio/screens/mock-data";
 import { QUEUE, QUEUE_ADD, addMusicHref, matchPlaylistId } from "./routes";
+import { NowPlayingRailSkeleton } from "@/components/studio/screens/RouteSkeletons";
 
 /**
  * A 340px rail has no room for the whole queue before it starts pushing the
@@ -227,6 +228,10 @@ function AddMusicSection() {
  * sections below it scroll.
  */
 export default function NowPlayingRail() {
+  const { playbackLoading } = useMockStudio();
+
+  if (playbackLoading) return <NowPlayingRailSkeleton />;
+
   return (
     <div className="flex flex-col h-full min-h-0">
       <PlayerSection />
