@@ -41,20 +41,29 @@ function Bar({
   );
 }
 
-function PageHeading({ action = false }: { action?: boolean }) {
+function PageHeading({
+  title,
+  action = false,
+}: {
+  title: string;
+  action?: boolean;
+}) {
   return (
     <div className="mb-8 flex min-h-10 items-center justify-between gap-4">
-      <Bar className="h-8 w-32 sm:w-44" />
+      <div className="flex min-w-0 items-center gap-3">
+        <Bar className="h-10 w-10 shrink-0 rounded-full md:hidden" />
+        <h1 className="type-h2 truncate text-2xl sm:text-3xl">{title}</h1>
+      </div>
       {action ? <Bar className="h-9 w-9 rounded-full" /> : null}
     </div>
   );
 }
 
-function BackHeading() {
+function BackHeading({ title }: { title: string }) {
   return (
     <div className="mb-8 flex min-h-10 items-center gap-3">
-      <Bar className="h-9 w-9 rounded-full" />
-      <Bar className="h-7 w-36 sm:w-52" />
+      <Bar className="h-10 w-10 shrink-0 rounded-full" />
+      <h1 className="type-h2 truncate text-2xl sm:text-3xl">{title}</h1>
     </div>
   );
 }
@@ -130,7 +139,7 @@ function MenuRows({ rows = 4 }: { rows?: number }) {
 export function HomePageSkeleton() {
   return (
     <LoadingFrame name="Home page">
-      <PageHeading action />
+      <PageHeading title="Home" action />
       <div className="space-y-10">
         <ShelfShape label="Recently played" title="Jump back in" cards={4} />
         <ShelfShape label="Fresh drops" title="New releases" />
@@ -143,7 +152,7 @@ export function HomePageSkeleton() {
 export function SearchPageSkeleton() {
   return (
     <LoadingFrame name="Search page">
-      <PageHeading />
+      <PageHeading title="Search" />
       <Bar className="mb-8 h-11 w-full rounded-full" />
       <div className="space-y-10">
         <ShelfShape label="Fresh drops" title="New releases" />
@@ -165,7 +174,7 @@ export function SearchPageSkeleton() {
 export function LibraryPageSkeleton() {
   return (
     <LoadingFrame name="Library page">
-      <PageHeading action />
+      <PageHeading title="Your Library" action />
       <div className="mb-6 flex gap-2">
         {Array.from({ length: 4 }, (_, index) => (
           <Bar key={index} className="h-8 w-20 rounded-full" />
@@ -183,7 +192,7 @@ export function LibraryPageSkeleton() {
 export function PlaylistPageSkeleton() {
   return (
     <LoadingFrame name="Playlist page">
-      <BackHeading />
+      <BackHeading title="Playlist" />
       <div className="grid gap-5 sm:grid-cols-[11rem_1fr] sm:items-end">
         <Bar className="aspect-square w-40 rounded-lg sm:w-44" />
         <div>
@@ -215,7 +224,7 @@ function AddMusicPageSkeleton({
 }) {
   return (
     <LoadingFrame name={name}>
-      <BackHeading />
+      <BackHeading title="Search songs" />
       <Bar className={cn("-mt-4 mb-5 h-3", targetWidth)} muted />
       <Bar className="h-11 w-full rounded-full" />
       <div className="mt-4">
@@ -240,7 +249,7 @@ export function QueueAddMusicPageSkeleton() {
 export function CreatePlaylistPageSkeleton() {
   return (
     <LoadingFrame name="Create playlist page" className="flex h-full flex-col">
-      <BackHeading />
+      <BackHeading title="Create playlist" />
       <div className="mx-auto w-full max-w-2xl flex-1">
         <div className="mb-7 flex items-center justify-center gap-2">
           <Bar className="h-2 w-20 rounded-full" />
@@ -272,7 +281,7 @@ export function CreatePlaylistPageSkeleton() {
 export function QueuePageSkeleton() {
   return (
     <LoadingFrame name="Queue page">
-      <BackHeading />
+      <BackHeading title="Up next" />
       <div className="mb-6 flex items-center gap-4 rounded-lg border border-border p-4">
         <Bar className="h-20 w-20 rounded-md" />
         <div className="flex-1">
@@ -289,7 +298,7 @@ export function QueuePageSkeleton() {
 export function ProfilePageSkeleton() {
   return (
     <LoadingFrame name="Profile page">
-      <PageHeading />
+      <PageHeading title="Profile" />
       <div className="mb-6 flex items-center gap-4 rounded-lg border border-border p-4">
         <Bar className="h-16 w-16 rounded-full" />
         <div className="flex-1">
@@ -305,7 +314,7 @@ export function ProfilePageSkeleton() {
 export function ProfileViewPageSkeleton() {
   return (
     <LoadingFrame name="Profile view page">
-      <BackHeading />
+      <BackHeading title="Your profile" />
       <div className="flex flex-col items-center py-6">
         <Bar className="h-24 w-24 rounded-full" />
         <Bar className="mt-4 h-7 w-40" />
@@ -324,7 +333,7 @@ export function ProfileViewPageSkeleton() {
 export function SettingsPageSkeleton() {
   return (
     <LoadingFrame name="Settings page">
-      <BackHeading />
+      <BackHeading title="Settings" />
       <div className="space-y-8">
         <section>
           <Bar className="h-2.5 w-20" />
@@ -347,7 +356,7 @@ export function SettingsPageSkeleton() {
 export function PrivacyPageSkeleton() {
   return (
     <LoadingFrame name="Privacy page">
-      <BackHeading />
+      <BackHeading title="Privacy" />
       <Bar className="h-3 w-full max-w-lg" muted />
       <Bar className="mt-2 h-3 w-4/5 max-w-md" muted />
       <div className="mt-6">
@@ -361,7 +370,7 @@ export function PrivacyPageSkeleton() {
 export function StatsPageSkeleton() {
   return (
     <LoadingFrame name="Listening stats page">
-      <BackHeading />
+      <BackHeading title="Listening stats" />
       <div className="grid grid-cols-2 gap-3">
         {Array.from({ length: 4 }, (_, index) => (
           <Bar key={index} className="h-24 w-full rounded-lg" />
@@ -399,7 +408,7 @@ export function StatsPageSkeleton() {
 export function RecentsPageSkeleton() {
   return (
     <LoadingFrame name="Recents page">
-      <BackHeading />
+      <BackHeading title="Recents" />
       <div className="space-y-8">
         {Array.from({ length: 3 }, (_, sectionIndex) => (
           <section key={sectionIndex}>
@@ -420,7 +429,7 @@ export function AuthPageSkeleton() {
       <div className="flex min-h-[calc(100vh-1rem)] items-center justify-center rounded-lg border border-border bg-card/50 p-6 sm:min-h-[calc(100vh-3rem)]">
         <div className="flex w-full max-w-[400px] flex-col items-center">
           <Bar className="h-8 w-28 rounded-md" />
-          <Bar className="mt-5 h-9 w-56 max-w-full" />
+          <h1 className="type-h1 mt-5 text-center">Listen your way</h1>
           <Bar className="mt-4 h-3 w-72 max-w-full" muted />
           <div className="mt-7 w-full space-y-3">
             <Bar className="h-11 w-full rounded-full" />
@@ -439,21 +448,24 @@ export function CreditsPageSkeleton() {
       name="Credits page"
       className="flex min-h-screen items-center justify-center p-4"
     >
-      <div className="w-full max-w-md rounded-xl border border-border bg-card p-6">
-        <div className="flex items-center gap-3">
-          <Bar className="h-10 w-10 rounded-full" />
-          <div className="flex-1">
-            <Bar className="h-4 w-32" />
-            <Bar className="mt-2 h-3 w-44" muted />
+      <div className="w-full max-w-md">
+        <h1 className="type-h1 mb-6">Credits</h1>
+        <div className="rounded-xl border border-border bg-card p-6">
+          <div className="flex items-center gap-3">
+            <Bar className="h-10 w-10 rounded-full" />
+            <div className="flex-1">
+              <Bar className="h-4 w-32" />
+              <Bar className="mt-2 h-3 w-44" muted />
+            </div>
           </div>
+          <div className="mt-6 flex gap-2">
+            {Array.from({ length: 4 }, (_, index) => (
+              <Bar key={index} className="h-7 w-16 rounded-full" />
+            ))}
+          </div>
+          <Bar className="mt-6 h-3 w-48" muted />
+          <Bar className="mt-3 h-3 w-full" muted />
         </div>
-        <div className="mt-6 flex gap-2">
-          {Array.from({ length: 4 }, (_, index) => (
-            <Bar key={index} className="h-7 w-16 rounded-full" />
-          ))}
-        </div>
-        <Bar className="mt-6 h-3 w-48" muted />
-        <Bar className="mt-3 h-3 w-full" muted />
       </div>
     </LoadingFrame>
   );
@@ -463,7 +475,7 @@ export function TermsPageSkeleton() {
   return (
     <LoadingFrame name="Terms page" className="mx-auto max-w-6xl p-2 sm:p-6">
       <div className="max-w-xl">
-        <BackHeading />
+        <BackHeading title="Terms" />
         <Bar className="h-3 w-full" muted />
         <Bar className="mt-2 h-3 w-4/5" muted />
         <div className="mt-8 space-y-7">
@@ -485,7 +497,7 @@ export function RootPageSkeleton() {
   return (
     <LoadingFrame name="App entry page" className="p-2 sm:p-6">
       <div className="flex min-h-[calc(100vh-1rem)] flex-col rounded-lg border border-border bg-card/50 p-6 sm:min-h-[calc(100vh-3rem)]">
-        <Bar className="h-8 w-28 rounded-md" />
+        <h1 className="font-display text-2xl font-bold">Yukirhythm</h1>
         <div className="m-auto flex w-full max-w-xl flex-col items-center">
           <Bar className="h-10 w-64 max-w-full" />
           <Bar className="mt-4 h-3 w-80 max-w-full" muted />
@@ -500,7 +512,7 @@ export function LibraryRailSkeleton() {
   return (
     <LoadingFrame name="Library sidebar" className="flex h-full flex-col p-4">
       <div className="flex items-center justify-between">
-        <Bar className="h-6 w-32" />
+        <h2 className="type-h3">Your Library</h2>
         <Bar className="h-9 w-9 rounded-full" />
       </div>
       <div className="mt-5 flex gap-2">

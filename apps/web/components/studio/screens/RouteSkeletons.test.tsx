@@ -47,6 +47,27 @@ const skeletons = [
   ["Now playing sidebar", NowPlayingRailSkeleton],
 ] as const;
 
+const pageTitles = [
+  ["Yukirhythm", RootPageSkeleton],
+  ["Listen your way", AuthPageSkeleton],
+  ["Credits", CreditsPageSkeleton],
+  ["Terms", TermsPageSkeleton],
+  ["Home", HomePageSkeleton],
+  ["Search", SearchPageSkeleton],
+  ["Your Library", LibraryPageSkeleton],
+  ["Create playlist", CreatePlaylistPageSkeleton],
+  ["Up next", QueuePageSkeleton],
+  ["Search songs", QueueAddMusicPageSkeleton],
+  ["Playlist", PlaylistPageSkeleton],
+  ["Search songs", PlaylistAddMusicPageSkeleton],
+  ["Profile", ProfilePageSkeleton],
+  ["Your profile", ProfileViewPageSkeleton],
+  ["Settings", SettingsPageSkeleton],
+  ["Privacy", PrivacyPageSkeleton],
+  ["Listening stats", StatsPageSkeleton],
+  ["Recents", RecentsPageSkeleton],
+] as const;
+
 describe("route skeletons", () => {
   it.each(skeletons)(
     "exposes an accessible, busy loading region for %s",
@@ -58,6 +79,17 @@ describe("route skeletons", () => {
       });
       expect(region).toHaveAttribute("aria-busy", "true");
       expect(region).toHaveTextContent(`Loading ${name}`);
+    }
+  );
+
+  it.each(pageTitles)(
+    "keeps the %s page title readable while loading",
+    (title, Skeleton) => {
+      render(<Skeleton />);
+
+      expect(
+        screen.getByRole("heading", { name: title, hidden: true })
+      ).toBeTruthy();
     }
   );
 
