@@ -83,6 +83,9 @@ export default function SearchScreen() {
         aria-label="Track search"
         onSubmit={(e) => {
           e.preventDefault();
+          e.currentTarget
+            .querySelector<HTMLInputElement>('input[type="search"]')
+            ?.blur();
           submit(q);
         }}
         className="relative mb-8"

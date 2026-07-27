@@ -386,7 +386,17 @@ function AddMusicStep({ trackIds, onToggleTrack }: AddMusicStepProps) {
         </span>
       </div>
 
-      <div className="relative">
+      <form
+        role="search"
+        aria-label="Playlist track search"
+        className="relative"
+        onSubmit={(event) => {
+          event.preventDefault();
+          event.currentTarget
+            .querySelector<HTMLInputElement>('input[type="search"]')
+            ?.blur();
+        }}
+      >
         <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
           value={q}
@@ -396,11 +406,13 @@ function AddMusicStep({ trackIds, onToggleTrack }: AddMusicStepProps) {
             setSearching(Boolean(value.trim()));
             if (!value.trim()) setResults([]);
           }}
+          type="search"
+          enterKeyHint="search"
           placeholder="Tracks, artists…"
           aria-label="Search tracks to add"
           className="pl-9"
         />
-      </div>
+      </form>
 
       {q.trim() ? (
         searching ? (

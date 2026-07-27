@@ -114,6 +114,18 @@ describe("SearchScreen", () => {
     expect(screen.queryByText("Tracks")).toBeNull();
   });
 
+  it("dismisses the phone keyboard when a search is submitted", () => {
+    renderSearch();
+    const input = screen.getByLabelText("Search") as HTMLInputElement;
+    input.focus();
+    expect(document.activeElement).toBe(input);
+
+    fireEvent.change(input, { target: { value: "lofi" } });
+    fireEvent.submit(screen.getByRole("search", { name: "Track search" }));
+
+    expect(document.activeElement).not.toBe(input);
+  });
+
   it("returns to the idle shelves when the field is cleared", () => {
     renderSearch();
     searchFor("lofi");

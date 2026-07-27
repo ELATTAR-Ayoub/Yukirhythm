@@ -77,6 +77,23 @@ function coverArt(container: HTMLElement): HTMLElement {
 }
 
 describe("CreatePlaylistFlow", () => {
+  it("dismisses the phone keyboard when step 2 search is submitted", () => {
+    renderFlow();
+    goToStep2();
+    const input = screen.getByLabelText(
+      "Search tracks to add"
+    ) as HTMLInputElement;
+    expect(input.type).toBe("search");
+    expect(input.getAttribute("enterkeyhint")).toBe("search");
+    input.focus();
+
+    fireEvent.submit(
+      screen.getByRole("search", { name: "Playlist track search" })
+    );
+
+    expect(document.activeElement).not.toBe(input);
+  });
+
   it("blocks Next on step 1 until the name is non-blank", () => {
     renderFlow();
     const next = screen.getByRole("button", { name: "Next" });
