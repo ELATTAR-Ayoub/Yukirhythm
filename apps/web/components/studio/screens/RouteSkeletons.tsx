@@ -59,11 +59,32 @@ function BackHeading() {
   );
 }
 
-function ShelfShape({ cards = 5 }: { cards?: number }) {
+function ShelfShape({
+  cards = 5,
+  label,
+  title,
+}: {
+  cards?: number;
+  label?: string;
+  title?: string;
+}) {
   return (
-    <section>
-      <Bar className="h-2.5 w-20" />
-      <Bar className="mt-2 h-6 w-40" />
+    <section aria-label={title ? `${title} loading` : undefined}>
+      {label && title ? (
+        <>
+          <p className="font-label text-xs uppercase tracking-wider text-muted-foreground">
+            {label}
+          </p>
+          <h2 className="mt-0.5 font-display text-2xl font-bold tracking-tight">
+            {title}
+          </h2>
+        </>
+      ) : (
+        <>
+          <Bar className="h-2.5 w-20" />
+          <Bar className="mt-2 h-6 w-40" />
+        </>
+      )}
       <div className="mt-4 flex gap-4 overflow-hidden">
         {Array.from({ length: cards }, (_, index) => (
           <SkeletonCard
@@ -111,9 +132,9 @@ export function HomePageSkeleton() {
     <LoadingFrame name="Home page">
       <PageHeading action />
       <div className="space-y-10">
-        <ShelfShape cards={4} />
-        <ShelfShape />
-        <ShelfShape />
+        <ShelfShape label="Recently played" title="Jump back in" cards={4} />
+        <ShelfShape label="Fresh drops" title="New releases" />
+        <ShelfShape label="For you" title="You might like" />
       </div>
     </LoadingFrame>
   );
@@ -125,8 +146,8 @@ export function SearchPageSkeleton() {
       <PageHeading />
       <Bar className="mb-8 h-11 w-full rounded-full" />
       <div className="space-y-10">
-        <ShelfShape />
-        <ShelfShape />
+        <ShelfShape label="Fresh drops" title="New releases" />
+        <ShelfShape label="For you" title="You might like" />
         <section>
           <Bar className="h-2.5 w-16" />
           <Bar className="mt-2 h-6 w-44" />

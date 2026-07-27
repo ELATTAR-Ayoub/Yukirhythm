@@ -20,9 +20,11 @@ export default function HomeScreen() {
   const {
     user,
     collections,
+    libraryLoading,
     jumpBackIn,
     newReleases,
     youMightLike,
+    jumpBackInLoading,
     newReleasesLoading,
     youMightLikeLoading,
   } = useMockStudio();
@@ -49,6 +51,8 @@ export default function HomeScreen() {
         all.findIndex((candidate) => candidate.id === collection.id) === index
     );
   }, [collections, jumpBackIn]);
+  const recentShelfLoading =
+    jumpBackInLoading || (libraryLoading && recentCollections.length === 0);
   /**
    * MediaCard is a fixed-width scroller card (`BOXY_WIDTHS`) by default. The
    * shelves below opt into RailShelf's grid, which only actually activates
@@ -74,8 +78,13 @@ export default function HomeScreen() {
       />
 
       <div className="space-y-10">
-        {user && recentCollections.length > 0 ? (
-          <RailShelf label="Recently played" title="Jump back in" grid>
+        {user && (recentShelfLoading || recentCollections.length > 0) ? (
+          <RailShelf
+            label="Recently played"
+            title="Jump back in"
+            loading={recentShelfLoading}
+            grid
+          >
             {recentCollections.map((c) => (
               <Link
                 key={c.id}

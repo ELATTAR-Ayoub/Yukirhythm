@@ -74,4 +74,15 @@ describe("route skeletons", () => {
       })
     ).toBeTruthy();
   });
+
+  it("keeps the real Home shelf headings visible while cards load", () => {
+    render(<HomePageSkeleton />);
+
+    expect(screen.getByText("Recently played")).toBeTruthy();
+    expect(screen.getByText("Jump back in")).toBeTruthy();
+    expect(screen.getByText("Fresh drops")).toBeTruthy();
+    expect(screen.getByText("New releases")).toBeTruthy();
+    expect(screen.getByText("For you")).toBeTruthy();
+    expect(screen.getByText("You might like")).toBeTruthy();
+  });
 });

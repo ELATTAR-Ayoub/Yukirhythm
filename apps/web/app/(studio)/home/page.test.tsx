@@ -114,7 +114,7 @@ describe("HomeScreen", () => {
     expect(screen.getAllByRole("button", { name: "Refresh" })).toHaveLength(2);
   });
 
-  it("skeletons the New releases shelf while the feeds load", () => {
+  it("keeps all three shelf headers visible while their cards load", () => {
     render(
       <MockStudioProvider
         feeds={{ loading: true, newReleases: [], youMightLike: [] }}
@@ -122,7 +122,19 @@ describe("HomeScreen", () => {
         <HomeScreen />
       </MockStudioProvider>
     );
-    expect(document.querySelector("section[aria-busy]")).toBeTruthy();
+
+    expect(
+      screen.getByRole("region", { name: "Jump back in loading" })
+    ).toHaveAttribute("aria-busy", "true");
+    expect(
+      screen.getByRole("region", { name: "New releases loading" })
+    ).toHaveAttribute("aria-busy", "true");
+    expect(
+      screen.getByRole("region", { name: "You might like loading" })
+    ).toHaveAttribute("aria-busy", "true");
+    expect(screen.getByText("Recently played")).toBeTruthy();
+    expect(screen.getByText("Fresh drops")).toBeTruthy();
+    expect(screen.getByText("For you")).toBeTruthy();
   });
 
   it("renders one completed shelf while the other is still loading", () => {
@@ -146,6 +158,33 @@ describe("HomeScreen", () => {
     ).toHaveAttribute("aria-busy", "true");
     expect(
       screen.queryByRole("region", { name: "New releases loading" })
+    ).toBeNull();
+  });
+
+  it("renders completed feeds while Jump back in is still loading", () => {
+    render(
+      <MockStudioProvider
+        feeds={{
+          jumpBackInLoading: true,
+          newReleasesLoading: false,
+          youMightLikeLoading: false,
+        }}
+      >
+        <HomeScreen />
+      </MockStudioProvider>
+    );
+
+    expect(
+      screen.getByRole("region", { name: "Jump back in loading" })
+    ).toHaveAttribute("aria-busy", "true");
+    expect(
+      screen.getByRole("button", { name: "Play Equalizer Sunday" })
+    ).toBeTruthy();
+    expect(
+      screen.queryByRole("region", { name: "New releases loading" })
+    ).toBeNull();
+    expect(
+      screen.queryByRole("region", { name: "You might like loading" })
     ).toBeNull();
   });
 });

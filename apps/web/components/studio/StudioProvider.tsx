@@ -154,9 +154,11 @@ export default function StudioProvider({
   const [statsLoading, setStatsLoading] = useState(true);
   const [recentsLoading, setRecentsLoading] = useState(true);
   const [playbackLoading, setPlaybackLoading] = useState(true);
+  const [jumpBackInLoading, setJumpBackInLoading] = useState(true);
   const [newReleasesLoading, setNewReleasesLoading] = useState(true);
   const [youMightLikeLoading, setYouMightLikeLoading] = useState(true);
-  const feedsLoading = newReleasesLoading || youMightLikeLoading;
+  const feedsLoading =
+    jumpBackInLoading || newReleasesLoading || youMightLikeLoading;
 
   const nowPlaying = currentIndex >= 0 ? (queue[currentIndex] ?? null) : null;
 
@@ -231,6 +233,7 @@ export default function StudioProvider({
         setStatsLoading(false);
         setRecentsLoading(false);
         setPlaybackLoading(false);
+        setJumpBackInLoading(false);
         setNewReleasesLoading(false);
         setYouMightLikeLoading(false);
         return;
@@ -246,6 +249,8 @@ export default function StudioProvider({
       setStatsLoading(true);
       setRecentsLoading(true);
       setPlaybackLoading(true);
+      setJumpBackIn([]);
+      setJumpBackInLoading(true);
       setNewReleases([]);
       setYouMightLike([]);
       setNewReleasesLoading(true);
@@ -256,7 +261,7 @@ export default function StudioProvider({
 
       try {
         // New accounts need a user doc first. After this one required write,
-        // start the profile, library and both shelves together.
+        // start the profile, library and all three shelves together.
         const provider = fbUser.providerData[0]?.providerId?.includes(
           "facebook"
         )
@@ -286,6 +291,16 @@ export default function StudioProvider({
           .finally(() => {
             if (live) setYouMightLikeLoading(false);
           });
+        void backend.feed
+          .jumpBackIn()
+          .then((r) => {
+            if (live) {
+              setJumpBackIn(r.collections.map((c) => toStudioCollection(c)));
+            }
+          }, warn("jump-back-in"))
+          .finally(() => {
+            if (live) setJumpBackInLoading(false);
+          });
 
         const [meResult, libraryResult] = await Promise.allSettled([
           backend.me.get(),
@@ -302,9 +317,10 @@ export default function StudioProvider({
         }
       } catch (err) {
         console.error("Failed to initialize user data", err);
-        // If ensure() fails, no shelf request was started. Settle both states
+        // If ensure() fails, no shelf request was started. Settle all states
         // so the skeleton cannot pulse forever.
         if (live) {
+          setJumpBackInLoading(false);
           setNewReleasesLoading(false);
           setYouMightLikeLoading(false);
         }
@@ -408,14 +424,6 @@ export default function StudioProvider({
           if (live) setPlaybackLoading(false);
         });
 
-      void backend.feed
-        .jumpBackIn()
-        .then(
-          (r) =>
-            live &&
-            setJumpBackIn(r.collections.map((c) => toStudioCollection(c))),
-          warn("jump-back-in")
-        );
       void backend.me
         .stats(tz)
         .then((s) => live && setStats(toStudioStats(s)), warn("stats"))
@@ -1034,6 +1042,7 @@ export default function StudioProvider({
       newReleases,
       youMightLike,
       feedsLoading,
+      jumpBackInLoading,
       newReleasesLoading,
       youMightLikeLoading,
       collectionResults,
@@ -1096,6 +1105,7 @@ export default function StudioProvider({
       newReleases,
       youMightLike,
       feedsLoading,
+      jumpBackInLoading,
       newReleasesLoading,
       youMightLikeLoading,
       collectionResults,

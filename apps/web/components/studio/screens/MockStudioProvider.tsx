@@ -167,6 +167,7 @@ interface MockStudioValue {
   feedsLoading: boolean;
   /** Each shelf settles independently; the aggregate flag remains available
    *  for callers that only need a broad feed-loading signal. */
+  jumpBackInLoading: boolean;
   newReleasesLoading: boolean;
   youMightLikeLoading: boolean;
   /** Collections matching the current search query (the caller's own library). */
@@ -216,6 +217,7 @@ export default function MockStudioProvider({
   /** Test/docs override for the feed shelves' data and loading state. */
   feeds?: {
     loading?: boolean;
+    jumpBackInLoading?: boolean;
     newReleasesLoading?: boolean;
     youMightLikeLoading?: boolean;
     youMightLike?: MockTrack[];
@@ -633,6 +635,11 @@ export default function MockStudioProvider({
   );
   const stats: MockStats = MOCK_STATS;
   const recents: MockHistoryEntry[] = MOCK_HISTORY;
+  const jumpBackInLoading = feeds?.jumpBackInLoading ?? feeds?.loading ?? false;
+  const newReleasesLoading =
+    feeds?.newReleasesLoading ?? feeds?.loading ?? false;
+  const youMightLikeLoading =
+    feeds?.youMightLikeLoading ?? feeds?.loading ?? false;
 
   const value: MockStudioValue = {
     queue,
@@ -679,9 +686,11 @@ export default function MockStudioProvider({
     jumpBackIn,
     newReleases,
     youMightLike,
-    feedsLoading: feeds?.loading ?? false,
-    newReleasesLoading: feeds?.newReleasesLoading ?? feeds?.loading ?? false,
-    youMightLikeLoading: feeds?.youMightLikeLoading ?? feeds?.loading ?? false,
+    feedsLoading:
+      jumpBackInLoading || newReleasesLoading || youMightLikeLoading,
+    jumpBackInLoading,
+    newReleasesLoading,
+    youMightLikeLoading,
     collectionResults,
     stats,
     statsLoading: false,

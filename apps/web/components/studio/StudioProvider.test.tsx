@@ -195,6 +195,7 @@ describe("StudioProvider library load", () => {
     );
     backend.feed.newReleases.mockClear();
     backend.feed.youMightLike.mockClear();
+    backend.feed.jumpBackIn.mockClear();
 
     render(
       <StudioProvider>
@@ -208,6 +209,7 @@ describe("StudioProvider library load", () => {
     await waitFor(() => {
       expect(backend.feed.newReleases).toHaveBeenCalledTimes(1);
       expect(backend.feed.youMightLike).toHaveBeenCalledTimes(1);
+      expect(backend.feed.jumpBackIn).toHaveBeenCalledTimes(1);
     });
     expect(screen.getByTestId("loading")).toHaveTextContent("true");
 
