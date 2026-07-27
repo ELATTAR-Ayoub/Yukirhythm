@@ -92,7 +92,17 @@ export default function AddMusicPanel({
 
   return (
     <>
-      <div className="relative mb-6">
+      <form
+        role="search"
+        aria-label={toQueue ? "Queue music search" : "Playlist music search"}
+        className="relative mb-6"
+        onSubmit={(event) => {
+          event.preventDefault();
+          event.currentTarget
+            .querySelector<HTMLInputElement>('input[type="search"]')
+            ?.blur();
+        }}
+      >
         <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
           autoFocus={autoFocus}
@@ -101,6 +111,8 @@ export default function AddMusicPanel({
           disabled={!user}
           value={q}
           onChange={(e) => setQ(e.target.value)}
+          type="search"
+          enterKeyHint="search"
           placeholder="Tracks, artists, tags…"
           aria-label={
             toQueue ? "Search tracks to queue" : "Search tracks to add"
@@ -108,7 +120,7 @@ export default function AddMusicPanel({
           className="pl-9"
           data-signal="add_music_search"
         />
-      </div>
+      </form>
 
       {!user ? (
         // The catalogue search is authenticated: signed out it answers 401,

@@ -3,6 +3,10 @@ import { fireEvent, render, screen } from "@testing-library/react";
 
 const play = vi.fn();
 
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ back: vi.fn(), push: vi.fn() }),
+}));
+
 vi.mock("@/components/studio/screens/MockStudioProvider", () => ({
   useMockStudio: () => ({
     user: MOCK_USER,

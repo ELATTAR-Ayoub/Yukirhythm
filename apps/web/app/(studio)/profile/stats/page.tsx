@@ -6,6 +6,8 @@ import StatCard from "@/components/studio/screens/StatCard";
 import SectionLabel from "@/components/studio/SectionLabel";
 import DataText from "@/components/studio/DataText";
 import TrackRow from "@/components/studio/TrackRow";
+import EmptyState from "@/components/studio/EmptyState";
+import { StatsPageSkeleton } from "@/components/studio/screens/RouteSkeletons";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
 import {
   formatDuration,
@@ -17,9 +19,19 @@ import { SCREENS } from "@/components/studio/shell/routes";
 const BASE = SCREENS;
 
 export default function StatsScreen() {
-  const { user, play, nowPlaying, isPlaying, stats } = useMockStudio();
+  const { user, play, nowPlaying, isPlaying, stats, statsLoading } =
+    useMockStudio();
   if (!user) return <SignInPrompt />;
-  if (!stats) return null;
+  if (statsLoading) return <StatsPageSkeleton />;
+  if (!stats) {
+    return (
+      <EmptyState
+        title="Stats unavailable"
+        hint="We could not load your listening stats. Try again shortly."
+        texture="tx-k2-static"
+      />
+    );
+  }
 
   /** Enter/Space activation for non-button click targets. */
   const playKeyHandler = (fn: () => void) => (e: React.KeyboardEvent) => {
@@ -32,7 +44,7 @@ export default function StatsScreen() {
   return (
     <div className="space-y-10">
       <div>
-        <BackHeader title="Listening stats" backHref={`${BASE}/profile`} />
+        <BackHeader title="Listening stats" fallbackHref={`${BASE}/profile`} />
         <div className="grid grid-cols-2 gap-3">
           <StatCard label="This week" value={`${stats.minutesWeek} min`} />
           <StatCard label="This month" value={`${stats.minutesMonth} min`} />

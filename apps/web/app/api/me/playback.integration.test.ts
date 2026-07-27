@@ -7,7 +7,7 @@ import {
 import type { PlaybackState } from "@/lib/catalog/model";
 
 import { GET, PUT } from "./playback/route";
-import { POST as enqueue } from "./playback/queue/route";
+import { DELETE as clearQueue, POST as enqueue } from "./playback/queue/route";
 import { DELETE as removeAt } from "./playback/queue/[index]/route";
 
 const auth = (token: string, method = "GET", body?: unknown) =>
@@ -114,6 +114,38 @@ describe("queue mutations against real Firestore", () => {
     expect((await enqueue(auth(token, "POST", { mode: "end" }))).status).toBe(
       400
     );
+  });
+
+  it("clears playback queues while preserving unrelated preferences", async () => {
+    await PUT(
+      auth(token, "PUT", {
+        trackId: "t2",
+        sourceType: "collection",
+        sourceId: "playlist-1",
+        manualQueue: ["manual"],
+        positionSec: 42,
+        isPlaying: true,
+        shuffleMode: true,
+        repeatMode: "all",
+        volume: 0.4,
+      })
+    );
+
+    const s = (await (
+      await clearQueue(auth(token, "DELETE"))
+    ).json()) as PlaybackState;
+
+    expect(s.queue).toEqual([]);
+    expect(s.manualQueue).toEqual([]);
+    expect(s.queueIndex).toBe(-1);
+    expect(s.trackId).toBeNull();
+    expect(s.sourceType).toBe("library");
+    expect(s.sourceId).toBeNull();
+    expect(s.positionSec).toBe(0);
+    expect(s.isPlaying).toBe(false);
+    expect(s.shuffleMode).toBe(false);
+    expect(s.repeatMode).toBe("all");
+    expect(s.volume).toBe(0.4);
   });
 
   it("removing an item before the cursor keeps the current track", async () => {

@@ -15,5 +15,10 @@
     "typecheck": "npm run typecheck --workspace apps/web",
     "test": "npm run test --workspace apps/web",
     "build": "npm run build --workspace apps/web"
+  },
+  "optionalDependencies": {
+    "@next/swc-linux-x64-gnu": "16.2.10",
+    "@rolldown/binding-linux-x64-gnu": "1.1.5",
+    "@unrs/resolver-binding-linux-x64-gnu": "1.12.2"
   }
 }

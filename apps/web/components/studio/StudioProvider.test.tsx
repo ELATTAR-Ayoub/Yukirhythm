@@ -42,10 +42,11 @@ const { backend, authState, hiddenPlayer } = vi.hoisted(() => ({
         get: vi.fn().mockResolvedValue({ queue: [], trackId: null }),
         save: vi.fn().mockResolvedValue({}),
         enqueue: vi.fn().mockResolvedValue({}),
+        clearQueue: vi.fn().mockResolvedValue({}),
         removeFromQueue: vi.fn().mockResolvedValue({}),
       },
     },
-    collections: { list: vi.fn() },
+    collections: { list: vi.fn(), create: vi.fn() },
     feed: {
       jumpBackIn: vi.fn().mockRejectedValue(new Error("no")),
       newReleases: vi.fn().mockRejectedValue(new Error("no")),
@@ -131,6 +132,7 @@ function PlaybackProbe() {
     setVolume,
     play,
     next,
+    clearQueue,
   } = useMockStudio();
   return (
     <>
@@ -149,15 +151,17 @@ function PlaybackProbe() {
         play-user-track
       </button>
       <button onClick={() => next()}>next</button>
+      <button onClick={() => void clearQueue()}>clear-queue</button>
     </>
   );
 }
 
 function Probe() {
-  const { collections, libraryLoading } = useMockStudio();
+  const { user, collections, libraryLoading } = useMockStudio();
   const liked = collections.find((c) => c.id === LIKED_SONGS_ID);
   return (
     <>
+      <div data-testid="startup-user">{user?.userName ?? "signed-out"}</div>
       <div data-testid="loading">{String(libraryLoading)}</div>
       <div data-testid="count">{collections.length}</div>
       <div data-testid="liked">{liked ? liked.title : "missing"}</div>
@@ -183,6 +187,45 @@ describe("StudioProvider library load", () => {
     );
     expect(screen.getByTestId("liked").textContent).toBe("Liked Songs");
     expect(screen.getByTestId("liked-system").textContent).toBe("true");
+  });
+
+  it("shows the authenticated identity and starts feeds before profile loading finishes", async () => {
+    let finishProfile: (value: unknown) => void = () => {};
+    backend.me.get.mockReturnValueOnce(
+      new Promise((resolve) => {
+        finishProfile = resolve;
+      })
+    );
+    backend.feed.newReleases.mockClear();
+    backend.feed.youMightLike.mockClear();
+    backend.feed.jumpBackIn.mockClear();
+
+    render(
+      <StudioProvider>
+        <Probe />
+      </StudioProvider>
+    );
+
+    // Firebase already identified the listener. The shell must never regress
+    // to a false signed-out prompt while the backend profile is unresolved.
+    expect(screen.getByTestId("startup-user")).toHaveTextContent("Yuki");
+    await waitFor(() => {
+      expect(backend.feed.newReleases).toHaveBeenCalledTimes(1);
+      expect(backend.feed.youMightLike).toHaveBeenCalledTimes(1);
+      expect(backend.feed.jumpBackIn).toHaveBeenCalledTimes(1);
+    });
+    expect(screen.getByTestId("loading")).toHaveTextContent("true");
+
+    await act(async () => {
+      finishProfile({
+        userId: "u1",
+        displayName: "Yuki",
+        email: "y@x.dev",
+      });
+    });
+    await waitFor(() =>
+      expect(screen.getByTestId("loading")).toHaveTextContent("false")
+    );
   });
 
   it("still builds the library when the likes call fails", async () => {
@@ -247,6 +290,78 @@ describe("StudioProvider library load", () => {
     expect(screen.getByTestId("liked-tracks").textContent).toBe(
       "brand-new-track"
     );
+  });
+
+  it("replaces a newly-created pending collection with the POST response without a list refresh", async () => {
+    function CreateProbe() {
+      const { collections, createCollection, libraryLoading } = useMockStudio();
+      return (
+        <>
+          <div data-testid="create-loading">{String(libraryLoading)}</div>
+          <button
+            onClick={() =>
+              createCollection({
+                title: "Rainy Tapes",
+                desc: "Tape loops",
+                tags: ["rain"],
+                kind: "music",
+                trackIds: [],
+              })
+            }
+          >
+            create
+          </button>
+          <div data-testid="created-ids">
+            {collections
+              .filter((c) => c.title === "Rainy Tapes")
+              .map((c) => c.id)
+              .join(",")}
+          </div>
+        </>
+      );
+    }
+
+    backend.collections.create.mockResolvedValueOnce({
+      collectionId: "server-rainy-tapes",
+      ownerId: "u1",
+      role: "playlist",
+      contentType: "music",
+      title: "Rainy Tapes",
+      description: "Tape loops",
+      tags: ["rain"],
+      cover: "texture",
+      texture: "tx-k-silk",
+      imageUrl: null,
+      tracks: [],
+      visibility: "private",
+      stats: {
+        trackCount: 0,
+        totalDurationSec: 0,
+        saveCount: 0,
+        playCount: 0,
+      },
+      createdAt: null,
+      updatedAt: null,
+    });
+
+    render(
+      <StudioProvider>
+        <CreateProbe />
+      </StudioProvider>
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId("create-loading").textContent).toBe("false")
+    );
+    const listCallsAfterLoad = backend.collections.list.mock.calls.length;
+
+    fireEvent.click(screen.getByText("create"));
+    expect(screen.getByTestId("created-ids").textContent).toMatch(/^pending-/);
+    await waitFor(() =>
+      expect(screen.getByTestId("created-ids").textContent).toBe(
+        "server-rainy-tapes"
+      )
+    );
+    expect(backend.collections.list).toHaveBeenCalledTimes(listCallsAfterLoad);
   });
 });
 
@@ -355,6 +470,8 @@ describe("StudioProvider playback session restore", () => {
     // not.toHaveBeenCalled(), which would trivially fail from a PRIOR test's
     // calls without this.
     backend.me.playback.save.mockClear();
+    backend.me.playback.clearQueue.mockClear();
+    backend.me.playback.clearQueue.mockResolvedValue({});
     hiddenPlayer.seekTo.mockClear();
   });
 
@@ -415,6 +532,41 @@ describe("StudioProvider playback session restore", () => {
     expect(screen.getByTestId("now-playing").textContent).toBe("none");
 
     warn.mockRestore();
+  });
+
+  it("waits for the clear mutation before stopping and emptying local playback", async () => {
+    let finish!: () => void;
+    backend.me.playback.get.mockResolvedValueOnce({
+      queue: [],
+      trackId: null,
+    });
+    backend.me.playback.clearQueue.mockReturnValueOnce(
+      new Promise((resolve) => {
+        finish = () => resolve({});
+      })
+    );
+
+    render(
+      <StudioProvider>
+        <PlaybackProbe />
+      </StudioProvider>
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId("collections-count").textContent).toBe("1")
+    );
+    fireEvent.click(screen.getByText("play-user-track"));
+    expect(screen.getByTestId("queue-length").textContent).toBe("1");
+
+    fireEvent.click(screen.getByText("clear-queue"));
+    expect(screen.getByTestId("queue-length").textContent).toBe("1");
+    expect(backend.me.playback.clearQueue).toHaveBeenCalledTimes(1);
+
+    finish();
+    await waitFor(() =>
+      expect(screen.getByTestId("queue-length").textContent).toBe("0")
+    );
+    expect(screen.getByTestId("now-playing").textContent).toBe("none");
+    expect(screen.getByTestId("is-playing").textContent).toBe("false");
   });
 
   it("clamps an out-of-range queueIndex when the saved track can't be re-anchored", async () => {
@@ -653,6 +805,9 @@ describe("StudioProvider playback session restore", () => {
         positionSec: 9,
         isPlaying: true,
         volume: 1,
+        sourceType: "library",
+        sourceId: null,
+        shuffleMode: false,
       });
     } finally {
       vi.useRealTimers();

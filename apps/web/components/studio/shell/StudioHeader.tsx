@@ -95,6 +95,9 @@ export default function StudioHeader() {
           aria-label="Site search"
           onSubmit={(e) => {
             e.preventDefault();
+            e.currentTarget
+              .querySelector<HTMLInputElement>('input[type="search"]')
+              ?.blur();
             if (q.trim()) search(q.trim());
             else clearSearch();
           }}

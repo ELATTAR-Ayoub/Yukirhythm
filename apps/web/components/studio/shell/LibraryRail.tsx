@@ -9,6 +9,7 @@ import { PlayerButton } from "@/components/studio/PlayerButton";
 import SignInPrompt from "@/components/studio/screens/SignInPrompt";
 import {
   CreatePlaylistTile,
+  ImportSpotifyPlaylistTile,
   LibraryRowCard,
 } from "@/components/studio/screens/LibraryRow";
 import CollectionMenu from "@/components/studio/screens/CollectionMenu";
@@ -18,7 +19,8 @@ import {
   filterLibrary,
 } from "@/components/studio/screens/library-utils";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
-import { CREATE, playlistHref } from "./routes";
+import { CREATE, SPOTIFY_IMPORT, playlistHref } from "./routes";
+import { LibraryRailSkeleton } from "@/components/studio/screens/RouteSkeletons";
 
 /**
  * The left column: the library, permanently docked. Rows navigate to the
@@ -27,12 +29,15 @@ import { CREATE, playlistHref } from "./routes";
  * place in the list.
  */
 export default function LibraryRail() {
-  const { user, collections, libraryFilter, setLibraryFilter } =
+  const { user, collections, libraryFilter, setLibraryFilter, libraryLoading } =
     useMockStudio();
   const pathname = usePathname();
   const router = useRouter();
 
   const openCreate = () => router.push(CREATE);
+  const openSpotifyImport = () => router.push(SPOTIFY_IMPORT);
+
+  if (libraryLoading) return <LibraryRailSkeleton />;
 
   if (!user) {
     return (
@@ -102,6 +107,7 @@ export default function LibraryRail() {
         })}
 
         <CreatePlaylistTile onClick={openCreate} />
+        <ImportSpotifyPlaylistTile onClick={openSpotifyImport} />
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 
-import { LibraryRowCard } from "./LibraryRow";
+import { ImportSpotifyPlaylistTile, LibraryRowCard } from "./LibraryRow";
 import { LIKED_SONGS, MOCK_COLLECTIONS } from "./mock-data";
 
 describe("LibraryRowCard", () => {
@@ -19,5 +19,16 @@ describe("LibraryRowCard", () => {
     const liked = { ...LIKED_SONGS, system: true, pinned: true };
     render(<LibraryRowCard collection={liked} />);
     expect(screen.queryByLabelText("Pinned")).toBeNull();
+  });
+});
+
+describe("ImportSpotifyPlaylistTile", () => {
+  it("uses the Spotify brand icon", () => {
+    render(<ImportSpotifyPlaylistTile onClick={() => {}} />);
+
+    const button = screen.getByRole("button", {
+      name: /import spotify playlist/i,
+    });
+    expect(button.querySelector('svg[data-brand="spotify"]')).not.toBeNull();
   });
 });

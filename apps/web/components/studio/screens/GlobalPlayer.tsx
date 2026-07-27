@@ -7,6 +7,7 @@ import { useIsDesktop } from "../shell/useBreakpoint";
 import PlaybackBar from "../shell/PlaybackBar";
 import DevicePlayer from "./DevicePlayer";
 import MiniPlayerBar from "./MiniPlayerBar";
+import { PlaybackBarSkeleton } from "./RouteSkeletons";
 
 /**
  * The one player surface for the whole app shell.
@@ -19,7 +20,8 @@ import MiniPlayerBar from "./MiniPlayerBar";
  * directly instead.
  */
 export default function GlobalPlayer() {
-  const { nowPlaying, playerExpanded, setPlayerExpanded } = useMockStudio();
+  const { nowPlaying, playerExpanded, setPlayerExpanded, playbackLoading } =
+    useMockStudio();
   const isDesktop = useIsDesktop();
   const dialogRef = useRef<HTMLDivElement>(null);
   const restoreRef = useRef<HTMLElement | null>(null);
@@ -61,6 +63,10 @@ export default function GlobalPlayer() {
       }
     };
   }, [playerExpanded, nowPlaying, setPlayerExpanded]);
+
+  if (playbackLoading) {
+    return isDesktop ? <PlaybackBarSkeleton /> : <PlaybackBarSkeleton mobile />;
+  }
 
   // No early return on `!nowPlaying`: the compressed bar is permanent
   // chrome, the way Spotify's is, and both bars render an idle presentation

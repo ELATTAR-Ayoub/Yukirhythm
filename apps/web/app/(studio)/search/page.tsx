@@ -5,8 +5,9 @@ import Link from "next/link";
 import { MagnifyingGlassIcon } from "@radix-ui/react-icons";
 
 import FeedShelf from "@/components/studio/screens/FeedShelf";
+import { useCachedStudioFeed } from "@/components/studio/screens/useCachedStudioFeed";
 import MediaCard from "@/components/studio/MediaCard";
-import TrackRow from "@/components/studio/TrackRow";
+import SearchTrackResults from "@/components/studio/screens/SearchTrackResults";
 import EmptyState from "@/components/studio/EmptyState";
 import Texture from "@/components/studio/Texture";
 import CollectionArt from "@/components/studio/screens/CollectionArt";
@@ -16,18 +17,7 @@ import SectionLabel from "@/components/studio/SectionLabel";
 import PageHeader from "@/components/studio/screens/PageHeader";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
 import { playlistHref } from "@/components/studio/shell/routes";
-import {
-  EXPLORE_TILES,
-  formatDuration,
-} from "@/components/studio/screens/mock-data";
-
-/** Enter/Space activation for non-button click targets. */
-const playKeyHandler = (fn: () => void) => (e: React.KeyboardEvent) => {
-  if (e.key === "Enter" || e.key === " ") {
-    e.preventDefault();
-    fn();
-  }
-};
+import { EXPLORE_TILES } from "@/components/studio/screens/mock-data";
 
 export default function SearchScreen() {
   const {
@@ -36,27 +26,44 @@ export default function SearchScreen() {
     searching,
     hasSearched,
     clearSearch,
-    play,
-    nowPlaying,
-    isPlaying,
     youMightLike,
     newReleases,
-    feedsLoading,
+    newReleasesLoading,
+    youMightLikeLoading,
     collectionResults,
+    user,
   } = useMockStudio();
   const [q, setQ] = useState("");
+  const [submittedQuery, setSubmittedQuery] = useState("");
+  const suggestedFeed = useCachedStudioFeed({
+    feed: "you-might-like",
+    userId: user?.id ?? "anonymous",
+    providerTracks: youMightLike,
+    providerLoading: youMightLikeLoading,
+  });
+  const newReleaseFeed = useCachedStudioFeed({
+    feed: "new-releases",
+    userId: user?.id ?? "anonymous",
+    providerTracks: newReleases,
+    providerLoading: newReleasesLoading,
+  });
 
   // Typing only edits the field; the search fires on submit (Enter, or the
   // mobile keyboard's Search key). Emptying the field abandons the results.
   const onChange = (value: string) => {
     setQ(value);
-    if (!value.trim()) clearSearch();
+    if (!value.trim()) {
+      setSubmittedQuery("");
+      clearSearch();
+    }
   };
 
   /** One explicit act — Enter or a mood tile — is what runs a search. */
   const submit = (value: string) => {
     setQ(value);
-    if (value.trim()) search(value.trim());
+    const query = value.trim();
+    setSubmittedQuery(query);
+    if (query) search(query);
     else clearSearch();
   };
 
@@ -76,6 +83,9 @@ export default function SearchScreen() {
         aria-label="Track search"
         onSubmit={(e) => {
           e.preventDefault();
+          e.currentTarget
+            .querySelector<HTMLInputElement>('input[type="search"]')
+            ?.blur();
           submit(q);
         }}
         className="relative mb-8"
@@ -97,15 +107,19 @@ export default function SearchScreen() {
           <FeedShelf
             label="For you"
             title="You might like"
-            tracks={youMightLike}
-            loading={feedsLoading}
+            tracks={suggestedFeed.tracks}
+            loading={suggestedFeed.loading}
+            onRefresh={suggestedFeed.refresh}
+            refreshing={suggestedFeed.refreshing}
           />
 
           <FeedShelf
             label="Fresh drops"
             title="New releases"
-            tracks={newReleases}
-            loading={feedsLoading}
+            tracks={newReleaseFeed.tracks}
+            loading={newReleaseFeed.loading}
+            onRefresh={newReleaseFeed.refresh}
+            refreshing={newReleaseFeed.refreshing}
           />
 
           <section>
@@ -144,35 +158,10 @@ export default function SearchScreen() {
           ) : (
             <>
               {searchResults.length > 0 ? (
-                <section>
-                  <SectionLabel>Tracks</SectionLabel>
-                  <div className="space-y-1 mt-2">
-                    {searchResults.map((track, i) => (
-                      <div
-                        key={track.id}
-                        role="button"
-                        tabIndex={0}
-                        aria-label={`Play ${track.title}`}
-                        onClick={() => play(track)}
-                        onKeyDown={playKeyHandler(() => play(track))}
-                        className="cursor-pointer"
-                      >
-                        {/* The wrapping div is the button; an overlay would
-                            nest one inside it. */}
-                        <TrackRow
-                          index={i + 1}
-                          title={track.title}
-                          artist={track.artist}
-                          duration={formatDuration(track.durationSec)}
-                          texture={track.texture}
-                          artUrl={track.artUrl}
-                          playing={nowPlaying?.id === track.id && isPlaying}
-                          playable={false}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </section>
+                <SearchTrackResults
+                  key={submittedQuery}
+                  tracks={searchResults}
+                />
               ) : null}
 
               {collectionHits.length > 0 ? (

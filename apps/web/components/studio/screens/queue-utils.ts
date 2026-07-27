@@ -77,3 +77,94 @@ export function removeQueueIndex(
   if (nextIndex >= nextQueue.length) nextIndex = -1;
   return { queue: nextQueue, currentIndex: nextIndex };
 }
+
+/**
+ * Where a loose `play(track)` — no `from` — lands when the user's own
+ * ad-hoc queue is already running (see B5: this only applies once the
+ * caller has confirmed `playingCollection` is null and the queue is
+ * non-empty). Already queued → jump to the existing slot, no duplicate;
+ * otherwise the track joins the queue at the end and that's where playback
+ * lands.
+ *
+ * Pure and shared by both providers, same reasoning as isSameContext.
+ */
+export function joinAdHocQueue(
+  queue: MockTrack[],
+  track: MockTrack
+): { queue: MockTrack[]; index: number } {
+  const at = queue.findIndex((t) => t.id === track.id);
+  if (at >= 0) return { queue, index: at };
+  return { queue: [...queue, track], index: queue.length };
+}
+
+/**
+ * Fisher–Yates the queue with the track at `currentIndex` pinned to the
+ * front — shuffle must never interrupt or reorder-away-from what's already
+ * playing. `rand` is injectable (defaults to `Math.random`) so callers can
+ * pin a deterministic permutation in tests.
+ *
+ * No special-casing for empty/single-track queues: the general algorithm
+ * already degenerates correctly (nothing to shuffle, current stays put).
+ *
+ * Pure and shared by both providers so enabling shuffle behaves identically
+ * in the mock and the real player.
+ */
+export function shuffleOrder(
+  queue: MockTrack[],
+  currentIndex: number,
+  rand: () => number = Math.random
+): { queue: MockTrack[]; currentIndex: number } {
+  const current = currentIndex >= 0 ? queue[currentIndex] : undefined;
+  const rest = queue.filter((_, i) => i !== currentIndex);
+  for (let i = rest.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [rest[i], rest[j]] = [rest[j], rest[i]];
+  }
+  const shuffled = current ? [current, ...rest] : rest;
+  return { queue: shuffled, currentIndex: current ? 0 : currentIndex };
+}
+
+/**
+ * Undo a shuffle: return to the remembered pre-shuffle order, dropping any
+ * id no longer present in the live queue (a track dequeued while shuffled
+ * must not be resurrected — see the dequeue-while-shuffled note on
+ * `toggleShuffle`). Anything in the live queue that ISN'T in the saved order
+ * (a track enqueued while shuffled) is appended at the end rather than
+ * silently dropped — restoring shuffle must never lose a track the user
+ * queued.
+ *
+ * `currentIndex` is re-derived from `nowPlayingId` rather than carried over:
+ * the same track can sit at a different position in either order.
+ *
+ * Pure and shared by both providers for the same reason as shuffleOrder.
+ */
+export function restoreOrder(
+  saved: MockTrack[],
+  liveQueue: MockTrack[],
+  nowPlayingId: string | null
+): { queue: MockTrack[]; currentIndex: number } {
+  // Counts, rather than Sets, preserve duplicate queue positions. Removing
+  // one copy while shuffled must not resurrect it on restore, and adding a
+  // second copy while shuffled must not silently discard that new position.
+  const remainingLive = new Map<string, number>();
+  liveQueue.forEach((track) =>
+    remainingLive.set(track.id, (remainingLive.get(track.id) ?? 0) + 1)
+  );
+  const restored = saved.filter((track) => {
+    const count = remainingLive.get(track.id) ?? 0;
+    if (!count) return false;
+    remainingLive.set(track.id, count - 1);
+    return true;
+  });
+  const added = liveQueue.filter((track) => {
+    const count = remainingLive.get(track.id) ?? 0;
+    if (!count) return false;
+    remainingLive.set(track.id, count - 1);
+    return true;
+  });
+  const queue = [...restored, ...added];
+  const currentIndex = nowPlayingId
+    ? queue.findIndex((t) => t.id === nowPlayingId)
+    : -1;
+  return { queue, currentIndex };
+}

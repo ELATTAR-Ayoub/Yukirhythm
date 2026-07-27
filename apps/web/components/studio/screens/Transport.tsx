@@ -15,6 +15,7 @@ import { PlayerButton, CircleSpinner } from "@/components/studio/PlayerButton";
 import IconSwap from "@/components/studio/IconSwap";
 import { useMockStudio } from "./MockStudioProvider";
 import LikeButton from "./LikeButton";
+import AddToPlaylistDialog from "./AddToPlaylistDialog";
 
 /**
  * The transport cluster from the DS spec, wired to the mock player.
@@ -44,9 +45,20 @@ export default function Transport({
   leading?: "loop" | "like";
   onQueue?: () => void;
 }) {
-  const { nowPlaying, isPlaying, isLoading, toggle, next, prev } =
-    useMockStudio();
+  const {
+    nowPlaying,
+    isPlaying,
+    isLoading,
+    toggle,
+    canNext,
+    canPrev,
+    next,
+    prev,
+  } = useMockStudio();
   const [looping, setLooping] = useState(false);
+  // Add-to-playlist dialog for the loaded track — opened when the heart is
+  // clicked on a track that's already liked (see LikeButton's onAlreadyLiked).
+  const [addingToPlaylist, setAddingToPlaylist] = useState(false);
   const disabled = !nowPlaying;
 
   return (
@@ -57,6 +69,7 @@ export default function Transport({
             trackId={nowPlaying.id}
             trackTitle={nowPlaying.title}
             size="base"
+            onAlreadyLiked={() => setAddingToPlaylist(true)}
           />
         ) : (
           // Inert placeholder so the cluster keeps its footprint while idle —
@@ -79,7 +92,7 @@ export default function Transport({
       )}
       <PlayerButton
         onClick={prev}
-        disabled={disabled}
+        disabled={disabled || !canPrev}
         aria-label="Previous"
         data-signal="disc_prev"
       >
@@ -104,7 +117,7 @@ export default function Transport({
       </PlayerButton>
       <PlayerButton
         onClick={next}
-        disabled={disabled}
+        disabled={disabled || !canNext}
         aria-label="Next"
         data-signal="disc_next"
       >
@@ -124,6 +137,13 @@ export default function Transport({
           <ListBulletIcon />
         </PlayerButton>
       )}
+      {leading === "like" && nowPlaying ? (
+        <AddToPlaylistDialog
+          track={nowPlaying}
+          open={addingToPlaylist}
+          onOpenChange={setAddingToPlaylist}
+        />
+      ) : null}
     </div>
   );
 }

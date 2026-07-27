@@ -13,6 +13,10 @@ export const TERMS = `${SCREENS}/terms`;
 /** Routed form of the create-playlist flow, reachable at every width (see
  *  LibraryRail and the mobile library page). */
 export const CREATE = `${SCREENS}/create`;
+/** Opens the Spotify import dialog on the routed Library screen. Keeping the
+ * dialog page-owned avoids mounting two OAuth callback handlers on desktop,
+ * where LibraryRail and LibraryScreen are visible at the same time. */
+export const SPOTIFY_IMPORT = `${LIBRARY}?spotifyImport=1`;
 /** Routed form of the queue, reachable at every width (see NowPlayingRail,
  *  Transport/DevicePlayer/PlaybackBar). */
 export const QUEUE = `${SCREENS}/queue`;
@@ -40,6 +44,16 @@ export function isSystemRoute(pathname: string | null | undefined): boolean {
 
 export function playlistHref(id: string): string {
   return `${SCREENS}/playlist/${encodeURIComponent(id)}`;
+}
+
+/**
+ * Where the player's list/queue control should lead.
+ *
+ * A collection-backed playback session belongs to that playlist. Only an
+ * ad-hoc playback session has a destructive, independently-managed queue.
+ */
+export function playbackListHref(collectionId?: string | null): string {
+  return collectionId ? playlistHref(collectionId) : QUEUE;
 }
 
 /** Routed form of the add-music flow for a given playlist, reachable at

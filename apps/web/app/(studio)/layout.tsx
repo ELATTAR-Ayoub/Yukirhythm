@@ -12,6 +12,7 @@ import GlobalPlayer from "@/components/studio/screens/GlobalPlayer";
 import StudioHeader from "@/components/studio/shell/StudioHeader";
 import LibraryRail from "@/components/studio/shell/LibraryRail";
 import NowPlayingRail from "@/components/studio/shell/NowPlayingRail";
+import StudioShellSkeleton from "@/components/studio/shell/StudioShellSkeleton";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
 import { isSystemRoute } from "@/components/studio/shell/routes";
 
@@ -81,7 +82,7 @@ const MAIN_BOTTOM_INSET = {
 function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const system = isSystemRoute(pathname);
-  const { nowPlaying } = useMockStudio();
+  const { nowPlaying, playbackLoading } = useMockStudio();
 
   return (
     <div className="h-screen overflow-hidden flex flex-col p-2 sm:p-6 md:p-2 md:gap-2">
@@ -108,7 +109,9 @@ function Shell({ children }: { children: React.ReactNode }) {
             // room — not a guessed `pb-44`, and not a constant either, since
             // the mini player only exists while something is loaded. Zero at
             // md+, where PlaybackBar is an in-flow flex sibling instead.
-            nowPlaying ? MAIN_BOTTOM_INSET.playing : MAIN_BOTTOM_INSET.idle,
+            nowPlaying || playbackLoading
+              ? MAIN_BOTTOM_INSET.playing
+              : MAIN_BOTTOM_INSET.idle,
             "md:pb-0",
             "md:rounded-2xl md:border md:border-border md:bg-card",
             // Symmetric: the column's bottom inset matches its top, so a page
@@ -152,11 +155,13 @@ export default function StudioLayout({
   children: React.ReactNode;
 }) {
   return (
-    <AuthGate>
-      <StudioProvider>
-        <Shell>{children}</Shell>
-        <Toaster />
-      </StudioProvider>
+    <AuthGate fallback={<StudioShellSkeleton />}>
+      {(authenticatedUser) => (
+        <StudioProvider authenticatedUser={authenticatedUser}>
+          <Shell>{children}</Shell>
+          <Toaster />
+        </StudioProvider>
+      )}
     </AuthGate>
   );
 }

@@ -64,6 +64,8 @@ describe("RailShelf", () => {
       <RailShelf label="Fresh drops" title="New releases" grid loading />
     );
     expect(container.querySelector("[aria-busy]")).toBeTruthy();
+    expect(screen.getByText("New releases")).toBeTruthy();
+    expect(screen.getByRole("status")).toHaveTextContent("Loading");
     expect(container.querySelector(".grid")).toBeNull();
   });
 

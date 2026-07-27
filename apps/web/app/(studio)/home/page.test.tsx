@@ -8,10 +8,18 @@ import { playlistHref } from "@/components/studio/shell/routes";
 import HomeScreen from "./page";
 
 const { push } = vi.hoisted(() => ({ push: vi.fn() }));
+const feedApi = vi.hoisted(() => ({
+  newReleases: vi.fn(),
+  youMightLike: vi.fn(),
+}));
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push }),
   usePathname: () => "/design-system/screens/home",
+}));
+
+vi.mock("@/lib/studio/useBackend", () => ({
+  useBackend: () => ({ feed: feedApi }),
 }));
 
 /** Surfaces nowPlaying so tests can prove a click did (or didn't) start playback. */
@@ -30,7 +38,10 @@ function renderHome() {
 }
 
 describe("HomeScreen", () => {
-  beforeEach(() => push.mockClear());
+  beforeEach(() => {
+    push.mockClear();
+    window.localStorage.clear();
+  });
 
   it("links each recently-played collection to its playlist route", () => {
     renderHome();
@@ -94,12 +105,86 @@ describe("HomeScreen", () => {
     }
   });
 
-  it("skeletons the New releases shelf while the feeds load", () => {
+  it("includes Liked Songs in Jump back in and both independently refreshable feeds", () => {
+    renderHome();
+
+    expect(screen.getByRole("link", { name: "Open Liked Songs" })).toBeTruthy();
+    expect(screen.getByText("New releases")).toBeTruthy();
+    expect(screen.getByText("You might like")).toBeTruthy();
+    expect(screen.getAllByRole("button", { name: "Refresh" })).toHaveLength(2);
+  });
+
+  it("keeps all three shelf headers visible while their cards load", () => {
     render(
-      <MockStudioProvider feeds={{ loading: true }}>
+      <MockStudioProvider
+        feeds={{ loading: true, newReleases: [], youMightLike: [] }}
+      >
         <HomeScreen />
       </MockStudioProvider>
     );
-    expect(document.querySelector("section[aria-busy]")).toBeTruthy();
+
+    expect(
+      screen.getByRole("region", { name: "Jump back in loading" })
+    ).toHaveAttribute("aria-busy", "true");
+    expect(
+      screen.getByRole("region", { name: "New releases loading" })
+    ).toHaveAttribute("aria-busy", "true");
+    expect(
+      screen.getByRole("region", { name: "You might like loading" })
+    ).toHaveAttribute("aria-busy", "true");
+    expect(screen.getByText("Recently played")).toBeTruthy();
+    expect(screen.getByText("Fresh drops")).toBeTruthy();
+    expect(screen.getByText("For you")).toBeTruthy();
+  });
+
+  it("renders one completed shelf while the other is still loading", () => {
+    render(
+      <MockStudioProvider
+        feeds={{
+          newReleasesLoading: false,
+          youMightLikeLoading: true,
+          youMightLike: [],
+        }}
+      >
+        <HomeScreen />
+      </MockStudioProvider>
+    );
+
+    expect(
+      screen.getByRole("button", { name: "Play Equalizer Sunday" })
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("region", { name: "You might like loading" })
+    ).toHaveAttribute("aria-busy", "true");
+    expect(
+      screen.queryByRole("region", { name: "New releases loading" })
+    ).toBeNull();
+  });
+
+  it("renders completed feeds while Jump back in is still loading", () => {
+    render(
+      <MockStudioProvider
+        feeds={{
+          jumpBackInLoading: true,
+          newReleasesLoading: false,
+          youMightLikeLoading: false,
+        }}
+      >
+        <HomeScreen />
+      </MockStudioProvider>
+    );
+
+    expect(
+      screen.getByRole("region", { name: "Jump back in loading" })
+    ).toHaveAttribute("aria-busy", "true");
+    expect(
+      screen.getByRole("button", { name: "Play Equalizer Sunday" })
+    ).toBeTruthy();
+    expect(
+      screen.queryByRole("region", { name: "New releases loading" })
+    ).toBeNull();
+    expect(
+      screen.queryByRole("region", { name: "You might like loading" })
+    ).toBeNull();
   });
 });

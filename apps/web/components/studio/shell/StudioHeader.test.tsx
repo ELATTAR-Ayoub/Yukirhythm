@@ -143,6 +143,21 @@ describe("StudioHeader search field", () => {
     expect(screen.getByTestId("has-searched").textContent).toBe("true");
   });
 
+  it("dismisses the phone keyboard when the search form is submitted", () => {
+    render(
+      <MockStudioProvider>
+        <StudioHeader />
+      </MockStudioProvider>
+    );
+    const input = searchField();
+    input.focus();
+    fireEvent.change(input, { target: { value: "lofi" } });
+
+    fireEvent.submit(screen.getByRole("search", { name: "Site search" }));
+
+    expect(document.activeElement).not.toBe(input);
+  });
+
   it("still routes to the search page on focus from elsewhere", () => {
     nav.pathname = HOME;
     render(

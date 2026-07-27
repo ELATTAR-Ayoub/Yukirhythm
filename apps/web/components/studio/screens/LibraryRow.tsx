@@ -3,6 +3,7 @@
 import { DrawingPinFilledIcon, PlusIcon } from "@radix-ui/react-icons";
 
 import MediaCard from "@/components/studio/MediaCard";
+import { SpotifyIcon } from "@/components/studio/BrandIcons";
 import CollectionArt from "./CollectionArt";
 import type { MockCollection } from "./mock-data";
 
@@ -60,6 +61,34 @@ export function CreatePlaylistTile({ onClick }: { onClick: () => void }) {
         <PlusIcon className="w-5 h-5" />
       </span>
       <span className="font-ui font-medium text-sm">Create playlist</span>
+    </button>
+  );
+}
+
+/** Spotify-to-Yukirhythm import launcher. It deliberately sits immediately
+ * below Create playlist everywhere the library list is rendered. */
+export function ImportSpotifyPlaylistTile({
+  onClick,
+}: {
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-full flex items-center gap-4 p-3 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:border-primary transition-colors duration-fast"
+    >
+      <span className="flex items-center justify-center w-12 h-12 rounded-md bg-[#1DB954]/15 text-[#1DB954] shrink-0">
+        <SpotifyIcon data-brand="spotify" className="w-5 h-5" />
+      </span>
+      <span className="text-left">
+        <span className="block font-ui font-medium text-sm">
+          Import Spotify playlist
+        </span>
+        <span className="block text-xs text-muted-foreground">
+          Bring your tracks into Yukirhythm
+        </span>
+      </span>
     </button>
   );
 }

@@ -17,7 +17,7 @@ export default function ViewProfileScreen() {
 
   return (
     <div>
-      <BackHeader title="Your profile" backHref={`${BASE}/profile`} />
+      <BackHeader title="Your profile" fallbackHref={`${BASE}/profile`} />
       <div className="flex flex-col items-center gap-3 py-6">
         <Avatar className="w-24 h-24 border border-border">
           <AvatarFallback className="bg-cobalt text-snow font-ui text-3xl">

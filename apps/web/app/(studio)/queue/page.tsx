@@ -1,10 +1,19 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+
 import BackHeader from "@/components/studio/screens/BackHeader";
+import ClearQueueButton from "@/components/studio/screens/ClearQueueButton";
 import CollectionDetail from "@/components/studio/screens/CollectionDetail";
+import { QueuePageSkeleton } from "@/components/studio/screens/RouteSkeletons";
 import useQueueCollection from "@/components/studio/screens/useQueueCollection";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
-import { HOME, QUEUE_ADD } from "@/components/studio/shell/routes";
+import {
+  HOME,
+  QUEUE_ADD,
+  playlistHref,
+} from "@/components/studio/shell/routes";
 
 /**
  * The queue route, reachable at every width — see NowPlayingRail's and
@@ -22,18 +31,30 @@ import { HOME, QUEUE_ADD } from "@/components/studio/shell/routes";
  * doesn't start the first.
  */
 export default function QueueScreen() {
-  const { playingCollection, queue, playAt } = useMockStudio();
+  const { playingCollection, queue, playAt, playbackLoading } = useMockStudio();
   const collection = useQueueCollection();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!playbackLoading && playingCollection) {
+      router.replace(playlistHref(playingCollection.id));
+    }
+  }, [playbackLoading, playingCollection, router]);
+
+  // Never expose queue-only actions while persisted playback is still being
+  // classified, nor during the one render before a playlist redirect lands.
+  if (playbackLoading || playingCollection) return <QueuePageSkeleton />;
 
   return (
     <div className="pb-8">
-      <BackHeader title={collection.title} backHref={HOME} />
+      <BackHeader title={collection.title} fallbackHref={HOME} />
       <CollectionDetail
         collection={collection}
         playFrom={playingCollection ?? undefined}
         addHref={QUEUE_ADD}
         tracks={queue}
         onPlayAt={playAt}
+        queueAction={<ClearQueueButton />}
       />
     </div>
   );

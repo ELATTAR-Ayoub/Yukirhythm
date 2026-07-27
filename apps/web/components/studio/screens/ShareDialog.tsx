@@ -84,7 +84,7 @@ export default function ShareDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle className="truncate">Share “{title}”</DialogTitle>
+          <DialogTitle>Share “{title}”</DialogTitle>
           <DialogDescription>
             Copy the link, or open it in an app to post yourself.
           </DialogDescription>

@@ -10,6 +10,7 @@ const nav = vi.hoisted(() => ({ id: "liked" }));
 
 vi.mock("next/navigation", () => ({
   useParams: () => ({ id: nav.id }),
+  useRouter: () => ({ back: vi.fn(), push: vi.fn() }),
 }));
 
 describe("AddMusicScreen", () => {

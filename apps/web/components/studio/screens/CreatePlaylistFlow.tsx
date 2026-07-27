@@ -1,10 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   CheckIcon,
-  Cross2Icon,
   MagnifyingGlassIcon,
   PlusIcon,
 } from "@radix-ui/react-icons";
@@ -22,13 +21,13 @@ import Texture, {
 } from "@/components/studio/Texture";
 import TrackRow from "@/components/studio/TrackRow";
 import EmptyState from "@/components/studio/EmptyState";
+import { SkeletonRow } from "@/components/studio/Skeletons";
 import { TagChip } from "./TagChip";
 import CollectionArt from "./CollectionArt";
 import { useMockStudio } from "./MockStudioProvider";
 import {
   formatDuration,
   getTrack,
-  searchMockTracks,
   type CollectionKind,
   type MockCollection,
   type MockTrack,
@@ -320,13 +319,59 @@ interface AddMusicStepProps {
  *  here touches the store; `onToggleTrack` only updates local draft state.
  *  Skippable: an empty selection is a valid playlist. */
 function AddMusicStep({ trackIds, onToggleTrack }: AddMusicStepProps) {
+  const { searchTracks } = useMockStudio();
   const [q, setQ] = useState("");
+  const [results, setResults] = useState<MockTrack[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [pendingTrackIds, setPendingTrackIds] = useState<Set<string>>(
+    () => new Set()
+  );
+  const feedbackTimers = useRef(
+    new Map<string, ReturnType<typeof setTimeout>>()
+  );
 
-  const results = useMemo(() => (q.trim() ? searchMockTracks(q) : []), [q]);
+  useEffect(() => {
+    const query = q.trim();
+    if (!query) return;
+    let live = true;
+    const timer = setTimeout(async () => {
+      const found = await searchTracks(query);
+      if (!live) return;
+      setResults(found.slice(0, 20));
+      setSearching(false);
+    }, 250);
+    return () => {
+      live = false;
+      clearTimeout(timer);
+    };
+  }, [q, searchTracks]);
+
+  useEffect(() => () => feedbackTimers.current.forEach(clearTimeout), []);
+
   const selected = useMemo(
     () => trackIds.map(getTrack).filter((t): t is MockTrack => t !== undefined),
     [trackIds]
   );
+  const availableResults = results.filter(
+    (track) => !trackIds.includes(track.id)
+  );
+
+  const toggleWithFeedback = (trackId: string) => {
+    if (pendingTrackIds.has(trackId)) return;
+    setPendingTrackIds((current) => new Set(current).add(trackId));
+    onToggleTrack(trackId);
+    feedbackTimers.current.set(
+      trackId,
+      setTimeout(() => {
+        feedbackTimers.current.delete(trackId);
+        setPendingTrackIds((current) => {
+          const next = new Set(current);
+          next.delete(trackId);
+          return next;
+        });
+      }, 600)
+    );
+  };
 
   return (
     <div className="space-y-4">
@@ -341,67 +386,92 @@ function AddMusicStep({ trackIds, onToggleTrack }: AddMusicStepProps) {
         </span>
       </div>
 
-      <div className="relative">
+      <form
+        role="search"
+        aria-label="Playlist track search"
+        className="relative"
+        onSubmit={(event) => {
+          event.preventDefault();
+          event.currentTarget
+            .querySelector<HTMLInputElement>('input[type="search"]')
+            ?.blur();
+        }}
+      >
         <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
           value={q}
-          onChange={(e) => setQ(e.target.value)}
+          onChange={(e) => {
+            const value = e.target.value;
+            setQ(value);
+            setSearching(Boolean(value.trim()));
+            if (!value.trim()) setResults([]);
+          }}
+          type="search"
+          enterKeyHint="search"
           placeholder="Tracks, artists…"
           aria-label="Search tracks to add"
           className="pl-9"
         />
-      </div>
+      </form>
 
       {q.trim() ? (
-        results.length === 0 ? (
+        searching ? (
+          <div className="space-y-1" role="status" aria-label="Searching">
+            <SkeletonRow />
+            <SkeletonRow />
+            <SkeletonRow />
+          </div>
+        ) : results.length === 0 ? (
           <EmptyState
             title="No matches"
             hint="Try a different title or artist."
             texture="tx-k2-static"
           />
-        ) : (
+        ) : availableResults.length > 0 ? (
           <div className="space-y-1">
-            {results.map((track, i) => {
-              const added = trackIds.includes(track.id);
-              return (
-                <div key={track.id} className="flex items-center gap-1">
-                  <div className="flex-1 min-w-0">
-                    <TrackRow
-                      index={i + 1}
-                      title={track.title}
-                      artist={track.artist}
-                      duration={formatDuration(track.durationSec)}
-                      texture={track.texture}
-                      artUrl={track.artUrl}
-                      playable={false}
-                    />
-                  </div>
-                  <PlayerButton
-                    variant={added ? "primary" : "outline"}
-                    size="sm"
-                    aria-label={
-                      added ? `Remove ${track.title}` : `Add ${track.title}`
-                    }
-                    onClick={() => onToggleTrack(track.id)}
-                  >
-                    <IconSwap
-                      active={added ? "added" : "add"}
-                      icons={{ add: <PlusIcon />, added: <CheckIcon /> }}
-                    />
-                  </PlayerButton>
+            {availableResults.map((track, i) => (
+              <div key={track.id} className="flex items-center gap-1">
+                <div className="flex-1 min-w-0">
+                  <TrackRow
+                    index={i + 1}
+                    title={track.title}
+                    artist={track.artist}
+                    duration={formatDuration(track.durationSec)}
+                    texture={track.texture}
+                    artUrl={track.artUrl}
+                    playable={false}
+                  />
                 </div>
-              );
-            })}
+                <PlayerButton
+                  variant="outline"
+                  size="sm"
+                  loading={pendingTrackIds.has(track.id)}
+                  aria-label={`Add ${track.title}`}
+                  onClick={() => toggleWithFeedback(track.id)}
+                >
+                  <IconSwap
+                    active="add"
+                    icons={{ add: <PlusIcon />, added: <CheckIcon /> }}
+                  />
+                </PlayerButton>
+              </div>
+            ))}
           </div>
-        )
+        ) : null
       ) : selected.length === 0 ? (
         <EmptyState
           title="Search to add"
           hint="Find a track by title or artist — or skip this step."
           texture="tx-k-ascii-ripple"
         />
-      ) : (
-        <div className="space-y-1">
+      ) : null}
+
+      {selected.length > 0 ? (
+        <section className="space-y-1" aria-label="Added tracks">
+          <div className="flex items-center justify-between">
+            <Label>Added</Label>
+            <span className="type-muted">Newest at the bottom</span>
+          </div>
           {selected.map((track) => (
             <div key={track.id} className="flex items-center gap-1">
               <div className="flex-1 min-w-0">
@@ -415,17 +485,18 @@ function AddMusicStep({ trackIds, onToggleTrack }: AddMusicStepProps) {
                 />
               </div>
               <PlayerButton
-                variant="ghost"
+                variant="primary"
                 size="sm"
+                loading={pendingTrackIds.has(track.id)}
                 aria-label={`Remove ${track.title}`}
-                onClick={() => onToggleTrack(track.id)}
+                onClick={() => toggleWithFeedback(track.id)}
               >
-                <Cross2Icon />
+                <CheckIcon />
               </PlayerButton>
             </div>
           ))}
-        </div>
-      )}
+        </section>
+      ) : null}
     </div>
   );
 }

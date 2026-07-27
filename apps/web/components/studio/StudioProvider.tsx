@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import type { User as FirebaseUser } from "firebase/auth";
 
 import {
   MockStudioContext,
+  type CreateStudioCollectionInput,
   type MockStudioValue,
 } from "@/components/studio/screens/MockStudioProvider";
 import type {
-  CollectionKind,
   MockCollection,
   MockTrack,
   MockUser,
@@ -17,10 +18,12 @@ import type { LibraryFilter } from "@/components/studio/screens/library-utils";
 import {
   insertIntoQueue,
   isSameContext,
+  joinAdHocQueue,
   removeQueueIndex,
+  restoreOrder,
+  shuffleOrder,
   type EnqueueMode,
 } from "@/components/studio/screens/queue-utils";
-import type { TextureName } from "@/components/studio/Texture";
 import { registerStudioTracks } from "@/components/studio/screens/mock-data";
 import {
   useAuthState,
@@ -29,6 +32,7 @@ import {
 } from "@/lib/studio/useAuth";
 import { useBackend } from "@/lib/studio/useBackend";
 import {
+  initialsOf,
   toStudioCollection,
   toStudioHistory,
   toStudioStats,
@@ -51,6 +55,18 @@ const HiddenYouTubePlayer = dynamic(
 
 const LIKED_ID = "liked";
 
+function firebaseUserSnapshot(user: FirebaseUser): MockUser {
+  const name = user.displayName || user.email || "You";
+  return {
+    id: user.uid,
+    userName: name,
+    email: user.email ?? "",
+    initials: initialsOf(name),
+    followers: 0,
+    following: 0,
+  };
+}
+
 /**
  * The real studio provider: same context the screens consume, backed by the
  * phase 1–7 backend and a real YouTube player. Playback position and play
@@ -58,14 +74,25 @@ const LIKED_ID = "liked";
  */
 export default function StudioProvider({
   children,
+  authenticatedUser,
 }: {
   children: React.ReactNode;
+  /**
+   * AuthGate can hand its already-settled user directly to the provider. When
+   * omitted (the auth page and isolated tests), observe auth here as before.
+   */
+  authenticatedUser?: FirebaseUser | null;
 }) {
   const backend = useBackend();
-  const { user: fbUser } = useAuthState();
+  const { user: observedFbUser } = useAuthState();
+  const fbUser =
+    authenticatedUser === undefined ? observedFbUser : authenticatedUser;
 
-  const [user, setUser] = useState<MockUser | null>(null);
+  const [user, setUser] = useState<MockUser | null>(() =>
+    fbUser ? firebaseUserSnapshot(fbUser) : null
+  );
   const [collections, setCollections] = useState<MockCollection[]>([]);
+  const collectionsRef = useRef<MockCollection[]>([]);
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
   const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set());
   const [libraryFilter, setLibraryFilter] =
@@ -83,6 +110,11 @@ export default function StudioProvider({
   const [navDirection, setNavDirection] = useState<"next" | "prev" | null>(
     null
   );
+  const [shuffled, setShuffled] = useState(false);
+  /** The order the queue was in right before shuffle was turned on — restored
+   *  verbatim (minus anything dequeued meanwhile) when it's turned back off.
+   *  Meaningful only while `shuffled` is true. */
+  const preShuffleOrderRef = useRef<MockTrack[] | null>(null);
   const [playerExpanded, setPlayerExpanded] = useState(false);
   const [volume, setVolumeState] = useState(1);
   const preMute = useRef(1);
@@ -120,7 +152,14 @@ export default function StudioProvider({
   const [youMightLike, setYouMightLike] = useState<MockTrack[]>([]);
   const [stats, setStats] = useState<MockStats | null>(null);
   const [recents, setRecents] = useState<MockHistoryEntry[]>([]);
-  const [feedsLoading, setFeedsLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [recentsLoading, setRecentsLoading] = useState(true);
+  const [playbackLoading, setPlaybackLoading] = useState(true);
+  const [jumpBackInLoading, setJumpBackInLoading] = useState(true);
+  const [newReleasesLoading, setNewReleasesLoading] = useState(true);
+  const [youMightLikeLoading, setYouMightLikeLoading] = useState(true);
+  const feedsLoading =
+    jumpBackInLoading || newReleasesLoading || youMightLikeLoading;
 
   const nowPlaying = currentIndex >= 0 ? (queue[currentIndex] ?? null) : null;
 
@@ -182,7 +221,9 @@ export default function StudioProvider({
             toStudioCollection(c, { pinned: pinnedIds.has(c.collectionId) })
           )
         : [];
-    setCollections([likedCollection, ...owns]);
+    const nextCollections = [likedCollection, ...owns];
+    collectionsRef.current = nextCollections;
+    setCollections(nextCollections);
   }, [backend, absorb, pinnedIds]);
 
   useEffect(() => {
@@ -190,14 +231,41 @@ export default function StudioProvider({
     (async () => {
       if (!fbUser) {
         setUser(null);
+        collectionsRef.current = [];
         setCollections([]);
         setLibraryLoading(false);
-        setFeedsLoading(false);
+        setStatsLoading(false);
+        setRecentsLoading(false);
+        setPlaybackLoading(false);
+        setJumpBackInLoading(false);
+        setNewReleasesLoading(false);
+        setYouMightLikeLoading(false);
         return;
       }
-      setFeedsLoading(true);
+
+      // AuthGate already proved who this user is. Show that identity
+      // immediately instead of briefly rendering a signed-out shell while the
+      // backend profile document is still in flight.
+      setUser(firebaseUserSnapshot(fbUser));
+      setLibraryLoading(true);
+      setStats(null);
+      setRecents([]);
+      setStatsLoading(true);
+      setRecentsLoading(true);
+      setPlaybackLoading(true);
+      setJumpBackIn([]);
+      setJumpBackInLoading(true);
+      setNewReleases([]);
+      setYouMightLike([]);
+      setNewReleasesLoading(true);
+      setYouMightLikeLoading(true);
+
+      const warn = (name: string) => (err: unknown) =>
+        console.warn(`Feed load failed: ${name}`, err);
+
       try {
-        // ensure the user doc exists, then load it
+        // New accounts need a user doc first. After this one required write,
+        // start the profile, library and all three shelves together.
         const provider = fbUser.providerData[0]?.providerId?.includes(
           "facebook"
         )
@@ -209,20 +277,57 @@ export default function StudioProvider({
           avatarUrl: fbUser.photoURL ?? null,
           authProvider: provider,
         });
-        const me = await backend.me.get();
-        if (!live || !me) {
-          // Bail-out without the feeds section below — the skeleton must not
-          // pulse forever on a user doc that failed to load.
-          if (live) setFeedsLoading(false);
-          return;
+        if (!live) return;
+
+        void backend.feed
+          .newReleases()
+          .then((r) => {
+            if (live) setNewReleases(absorb(r.items.map((i) => i.track)));
+          }, warn("new-releases"))
+          .finally(() => {
+            if (live) setNewReleasesLoading(false);
+          });
+        void backend.feed
+          .youMightLike()
+          .then((r) => {
+            if (live) setYouMightLike(absorb(r.items.map((i) => i.track)));
+          }, warn("you-might-like"))
+          .finally(() => {
+            if (live) setYouMightLikeLoading(false);
+          });
+        void backend.feed
+          .jumpBackIn()
+          .then((r) => {
+            if (live) {
+              setJumpBackIn(r.collections.map((c) => toStudioCollection(c)));
+            }
+          }, warn("jump-back-in"))
+          .finally(() => {
+            if (live) setJumpBackInLoading(false);
+          });
+
+        const [meResult, libraryResult] = await Promise.allSettled([
+          backend.me.get(),
+          refreshLibrary(),
+        ]);
+        if (!live) return;
+        if (meResult.status === "fulfilled" && meResult.value) {
+          setUser(toStudioUser(meResult.value));
+        } else if (meResult.status === "rejected") {
+          console.error("Failed to load user profile", meResult.reason);
         }
-        setUser(toStudioUser(me));
-        await refreshLibrary();
+        if (libraryResult.status === "rejected") {
+          console.error("Failed to load user library", libraryResult.reason);
+        }
       } catch (err) {
-        // ensure()/get() failing is rarer than the likes/collections reads
-        // (already hardened above via allSettled) but must not leave the
-        // sign-in effect throwing out from under the finally below either.
-        console.error("Failed to load user/library", err);
+        console.error("Failed to initialize user data", err);
+        // If ensure() fails, no shelf request was started. Settle all states
+        // so the skeleton cannot pulse forever.
+        if (live) {
+          setJumpBackInLoading(false);
+          setNewReleasesLoading(false);
+          setYouMightLikeLoading(false);
+        }
       } finally {
         // Must run on every path — success, thrown error, or early return
         // above — so the user is never left staring at a stuck loading state.
@@ -233,8 +338,6 @@ export default function StudioProvider({
       // not blank the others, so they settle separately. Failures are logged:
       // a silently-empty shelf is indistinguishable from a broken feed.
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      const warn = (name: string) => (err: unknown) =>
-        console.warn(`Feed load failed: ${name}`, err);
 
       // Restore the session that was playing before the reload. Deliberately
       // independent of the feed fetches below — a failed read here must not
@@ -286,6 +389,13 @@ export default function StudioProvider({
                 : 0;
 
           setQueue(resolved);
+          setPlayingCollection(
+            state.sourceType === "collection" && state.sourceId
+              ? (collectionsRef.current.find(
+                  (collection) => collection.id === state.sourceId
+                ) ?? null)
+              : null
+          );
           setCurrentIndex(finalIndex);
           setProgressSec(state.positionSec ?? 0);
           // Target-aware: onReady fires again on every track change
@@ -320,43 +430,29 @@ export default function StudioProvider({
           // presses play to actually start sound, from pendingSeekRef's
           // position rather than 0:00.
         })
-        .catch((err) => console.warn("Playback restore failed", err));
-
-      void backend.feed
-        .jumpBackIn()
-        .then(
-          (r) =>
-            live &&
-            setJumpBackIn(r.collections.map((c) => toStudioCollection(c))),
-          warn("jump-back-in")
-        );
-      const shelfFeeds = [
-        backend.feed.newReleases().then((r) => {
-          if (live) setNewReleases(absorb(r.items.map((i) => i.track)));
-        }),
-        backend.feed.youMightLike().then((r) => {
-          if (live) setYouMightLike(absorb(r.items.map((i) => i.track)));
-        }),
-      ] as const;
-      void Promise.allSettled(shelfFeeds).then((results) => {
-        results.forEach((r, i) => {
-          if (r.status === "rejected")
-            warn(i === 0 ? "new-releases" : "you-might-like")(r.reason);
+        .catch((err) => console.warn("Playback restore failed", err))
+        .finally(() => {
+          if (live) setPlaybackLoading(false);
         });
-        // Cleared on success AND failure — a dead feed shows its empty state,
-        // never a skeleton that pulses forever.
-        if (live) setFeedsLoading(false);
-      });
+
       void backend.me
         .stats(tz)
-        .then((s) => live && setStats(toStudioStats(s)), warn("stats"));
-      void backend.me.recents().then((r) => {
-        if (!live) return;
-        absorb(
-          r.items.map((i) => i.track).filter((t): t is Track => t !== null)
-        );
-        setRecents(toStudioHistory(r.items, Date.now()));
-      }, warn("recents"));
+        .then((s) => live && setStats(toStudioStats(s)), warn("stats"))
+        .finally(() => {
+          if (live) setStatsLoading(false);
+        });
+      void backend.me
+        .recents()
+        .then((r) => {
+          if (!live) return;
+          absorb(
+            r.items.map((i) => i.track).filter((t): t is Track => t !== null)
+          );
+          setRecents(toStudioHistory(r.items, Date.now()));
+        }, warn("recents"))
+        .finally(() => {
+          if (live) setRecentsLoading(false);
+        });
     })();
     return () => {
       live = false;
@@ -422,6 +518,28 @@ export default function StudioProvider({
         return;
       }
 
+      // A loose play (no `from`) while the user's own ad-hoc queue is running
+      // (no collection context) JOINS that queue instead of wiping it —
+      // already-queued track gets a jump, not a duplicate; otherwise it lands
+      // on the end. A collection playing, or a genuinely cold queue, falls
+      // through to the replace-with-a-fresh-queue branch below unchanged.
+      if (!from && playingCollection === null && queue.length > 0) {
+        const joined = joinAdHocQueue(queue, track);
+        const appended = joined.index === queue.length;
+        flushEvent();
+        if (appended) registerStudioTracks([track]);
+        setQueue(joined.queue);
+        setNavDirection(null);
+        startTrack(joined.index);
+        if (appended) {
+          // Best-effort, same as enqueue: a failed write must not undo the
+          // queue the user is looking at, and the next save() flush re-sends
+          // the whole list.
+          void backend.me.playback.enqueue(track.id, "end").catch(() => {});
+        }
+        return;
+      }
+
       flushEvent();
       const q = from ? await resolveTrackIds(from.trackIds) : [track];
       const idx = q.findIndex((t) => t.id === track.id);
@@ -429,8 +547,23 @@ export default function StudioProvider({
       setQueue(q.length ? q : [track]);
       setNavDirection(null);
       startTrack(idx >= 0 ? idx : 0);
+      // A genuinely fresh queue invalidates whatever shuffle was doing to the
+      // PREVIOUS one — leaving it on here would show "shuffled" active over
+      // an order that was never actually shuffled.
+      if (shuffled) {
+        setShuffled(false);
+        preShuffleOrderRef.current = null;
+      }
     },
-    [resolveTrackIds, flushEvent, startTrack, playingCollection, queue]
+    [
+      resolveTrackIds,
+      flushEvent,
+      startTrack,
+      playingCollection,
+      queue,
+      backend,
+      shuffled,
+    ]
   );
 
   const dequeue = useCallback(
@@ -440,9 +573,19 @@ export default function StudioProvider({
       // track that earned them, not vanish or get attributed to whatever
       // nowPlaying resolves to afterward.
       flushEvent();
+      const removedId = queue[index]?.id;
       const result = removeQueueIndex(queue, currentIndex, index);
       setQueue(result.queue);
       setCurrentIndex(result.currentIndex);
+      // Dropping the same slot from the remembered pre-shuffle order too —
+      // otherwise turning shuffle back off would resurrect a track the user
+      // just removed.
+      if (shuffled && removedId && preShuffleOrderRef.current) {
+        const saved = [...preShuffleOrderRef.current];
+        const savedIndex = saved.findIndex((t) => t.id === removedId);
+        if (savedIndex >= 0) saved.splice(savedIndex, 1);
+        preShuffleOrderRef.current = saved;
+      }
       // Clamped past the end means the track that was playing just vanished
       // and nothing replaced it — stop, so a later, unrelated enqueue() can't
       // silently resurrect playback into the vacated slot.
@@ -453,8 +596,23 @@ export default function StudioProvider({
       // the user just removed, and the next save() flush re-sends the list.
       void backend.me.playback.removeFromQueue(index).catch(() => {});
     },
-    [backend, flushEvent, queue, currentIndex]
+    [backend, flushEvent, queue, currentIndex, shuffled]
   );
+
+  const clearQueue = useCallback(async () => {
+    flushEvent();
+    await backend.me.playback.clearQueue();
+    setQueue([]);
+    setPlayingCollection(null);
+    setCurrentIndex(-1);
+    setIsPlaying(false);
+    setIsLoading(false);
+    setProgressSec(0);
+    setNavDirection(null);
+    setShuffled(false);
+    preShuffleOrderRef.current = null;
+    pendingSeekRef.current = null;
+  }, [backend, flushEvent]);
 
   /**
    * Add to the running queue. Local state moves first so the rail updates on
@@ -479,21 +637,13 @@ export default function StudioProvider({
   );
   const next = useCallback(() => {
     flushEvent();
+    // The wrap IS the point: onEnded() calls next() with nothing else
+    // special-cased, so a finished queue — shuffled or not — restarts from
+    // the top instead of stopping dead at the last track.
     setCurrentIndex((i) =>
       i < 0 || !queue.length ? i : (i + 1) % queue.length
     );
     setNavDirection("next");
-    setProgressSec(0);
-    setIsPlaying(true);
-    startedAtRef.current = Date.now();
-    listenedRef.current = 0;
-  }, [queue.length, flushEvent]);
-  const prev = useCallback(() => {
-    flushEvent();
-    setCurrentIndex((i) =>
-      i < 0 || !queue.length ? i : (i - 1 + queue.length) % queue.length
-    );
-    setNavDirection("prev");
     setProgressSec(0);
     setIsPlaying(true);
     startedAtRef.current = Date.now();
@@ -509,6 +659,68 @@ export default function StudioProvider({
       playerRef.current?.seekTo(clamped);
     },
     [nowPlaying]
+  );
+
+  /**
+   * Smart previous: a "restart this track" gesture past a threshold, a real
+   * "go back" gesture before it. At the first queue position there is no
+   * previous track, so the transport disables this action until five seconds
+   * have elapsed (at which point it can restart the current track).
+   */
+  const prev = useCallback(() => {
+    if (progressSec >= 5) {
+      seek(0);
+      return;
+    }
+    flushEvent();
+    setCurrentIndex((i) => (i <= 0 ? i : i - 1));
+    setNavDirection("prev");
+    setProgressSec(0);
+    setIsPlaying(true);
+    startedAtRef.current = Date.now();
+    listenedRef.current = 0;
+  }, [flushEvent, progressSec, seek]);
+
+  /**
+   * Enable: remember today's order, Fisher–Yates the rest with whatever is
+   * currently playing pinned to the front — playback itself never
+   * interrupts (no startTrack, index/queue only). Disable: restore the
+   * remembered order, dropping anything dequeued in the meantime, and
+   * re-derive the playhead by the id that's actually playing (not the
+   * carried-over index — the same track can sit at a different slot in
+   * either order).
+   */
+  const toggleShuffle = useCallback(() => {
+    if (!shuffled) {
+      preShuffleOrderRef.current = queue;
+      const result = shuffleOrder(queue, currentIndex, Math.random);
+      setQueue(result.queue);
+      setCurrentIndex(result.currentIndex);
+      setShuffled(true);
+      return;
+    }
+    const saved = preShuffleOrderRef.current ?? queue;
+    const result = restoreOrder(saved, queue, nowPlaying?.id ?? null);
+    setQueue(result.queue);
+    setCurrentIndex(result.currentIndex);
+    preShuffleOrderRef.current = null;
+    setShuffled(false);
+  }, [shuffled, queue, currentIndex, nowPlaying]);
+
+  const playShuffled = useCallback(
+    (tracks: MockTrack[], from?: MockCollection) => {
+      if (!tracks.length) return;
+      flushEvent();
+      registerStudioTracks(tracks);
+      const result = shuffleOrder(tracks, -1, Math.random);
+      preShuffleOrderRef.current = tracks;
+      setPlayingCollection(from ?? null);
+      setQueue(result.queue);
+      setNavDirection(null);
+      setShuffled(true);
+      startTrack(0);
+    },
+    [flushEvent, startTrack]
   );
 
   const setVolume = useCallback((v: number) => {
@@ -534,6 +746,8 @@ export default function StudioProvider({
     progressSec,
     isPlaying,
     volume,
+    playingCollection,
+    shuffled,
   });
   useEffect(() => {
     persistSnapshotRef.current = {
@@ -543,6 +757,8 @@ export default function StudioProvider({
       progressSec,
       isPlaying,
       volume,
+      playingCollection,
+      shuffled,
     };
   });
 
@@ -564,6 +780,9 @@ export default function StudioProvider({
         positionSec: s.progressSec,
         isPlaying: s.isPlaying,
         volume: s.volume,
+        sourceType: s.playingCollection ? "collection" : "library",
+        sourceId: s.playingCollection?.id ?? null,
+        shuffleMode: s.shuffled,
       });
     }, 10000);
     return () => clearInterval(id);
@@ -738,15 +957,7 @@ export default function StudioProvider({
   );
 
   const createCollection = useCallback(
-    (input: {
-      title: string;
-      desc: string;
-      tags: string[];
-      kind: CollectionKind;
-      texture?: TextureName;
-      cover?: "texture" | "mosaic";
-      trackIds?: string[];
-    }): MockCollection => {
+    (input: CreateStudioCollectionInput): MockCollection => {
       // optimistic local object; the server issues the real id asynchronously
       const optimistic: MockCollection = {
         id: `pending-${crypto.randomUUID()}`,
@@ -771,10 +982,41 @@ export default function StudioProvider({
           cover: input.cover,
           trackIds: input.trackIds,
         } as any)
-        .then(refreshLibrary);
+        .then((persisted) => {
+          // Replace this exact optimistic row with the POST response. A full
+          // list refresh here raced Firestore visibility for some users and
+          // could temporarily remove the pending row while its detail route
+          // was already open, producing "Collection not found".
+          const created = toStudioCollection(persisted);
+          setCollections((current) =>
+            current.map((collection) =>
+              collection.id === optimistic.id ? created : collection
+            )
+          );
+        });
       return optimistic;
     },
-    [backend, refreshLibrary]
+    [backend]
+  );
+  const createCollectionAsync = useCallback(
+    async (input: CreateStudioCollectionInput): Promise<MockCollection> => {
+      const persisted = await backend.collections.create({
+        title: input.title,
+        description: input.desc,
+        tags: input.tags,
+        contentType: input.kind,
+        texture: input.texture,
+        cover: input.cover,
+        trackIds: input.trackIds,
+      } as any);
+      const created = toStudioCollection(persisted);
+      setCollections((current) => [
+        ...current.filter((collection) => collection.id !== created.id),
+        created,
+      ]);
+      return created;
+    },
+    [backend]
   );
 
   // Defaults to google so any caller that omits the argument (there are
@@ -799,11 +1041,17 @@ export default function StudioProvider({
       currentIndex,
       playAt,
       dequeue,
+      clearQueue,
       enqueue,
       toggle,
+      canNext: currentIndex >= 0 && queue.length > 1,
+      canPrev: currentIndex > 0 || (currentIndex >= 0 && progressSec >= 5),
       next,
       prev,
       seek,
+      shuffled,
+      toggleShuffle,
+      playShuffled,
       user,
       signIn,
       signOut,
@@ -823,13 +1071,20 @@ export default function StudioProvider({
       toggleTrackInCollection,
       addTrackToCollection,
       createCollection,
+      createCollectionAsync,
       jumpBackIn,
       newReleases,
       youMightLike,
       feedsLoading,
+      jumpBackInLoading,
+      newReleasesLoading,
+      youMightLikeLoading,
       collectionResults,
       stats,
+      statsLoading,
       recents,
+      recentsLoading,
+      playbackLoading,
       playerExpanded,
       volume,
       setVolume,
@@ -849,11 +1104,15 @@ export default function StudioProvider({
       currentIndex,
       playAt,
       dequeue,
+      clearQueue,
       enqueue,
       toggle,
       next,
       prev,
       seek,
+      shuffled,
+      toggleShuffle,
+      playShuffled,
       user,
       signIn,
       signOut,
@@ -872,6 +1131,7 @@ export default function StudioProvider({
       toggleTrackInCollection,
       addTrackToCollection,
       createCollection,
+      createCollectionAsync,
       playerExpanded,
       volume,
       setVolume,
@@ -880,9 +1140,15 @@ export default function StudioProvider({
       newReleases,
       youMightLike,
       feedsLoading,
+      jumpBackInLoading,
+      newReleasesLoading,
+      youMightLikeLoading,
       collectionResults,
       stats,
+      statsLoading,
       recents,
+      recentsLoading,
+      playbackLoading,
     ]
   );
 

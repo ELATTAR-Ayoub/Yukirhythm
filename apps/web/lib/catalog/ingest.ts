@@ -111,26 +111,48 @@ export async function ingestTrack(t: ProviderTrack): Promise<void> {
     await ref.set(merged, { merge: true });
   }
 
-  for (const a of t.artists) {
-    if (!a.artistId) continue;
-    const aRef = db.collection("artists").doc(a.artistId);
-    const aSnap = await aRef.get();
-    // Name-only stub on first sight; the artist route enriches it with a bio.
-    if (!aSnap.exists) {
-      await aRef.set(
-        toArtistDoc({
-          artistId: a.artistId,
-          name: a.name,
-          bio: null,
-          artwork: [],
-          subscriberCount: null,
-          relatedArtistIds: [],
-        })
-      );
-    }
-  }
+  await Promise.all(
+    t.artists
+      .filter((a) => Boolean(a.artistId))
+      .map(async (a) => {
+        const aRef = db.collection("artists").doc(a.artistId);
+        const aSnap = await aRef.get();
+        // Name-only stub on first sight; the artist route enriches it with a
+        // bio. Concurrent duplicate writes are idempotent.
+        if (!aSnap.exists) {
+          await aRef.set(
+            toArtistDoc({
+              artistId: a.artistId,
+              name: a.name,
+              bio: null,
+              artwork: [],
+              subscriberCount: null,
+              relatedArtistIds: [],
+            })
+          );
+        }
+      })
+  );
 }
 
 export async function ingestTracks(tracks: ProviderTrack[]): Promise<void> {
-  for (const t of tracks) await ingestTrack(t);
+  const unique = [
+    ...new Map(
+      tracks
+        .filter((track) => Boolean(track.providerTrackId))
+        .map((track) => [track.providerTrackId, track])
+    ).values(),
+  ];
+
+  // Cold-start feeds can ingest dozens of tracks. Sequential upserts turn
+  // every Firestore read/write into another visible wait; bounded batches
+  // retain back-pressure while overlapping independent work.
+  const concurrency = 8;
+  for (let index = 0; index < unique.length; index += concurrency) {
+    await Promise.all(
+      unique
+        .slice(index, index + concurrency)
+        .map((track) => ingestTrack(track))
+    );
+  }
 }

@@ -89,11 +89,10 @@ describe("MiniPlayerBar", () => {
       );
       seed();
 
-      for (const name of ["Previous", "Next"]) {
-        expect(screen.getByLabelText(name).hasAttribute("disabled")).toBe(
-          false
-        );
-      }
+      // This seed starts at queue position zero: there is no earlier track,
+      // while Next can still advance through the rest of the queue.
+      expect(screen.getByLabelText("Previous")).toBeDisabled();
+      expect(screen.getByLabelText("Next")).not.toBeDisabled();
       // Playing, so the 3-face IconSwap is showing Pause rather than Play.
       expect(screen.getByLabelText("Pause").hasAttribute("disabled")).toBe(
         false

@@ -35,7 +35,7 @@ export default function SettingsScreen() {
 
   return (
     <div className="space-y-8">
-      <BackHeader title="Settings" backHref={`${BASE}/profile`} />
+      <BackHeader title="Settings" fallbackHref={`${BASE}/profile`} />
 
       <section>
         <SectionLabel>Playback</SectionLabel>

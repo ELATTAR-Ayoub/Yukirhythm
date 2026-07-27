@@ -110,3 +110,25 @@ describe("AddMusicPanel searching state", () => {
     expect(screen.queryByText("No matches")).toBeNull();
   });
 });
+
+describe("AddMusicPanel mobile keyboard", () => {
+  it("uses the Search key and dismisses the keyboard on submit", () => {
+    render(
+      <MockStudioProvider>
+        <AddMusicPanel />
+      </MockStudioProvider>
+    );
+    const input = screen.getByLabelText(
+      "Search tracks to queue"
+    ) as HTMLInputElement;
+    expect(input.type).toBe("search");
+    expect(input.getAttribute("enterkeyhint")).toBe("search");
+    input.focus();
+
+    fireEvent.submit(
+      screen.getByRole("search", { name: "Queue music search" })
+    );
+
+    expect(document.activeElement).not.toBe(input);
+  });
+});

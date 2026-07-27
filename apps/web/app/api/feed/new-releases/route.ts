@@ -24,49 +24,62 @@ export async function GET(req: Request): Promise<Response> {
   if (!uid) return unauthorized();
 
   const db = adminDb();
-  const user = (await db.collection("users").doc(uid).get()).data() as
-    User | undefined;
+  const [userSnap, ctx] = await Promise.all([
+    db.collection("users").doc(uid).get(),
+    loadFeedContext(uid),
+  ]);
+  const user = userSnap.data() as User | undefined;
   const personalized = user?.privacy?.personalization !== false;
-
-  const ctx = await loadFeedContext(uid);
 
   // Resolve the tracks behind the user's events for artist affinity.
   const eventTrackIds = [...new Set(ctx.events.map((e) => e.trackId))];
+  const eventTrackDocs = await Promise.all(
+    eventTrackIds.map((id) => db.collection("tracks").doc(id).get())
+  );
   const tracksById = new Map<string, Track>();
-  for (const id of eventTrackIds) {
-    const t = await db.collection("tracks").doc(id).get();
-    if (t.exists) tracksById.set(id, t.data() as Track);
-  }
+  eventTrackDocs.forEach((doc, index) => {
+    if (doc.exists) tracksById.set(eventTrackIds[index], doc.data() as Track);
+  });
   const affinity = artistAffinityFrom(ctx.events, tracksById);
 
   // Candidates: related to the user's most-played seeds.
   const candidates = new Map<string, Track>();
   if (personalized && ctx.topPlayed.length) {
     const provider = await getCatalogProvider();
-    for (const seed of ctx.topPlayed.slice(0, 3)) {
-      try {
-        const related = (await provider.getRelatedTracks(seed)).filter(
-          (t) => t.isEmbeddable
-        );
-        if (related.length) await ingestTracks(related);
-        for (const t of related) {
-          const doc = await db
-            .collection("tracks")
-            .doc(t.providerTrackId)
-            .get();
-          if (doc.exists && !ctx.exclude.has(t.providerTrackId)) {
-            candidates.set(t.providerTrackId, doc.data() as Track);
-          }
+    const relatedGroups = await Promise.all(
+      ctx.topPlayed.slice(0, 3).map(async (seed) => {
+        try {
+          return (await provider.getRelatedTracks(seed)).filter(
+            (track) => track.isEmbeddable
+          );
+        } catch (err) {
+          // One dead seed must not kill the feed — the guarded fallbacks below
+          // still answer, and other seeds may have succeeded.
+          console.error(
+            `feed/new-releases: related for seed "${seed}" failed`,
+            err
+          );
+          return [];
         }
-      } catch (err) {
-        // One dead seed must not kill the feed — the guarded fallbacks below
-        // still answer, and other seeds may have succeeded.
-        console.error(
-          `feed/new-releases: related for seed "${seed}" failed`,
-          err
-        );
+      })
+    );
+    const relatedTracks = [
+      ...new Map(
+        relatedGroups.flat().map((track) => [track.providerTrackId, track])
+      ).values(),
+    ];
+    if (relatedTracks.length) await ingestTracks(relatedTracks);
+    const relatedDocs = await Promise.all(
+      relatedTracks.map((track) =>
+        db.collection("tracks").doc(track.providerTrackId).get()
+      )
+    );
+    relatedDocs.forEach((doc, index) => {
+      const id = relatedTracks[index].providerTrackId;
+      if (doc.exists && !ctx.exclude.has(id)) {
+        candidates.set(id, doc.data() as Track);
       }
-    }
+    });
   }
 
   // Cold start / thin candidates: globally popular catalogue tracks. Guarded —

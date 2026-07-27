@@ -46,3 +46,40 @@ export async function POST(req: Request): Promise<Response> {
 
   return Response.json((await r.get()).data());
 }
+
+/**
+ * Clear the ad-hoc playback queue and stop its current track. This is
+ * intentionally a playback mutation, not a collection mutation: no playlist
+ * document is read or changed.
+ */
+export async function DELETE(req: Request): Promise<Response> {
+  const uid = await uidFromRequest(req);
+  if (!uid) return unauthorized();
+
+  const r = ref(uid);
+  const db = adminDb();
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(r);
+    const state = (
+      snap.exists
+        ? snap.data()
+        : { ...EMPTY_PLAYBACK, updatedAt: Timestamp.now() }
+    ) as PlaybackState;
+
+    tx.set(r, {
+      ...state,
+      trackId: null,
+      sourceType: "library",
+      sourceId: null,
+      queue: [],
+      queueIndex: -1,
+      manualQueue: [],
+      positionSec: 0,
+      isPlaying: false,
+      shuffleMode: false,
+      updatedAt: Timestamp.now(),
+    });
+  });
+
+  return Response.json((await r.get()).data());
+}

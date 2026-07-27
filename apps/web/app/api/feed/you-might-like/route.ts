@@ -28,12 +28,13 @@ export async function GET(req: Request): Promise<Response> {
   if (!uid) return unauthorized();
 
   const db = adminDb();
-  const user = (await db.collection("users").doc(uid).get()).data() as
-    User | undefined;
+  const [userSnap, ctx, provider] = await Promise.all([
+    db.collection("users").doc(uid).get(),
+    loadFeedContext(uid),
+    getCatalogProvider(),
+  ]);
+  const user = userSnap.data() as User | undefined;
   const personalized = user?.privacy?.personalization !== false;
-
-  const ctx = await loadFeedContext(uid);
-  const provider = await getCatalogProvider();
 
   // Radio: related tracks off the user's most-played seeds (or a cold seed).
   const seeds =
@@ -48,26 +49,56 @@ export async function GET(req: Request): Promise<Response> {
     if (cold) seeds.push(cold);
   }
 
+  // Co-listen does not depend on provider radio. Start its only Firestore
+  // query now so it overlaps the slower related-track/ingest work below.
+  const publicCollectionsPromise =
+    personalized && ctx.likedTrackIds.length
+      ? db
+          .collection("collections")
+          .where("visibility", "==", "public")
+          .limit(200)
+          .get()
+      : Promise.resolve(null);
+
   const radio: BlendInput["radio"] = [];
-  for (const seedId of seeds) {
-    try {
-      const seedDoc = await db.collection("tracks").doc(seedId).get();
-      const seedTitle = seedDoc.exists
-        ? (seedDoc.data() as Track).title
-        : "a track you played";
-      const related = await provider.getRelatedTracks(seedId);
-      const embeddable = related.filter((t) => t.isEmbeddable);
-      if (embeddable.length) await ingestTracks(embeddable);
-      for (const t of embeddable.slice(0, 10)) {
-        radio.push({ trackId: t.providerTrackId, seedTitle });
+  const seedGroups = await Promise.all(
+    seeds.map(async (seedId) => {
+      try {
+        const [seedDoc, related] = await Promise.all([
+          db.collection("tracks").doc(seedId).get(),
+          provider.getRelatedTracks(seedId),
+        ]);
+        return {
+          seedTitle: seedDoc.exists
+            ? (seedDoc.data() as Track).title
+            : "a track you played",
+          tracks: related.filter((track) => track.isEmbeddable),
+        };
+      } catch (err) {
+        // One dead seed must not kill the feed — the cold-start below still
+        // answers, and other seeds may have succeeded.
+        console.error(
+          `feed/you-might-like: radio for seed "${seedId}" failed`,
+          err
+        );
+        return { seedTitle: "a track you played", tracks: [] };
       }
-    } catch (err) {
-      // One dead seed must not kill the feed — the cold-start below still
-      // answers, and other seeds may have succeeded.
-      console.error(
-        `feed/you-might-like: radio for seed "${seedId}" failed`,
-        err
-      );
+    })
+  );
+  const seedTracks = [
+    ...new Map(
+      seedGroups
+        .flatMap((group) => group.tracks)
+        .map((track) => [track.providerTrackId, track])
+    ).values(),
+  ];
+  if (seedTracks.length) await ingestTracks(seedTracks);
+  for (const group of seedGroups) {
+    for (const track of group.tracks.slice(0, 10)) {
+      radio.push({
+        trackId: track.providerTrackId,
+        seedTitle: group.seedTitle,
+      });
     }
   }
 
@@ -90,12 +121,8 @@ export async function GET(req: Request): Promise<Response> {
   // Co-listen: tracks appearing alongside the user's liked tracks in OTHER
   // users' public collections.
   const coCount = new Map<string, number>();
-  if (personalized && ctx.likedTrackIds.length) {
-    const publicSnap = await db
-      .collection("collections")
-      .where("visibility", "==", "public")
-      .limit(200)
-      .get();
+  const publicSnap = await publicCollectionsPromise;
+  if (publicSnap) {
     const likedSet = new Set(ctx.likedTrackIds);
     for (const doc of publicSnap.docs) {
       const c = doc.data() as Collection;
@@ -123,11 +150,17 @@ export async function GET(req: Request): Promise<Response> {
   });
 
   // Resolve to track docs for the UI.
-  const items = [];
-  for (const r of recs) {
-    const t = await db.collection("tracks").doc(r.trackId).get();
-    if (t.exists) items.push({ ...r, track: t.data() as Track });
-  }
+  const recDocs = await Promise.all(
+    recs.map((recommendation) =>
+      db.collection("tracks").doc(recommendation.trackId).get()
+    )
+  );
+  const items = recs.flatMap((recommendation, index) => {
+    const doc = recDocs[index];
+    return doc.exists
+      ? [{ ...recommendation, track: doc.data() as Track }]
+      : [];
+  });
 
   return Response.json({ personalized, items });
 }

@@ -4,8 +4,12 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import MockStudioProvider, {
   useMockStudio,
 } from "@/components/studio/screens/MockStudioProvider";
-import { MOCK_TRACKS } from "@/components/studio/screens/mock-data";
-import { QUEUE } from "./routes";
+import {
+  MOCK_COLLECTIONS,
+  MOCK_TRACKS,
+  getCollectionTracks,
+} from "@/components/studio/screens/mock-data";
+import { QUEUE, playlistHref } from "./routes";
 import PlaybackBar from "./PlaybackBar";
 
 const { push } = vi.hoisted(() => ({ push: vi.fn() }));
@@ -17,6 +21,16 @@ vi.mock("next/navigation", () => ({
 function PlayFirst() {
   const { play } = useMockStudio();
   return <button onClick={() => play(MOCK_TRACKS[0])}>seed</button>;
+}
+
+function PlayPlaylist() {
+  const { play } = useMockStudio();
+  const source = MOCK_COLLECTIONS[0];
+  return (
+    <button onClick={() => play(getCollectionTracks(source)[0], source)}>
+      seed playlist
+    </button>
+  );
 }
 
 /**
@@ -176,7 +190,7 @@ describe("PlaybackBar", () => {
     expect(screen.getByLabelText("Loop")).toBeTruthy();
   });
 
-  it("navigates to the routed queue page from the transport's queue control", () => {
+  it("navigates to /queue from the transport for ad-hoc playback", () => {
     stubMatchMedia(false);
     render(
       <MockStudioProvider>
@@ -190,5 +204,23 @@ describe("PlaybackBar", () => {
     fireEvent.click(screen.getByLabelText("Queue"));
 
     expect(push).toHaveBeenCalledWith(QUEUE);
+  });
+
+  it("navigates to the source playlist instead of /queue for playlist playback", () => {
+    stubMatchMedia(false);
+    const source = MOCK_COLLECTIONS[0];
+    render(
+      <MockStudioProvider>
+        <PlayPlaylist />
+        <PlaybackBar onExpand={() => {}} />
+      </MockStudioProvider>
+    );
+    fireEvent.click(screen.getByText("seed playlist"));
+    act(() => vi.advanceTimersByTime(650));
+
+    fireEvent.click(screen.getByLabelText("Queue"));
+
+    expect(push).toHaveBeenCalledWith(playlistHref(source.id));
+    expect(push).not.toHaveBeenCalledWith(QUEUE);
   });
 });

@@ -34,6 +34,18 @@ describe("AuthGate", () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
+  it("renders a route-aware shell fallback when one is provided", () => {
+    render(
+      <AuthGate fallback={<div data-testid="shell-skeleton" />}>
+        <div data-testid="gated" />
+      </AuthGate>
+    );
+
+    expect(screen.getByTestId("shell-skeleton")).toBeTruthy();
+    expect(screen.queryByTestId("loader")).toBeNull();
+    expect(screen.queryByTestId("gated")).toBeNull();
+  });
+
   it("redirects to /auth once settled signed out, still never rendering children", () => {
     authState.loading = false;
     render(
@@ -55,5 +67,20 @@ describe("AuthGate", () => {
     );
     expect(screen.getByTestId("gated")).toBeTruthy();
     expect(replace).not.toHaveBeenCalled();
+  });
+
+  it("hands the settled user to authenticated children without another auth wait", () => {
+    authState.loading = false;
+    authState.user = { uid: "u1" };
+
+    render(
+      <AuthGate>
+        {(authenticatedUser) => (
+          <div data-testid="authenticated-user">{authenticatedUser.uid}</div>
+        )}
+      </AuthGate>
+    );
+
+    expect(screen.getByTestId("authenticated-user")).toHaveTextContent("u1");
   });
 });

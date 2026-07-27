@@ -45,7 +45,7 @@ export default function TermsScreen() {
   return (
     <ScreensFrame>
       <div className="max-w-xl space-y-8 pb-16">
-        <BackHeader title="Terms" backHref={`${BASE}/auth`} />
+        <BackHeader title="Terms" fallbackHref={`${BASE}/auth`} />
 
         <p className="type-small text-muted-foreground">
           The short version: this is a prototype, the music is not real, and

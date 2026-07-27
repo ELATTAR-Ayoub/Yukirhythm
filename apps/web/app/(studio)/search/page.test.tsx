@@ -8,10 +8,18 @@ import { playlistHref } from "@/components/studio/shell/routes";
 import SearchScreen from "./page";
 
 const { push } = vi.hoisted(() => ({ push: vi.fn() }));
+const feedApi = vi.hoisted(() => ({
+  newReleases: vi.fn(),
+  youMightLike: vi.fn(),
+}));
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push }),
   usePathname: () => "/design-system/screens/search",
+}));
+
+vi.mock("@/lib/studio/useBackend", () => ({
+  useBackend: () => ({ feed: feedApi }),
 }));
 
 /** Surfaces nowPlaying so tests can prove a click did (or didn't) start playback. */
@@ -42,6 +50,7 @@ describe("SearchScreen", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     push.mockClear();
+    window.localStorage.clear();
   });
   afterEach(() => vi.useRealTimers());
 
@@ -105,6 +114,18 @@ describe("SearchScreen", () => {
     expect(screen.queryByText("Tracks")).toBeNull();
   });
 
+  it("dismisses the phone keyboard when a search is submitted", () => {
+    renderSearch();
+    const input = screen.getByLabelText("Search") as HTMLInputElement;
+    input.focus();
+    expect(document.activeElement).toBe(input);
+
+    fireEvent.change(input, { target: { value: "lofi" } });
+    fireEvent.submit(screen.getByRole("search", { name: "Track search" }));
+
+    expect(document.activeElement).not.toBe(input);
+  });
+
   it("returns to the idle shelves when the field is cleared", () => {
     renderSearch();
     searchFor("lofi");
@@ -129,7 +150,9 @@ describe("SearchScreen", () => {
 
   it("skeletons both shelves while the feeds load", () => {
     render(
-      <MockStudioProvider feeds={{ loading: true }}>
+      <MockStudioProvider
+        feeds={{ loading: true, youMightLike: [], newReleases: [] }}
+      >
         <SearchScreen />
       </MockStudioProvider>
     );

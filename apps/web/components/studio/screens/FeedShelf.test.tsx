@@ -15,15 +15,17 @@ function NowPlayingProbe() {
 }
 
 describe("FeedShelf", () => {
-  it("skeletons the whole shelf while loading", () => {
+  it("keeps the named shelf visible with explicit feedback while loading", () => {
     render(
       <MockStudioProvider>
         <FeedShelf label="For you" title="You might like" tracks={[]} loading />
       </MockStudioProvider>
     );
-    // RailShelf's loading mode: an aria-busy section, no heading, no cards.
-    expect(document.querySelector("section[aria-busy]")).toBeTruthy();
-    expect(screen.queryByText("You might like")).toBeNull();
+    expect(
+      screen.getByRole("region", { name: "You might like loading" })
+    ).toHaveAttribute("aria-busy", "true");
+    expect(screen.getByText("You might like")).toBeTruthy();
+    expect(screen.getByRole("status")).toHaveTextContent("Loading");
   });
 
   it("shows a quiet line when the feed settles empty", () => {
@@ -58,6 +60,42 @@ describe("FeedShelf", () => {
     );
     expect(screen.getByTestId("now-playing").textContent).toBe(
       MOCK_TRACKS[0].title
+    );
+  });
+
+  it("shows a named refresh control with progress feedback", () => {
+    const refresh = vi.fn();
+    const { rerender } = render(
+      <MockStudioProvider>
+        <FeedShelf
+          label="Fresh drops"
+          title="New releases"
+          tracks={MOCK_TRACKS.slice(0, 2)}
+          loading={false}
+          onRefresh={refresh}
+        />
+      </MockStudioProvider>
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Refresh" }));
+    expect(refresh).toHaveBeenCalledTimes(1);
+
+    rerender(
+      <MockStudioProvider>
+        <FeedShelf
+          label="Fresh drops"
+          title="New releases"
+          tracks={MOCK_TRACKS.slice(0, 2)}
+          loading={false}
+          onRefresh={refresh}
+          refreshing
+        />
+      </MockStudioProvider>
+    );
+    expect(screen.getByRole("button", { name: "Refresh" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Refresh" })).toHaveAttribute(
+      "aria-busy",
+      "true"
     );
   });
 });

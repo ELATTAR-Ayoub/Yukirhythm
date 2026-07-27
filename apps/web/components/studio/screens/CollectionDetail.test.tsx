@@ -225,14 +225,27 @@ describe("CollectionDetail", () => {
   });
 
   describe("shuffle (positional list)", () => {
-    it("reports the picked position, not the first copy of a duplicated track", () => {
+    it("shuffles the whole positional list and starts that remembered order", () => {
       // play()'s internal findIndex would resolve the picked track back to
       // its FIRST copy — shuffle must report the position it actually chose.
       const dup = MOCK_TRACKS[0];
       const other = MOCK_TRACKS[1];
       const onPlayAt = vi.fn();
 
-      const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0.99);
+      vi.spyOn(Math, "random").mockReturnValue(0);
+
+      function ShuffleState() {
+        const { queue, shuffled, currentIndex } = useMockStudio();
+        return (
+          <>
+            <output data-testid="shuffle-state">{String(shuffled)}</output>
+            <output data-testid="shuffle-index">{currentIndex}</output>
+            <output data-testid="shuffle-order">
+              {queue.map((track) => track.id).join(",")}
+            </output>
+          </>
+        );
+      }
 
       render(
         <MockStudioProvider>
@@ -241,13 +254,18 @@ describe("CollectionDetail", () => {
             tracks={[dup, other, dup]}
             onPlayAt={onPlayAt}
           />
+          <ShuffleState />
         </MockStudioProvider>
       );
 
       fireEvent.click(screen.getByLabelText("Shuffle collection"));
 
-      expect(onPlayAt).toHaveBeenCalledWith(2);
-      randomSpy.mockRestore();
+      expect(onPlayAt).not.toHaveBeenCalled();
+      expect(screen.getByTestId("shuffle-state").textContent).toBe("true");
+      expect(screen.getByTestId("shuffle-index").textContent).toBe("0");
+      expect(screen.getByTestId("shuffle-order").textContent).toBe(
+        `${other.id},${dup.id},${dup.id}`
+      );
     });
   });
 
