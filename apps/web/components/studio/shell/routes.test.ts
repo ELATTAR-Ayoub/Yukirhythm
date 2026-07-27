@@ -6,6 +6,7 @@ import {
   QUEUE,
   isSystemRoute,
   playlistHref,
+  playbackListHref,
   addMusicHref,
 } from "./routes";
 
@@ -50,6 +51,16 @@ describe("playlistHref", () => {
   it("builds the playlist route and encodes the id", () => {
     expect(playlistHref("liked")).toBe(`${SCREENS}/playlist/liked`);
     expect(playlistHref("local 1")).toBe(`${SCREENS}/playlist/local%201`);
+  });
+});
+
+describe("playbackListHref", () => {
+  it("opens a playlist for collection playback and /queue only for ad-hoc playback", () => {
+    expect(playbackListHref("collection 1")).toBe(
+      `${SCREENS}/playlist/collection%201`
+    );
+    expect(playbackListHref(null)).toBe(QUEUE);
+    expect(playbackListHref()).toBe(QUEUE);
   });
 });
 

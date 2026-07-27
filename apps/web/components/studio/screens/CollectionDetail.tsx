@@ -136,6 +136,9 @@ interface CollectionDetailProps {
    * first copy, so clicking the second row would start the first.
    */
   onPlayAt?: (index: number) => void;
+  /** Optional control beside Shuffle. Only the guarded queue route supplies
+   *  this; playlist surfaces intentionally have no destructive bulk action. */
+  queueAction?: React.ReactNode;
 }
 
 /**
@@ -150,6 +153,7 @@ export default function CollectionDetail({
   addHref,
   tracks: tracksProp,
   onPlayAt,
+  queueAction,
 }: CollectionDetailProps) {
   const {
     play,
@@ -235,6 +239,7 @@ export default function CollectionDetail({
         >
           <ShuffleIcon />
         </PlayerButton>
+        {queueAction}
         <PlayerButton
           variant="primary"
           size="xl"

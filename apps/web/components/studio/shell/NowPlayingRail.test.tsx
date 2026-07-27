@@ -12,7 +12,7 @@ import {
 } from "@/components/studio/screens/mock-data";
 import { IDLE_LABEL } from "@/components/studio/screens/player-idle";
 import NowPlayingRail from "./NowPlayingRail";
-import { QUEUE, QUEUE_ADD } from "./routes";
+import { QUEUE, QUEUE_ADD, playlistHref } from "./routes";
 
 const { push, nav } = vi.hoisted(() => ({
   push: vi.fn(),
@@ -189,7 +189,7 @@ describe("NowPlayingRail", () => {
       expect(screen.queryByText("Nothing queued yet.")).toBeNull();
     });
 
-    it("navigates to the routed queue page from the Open queue control, at every width", () => {
+    it("navigates to /queue from Open queue for ad-hoc playback", () => {
       render(
         <MockStudioProvider>
           <NowPlayingRail />
@@ -199,6 +199,21 @@ describe("NowPlayingRail", () => {
       fireEvent.click(screen.getByLabelText("Open queue"));
 
       expect(push).toHaveBeenCalledWith(QUEUE);
+    });
+
+    it("opens the source playlist instead of /queue for playlist playback", () => {
+      const source = MOCK_COLLECTIONS[0];
+      render(
+        <MockStudioProvider>
+          <Seed track={source.trackIds[0]} source={source} />
+          <NowPlayingRail />
+        </MockStudioProvider>
+      );
+      fireEvent.click(screen.getByText("seed"));
+      fireEvent.click(screen.getByLabelText("Open queue"));
+
+      expect(push).toHaveBeenCalledWith(playlistHref(source.id));
+      expect(push).not.toHaveBeenCalledWith(QUEUE);
     });
 
     it("does not nest a play button inside the row's role=button wrapper", () => {

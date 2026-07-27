@@ -237,6 +237,10 @@ export function createBackendClient(getToken: TokenProvider) {
             method: "POST",
             body: body({ trackId, mode }),
           }),
+        clearQueue: () =>
+          request<PlaybackState>(endpoints.me.playbackQueue(), {
+            method: "DELETE",
+          }),
         removeFromQueue: (index: number) =>
           request<PlaybackState>(endpoints.me.playbackQueueItem(index), {
             method: "DELETE",

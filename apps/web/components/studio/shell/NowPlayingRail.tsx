@@ -13,7 +13,12 @@ import LikeButton from "@/components/studio/screens/LikeButton";
 import TrackMenu from "@/components/studio/screens/TrackMenu";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
 import { formatDuration } from "@/components/studio/screens/mock-data";
-import { QUEUE, QUEUE_ADD, addMusicHref, matchPlaylistId } from "./routes";
+import {
+  QUEUE_ADD,
+  addMusicHref,
+  matchPlaylistId,
+  playbackListHref,
+} from "./routes";
 import { NowPlayingRailSkeleton } from "@/components/studio/screens/RouteSkeletons";
 
 /**
@@ -50,7 +55,7 @@ function PlayerSection() {
  * to the full queue page.
  */
 function UpNextSection() {
-  const { queue, currentIndex, playAt } = useMockStudio();
+  const { queue, currentIndex, playAt, playingCollection } = useMockStudio();
   const router = useRouter();
 
   // Read straight off the queue — not `getCollectionTracks(useQueueCollection())`.
@@ -88,7 +93,7 @@ function UpNextSection() {
           variant="ghost"
           size="sm"
           aria-label="Open queue"
-          onClick={() => router.push(QUEUE)}
+          onClick={() => router.push(playbackListHref(playingCollection?.id))}
           data-signal="queue_open"
         >
           <ListBulletIcon />

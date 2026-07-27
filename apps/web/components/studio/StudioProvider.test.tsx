@@ -42,6 +42,7 @@ const { backend, authState, hiddenPlayer } = vi.hoisted(() => ({
         get: vi.fn().mockResolvedValue({ queue: [], trackId: null }),
         save: vi.fn().mockResolvedValue({}),
         enqueue: vi.fn().mockResolvedValue({}),
+        clearQueue: vi.fn().mockResolvedValue({}),
         removeFromQueue: vi.fn().mockResolvedValue({}),
       },
     },
@@ -131,6 +132,7 @@ function PlaybackProbe() {
     setVolume,
     play,
     next,
+    clearQueue,
   } = useMockStudio();
   return (
     <>
@@ -149,6 +151,7 @@ function PlaybackProbe() {
         play-user-track
       </button>
       <button onClick={() => next()}>next</button>
+      <button onClick={() => void clearQueue()}>clear-queue</button>
     </>
   );
 }
@@ -467,6 +470,8 @@ describe("StudioProvider playback session restore", () => {
     // not.toHaveBeenCalled(), which would trivially fail from a PRIOR test's
     // calls without this.
     backend.me.playback.save.mockClear();
+    backend.me.playback.clearQueue.mockClear();
+    backend.me.playback.clearQueue.mockResolvedValue({});
     hiddenPlayer.seekTo.mockClear();
   });
 
@@ -527,6 +532,41 @@ describe("StudioProvider playback session restore", () => {
     expect(screen.getByTestId("now-playing").textContent).toBe("none");
 
     warn.mockRestore();
+  });
+
+  it("waits for the clear mutation before stopping and emptying local playback", async () => {
+    let finish!: () => void;
+    backend.me.playback.get.mockResolvedValueOnce({
+      queue: [],
+      trackId: null,
+    });
+    backend.me.playback.clearQueue.mockReturnValueOnce(
+      new Promise((resolve) => {
+        finish = () => resolve({});
+      })
+    );
+
+    render(
+      <StudioProvider>
+        <PlaybackProbe />
+      </StudioProvider>
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId("collections-count").textContent).toBe("1")
+    );
+    fireEvent.click(screen.getByText("play-user-track"));
+    expect(screen.getByTestId("queue-length").textContent).toBe("1");
+
+    fireEvent.click(screen.getByText("clear-queue"));
+    expect(screen.getByTestId("queue-length").textContent).toBe("1");
+    expect(backend.me.playback.clearQueue).toHaveBeenCalledTimes(1);
+
+    finish();
+    await waitFor(() =>
+      expect(screen.getByTestId("queue-length").textContent).toBe("0")
+    );
+    expect(screen.getByTestId("now-playing").textContent).toBe("none");
+    expect(screen.getByTestId("is-playing").textContent).toBe("false");
   });
 
   it("clamps an out-of-range queueIndex when the saved track can't be re-anchored", async () => {
@@ -765,6 +805,9 @@ describe("StudioProvider playback session restore", () => {
         positionSec: 9,
         isPlaying: true,
         volume: 1,
+        sourceType: "library",
+        sourceId: null,
+        shuffleMode: false,
       });
     } finally {
       vi.useRealTimers();

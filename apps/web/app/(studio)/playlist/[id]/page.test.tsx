@@ -50,6 +50,7 @@ describe("PlaylistScreen", () => {
       </MockStudioProvider>
     );
     expect(screen.getByLabelText("Play collection")).toBeTruthy();
+    expect(screen.queryByLabelText("Clear queue")).toBeNull();
   });
 
   it("falls back to an empty state for an unknown id", () => {

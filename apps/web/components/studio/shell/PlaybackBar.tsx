@@ -12,7 +12,7 @@ import { formatDuration } from "@/components/studio/screens/mock-data";
 import { IDLE_LABEL, NO_TIME } from "@/components/studio/screens/player-idle";
 import { useIsWide } from "./useBreakpoint";
 import PlayerExtras from "./PlayerExtras";
-import { QUEUE } from "./routes";
+import { playbackListHref } from "./routes";
 
 interface PlaybackBarProps {
   /** Opens the fullscreen DevicePlayer overlay. Ignored at 1440+ — see below. */
@@ -44,7 +44,8 @@ interface PlaybackBarProps {
  * suggest it can be played.
  */
 export default function PlaybackBar({ onExpand }: PlaybackBarProps) {
-  const { nowPlaying, isPlaying, progressSec, seek } = useMockStudio();
+  const { nowPlaying, isPlaying, progressSec, seek, playingCollection } =
+    useMockStudio();
   const router = useRouter();
   const isWide = useIsWide();
 
@@ -118,7 +119,10 @@ export default function PlaybackBar({ onExpand }: PlaybackBarProps) {
         {/* PlaybackBar only ever renders once GlobalPlayer's own isDesktop
             check picks it over MiniPlayerBar, so unlike NowPlayingRail/
             DevicePlayer there is no mobile fallback to branch to here. */}
-        <Transport size="base" onQueue={() => router.push(QUEUE)} />
+        <Transport
+          size="base"
+          onQueue={() => router.push(playbackListHref(playingCollection?.id))}
+        />
         <div className="w-full flex items-center gap-2">
           <DataText className="text-xs text-muted-foreground shrink-0">
             {/* zeroIsKnown: 0s elapsed at the start of a track is real,

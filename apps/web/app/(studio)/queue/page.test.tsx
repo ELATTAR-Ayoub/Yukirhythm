@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 
 import MockStudioProvider, {
   useMockStudio,
@@ -8,13 +14,16 @@ import {
   LIKED_SONGS,
   getCollectionTracks,
 } from "@/components/studio/screens/mock-data";
-import { HOME } from "@/components/studio/shell/routes";
+import { HOME, playlistHref } from "@/components/studio/shell/routes";
 import QueueScreen from "./page";
 
-const { push } = vi.hoisted(() => ({ push: vi.fn() }));
+const { push, replace } = vi.hoisted(() => ({
+  push: vi.fn(),
+  replace: vi.fn(),
+}));
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push }),
+  useRouter: () => ({ push, replace }),
 }));
 
 function Seed({
@@ -30,7 +39,10 @@ function Seed({
 }
 
 describe("QueueScreen", () => {
-  beforeEach(() => push.mockClear());
+  beforeEach(() => {
+    push.mockClear();
+    replace.mockClear();
+  });
 
   it("renders the synthetic Up next queue on a cold session, nothing ever played", () => {
     // Regression guard: an earlier bug made the queue unreachable before
@@ -44,11 +56,14 @@ describe("QueueScreen", () => {
 
     expect(screen.getByRole("heading", { name: "Up next" })).toBeTruthy();
     expect(screen.getByLabelText("Play collection")).toBeTruthy();
+    expect(screen.getByLabelText("Clear queue").className).toContain(
+      "bg-destructive"
+    );
     // First track of the library queue.
     expect(screen.getByText("Midnight Snowfall")).toBeTruthy();
   });
 
-  it("renders the collection playback actually came from once something plays", () => {
+  it("redirects playlist playback to its playlist and never exposes queue clearing", async () => {
     render(
       <MockStudioProvider>
         <Seed track="t2" source={LIKED_SONGS} />
@@ -58,9 +73,10 @@ describe("QueueScreen", () => {
 
     fireEvent.click(screen.getByText("seed"));
 
-    expect(
-      screen.getByRole("heading", { name: LIKED_SONGS.title })
-    ).toBeTruthy();
+    await waitFor(() =>
+      expect(replace).toHaveBeenCalledWith(playlistHref(LIKED_SONGS.id))
+    );
+    expect(screen.queryByLabelText("Clear queue")).toBeNull();
   });
 
   it("has a way back", () => {
@@ -83,5 +99,31 @@ describe("QueueScreen", () => {
     fireEvent.click(screen.getByLabelText("Add music"));
     expect(push).toHaveBeenCalledWith("/queue/add");
     expect(push).not.toHaveBeenCalledWith("/playlist/queue/add");
+  });
+
+  it("confirms before clearing every ad-hoc queue song", async () => {
+    render(
+      <MockStudioProvider>
+        <QueueScreen />
+      </MockStudioProvider>
+    );
+
+    fireEvent.click(screen.getByLabelText("Clear queue"));
+    const dialog = screen.getByRole("alertdialog");
+    expect(within(dialog).getByText("Clear your queue?")).toBeTruthy();
+    expect(
+      within(dialog).getByText(/Your playlists will not be changed/)
+    ).toBeTruthy();
+
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Clear queue" })
+    );
+
+    await waitFor(() =>
+      expect(screen.getByText("Nothing in here yet")).toBeTruthy()
+    );
+    expect(screen.getByLabelText("Clear queue").hasAttribute("disabled")).toBe(
+      true
+    );
   });
 });

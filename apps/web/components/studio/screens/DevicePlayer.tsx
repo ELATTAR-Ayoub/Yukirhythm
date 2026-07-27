@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { ChevronDownIcon, MagnifyingGlassIcon } from "@radix-ui/react-icons";
 
 import { cn } from "@/lib/utils";
@@ -10,9 +10,8 @@ import { PlayerButton } from "@/components/studio/PlayerButton";
 import { Slider } from "@/components/ui/slider";
 import Transport from "./Transport";
 import VinylDisc from "./VinylDisc";
-import PlayerSearchDrawer from "./PlayerSearchDrawer";
 import { useMockStudio } from "./MockStudioProvider";
-import { QUEUE } from "../shell/routes";
+import { QUEUE, QUEUE_ADD, playbackListHref } from "../shell/routes";
 import { formatDuration } from "./mock-data";
 import { IDLE_LABEL, NO_TIME } from "./player-idle";
 
@@ -42,11 +41,19 @@ export default function DevicePlayer({
   onCollapse,
   docked = false,
 }: DevicePlayerProps) {
-  const { nowPlaying, isPlaying, progressSec, seek, navDirection } =
-    useMockStudio();
+  const {
+    nowPlaying,
+    isPlaying,
+    progressSec,
+    seek,
+    navDirection,
+    playingCollection,
+  } = useMockStudio();
   const router = useRouter();
+  const pathname = usePathname();
   const [discExpanded, setDiscExpanded] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
+  const showQueueSearch =
+    !docked && pathname === QUEUE && playingCollection === null;
 
   return (
     <div className={cn("relative w-full", !docked && "max-w-[340px]")}>
@@ -56,10 +63,10 @@ export default function DevicePlayer({
         the two read as one chassis, with only the lower slab and its input
         showing. z-0 keeps it under the card, which hides the tucked portion.
       */}
-      {docked ? null : (
+      {showQueueSearch ? (
         <div
           className={cn(
-            "absolute inset-x-4 top-full -mt-11 z-0 anim-tray-out",
+            "absolute inset-x-4 top-full -mt-11 z-0 anim-tray-out md:hidden",
             "transition-opacity duration-500",
             discExpanded && "opacity-0 pointer-events-none"
           )}
@@ -72,7 +79,10 @@ export default function DevicePlayer({
           >
             <button
               type="button"
-              onClick={() => setSearchOpen(true)}
+              onClick={() => {
+                onCollapse?.();
+                router.push(QUEUE_ADD);
+              }}
               aria-label="Search tracks"
               data-signal="player_search_open"
               className={cn(
@@ -89,7 +99,7 @@ export default function DevicePlayer({
             </button>
           </div>
         </div>
-      )}
+      ) : null}
 
       <section
         className={cn(
@@ -207,14 +217,12 @@ export default function DevicePlayer({
           <Transport
             size="lg"
             leading="like"
-            onQueue={() => router.push(QUEUE)}
+            onQueue={() => router.push(playbackListHref(playingCollection?.id))}
           />
         </div>
 
         <div aria-hidden className="w-full pb-8" />
       </section>
-
-      <PlayerSearchDrawer open={searchOpen} onOpenChange={setSearchOpen} />
     </div>
   );
 }

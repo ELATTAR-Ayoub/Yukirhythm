@@ -46,6 +46,16 @@ export function playlistHref(id: string): string {
   return `${SCREENS}/playlist/${encodeURIComponent(id)}`;
 }
 
+/**
+ * Where the player's list/queue control should lead.
+ *
+ * A collection-backed playback session belongs to that playlist. Only an
+ * ad-hoc playback session has a destructive, independently-managed queue.
+ */
+export function playbackListHref(collectionId?: string | null): string {
+  return collectionId ? playlistHref(collectionId) : QUEUE;
+}
+
 /** Routed form of the add-music flow for a given playlist, reachable at
  *  every width (see CollectionDetail's "Add music" control). */
 export function addMusicHref(id: string): string {

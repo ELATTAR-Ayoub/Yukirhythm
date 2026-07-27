@@ -82,6 +82,9 @@ interface MockStudioValue {
   /** Drop exactly one position from the running queue. Not "remove this
    *  track": a duplicate must lose only the copy the user pointed at. */
   dequeue: (index: number) => void;
+  /** Empty the ad-hoc playback queue and stop playback. This never mutates a
+   *  playlist; queue-only UI is responsible for exposing it. */
+  clearQueue: () => Promise<void>;
   /** Put a track into the running queue — what the rail shows under "Up next".
    *  This is playback state, not library state: nothing is written to any
    *  playlist, and no playlist needs to be open for it to work. */
@@ -445,6 +448,18 @@ export default function MockStudioProvider({
     [queue, currentIndex, shuffled]
   );
 
+  const clearQueue = useCallback(async () => {
+    setQueue([]);
+    setPlayingCollection(null);
+    setCurrentIndex(-1);
+    setIsPlaying(false);
+    setIsLoading(false);
+    setProgressSec(0);
+    setNavDirection(null);
+    setShuffled(false);
+    preShuffleOrderRef.current = null;
+  }, []);
+
   /** Splices into the running queue. Deliberately does not start playback:
    *  queueing something is a statement about what comes later, not now. */
   const enqueue = useCallback(
@@ -653,6 +668,7 @@ export default function MockStudioProvider({
     currentIndex,
     playAt,
     dequeue,
+    clearQueue,
     enqueue,
     toggle,
     canNext: currentIndex >= 0 && queue.length > 1,

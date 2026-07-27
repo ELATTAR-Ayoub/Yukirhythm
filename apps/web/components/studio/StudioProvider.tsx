@@ -92,6 +92,7 @@ export default function StudioProvider({
     fbUser ? firebaseUserSnapshot(fbUser) : null
   );
   const [collections, setCollections] = useState<MockCollection[]>([]);
+  const collectionsRef = useRef<MockCollection[]>([]);
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
   const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set());
   const [libraryFilter, setLibraryFilter] =
@@ -220,7 +221,9 @@ export default function StudioProvider({
             toStudioCollection(c, { pinned: pinnedIds.has(c.collectionId) })
           )
         : [];
-    setCollections([likedCollection, ...owns]);
+    const nextCollections = [likedCollection, ...owns];
+    collectionsRef.current = nextCollections;
+    setCollections(nextCollections);
   }, [backend, absorb, pinnedIds]);
 
   useEffect(() => {
@@ -228,6 +231,7 @@ export default function StudioProvider({
     (async () => {
       if (!fbUser) {
         setUser(null);
+        collectionsRef.current = [];
         setCollections([]);
         setLibraryLoading(false);
         setStatsLoading(false);
@@ -385,6 +389,13 @@ export default function StudioProvider({
                 : 0;
 
           setQueue(resolved);
+          setPlayingCollection(
+            state.sourceType === "collection" && state.sourceId
+              ? (collectionsRef.current.find(
+                  (collection) => collection.id === state.sourceId
+                ) ?? null)
+              : null
+          );
           setCurrentIndex(finalIndex);
           setProgressSec(state.positionSec ?? 0);
           // Target-aware: onReady fires again on every track change
@@ -588,6 +599,21 @@ export default function StudioProvider({
     [backend, flushEvent, queue, currentIndex, shuffled]
   );
 
+  const clearQueue = useCallback(async () => {
+    flushEvent();
+    await backend.me.playback.clearQueue();
+    setQueue([]);
+    setPlayingCollection(null);
+    setCurrentIndex(-1);
+    setIsPlaying(false);
+    setIsLoading(false);
+    setProgressSec(0);
+    setNavDirection(null);
+    setShuffled(false);
+    preShuffleOrderRef.current = null;
+    pendingSeekRef.current = null;
+  }, [backend, flushEvent]);
+
   /**
    * Add to the running queue. Local state moves first so the rail updates on
    * the click, and the same splice is persisted server-side so the queue
@@ -720,6 +746,8 @@ export default function StudioProvider({
     progressSec,
     isPlaying,
     volume,
+    playingCollection,
+    shuffled,
   });
   useEffect(() => {
     persistSnapshotRef.current = {
@@ -729,6 +757,8 @@ export default function StudioProvider({
       progressSec,
       isPlaying,
       volume,
+      playingCollection,
+      shuffled,
     };
   });
 
@@ -750,6 +780,9 @@ export default function StudioProvider({
         positionSec: s.progressSec,
         isPlaying: s.isPlaying,
         volume: s.volume,
+        sourceType: s.playingCollection ? "collection" : "library",
+        sourceId: s.playingCollection?.id ?? null,
+        shuffleMode: s.shuffled,
       });
     }, 10000);
     return () => clearInterval(id);
@@ -1008,6 +1041,7 @@ export default function StudioProvider({
       currentIndex,
       playAt,
       dequeue,
+      clearQueue,
       enqueue,
       toggle,
       canNext: currentIndex >= 0 && queue.length > 1,
@@ -1070,6 +1104,7 @@ export default function StudioProvider({
       currentIndex,
       playAt,
       dequeue,
+      clearQueue,
       enqueue,
       toggle,
       next,

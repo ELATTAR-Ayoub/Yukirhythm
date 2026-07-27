@@ -180,6 +180,28 @@ describe("MockStudioProvider", () => {
     expect(result.current.nowPlaying?.id).toBe(MOCK_TRACKS[0].id);
   });
 
+  it("clears playback state without mutating a playlist", async () => {
+    const source = MOCK_COLLECTIONS[0];
+    const originalTrackIds = [...source.trackIds];
+    const { result } = renderHook(() => useMockStudio(), { wrapper });
+
+    act(() => {
+      result.current.play(getCollectionTracks(source)[0], source);
+      result.current.toggleShuffle();
+    });
+    await act(async () => {
+      await result.current.clearQueue();
+    });
+
+    expect(result.current.queue).toEqual([]);
+    expect(result.current.currentIndex).toBe(-1);
+    expect(result.current.nowPlaying).toBeNull();
+    expect(result.current.playingCollection).toBeNull();
+    expect(result.current.isPlaying).toBe(false);
+    expect(result.current.shuffled).toBe(false);
+    expect(source.trackIds).toEqual(originalTrackIds);
+  });
+
   it("still advances when a track finishes on its own", () => {
     const { result } = renderHook(() => useMockStudio(), { wrapper });
 
