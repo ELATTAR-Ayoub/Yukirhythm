@@ -56,4 +56,19 @@ describe("AuthGate", () => {
     expect(screen.getByTestId("gated")).toBeTruthy();
     expect(replace).not.toHaveBeenCalled();
   });
+
+  it("hands the settled user to authenticated children without another auth wait", () => {
+    authState.loading = false;
+    authState.user = { uid: "u1" };
+
+    render(
+      <AuthGate>
+        {(authenticatedUser) => (
+          <div data-testid="authenticated-user">{authenticatedUser.uid}</div>
+        )}
+      </AuthGate>
+    );
+
+    expect(screen.getByTestId("authenticated-user")).toHaveTextContent("u1");
+  });
 });

@@ -153,10 +153,12 @@ export default function StudioLayout({
 }) {
   return (
     <AuthGate>
-      <StudioProvider>
-        <Shell>{children}</Shell>
-        <Toaster />
-      </StudioProvider>
+      {(authenticatedUser) => (
+        <StudioProvider authenticatedUser={authenticatedUser}>
+          <Shell>{children}</Shell>
+          <Toaster />
+        </StudioProvider>
+      )}
     </AuthGate>
   );
 }

@@ -15,7 +15,7 @@ interface RailShelfProps {
   seeAllHref?: string;
   /** Optional control aligned opposite the shelf title. */
   headerAction?: React.ReactNode;
-  /** Skeletons everything — header, see-all and cards. */
+  /** Shows the real section header plus loading feedback and card skeletons. */
   loading?: boolean;
   /**
    * Wraps children into a grid instead of the horizontal drag-scroller once
@@ -62,13 +62,24 @@ export default function RailShelf({
 
   if (loading) {
     return (
-      <section className={cn("w-full", className)} aria-busy>
-        <div className="flex items-end justify-between gap-4 mb-3 animate-pulse">
+      <section
+        className={cn("w-full", className)}
+        aria-busy
+        aria-label={`${title} loading`}
+      >
+        <div className="flex items-end justify-between gap-4 mb-3">
           <div>
-            <div className="h-2.5 w-24 bg-muted rounded-sm" />
-            <div className="h-6 w-48 bg-muted rounded-sm mt-2" />
+            <SectionLabel>{label}</SectionLabel>
+            <h2 className="font-display font-bold text-2xl tracking-tight mt-0.5">
+              {title}
+            </h2>
           </div>
-          <div className="h-7 w-20 bg-muted rounded-full" />
+          <span
+            role="status"
+            className="text-xs font-ui text-muted-foreground animate-pulse"
+          >
+            Loading…
+          </span>
         </div>
         <div className="flex gap-4 overflow-hidden pb-3 -mx-1 px-1">
           {Array.from({ length: 6 }, (_, i) => (

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import type { User as FirebaseUser } from "firebase/auth";
 
 import {
   MockStudioContext,
@@ -31,6 +32,7 @@ import {
 } from "@/lib/studio/useAuth";
 import { useBackend } from "@/lib/studio/useBackend";
 import {
+  initialsOf,
   toStudioCollection,
   toStudioHistory,
   toStudioStats,
@@ -53,6 +55,18 @@ const HiddenYouTubePlayer = dynamic(
 
 const LIKED_ID = "liked";
 
+function firebaseUserSnapshot(user: FirebaseUser): MockUser {
+  const name = user.displayName || user.email || "You";
+  return {
+    id: user.uid,
+    userName: name,
+    email: user.email ?? "",
+    initials: initialsOf(name),
+    followers: 0,
+    following: 0,
+  };
+}
+
 /**
  * The real studio provider: same context the screens consume, backed by the
  * phase 1–7 backend and a real YouTube player. Playback position and play
@@ -60,13 +74,23 @@ const LIKED_ID = "liked";
  */
 export default function StudioProvider({
   children,
+  authenticatedUser,
 }: {
   children: React.ReactNode;
+  /**
+   * AuthGate can hand its already-settled user directly to the provider. When
+   * omitted (the auth page and isolated tests), observe auth here as before.
+   */
+  authenticatedUser?: FirebaseUser | null;
 }) {
   const backend = useBackend();
-  const { user: fbUser } = useAuthState();
+  const { user: observedFbUser } = useAuthState();
+  const fbUser =
+    authenticatedUser === undefined ? observedFbUser : authenticatedUser;
 
-  const [user, setUser] = useState<MockUser | null>(null);
+  const [user, setUser] = useState<MockUser | null>(() =>
+    fbUser ? firebaseUserSnapshot(fbUser) : null
+  );
   const [collections, setCollections] = useState<MockCollection[]>([]);
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
   const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set());
@@ -127,7 +151,9 @@ export default function StudioProvider({
   const [youMightLike, setYouMightLike] = useState<MockTrack[]>([]);
   const [stats, setStats] = useState<MockStats | null>(null);
   const [recents, setRecents] = useState<MockHistoryEntry[]>([]);
-  const [feedsLoading, setFeedsLoading] = useState(true);
+  const [newReleasesLoading, setNewReleasesLoading] = useState(true);
+  const [youMightLikeLoading, setYouMightLikeLoading] = useState(true);
+  const feedsLoading = newReleasesLoading || youMightLikeLoading;
 
   const nowPlaying = currentIndex >= 0 ? (queue[currentIndex] ?? null) : null;
 
@@ -199,12 +225,27 @@ export default function StudioProvider({
         setUser(null);
         setCollections([]);
         setLibraryLoading(false);
-        setFeedsLoading(false);
+        setNewReleasesLoading(false);
+        setYouMightLikeLoading(false);
         return;
       }
-      setFeedsLoading(true);
+
+      // AuthGate already proved who this user is. Show that identity
+      // immediately instead of briefly rendering a signed-out shell while the
+      // backend profile document is still in flight.
+      setUser(firebaseUserSnapshot(fbUser));
+      setLibraryLoading(true);
+      setNewReleases([]);
+      setYouMightLike([]);
+      setNewReleasesLoading(true);
+      setYouMightLikeLoading(true);
+
+      const warn = (name: string) => (err: unknown) =>
+        console.warn(`Feed load failed: ${name}`, err);
+
       try {
-        // ensure the user doc exists, then load it
+        // New accounts need a user doc first. After this one required write,
+        // start the profile, library and both shelves together.
         const provider = fbUser.providerData[0]?.providerId?.includes(
           "facebook"
         )
@@ -216,20 +257,46 @@ export default function StudioProvider({
           avatarUrl: fbUser.photoURL ?? null,
           authProvider: provider,
         });
-        const me = await backend.me.get();
-        if (!live || !me) {
-          // Bail-out without the feeds section below — the skeleton must not
-          // pulse forever on a user doc that failed to load.
-          if (live) setFeedsLoading(false);
-          return;
+        if (!live) return;
+
+        void backend.feed
+          .newReleases()
+          .then((r) => {
+            if (live) setNewReleases(absorb(r.items.map((i) => i.track)));
+          }, warn("new-releases"))
+          .finally(() => {
+            if (live) setNewReleasesLoading(false);
+          });
+        void backend.feed
+          .youMightLike()
+          .then((r) => {
+            if (live) setYouMightLike(absorb(r.items.map((i) => i.track)));
+          }, warn("you-might-like"))
+          .finally(() => {
+            if (live) setYouMightLikeLoading(false);
+          });
+
+        const [meResult, libraryResult] = await Promise.allSettled([
+          backend.me.get(),
+          refreshLibrary(),
+        ]);
+        if (!live) return;
+        if (meResult.status === "fulfilled" && meResult.value) {
+          setUser(toStudioUser(meResult.value));
+        } else if (meResult.status === "rejected") {
+          console.error("Failed to load user profile", meResult.reason);
         }
-        setUser(toStudioUser(me));
-        await refreshLibrary();
+        if (libraryResult.status === "rejected") {
+          console.error("Failed to load user library", libraryResult.reason);
+        }
       } catch (err) {
-        // ensure()/get() failing is rarer than the likes/collections reads
-        // (already hardened above via allSettled) but must not leave the
-        // sign-in effect throwing out from under the finally below either.
-        console.error("Failed to load user/library", err);
+        console.error("Failed to initialize user data", err);
+        // If ensure() fails, no shelf request was started. Settle both states
+        // so the skeleton cannot pulse forever.
+        if (live) {
+          setNewReleasesLoading(false);
+          setYouMightLikeLoading(false);
+        }
       } finally {
         // Must run on every path — success, thrown error, or early return
         // above — so the user is never left staring at a stuck loading state.
@@ -240,8 +307,6 @@ export default function StudioProvider({
       // not blank the others, so they settle separately. Failures are logged:
       // a silently-empty shelf is indistinguishable from a broken feed.
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      const warn = (name: string) => (err: unknown) =>
-        console.warn(`Feed load failed: ${name}`, err);
 
       // Restore the session that was playing before the reload. Deliberately
       // independent of the feed fetches below — a failed read here must not
@@ -337,23 +402,6 @@ export default function StudioProvider({
             setJumpBackIn(r.collections.map((c) => toStudioCollection(c))),
           warn("jump-back-in")
         );
-      const shelfFeeds = [
-        backend.feed.newReleases().then((r) => {
-          if (live) setNewReleases(absorb(r.items.map((i) => i.track)));
-        }),
-        backend.feed.youMightLike().then((r) => {
-          if (live) setYouMightLike(absorb(r.items.map((i) => i.track)));
-        }),
-      ] as const;
-      void Promise.allSettled(shelfFeeds).then((results) => {
-        results.forEach((r, i) => {
-          if (r.status === "rejected")
-            warn(i === 0 ? "new-releases" : "you-might-like")(r.reason);
-        });
-        // Cleared on success AND failure — a dead feed shows its empty state,
-        // never a skeleton that pulses forever.
-        if (live) setFeedsLoading(false);
-      });
       void backend.me
         .stats(tz)
         .then((s) => live && setStats(toStudioStats(s)), warn("stats"));
@@ -964,6 +1012,8 @@ export default function StudioProvider({
       newReleases,
       youMightLike,
       feedsLoading,
+      newReleasesLoading,
+      youMightLikeLoading,
       collectionResults,
       stats,
       recents,
@@ -1021,6 +1071,8 @@ export default function StudioProvider({
       newReleases,
       youMightLike,
       feedsLoading,
+      newReleasesLoading,
+      youMightLikeLoading,
       collectionResults,
       stats,
       recents,

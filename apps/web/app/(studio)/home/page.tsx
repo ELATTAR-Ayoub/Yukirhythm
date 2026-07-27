@@ -23,20 +23,21 @@ export default function HomeScreen() {
     jumpBackIn,
     newReleases,
     youMightLike,
-    feedsLoading,
+    newReleasesLoading,
+    youMightLikeLoading,
   } = useMockStudio();
   const isDesktop = useIsDesktop();
   const newReleaseFeed = useCachedStudioFeed({
     feed: "new-releases",
     userId: user?.id ?? "anonymous",
     providerTracks: newReleases,
-    providerLoading: feedsLoading,
+    providerLoading: newReleasesLoading,
   });
   const suggestedFeed = useCachedStudioFeed({
     feed: "you-might-like",
     userId: user?.id ?? "anonymous",
     providerTracks: youMightLike,
-    providerLoading: feedsLoading,
+    providerLoading: youMightLikeLoading,
   });
   const recentCollections = useMemo(() => {
     const likedSongs = collections.find(

@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import type { User as FirebaseUser } from "firebase/auth";
 
 import Loader from "@/components/Loader";
 import { useAuthState } from "@/lib/studio/useAuth";
@@ -16,7 +17,12 @@ import { AUTH } from "./routes";
  * known" must not flash gated content, and must not bounce a returning user
  * through /auth either (so no redirect until `loading` clears).
  */
-export default function AuthGate({ children }: { children: React.ReactNode }) {
+export default function AuthGate({
+  children,
+}: {
+  children:
+    React.ReactNode | ((authenticatedUser: FirebaseUser) => React.ReactNode);
+}) {
   const { user, loading } = useAuthState();
   const router = useRouter();
 
@@ -25,5 +31,5 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
   }, [user, loading, router]);
 
   if (loading || !user) return <Loader />;
-  return <>{children}</>;
+  return <>{typeof children === "function" ? children(user) : children}</>;
 }

@@ -15,15 +15,17 @@ function NowPlayingProbe() {
 }
 
 describe("FeedShelf", () => {
-  it("skeletons the whole shelf while loading", () => {
+  it("keeps the named shelf visible with explicit feedback while loading", () => {
     render(
       <MockStudioProvider>
         <FeedShelf label="For you" title="You might like" tracks={[]} loading />
       </MockStudioProvider>
     );
-    // RailShelf's loading mode: an aria-busy section, no heading, no cards.
-    expect(document.querySelector("section[aria-busy]")).toBeTruthy();
-    expect(screen.queryByText("You might like")).toBeNull();
+    expect(
+      screen.getByRole("region", { name: "You might like loading" })
+    ).toHaveAttribute("aria-busy", "true");
+    expect(screen.getByText("You might like")).toBeTruthy();
+    expect(screen.getByRole("status")).toHaveTextContent("Loading");
   });
 
   it("shows a quiet line when the feed settles empty", () => {

@@ -28,7 +28,8 @@ export default function SearchScreen() {
     clearSearch,
     youMightLike,
     newReleases,
-    feedsLoading,
+    newReleasesLoading,
+    youMightLikeLoading,
     collectionResults,
     user,
   } = useMockStudio();
@@ -38,13 +39,13 @@ export default function SearchScreen() {
     feed: "you-might-like",
     userId: user?.id ?? "anonymous",
     providerTracks: youMightLike,
-    providerLoading: feedsLoading,
+    providerLoading: youMightLikeLoading,
   });
   const newReleaseFeed = useCachedStudioFeed({
     feed: "new-releases",
     userId: user?.id ?? "anonymous",
     providerTracks: newReleases,
-    providerLoading: feedsLoading,
+    providerLoading: newReleasesLoading,
   });
 
   // Typing only edits the field; the search fires on submit (Enter, or the

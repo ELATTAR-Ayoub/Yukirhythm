@@ -154,10 +154,11 @@ function PlaybackProbe() {
 }
 
 function Probe() {
-  const { collections, libraryLoading } = useMockStudio();
+  const { user, collections, libraryLoading } = useMockStudio();
   const liked = collections.find((c) => c.id === LIKED_SONGS_ID);
   return (
     <>
+      <div data-testid="startup-user">{user?.userName ?? "signed-out"}</div>
       <div data-testid="loading">{String(libraryLoading)}</div>
       <div data-testid="count">{collections.length}</div>
       <div data-testid="liked">{liked ? liked.title : "missing"}</div>
@@ -183,6 +184,43 @@ describe("StudioProvider library load", () => {
     );
     expect(screen.getByTestId("liked").textContent).toBe("Liked Songs");
     expect(screen.getByTestId("liked-system").textContent).toBe("true");
+  });
+
+  it("shows the authenticated identity and starts feeds before profile loading finishes", async () => {
+    let finishProfile: (value: unknown) => void = () => {};
+    backend.me.get.mockReturnValueOnce(
+      new Promise((resolve) => {
+        finishProfile = resolve;
+      })
+    );
+    backend.feed.newReleases.mockClear();
+    backend.feed.youMightLike.mockClear();
+
+    render(
+      <StudioProvider>
+        <Probe />
+      </StudioProvider>
+    );
+
+    // Firebase already identified the listener. The shell must never regress
+    // to a false signed-out prompt while the backend profile is unresolved.
+    expect(screen.getByTestId("startup-user")).toHaveTextContent("Yuki");
+    await waitFor(() => {
+      expect(backend.feed.newReleases).toHaveBeenCalledTimes(1);
+      expect(backend.feed.youMightLike).toHaveBeenCalledTimes(1);
+    });
+    expect(screen.getByTestId("loading")).toHaveTextContent("true");
+
+    await act(async () => {
+      finishProfile({
+        userId: "u1",
+        displayName: "Yuki",
+        email: "y@x.dev",
+      });
+    });
+    await waitFor(() =>
+      expect(screen.getByTestId("loading")).toHaveTextContent("false")
+    );
   });
 
   it("still builds the library when the likes call fails", async () => {

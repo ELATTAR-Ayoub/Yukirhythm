@@ -165,6 +165,10 @@ interface MockStudioValue {
   youMightLike: MockTrack[];
   /** True while the home/search shelves' feeds are in flight. */
   feedsLoading: boolean;
+  /** Each shelf settles independently; the aggregate flag remains available
+   *  for callers that only need a broad feed-loading signal. */
+  newReleasesLoading: boolean;
+  youMightLikeLoading: boolean;
   /** Collections matching the current search query (the caller's own library). */
   collectionResults: MockCollection[];
   /** Listening stats; null while loading or signed out. */
@@ -208,6 +212,8 @@ export default function MockStudioProvider({
   /** Test/docs override for the feed shelves' data and loading state. */
   feeds?: {
     loading?: boolean;
+    newReleasesLoading?: boolean;
+    youMightLikeLoading?: boolean;
     youMightLike?: MockTrack[];
     newReleases?: MockTrack[];
   };
@@ -670,6 +676,8 @@ export default function MockStudioProvider({
     newReleases,
     youMightLike,
     feedsLoading: feeds?.loading ?? false,
+    newReleasesLoading: feeds?.newReleasesLoading ?? feeds?.loading ?? false,
+    youMightLikeLoading: feeds?.youMightLikeLoading ?? feeds?.loading ?? false,
     collectionResults,
     stats,
     recents,

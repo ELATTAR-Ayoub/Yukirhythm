@@ -18,10 +18,13 @@ export type FeedContext = {
 export async function loadFeedContext(uid: string): Promise<FeedContext> {
   const db = adminDb();
 
-  const evSnap = await db
-    .collection("playEvents")
-    .where("userId", "==", uid)
-    .get();
+  // These snapshots have no dependency on one another. Reading them together
+  // removes two full Firestore round trips from every personalized feed.
+  const [evSnap, owned, stateSnap] = await Promise.all([
+    db.collection("playEvents").where("userId", "==", uid).get(),
+    db.collection("collections").where("ownerId", "==", uid).get(),
+    db.collection("users").doc(uid).collection("trackState").get(),
+  ]);
   const events: StatEvent[] = evSnap.docs.map((d) => {
     const e = d.data() as PlayEvent;
     return {
@@ -38,21 +41,12 @@ export async function loadFeedContext(uid: string): Promise<FeedContext> {
     if (e.startedAtMs >= now - 7 * DAY) exclude.add(e.trackId);
 
   // library: every track in the user's owned collections
-  const owned = await db
-    .collection("collections")
-    .where("ownerId", "==", uid)
-    .get();
   for (const doc of owned.docs) {
     for (const t of (doc.data() as Collection).tracks ?? [])
       exclude.add(t.trackId);
   }
 
   // overlay: liked + play counts
-  const stateSnap = await db
-    .collection("users")
-    .doc(uid)
-    .collection("trackState")
-    .get();
   const states = stateSnap.docs.map((d) => d.data() as TrackState);
   const likedTrackIds = states.filter((s) => s.isLiked).map((s) => s.trackId);
   for (const id of likedTrackIds) exclude.add(id);

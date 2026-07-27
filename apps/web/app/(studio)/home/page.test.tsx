@@ -124,4 +124,28 @@ describe("HomeScreen", () => {
     );
     expect(document.querySelector("section[aria-busy]")).toBeTruthy();
   });
+
+  it("renders one completed shelf while the other is still loading", () => {
+    render(
+      <MockStudioProvider
+        feeds={{
+          newReleasesLoading: false,
+          youMightLikeLoading: true,
+          youMightLike: [],
+        }}
+      >
+        <HomeScreen />
+      </MockStudioProvider>
+    );
+
+    expect(
+      screen.getByRole("button", { name: "Play Equalizer Sunday" })
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("region", { name: "You might like loading" })
+    ).toHaveAttribute("aria-busy", "true");
+    expect(
+      screen.queryByRole("region", { name: "New releases loading" })
+    ).toBeNull();
+  });
 });
