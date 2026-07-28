@@ -61,6 +61,11 @@ describe("FeedShelf", () => {
     expect(screen.getByTestId("now-playing").textContent).toBe(
       MOCK_TRACKS[0].title
     );
+    expect(
+      screen.getByRole("button", {
+        name: `More for ${MOCK_TRACKS[0].title}`,
+      })
+    ).toBeInTheDocument();
   });
 
   it("shows a named refresh control with progress feedback", () => {

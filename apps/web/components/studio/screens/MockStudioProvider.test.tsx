@@ -47,6 +47,28 @@ describe("MockStudioProvider", () => {
     expect(result.current.progressSec).toBe(2);
   });
 
+  it("pauses a current track when its card is clicked again without leaving a loading timer behind", () => {
+    const { result } = renderHook(() => useMockStudio(), { wrapper });
+    const selected = MOCK_TRACKS[0];
+
+    act(() => result.current.play(selected));
+    expect(result.current.isLoading).toBe(true);
+
+    act(() => result.current.play(selected));
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.isPlaying).toBe(false);
+
+    // The first click's buffering timer must not resurrect playback later.
+    act(() => vi.advanceTimersByTime(650));
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.isPlaying).toBe(false);
+
+    // Once paused, the same surface resumes without cueing the same URL again.
+    act(() => result.current.play(selected));
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.isPlaying).toBe(true);
+  });
+
   it("flips auth state on signIn/signOut", () => {
     const { result } = renderHook(() => useMockStudio(), { wrapper });
 

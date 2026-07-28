@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useMockStudio } from "./MockStudioProvider";
 import { formatDuration, type MockTrack } from "./mock-data";
+import TrackMenu from "./TrackMenu";
 
 /** Enter/Space activation for non-button click targets. */
 const playKeyHandler = (fn: () => void) => (e: React.KeyboardEvent) => {
@@ -90,23 +91,30 @@ export default function FeedShelf({
       {tracks.map((track) => (
         <div
           key={track.id}
-          role="button"
-          tabIndex={0}
-          aria-label={`Play ${track.title}`}
-          onClick={() => play(track)}
-          onKeyDown={playKeyHandler(() => play(track))}
-          className="text-left shrink-0 cursor-pointer"
+          className="group/track-card relative min-w-0 shrink-0"
         >
-          <MediaCard
-            title={track.title}
-            artist={track.artist}
-            texture={track.texture}
-            artUrl={track.artUrl}
-            duration={formatDuration(track.durationSec)}
-            size={size}
-            playing={nowPlaying?.id === track.id && isPlaying}
-            className={cardClassName}
-          />
+          <div
+            role="button"
+            tabIndex={0}
+            aria-label={`Play ${track.title}`}
+            onClick={() => play(track)}
+            onKeyDown={playKeyHandler(() => play(track))}
+            className="text-left cursor-pointer"
+          >
+            <MediaCard
+              title={track.title}
+              artist={track.artist}
+              texture={track.texture}
+              artUrl={track.artUrl}
+              duration={formatDuration(track.durationSec)}
+              size={size}
+              playing={nowPlaying?.id === track.id && isPlaying}
+              className={cardClassName}
+            />
+          </div>
+          <div className="absolute right-3 top-3 z-10 rounded-full bg-card/85 shadow-e1 backdrop-blur-sm opacity-100 transition-opacity duration-fast sm:opacity-0 sm:group-hover/track-card:opacity-100 sm:group-focus-within/track-card:opacity-100">
+            <TrackMenu track={track} />
+          </div>
         </div>
       ))}
     </RailShelf>

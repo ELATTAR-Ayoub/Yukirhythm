@@ -524,18 +524,49 @@ export default function StudioProvider({
     pendingSeekRef.current = null;
   }, []);
 
+  /**
+   * Cards and rows are playback controls too. Activating the track that is
+   * already current pauses it (including while it is still cueing); activating
+   * it once paused resumes without re-cueing the same URL.
+   */
+  const toggleCurrentFromSurface = useCallback(() => {
+    setNavDirection(null);
+    if (isPlaying || isLoading) {
+      if (isPlaying) flushEvent();
+      setIsPlaying(false);
+      setIsLoading(false);
+      return;
+    }
+    setIsPlaying(true);
+  }, [flushEvent, isLoading, isPlaying]);
+
   const playAt = useCallback(
     (index: number) => {
       if (index < 0 || index >= queue.length) return;
+      if (index === currentIndex) {
+        toggleCurrentFromSurface();
+        return;
+      }
       flushEvent();
       setNavDirection(null);
       startTrack(index);
     },
-    [queue.length, flushEvent, startTrack]
+    [
+      queue.length,
+      currentIndex,
+      toggleCurrentFromSurface,
+      flushEvent,
+      startTrack,
+    ]
   );
 
   const play = useCallback(
     async (track: MockTrack, from?: MockCollection) => {
+      if (nowPlaying?.id === track.id) {
+        toggleCurrentFromSurface();
+        return;
+      }
+
       // Clicking a row in the queue you are already inside must not rebuild
       // that queue — everything enqueued from the rail lives only there. See
       // isSameContext for why `from` omitted (Search, Home) never counts.
@@ -592,6 +623,8 @@ export default function StudioProvider({
       queue,
       backend,
       shuffled,
+      nowPlaying,
+      toggleCurrentFromSurface,
     ]
   );
 

@@ -7,6 +7,8 @@ import SectionLabel from "@/components/studio/SectionLabel";
 import { Button } from "@/components/ui/button";
 import { useMockStudio } from "./MockStudioProvider";
 import { formatDuration, type MockTrack } from "./mock-data";
+import LikeButton from "./LikeButton";
+import TrackMenu from "./TrackMenu";
 
 const PAGE_SIZE = 20;
 
@@ -37,25 +39,28 @@ export default function SearchTrackResults({
       <SectionLabel>Tracks</SectionLabel>
       <div className="space-y-1 mt-2">
         {visibleTracks.map((track, i) => (
-          <div
-            key={track.id}
-            role="button"
-            tabIndex={0}
-            aria-label={`Play ${track.title}`}
-            onClick={() => play(track)}
-            onKeyDown={playKeyHandler(() => play(track))}
-            className="cursor-pointer"
-          >
-            <TrackRow
-              index={i + 1}
-              title={track.title}
-              artist={track.artist}
-              duration={formatDuration(track.durationSec)}
-              texture={track.texture}
-              artUrl={track.artUrl}
-              playing={nowPlaying?.id === track.id && isPlaying}
-              playable={false}
-            />
+          <div key={track.id} className="flex items-center gap-2 pr-1">
+            <div
+              role="button"
+              tabIndex={0}
+              aria-label={`Play ${track.title}`}
+              onClick={() => play(track)}
+              onKeyDown={playKeyHandler(() => play(track))}
+              className="min-w-0 flex-1 cursor-pointer"
+            >
+              <TrackRow
+                index={i + 1}
+                title={track.title}
+                artist={track.artist}
+                duration={formatDuration(track.durationSec)}
+                texture={track.texture}
+                artUrl={track.artUrl}
+                playing={nowPlaying?.id === track.id && isPlaying}
+                playable={false}
+              />
+            </div>
+            <LikeButton trackId={track.id} trackTitle={track.title} />
+            <TrackMenu track={track} />
           </div>
         ))}
       </div>

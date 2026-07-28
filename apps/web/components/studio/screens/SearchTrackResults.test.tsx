@@ -40,4 +40,29 @@ describe("SearchTrackResults", () => {
     ).toHaveLength(45);
     expect(screen.queryByRole("button", { name: "See more" })).toBeNull();
   });
+
+  it("uses the normal like and track menus for every searched song", async () => {
+    window.HTMLElement.prototype.hasPointerCapture = () => false;
+    window.HTMLElement.prototype.releasePointerCapture = () => {};
+    window.HTMLElement.prototype.scrollIntoView = () => {};
+    render(
+      <MockStudioProvider>
+        <SearchTrackResults tracks={tracks.slice(0, 2)} />
+      </MockStudioProvider>
+    );
+
+    expect(
+      screen.getByRole("button", { name: "Like Result 1" })
+    ).toBeInTheDocument();
+    fireEvent.pointerDown(
+      screen.getByRole("button", { name: "More for Result 1" }),
+      { button: 0 }
+    );
+
+    expect(await screen.findByRole("menuitem", { name: "Like" })).toBeTruthy();
+    expect(
+      screen.getByRole("menuitem", { name: "Add to playlist" })
+    ).toBeTruthy();
+    expect(screen.getByRole("menuitem", { name: "Share" })).toBeTruthy();
+  });
 });

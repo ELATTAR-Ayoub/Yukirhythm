@@ -388,17 +388,38 @@ export default function MockStudioProvider({
     }, 650);
   }, []);
 
+  const toggleCurrentFromSurface = useCallback(() => {
+    setNavDirection(null);
+    if (isPlaying || isLoading) {
+      if (loadTimer.current) clearTimeout(loadTimer.current);
+      loadTimer.current = null;
+      setIsPlaying(false);
+      setIsLoading(false);
+      return;
+    }
+    setIsPlaying(true);
+  }, [isLoading, isPlaying]);
+
   const playAt = useCallback(
     (index: number) => {
       if (index < 0 || index >= queue.length) return;
+      if (index === currentIndex) {
+        toggleCurrentFromSurface();
+        return;
+      }
       setNavDirection(null);
       startLoad(index);
     },
-    [queue.length, startLoad]
+    [queue.length, currentIndex, toggleCurrentFromSurface, startLoad]
   );
 
   const play = useCallback(
     (track: MockTrack, from?: MockCollection) => {
+      if (nowPlaying?.id === track.id) {
+        toggleCurrentFromSurface();
+        return;
+      }
+
       // Clicking a row in the queue you are already inside is not a request to
       // rebuild that queue. Only naming the collection currently playing is —
       // see isSameContext for why `from` omitted never counts.
@@ -434,7 +455,14 @@ export default function MockStudioProvider({
         preShuffleOrderRef.current = null;
       }
     },
-    [startLoad, playingCollection, queue, shuffled]
+    [
+      startLoad,
+      playingCollection,
+      queue,
+      shuffled,
+      nowPlaying,
+      toggleCurrentFromSurface,
+    ]
   );
 
   const dequeue = useCallback(
