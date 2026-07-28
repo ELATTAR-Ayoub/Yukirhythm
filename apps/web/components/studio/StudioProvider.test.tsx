@@ -52,7 +52,7 @@ const { backend, authState, hiddenPlayer } = vi.hoisted(() => ({
       newReleases: vi.fn().mockRejectedValue(new Error("no")),
       youMightLike: vi.fn().mockRejectedValue(new Error("no")),
     },
-    catalog: { track: vi.fn(), search: vi.fn() },
+    catalog: { track: vi.fn(), tracksByIds: vi.fn(), search: vi.fn() },
     events: { ingest: vi.fn() },
   },
   authState: {
@@ -90,6 +90,23 @@ vi.mock("next/dynamic", () => ({
 }));
 
 import StudioProvider from "./StudioProvider";
+
+beforeEach(() => {
+  backend.catalog.tracksByIds.mockImplementation(async (ids: string[]) => {
+    const results = await Promise.allSettled(
+      ids.map((id) => backend.catalog.track(id))
+    );
+    return {
+      tracks: results.flatMap((result) =>
+        result.status === "fulfilled" && result.value ? [result.value] : []
+      ),
+      missingTrackIds: ids.filter(
+        (_id, index) =>
+          results[index]?.status !== "fulfilled" || !results[index]?.value
+      ),
+    };
+  });
+});
 
 /** Minimal catalog Track fixture — mirrors the one in adapt.test.ts. Only the
  *  fields toStudioTrack actually reads need real values. */
@@ -189,6 +206,53 @@ describe("StudioProvider library load", () => {
     );
     expect(screen.getByTestId("liked").textContent).toBe("Liked Songs");
     expect(screen.getByTestId("liked-system").textContent).toBe("true");
+  });
+
+  it("loads only the first four database tracks needed by a library mosaic", async () => {
+    const previewIds = ["preview-1", "preview-2", "preview-3", "preview-4"];
+    backend.collections.list.mockResolvedValueOnce([
+      {
+        collectionId: "mosaic-playlist",
+        ownerId: "u1",
+        role: "playlist",
+        contentType: "music",
+        title: "Mosaic playlist",
+        description: "",
+        tags: [],
+        cover: "mosaic",
+        texture: "tx-k-marble",
+        imageUrl: null,
+        tracks: [...previewIds, "preview-5"].map((trackId) => ({
+          trackId,
+          addedAt: null,
+          addedBy: "u1",
+        })),
+        visibility: "private",
+        stats: {
+          trackCount: 5,
+          totalDurationSec: 900,
+          saveCount: 0,
+          playCount: 0,
+        },
+        createdAt: null,
+        updatedAt: null,
+      },
+    ]);
+    backend.catalog.track.mockImplementation((id: string) =>
+      Promise.resolve(track({ trackId: id, title: id }))
+    );
+
+    render(
+      <StudioProvider>
+        <Probe />
+      </StudioProvider>
+    );
+
+    await waitFor(() =>
+      expect(screen.getByTestId("loading").textContent).toBe("false")
+    );
+    expect(backend.catalog.tracksByIds).toHaveBeenCalledWith(previewIds);
+    expect(backend.catalog.track).not.toHaveBeenCalledWith("preview-5");
   });
 
   it("shows the authenticated identity and starts feeds before profile loading finishes", async () => {

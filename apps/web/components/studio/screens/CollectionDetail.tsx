@@ -211,7 +211,7 @@ export default function CollectionDetail({
     <>
       <CollectionDesc
         key={collection.id}
-        count={tracks.length}
+        count={collection.trackIds.length}
         desc={collection.desc}
       />
 

@@ -61,12 +61,32 @@ async function mutate(
       next = current.filter((t) => t.trackId !== trackId);
     }
 
-    // Recompute totalDurationSec from the real track docs.
-    let totalDurationSec = 0;
-    for (const t of next) {
-      const ts = await tx.get(db.collection("tracks").doc(t.trackId));
-      if (ts.exists) totalDurationSec += (ts.data() as Track).durationSec ?? 0;
+    // Resolve memberships as one transaction read. Besides being substantially
+    // faster for large playlists, this prevents a new orphaned membership from
+    // entering the collection while still allowing an old orphan to be removed.
+    const trackSnapshots = next.length
+      ? await tx.getAll(
+          ...next.map((membership) =>
+            db.collection("tracks").doc(membership.trackId)
+          )
+        )
+      : [];
+    if (
+      op === "add" &&
+      !trackSnapshots.some(
+        (snapshot) => snapshot.exists && snapshot.id === trackId
+      )
+    ) {
+      status = 404;
+      return;
     }
+    const totalDurationSec = trackSnapshots.reduce(
+      (total, snapshot) =>
+        snapshot.exists
+          ? total + ((snapshot.data() as Track).durationSec ?? 0)
+          : total,
+      0
+    );
 
     tx.update(ref, {
       tracks: next,

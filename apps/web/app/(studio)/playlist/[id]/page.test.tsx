@@ -9,6 +9,12 @@ const nav = vi.hoisted(() => ({
   created: null as string | null,
   replace: vi.fn(),
 }));
+const testBackend = vi.hoisted(() => ({
+  catalog: {
+    tracksByIds: vi.fn(),
+    track: vi.fn(),
+  },
+}));
 
 vi.mock("next/navigation", () => ({
   useParams: () => ({ id: nav.id }),
@@ -18,6 +24,9 @@ vi.mock("next/navigation", () => ({
   // CollectionDetail's Add-music control calls useRouter() unconditionally
   // now (it routes at every width); none of these tests exercise that click.
   useRouter: () => ({ push: () => {}, replace: nav.replace }),
+}));
+vi.mock("@/lib/studio/useBackend", () => ({
+  useBackend: () => testBackend,
 }));
 
 describe("PlaylistScreen", () => {

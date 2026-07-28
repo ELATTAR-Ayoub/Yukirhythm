@@ -39,6 +39,8 @@ export const endpoints = {
     search: (q: string, type?: "song" | "album" | "artist" | "playlist") =>
       `${API}/catalog/search${qs({ q, type })}`,
     suggest: (q: string) => `${API}/catalog/suggest${qs({ q })}`,
+    tracksByIds: (trackIds: string[]) =>
+      `${API}/catalog/tracks${qs({ ids: trackIds.join(",") })}`,
     /** Tracks filtered by a taxonomy label — the explore tiles. */
     tracksByLabel: (label: string) => `${API}/catalog/tracks${qs({ label })}`,
     track: (trackId: string) => `${API}/catalog/tracks/${enc(trackId)}`,

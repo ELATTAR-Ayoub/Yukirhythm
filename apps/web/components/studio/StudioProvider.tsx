@@ -190,12 +190,20 @@ export default function StudioProvider({
       const missingIds = [
         ...new Set(ids.filter((id) => !preloadedById.has(id))),
       ];
-      const fetched = await Promise.all(
-        missingIds.map((id) => backend.catalog.track(id).catch(() => null))
-      );
-      const fetchedMocks = absorb(
-        fetched.filter((track): track is Track => track !== null)
-      );
+      const batch = missingIds.length
+        ? await backend.catalog.tracksByIds(missingIds)
+        : { tracks: [], missingTrackIds: [] };
+      const recovered = batch.missingTrackIds.length
+        ? await Promise.all(
+            batch.missingTrackIds.map((id) =>
+              backend.catalog.track(id).catch(() => null)
+            )
+          )
+        : [];
+      const fetchedMocks = absorb([
+        ...batch.tracks,
+        ...recovered.filter((track): track is Track => track !== null),
+      ]);
       const resolvedById = new Map(preloadedById);
       fetchedMocks.forEach((track) => resolvedById.set(track.id, track));
       return ids
@@ -236,12 +244,32 @@ export default function StudioProvider({
       system: true,
       pinned: true,
     };
-    const owns =
-      ownedRes.status === "fulfilled"
-        ? ownedRes.value.map((c) =>
-            toStudioCollection(c, { pinned: pinnedIds.has(c.collectionId) })
-          )
-        : [];
+    const ownedCollections =
+      ownedRes.status === "fulfilled" ? ownedRes.value : [];
+    const previewTrackIds = [
+      ...new Set(
+        ownedCollections.flatMap((collection) =>
+          collection.cover === "mosaic"
+            ? (collection.tracks ?? [])
+                .slice(0, 4)
+                .map((membership) => membership.trackId)
+            : []
+        )
+      ),
+    ];
+    if (previewTrackIds.length) {
+      try {
+        const preview = await backend.catalog.tracksByIds(previewTrackIds);
+        absorb(preview.tracks);
+      } catch (err) {
+        // Artwork is progressive enhancement: a failed preview batch must not
+        // hide the library or its accurate membership counts.
+        console.warn("Playlist artwork preview load failed", err);
+      }
+    }
+    const owns = ownedCollections.map((c) =>
+      toStudioCollection(c, { pinned: pinnedIds.has(c.collectionId) })
+    );
     const nextCollections = [likedCollection, ...owns];
     collectionsRef.current = nextCollections;
     setCollections(nextCollections);

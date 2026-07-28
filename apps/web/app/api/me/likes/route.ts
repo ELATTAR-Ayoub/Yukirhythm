@@ -4,6 +4,7 @@ import { uidFromRequest, unauthorized } from "@/lib/firebase/verify";
 import { LIKED_COLLECTION_ID, type Track } from "@/lib/catalog/model";
 
 export const runtime = "nodejs";
+const TRACK_BATCH_SIZE = 100;
 
 /**
  * True for Firestore's FAILED_PRECONDITION — the status a composite-index
@@ -72,8 +73,21 @@ export async function GET(req: Request): Promise<Response> {
   const trackIds = docs.map((d) => d.id);
   const tracks: Track[] = [];
   let totalDurationSec = 0;
-  for (const id of trackIds) {
-    const ts = await db.collection("tracks").doc(id).get();
+  const chunks = Array.from(
+    { length: Math.ceil(trackIds.length / TRACK_BATCH_SIZE) },
+    (_, index) =>
+      trackIds.slice(index * TRACK_BATCH_SIZE, (index + 1) * TRACK_BATCH_SIZE)
+  );
+  const trackSnapshots = (
+    await Promise.all(
+      chunks.map((chunk) =>
+        db.getAll(
+          ...chunk.map((trackId) => db.collection("tracks").doc(trackId))
+        )
+      )
+    )
+  ).flat();
+  for (const ts of trackSnapshots) {
     if (ts.exists) {
       const t = ts.data() as Track;
       tracks.push(t);

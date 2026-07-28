@@ -10,6 +10,8 @@ import PlaylistHero from "@/components/studio/screens/PlaylistHero";
 import { PlaylistPageSkeleton } from "@/components/studio/screens/RouteSkeletons";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
 import { LIBRARY, playlistHref } from "@/components/studio/shell/routes";
+import useResolvedCollectionTracks from "@/components/studio/screens/useResolvedCollectionTracks";
+import { Button } from "@/components/ui/button";
 
 export default function PlaylistScreen() {
   const { collections, libraryLoading } = useMockStudio();
@@ -33,6 +35,7 @@ export default function PlaylistScreen() {
         ? [...collections].reverse().find((c) => c.title === createdTitle)
         : undefined))
     : undefined;
+  const resolved = useResolvedCollectionTracks(collection);
 
   // Once the refreshed library exposes the server-issued id, canonicalise
   // the optimistic URL. Until then `collection` keeps the detail page
@@ -58,6 +61,27 @@ export default function PlaylistScreen() {
     );
   }
 
+  if (resolved.tracks === null && !resolved.error) {
+    return <PlaylistPageSkeleton title={collection.title} />;
+  }
+
+  if (resolved.error) {
+    return (
+      <div className="pb-8">
+        <BackHeader title={collection.title} fallbackHref={LIBRARY} />
+        <PlaylistHero collection={collection} />
+        <EmptyState
+          title="Could not load playlist tracks"
+          hint="Your playlist is still saved. Check your connection and try loading its songs again."
+          texture="tx-k2-static"
+          action={<Button onClick={resolved.retry}>Try again</Button>}
+        />
+      </div>
+    );
+  }
+
+  const tracks = resolved.tracks ?? [];
+
   return (
     <div className="pb-8">
       {/* The same header every other screen uses — it anchors the top of the
@@ -68,9 +92,19 @@ export default function PlaylistScreen() {
           single heading. */}
       <BackHeader title={collection.title} fallbackHref={LIBRARY} />
 
-      <PlaylistHero collection={collection} />
+      <PlaylistHero collection={collection} tracks={tracks} />
       <div className="px-1 mt-4">
-        <CollectionDetail collection={collection} />
+        {resolved.missingTrackIds.length ? (
+          <p
+            role="status"
+            className="mb-3 rounded-lg border border-border bg-secondary/50 px-3 py-2 text-sm text-muted-foreground"
+          >
+            {resolved.missingTrackIds.length}{" "}
+            {resolved.missingTrackIds.length === 1 ? "track is" : "tracks are"}{" "}
+            currently unavailable from the music provider.
+          </p>
+        ) : null}
+        <CollectionDetail collection={collection} tracks={tracks} />
       </div>
     </div>
   );

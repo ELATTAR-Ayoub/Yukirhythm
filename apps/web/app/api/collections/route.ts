@@ -11,6 +11,7 @@ import {
 export const runtime = "nodejs";
 
 const COVERS = ["texture", "mosaic", "image"] as const;
+const TRACK_BATCH_SIZE = 100;
 
 export async function GET(req: Request): Promise<Response> {
   const uid = await uidFromRequest(req);
@@ -59,7 +60,11 @@ export async function POST(req: Request): Promise<Response> {
   const now = Timestamp.now();
 
   const rawTrackIds = Array.isArray(body.trackIds)
-    ? body.trackIds.filter((t): t is string => typeof t === "string")
+    ? [
+        ...new Set(
+          body.trackIds.filter((t): t is string => typeof t === "string")
+        ),
+      ]
     : [];
   const tracks: CollectionTrack[] = rawTrackIds.map((trackId) => ({
     trackId,
@@ -67,12 +72,37 @@ export async function POST(req: Request): Promise<Response> {
     addedBy: uid,
   }));
 
-  // Sum durations from the real track docs so totalDurationSec is honest.
-  let totalDurationSec = 0;
-  for (const t of tracks) {
-    const ts = await db.collection("tracks").doc(t.trackId).get();
-    if (ts.exists) totalDurationSec += (ts.data() as Track).durationSec ?? 0;
+  // Resolve and validate initial membership in bounded parallel batches.
+  const trackChunks = Array.from(
+    { length: Math.ceil(rawTrackIds.length / TRACK_BATCH_SIZE) },
+    (_, index) =>
+      rawTrackIds.slice(
+        index * TRACK_BATCH_SIZE,
+        (index + 1) * TRACK_BATCH_SIZE
+      )
+  );
+  const trackSnapshots = (
+    await Promise.all(
+      trackChunks.map((chunk) =>
+        db.getAll(
+          ...chunk.map((trackId) => db.collection("tracks").doc(trackId))
+        )
+      )
+    )
+  ).flat();
+  const realTracks = trackSnapshots
+    .filter((snapshot) => snapshot.exists)
+    .map((snapshot) => snapshot.data() as Track);
+  if (realTracks.length !== rawTrackIds.length) {
+    return Response.json(
+      { error: "One or more tracks are unavailable" },
+      { status: 400 }
+    );
   }
+  const totalDurationSec = realTracks.reduce(
+    (total, track) => total + (track.durationSec ?? 0),
+    0
+  );
 
   const cover = COVERS.includes(body.cover as (typeof COVERS)[number])
     ? (body.cover as Collection["cover"])

@@ -124,6 +124,14 @@ describe("collections against real Firestore", () => {
     expect(user.counts.collectionCount).toBe(1);
   });
 
+  it("rejects an unavailable initial track instead of storing an orphan", async () => {
+    const res = await createCollection(
+      j({ title: "Broken", trackIds: ["does-not-exist"] }, token, "POST")
+    );
+
+    expect(res.status).toBe(400);
+  });
+
   it("lists only the caller's collections", async () => {
     await createCollection(j({ title: "Mine" }, token, "POST"));
     const res = await listCollections(auth(token));
@@ -227,6 +235,19 @@ describe("membership against real Firestore", () => {
       await adminDb().collection("collections").doc(collectionId).get()
     ).data() as Collection;
     expect(c.tracks).toHaveLength(1);
+  });
+
+  it("rejects an unavailable track instead of storing an orphan", async () => {
+    const res = await addTrack(
+      auth(token, "PUT"),
+      trackParams("does-not-exist")
+    );
+    const c = (
+      await adminDb().collection("collections").doc(collectionId).get()
+    ).data() as Collection;
+
+    expect(res.status).toBe(404);
+    expect(c.tracks.map((track) => track.trackId)).toEqual(["t1"]);
   });
 
   it("stays consistent under concurrent adds", async () => {

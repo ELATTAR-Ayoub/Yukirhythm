@@ -65,6 +65,11 @@ function trackStateCollection() {
 }
 
 const fakeDb = {
+  getAll: async (...refs: { id: string }[]) =>
+    refs.map((ref) => {
+      const t = tracksById[ref.id];
+      return { exists: Boolean(t), data: () => t };
+    }),
   collection: (name: string) => {
     if (name === "users") {
       return {
@@ -80,6 +85,7 @@ const fakeDb = {
     if (name === "tracks") {
       return {
         doc: (id: string) => ({
+          id,
           get: async () => {
             const t = tracksById[id];
             return { exists: Boolean(t), data: () => t };

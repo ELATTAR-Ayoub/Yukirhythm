@@ -44,6 +44,8 @@ export type RecentsPage = {
 
 export type TokenProvider = () => Promise<string | null>;
 
+const TRACK_BATCH_SIZE = 100;
+
 export class ApiError extends Error {
   constructor(
     readonly status: number,
@@ -84,6 +86,30 @@ export function createBackendClient(getToken: TokenProvider) {
         request<{ label: string; tracks: Track[] }>(
           endpoints.catalog.tracksByLabel(label)
         ),
+      tracksByIds: async (trackIds: string[]) => {
+        const uniqueIds = [
+          ...new Set(trackIds.filter((trackId) => Boolean(trackId))),
+        ];
+        const chunks = Array.from(
+          { length: Math.ceil(uniqueIds.length / TRACK_BATCH_SIZE) },
+          (_, index) =>
+            uniqueIds.slice(
+              index * TRACK_BATCH_SIZE,
+              (index + 1) * TRACK_BATCH_SIZE
+            )
+        );
+        const pages = await Promise.all(
+          chunks.map((chunk) =>
+            request<{ tracks: Track[]; missingTrackIds: string[] }>(
+              endpoints.catalog.tracksByIds(chunk)
+            )
+          )
+        );
+        return {
+          tracks: pages.flatMap((page) => page.tracks),
+          missingTrackIds: pages.flatMap((page) => page.missingTrackIds),
+        };
+      },
       track: (trackId: string) =>
         request<Track>(endpoints.catalog.track(trackId)),
       artist: (artistId: string) =>

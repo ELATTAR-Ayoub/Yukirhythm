@@ -10,6 +10,9 @@ describe("endpoints registry", () => {
     expect(endpoints.catalog.tracksByLabel("lofi")).toBe(
       "/api/catalog/tracks?label=lofi"
     );
+    expect(endpoints.catalog.tracksByIds(["t1", "a/b"])).toBe(
+      "/api/catalog/tracks?ids=t1%2Ca%2Fb"
+    );
     expect(endpoints.catalog.track("a/b")).toBe("/api/catalog/tracks/a%2Fb");
   });
 
