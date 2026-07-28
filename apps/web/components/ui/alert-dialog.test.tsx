@@ -10,6 +10,33 @@ import {
 } from "./alert-dialog";
 
 describe("AlertDialog", () => {
+  it("uses the same bottom-up entrance and exit as a normal dialog", () => {
+    render(
+      <AlertDialog open>
+        <AlertDialogContent>
+          <AlertDialogTitle>Confirm action</AlertDialogTitle>
+          <AlertDialogDescription>
+            Review before continuing.
+          </AlertDialogDescription>
+        </AlertDialogContent>
+      </AlertDialog>
+    );
+
+    const content = screen.getByRole("alertdialog");
+    expect(content).toHaveClass(
+      "duration-200",
+      "data-[state=open]:fade-in-0",
+      "data-[state=closed]:fade-out-0",
+      "data-[state=open]:slide-in-from-bottom-8",
+      "data-[state=closed]:slide-out-to-bottom-8"
+    );
+    expect(content).not.toHaveClass(
+      "data-[state=open]:zoom-in-95",
+      "data-[state=open]:slide-in-from-left-1/2",
+      "data-[state=open]:slide-in-from-top-[48%]"
+    );
+  });
+
   it("keeps long content within the mobile viewport and allows text to wrap", () => {
     const title = "VeryLongAlertDialogTitle".repeat(20);
     const description = "VeryLongAlertDialogDescription".repeat(20);
