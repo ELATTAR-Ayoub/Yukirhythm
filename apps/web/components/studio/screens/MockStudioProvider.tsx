@@ -49,7 +49,8 @@ export type CreateStudioCollectionInput = {
   tags: string[];
   kind: CollectionKind;
   texture?: TextureName;
-  cover?: "texture" | "mosaic";
+  cover?: "texture" | "mosaic" | "image";
+  artUrl?: string;
   trackIds?: string[];
 };
 
@@ -347,6 +348,7 @@ export default function MockStudioProvider({
         desc: input.desc,
         texture: input.texture ?? "tx-k-silk",
         cover: input.cover ?? "texture",
+        artUrl: input.artUrl,
         trackIds: input.trackIds ?? [],
         likes: 0,
         tags: input.tags,

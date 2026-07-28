@@ -21,6 +21,9 @@ export type CollectionKind = "music" | "podcast";
 
 export interface MockCollection {
   id: string;
+  /** Public playback can return to its share route instead of fabricating a
+   * private `/playlist/:id` destination. */
+  playbackHref?: string;
   title: string;
   desc: string;
   texture: TextureName;

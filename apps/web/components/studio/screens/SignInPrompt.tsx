@@ -1,11 +1,11 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 import EmptyState from "@/components/studio/EmptyState";
 import { Button } from "@/components/ui/button";
-import { SCREENS } from "@/components/studio/shell/routes";
-
-/** Route base — the app lives at the root (see shell/routes.ts). */
-const BASE = SCREENS;
+import { authHref } from "@/components/studio/shell/routes";
 
 interface SignInPromptProps {
   title?: string;
@@ -17,11 +17,13 @@ export default function SignInPrompt({
   title = "Sign in to continue",
   hint = "Your library, stats and history live behind one tap.",
 }: SignInPromptProps) {
+  const pathname = usePathname();
+
   return (
     <div className="flex flex-col items-center gap-4 py-8">
       <EmptyState title={title} hint={hint} texture="tx-k2-horizon" />
       <Button asChild>
-        <Link href={`${BASE}/auth`}>Sign in</Link>
+        <Link href={authHref(pathname)}>Sign in</Link>
       </Button>
     </div>
   );

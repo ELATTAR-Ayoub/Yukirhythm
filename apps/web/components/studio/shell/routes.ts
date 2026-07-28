@@ -26,6 +26,17 @@ export const QUEUE = `${SCREENS}/queue`;
  *  "Collection not found" error. */
 export const QUEUE_ADD = `${QUEUE}/add`;
 
+/** A same-origin sign-in destination, optionally carrying where to return. */
+export function authHref(returnTo?: string | null): string {
+  if (!isSafeAppPath(returnTo)) return AUTH;
+  return `${AUTH}?returnTo=${encodeURIComponent(returnTo)}`;
+}
+
+/** Reject protocol-relative/external values before using an auth return path. */
+export function isSafeAppPath(value?: string | null): value is string {
+  return Boolean(value?.startsWith("/") && !value.startsWith("//"));
+}
+
 /**
  * Pages that are not music surfaces. On these the shell hides both rails and
  * centres the page column, so a settings screen never reads as "somewhere in
@@ -61,7 +72,11 @@ export function sharedPlaylistHref(id: string): string {
  * A collection-backed playback session belongs to that playlist. Only an
  * ad-hoc playback session has a destructive, independently-managed queue.
  */
-export function playbackListHref(collectionId?: string | null): string {
+export function playbackListHref(
+  collectionId?: string | null,
+  explicitHref?: string | null
+): string {
+  if (isSafeAppPath(explicitHref)) return explicitHref;
   return collectionId ? playlistHref(collectionId) : QUEUE;
 }
 

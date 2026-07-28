@@ -3,7 +3,7 @@
 import SpinningDisc from "@/components/studio/SpinningDisc";
 import CollectionArt from "./CollectionArt";
 import { useMockStudio } from "./MockStudioProvider";
-import type { MockCollection } from "./mock-data";
+import type { MockCollection, MockTrack } from "./mock-data";
 
 /**
  * Playlist page header. Spotify puts a square card here; we put the record,
@@ -16,8 +16,11 @@ import type { MockCollection } from "./mock-data";
  */
 export default function PlaylistHero({
   collection,
+  tracks,
 }: {
   collection: MockCollection;
+  /** Resolved public tracks can bypass the private studio registry. */
+  tracks?: MockTrack[];
 }) {
   const { playingCollection, isPlaying } = useMockStudio();
   const spinning = playingCollection?.id === collection.id && isPlaying;
@@ -35,6 +38,7 @@ export default function PlaylistHero({
           0.40/0.30 brings light to 1.06x dark in CIE L* — near parity. */}
       <CollectionArt
         collection={collection}
+        tracks={tracks}
         className="absolute inset-0 w-full h-full opacity-40 dark:opacity-30"
       />
       <div
@@ -51,6 +55,7 @@ export default function PlaylistHero({
           art={
             <CollectionArt
               collection={collection}
+              tracks={tracks}
               className="absolute inset-0 w-full h-full"
             />
           }

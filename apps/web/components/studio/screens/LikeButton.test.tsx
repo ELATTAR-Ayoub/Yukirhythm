@@ -5,6 +5,10 @@ import MockStudioProvider, { useMockStudio } from "./MockStudioProvider";
 import { LIKED_SONGS, LIKED_SONGS_ID } from "./mock-data";
 import LikeButton from "./LikeButton";
 
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/share/track/public-track",
+}));
+
 /** Reads Liked Songs straight from the store, so the tests assert the real
  *  membership rather than the button's own markup. */
 function LikedProbe() {
@@ -14,6 +18,16 @@ function LikedProbe() {
 }
 
 const liked = () => screen.getByTestId("liked").textContent!.split(",");
+
+function GuestHarness({ trackId }: { trackId: string }) {
+  const { signOut } = useMockStudio();
+  return (
+    <>
+      <button onClick={signOut}>Become guest</button>
+      <LikeButton trackId={trackId} trackTitle="Public Track" />
+    </>
+  );
+}
 
 function renderFor(trackId: string, title = "Some Track") {
   return render(
@@ -132,5 +146,25 @@ describe("LikeButton", () => {
     expect(
       screen.getByRole("button", { name: "Like Some Track" })
     ).toHaveProperty("ariaPressed", "true");
+  });
+
+  it("sends a guest through sign-in and back to the shared track", () => {
+    render(
+      <MockStudioProvider>
+        <LikedProbe />
+        <GuestHarness trackId={notSeeded} />
+      </MockStudioProvider>
+    );
+    fireEvent.click(screen.getByText("Become guest"));
+    fireEvent.click(screen.getByRole("button", { name: "Like Public Track" }));
+
+    expect(screen.getByRole("alertdialog")).toHaveTextContent(
+      "Sign in to continue"
+    );
+    expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute(
+      "href",
+      "/auth?returnTo=%2Fshare%2Ftrack%2Fpublic-track"
+    );
+    expect(liked()).not.toContain(notSeeded);
   });
 });

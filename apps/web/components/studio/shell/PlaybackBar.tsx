@@ -121,7 +121,14 @@ export default function PlaybackBar({ onExpand }: PlaybackBarProps) {
             DevicePlayer there is no mobile fallback to branch to here. */}
         <Transport
           size="base"
-          onQueue={() => router.push(playbackListHref(playingCollection?.id))}
+          onQueue={() =>
+            router.push(
+              playbackListHref(
+                playingCollection?.id,
+                playingCollection?.playbackHref
+              )
+            )
+          }
         />
         <div className="w-full flex items-center gap-2">
           <DataText className="text-xs text-muted-foreground shrink-0">

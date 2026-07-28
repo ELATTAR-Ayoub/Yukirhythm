@@ -140,6 +140,11 @@ interface CollectionDetailProps {
   /** Optional control beside Shuffle. Only the guarded queue route supplies
    *  this; playlist surfaces intentionally have no destructive bulk action. */
   queueAction?: React.ReactNode;
+  /** Account-owned playlists are editable by default. Public snapshots turn
+   *  this off while retaining the exact same detail component and rows. */
+  editable?: boolean;
+  /** Public snapshots can place their account-copy action beside playback. */
+  collectionAction?: React.ReactNode;
 }
 
 /**
@@ -155,6 +160,8 @@ export default function CollectionDetail({
   tracks: tracksProp,
   onPlayAt,
   queueAction,
+  editable = true,
+  collectionAction,
 }: CollectionDetailProps) {
   const {
     play,
@@ -240,7 +247,10 @@ export default function CollectionDetail({
         >
           <ShuffleIcon />
         </PlayerButton>
-        {!onPlayAt ? <CollectionMenu collection={collection} /> : null}
+        {collectionAction}
+        {!onPlayAt && editable ? (
+          <CollectionMenu collection={collection} />
+        ) : null}
         {queueAction}
         <PlayerButton
           variant="primary"
@@ -269,15 +279,19 @@ export default function CollectionDetail({
       <div className="flex items-center justify-between gap-3 mt-6 mb-2">
         {onPlayAt ? <span /> : <SortControl sort={sort} onChange={setSort} />}
         <div className="flex items-center gap-2">
-          <PlayerButton
-            variant="outline"
-            size="sm"
-            aria-label="Add music"
-            onClick={() => router.push(addHref ?? addMusicHref(collection.id))}
-            data-signal="add_music_open"
-          >
-            <PlusIcon />
-          </PlayerButton>
+          {editable ? (
+            <PlayerButton
+              variant="outline"
+              size="sm"
+              aria-label="Add music"
+              onClick={() =>
+                router.push(addHref ?? addMusicHref(collection.id))
+              }
+              data-signal="add_music_open"
+            >
+              <PlusIcon />
+            </PlayerButton>
+          ) : null}
           <ViewToggle view={view} onChange={setView} />
         </div>
       </div>

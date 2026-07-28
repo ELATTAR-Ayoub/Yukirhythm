@@ -3,12 +3,18 @@ import { render, screen } from "@testing-library/react";
 
 import MockStudioProvider from "@/components/studio/screens/MockStudioProvider";
 
-const { replace, authState } = vi.hoisted(() => ({
+const { replace, authState, returnTo } = vi.hoisted(() => ({
   replace: vi.fn(),
   authState: { user: null as { uid: string } | null, loading: false },
+  returnTo: { value: null as string | null },
 }));
 
-vi.mock("next/navigation", () => ({ useRouter: () => ({ replace }) }));
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ replace }),
+  useSearchParams: () => ({
+    get: (name: string) => (name === "returnTo" ? returnTo.value : null),
+  }),
+}));
 vi.mock("@/lib/studio/useAuth", () => ({ useAuthState: () => authState }));
 
 import AuthScreen from "./page";
@@ -18,6 +24,7 @@ describe("AuthScreen", () => {
     replace.mockClear();
     authState.user = null;
     authState.loading = false;
+    returnTo.value = null;
   });
 
   it("stays put for a signed-out visitor", () => {
@@ -50,5 +57,27 @@ describe("AuthScreen", () => {
       </MockStudioProvider>
     );
     expect(replace).not.toHaveBeenCalled();
+  });
+
+  it("returns a signed-in visitor to a safe shared page", () => {
+    authState.user = { uid: "u1" };
+    returnTo.value = "/share/playlist/opaque";
+    render(
+      <MockStudioProvider>
+        <AuthScreen />
+      </MockStudioProvider>
+    );
+    expect(replace).toHaveBeenCalledWith("/share/playlist/opaque");
+  });
+
+  it("rejects an external return destination", () => {
+    authState.user = { uid: "u1" };
+    returnTo.value = "//evil.example";
+    render(
+      <MockStudioProvider>
+        <AuthScreen />
+      </MockStudioProvider>
+    );
+    expect(replace).toHaveBeenCalledWith("/");
   });
 });

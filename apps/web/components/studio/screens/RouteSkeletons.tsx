@@ -189,10 +189,14 @@ export function LibraryPageSkeleton() {
   );
 }
 
-export function PlaylistPageSkeleton() {
+export function PlaylistPageSkeleton({
+  title = "Playlist",
+}: {
+  title?: string;
+} = {}) {
   return (
     <LoadingFrame name="Playlist page">
-      <BackHeading title="Playlist" />
+      <BackHeading title={title} />
       <div className="grid gap-5 sm:grid-cols-[11rem_1fr] sm:items-end">
         <Bar className="aspect-square w-40 rounded-lg sm:w-44" />
         <div>

@@ -130,6 +130,7 @@ export type SharedPlaylist = {
 
   title: string;
   description: string;
+  tags: string[];
   cover: Collection["cover"];
   texture: TextureName;
   imageUrl: string | null;

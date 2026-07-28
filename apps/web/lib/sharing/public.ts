@@ -19,6 +19,7 @@ export type PublicPlaylist = {
   title: string;
   description: string;
   ownerName: string;
+  tags: string[];
   cover: SharedPlaylist["cover"];
   artUrl: string;
   artUrls: string[];
@@ -97,6 +98,7 @@ async function loadPlaylist(id: string): Promise<PublicPlaylist | null> {
     title: playlist.title,
     description: playlist.description,
     ownerName: playlist.ownerName,
+    tags: playlist.tags ?? [],
     cover: playlist.cover,
     artUrl,
     artUrls,

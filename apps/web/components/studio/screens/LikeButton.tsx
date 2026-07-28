@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { HeartFilledIcon, HeartIcon } from "@radix-ui/react-icons";
 
 import { cn } from "@/lib/utils";
 import IconSwap from "@/components/studio/IconSwap";
 import { PlayerButton } from "@/components/studio/PlayerButton";
 import { useMockStudio } from "./MockStudioProvider";
+import SignInRequiredDialog from "./SignInRequiredDialog";
 
 const HEART_ICONS = {
   off: <HeartIcon />,
@@ -43,26 +45,40 @@ export default function LikeButton({
   className,
   onAlreadyLiked,
 }: LikeButtonProps) {
-  const { isLiked, toggleLike } = useMockStudio();
+  const { user, isLiked, toggleLike } = useMockStudio();
+  const [signInRequired, setSignInRequired] = useState(false);
   const liked = isLiked(trackId);
 
   return (
-    <PlayerButton
-      variant="secondary"
-      size={size}
-      aria-label={`Like ${trackTitle}`}
-      aria-pressed={liked}
-      onClick={() => {
-        if (liked && onAlreadyLiked) {
-          onAlreadyLiked();
-          return;
-        }
-        toggleLike(trackId);
-      }}
-      data-signal="track_like"
-      className={cn(liked && "text-primary", className)}
-    >
-      <IconSwap active={liked ? "on" : "off"} icons={HEART_ICONS} />
-    </PlayerButton>
+    <>
+      <PlayerButton
+        variant="secondary"
+        size={size}
+        aria-label={`Like ${trackTitle}`}
+        aria-pressed={liked}
+        onClick={() => {
+          if (!user) {
+            setSignInRequired(true);
+            return;
+          }
+          if (liked && onAlreadyLiked) {
+            onAlreadyLiked();
+            return;
+          }
+          toggleLike(trackId);
+        }}
+        data-signal="track_like"
+        className={cn(liked && "text-primary", className)}
+      >
+        <IconSwap active={liked ? "on" : "off"} icons={HEART_ICONS} />
+      </PlayerButton>
+      {signInRequired ? (
+        <SignInRequiredDialog
+          open
+          onOpenChange={setSignInRequired}
+          action="like songs"
+        />
+      ) : null}
+    </>
   );
 }

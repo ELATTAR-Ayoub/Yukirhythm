@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
 import { useSignOut } from "@/components/studio/screens/useSignOut";
-import { AUTH, CREDITS, HOME, PROFILE, SEARCH } from "./routes";
+import { authHref, CREDITS, HOME, PROFILE, SEARCH } from "./routes";
 
 const MENU = [
   { href: `${PROFILE}/view`, label: "Profile" },
@@ -152,7 +152,7 @@ export default function StudioHeader() {
           </DropdownMenu>
         ) : (
           <Link
-            href={AUTH}
+            href={authHref(pathname)}
             className="font-ui text-sm px-4 py-2 rounded-full bg-secondary hover:text-primary transition-colors duration-fast"
           >
             Sign in

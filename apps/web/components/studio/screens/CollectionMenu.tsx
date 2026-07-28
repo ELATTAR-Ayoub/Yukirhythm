@@ -23,10 +23,15 @@ import { useMockStudio } from "./MockStudioProvider";
 
 interface CollectionMenuProps {
   collection: MockCollection;
+  /** A public snapshot already has a link and exposes sharing only. */
+  sharePath?: string;
 }
 
 /** The ⋯ menu on a library playlist: pin it, or share it. */
-export default function CollectionMenu({ collection }: CollectionMenuProps) {
+export default function CollectionMenu({
+  collection,
+  sharePath,
+}: CollectionMenuProps) {
   const { togglePin, publishCollectionShare } = useMockStudio();
   const [sharing, setSharing] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -37,6 +42,11 @@ export default function CollectionMenu({ collection }: CollectionMenuProps) {
 
   const publishShare = async () => {
     if (publishing) return;
+    if (sharePath) {
+      setShareUrl(absoluteUrl(sharePath));
+      setSharing(true);
+      return;
+    }
     setPublishing(true);
     const toastId = toast.loading("Preparing public playlist link...");
     try {
@@ -69,7 +79,7 @@ export default function CollectionMenu({ collection }: CollectionMenuProps) {
           {/* Liked Songs is permanent — there is no state in which pinning or
               unpinning it means anything, so the whole item is omitted rather
               than disabled. */}
-          {!collection.system && (
+          {!sharePath && !collection.system && (
             <>
               <DropdownMenuItem
                 onClick={() => {

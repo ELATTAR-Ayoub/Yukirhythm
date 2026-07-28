@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 
 import {
   SCREENS,
+  AUTH,
   CREATE,
   QUEUE,
   isSystemRoute,
@@ -10,7 +11,21 @@ import {
   addMusicHref,
   sharedTrackHref,
   sharedPlaylistHref,
+  authHref,
+  isSafeAppPath,
 } from "./routes";
+
+describe("authHref", () => {
+  it("builds only same-origin return links", () => {
+    expect(authHref("/share/track/a b")).toBe(
+      `${AUTH}?returnTo=%2Fshare%2Ftrack%2Fa%20b`
+    );
+    expect(authHref("https://evil.example")).toBe(AUTH);
+    expect(authHref("//evil.example")).toBe(AUTH);
+    expect(isSafeAppPath("/share/playlist/one")).toBe(true);
+    expect(isSafeAppPath("javascript:alert(1)")).toBe(false);
+  });
+});
 
 describe("isSystemRoute", () => {
   it("treats profile and its subpages as system routes", () => {
@@ -72,6 +87,12 @@ describe("playbackListHref", () => {
     );
     expect(playbackListHref(null)).toBe(QUEUE);
     expect(playbackListHref()).toBe(QUEUE);
+    expect(
+      playbackListHref("public-share", "/share/playlist/public-share")
+    ).toBe("/share/playlist/public-share");
+    expect(playbackListHref("collection 1", "//evil.example")).toBe(
+      `${SCREENS}/playlist/collection%201`
+    );
   });
 });
 

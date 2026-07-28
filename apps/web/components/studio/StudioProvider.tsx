@@ -54,6 +54,7 @@ const HiddenYouTubePlayer = dynamic(
 );
 
 const LIKED_ID = "liked";
+const NO_PRELOADED_TRACKS: MockTrack[] = [];
 
 function firebaseUserSnapshot(user: FirebaseUser): MockUser {
   const name = user.displayName || user.email || "You";
@@ -75,6 +76,8 @@ function firebaseUserSnapshot(user: FirebaseUser): MockUser {
 export default function StudioProvider({
   children,
   authenticatedUser,
+  preloadedTracks = NO_PRELOADED_TRACKS,
+  restorePlayback = true,
 }: {
   children: React.ReactNode;
   /**
@@ -82,6 +85,10 @@ export default function StudioProvider({
    * omitted (the auth page and isolated tests), observe auth here as before.
    */
   authenticatedUser?: FirebaseUser | null;
+  /** Public listening routes already resolved their tracks server-side. */
+  preloadedTracks?: MockTrack[];
+  /** Public links should not restore and overwrite the music being shared. */
+  restorePlayback?: boolean;
 }) {
   const backend = useBackend();
   const { user: observedFbUser } = useAuthState();
@@ -162,6 +169,10 @@ export default function StudioProvider({
     jumpBackInLoading || newReleasesLoading || youMightLikeLoading;
 
   const nowPlaying = currentIndex >= 0 ? (queue[currentIndex] ?? null) : null;
+  const preloadedById = useMemo(
+    () => new Map(preloadedTracks.map((track) => [track.id, track])),
+    [preloadedTracks]
+  );
 
   /** Register tracks so the screens' getTrack/getCollectionTracks resolve them. */
   const absorb = useCallback((tracks: Track[]) => {
@@ -176,12 +187,22 @@ export default function StudioProvider({
    *  persisted playback) — same resolution, two different sources of ids. */
   const resolveTrackIds = useCallback(
     async (ids: string[]): Promise<MockTrack[]> => {
-      const resolved = await Promise.all(
-        ids.map((id) => backend.catalog.track(id).catch(() => null))
+      const missingIds = [
+        ...new Set(ids.filter((id) => !preloadedById.has(id))),
+      ];
+      const fetched = await Promise.all(
+        missingIds.map((id) => backend.catalog.track(id).catch(() => null))
       );
-      return absorb(resolved.filter((t): t is Track => t !== null));
+      const fetchedMocks = absorb(
+        fetched.filter((track): track is Track => track !== null)
+      );
+      const resolvedById = new Map(preloadedById);
+      fetchedMocks.forEach((track) => resolvedById.set(track.id, track));
+      return ids
+        .map((id) => resolvedById.get(id))
+        .filter((track): track is MockTrack => track !== undefined);
     },
-    [backend, absorb]
+    [backend, absorb, preloadedById]
   );
 
   // ---- load the user + library on sign-in --------------------------------
@@ -252,7 +273,7 @@ export default function StudioProvider({
       setRecents([]);
       setStatsLoading(true);
       setRecentsLoading(true);
-      setPlaybackLoading(true);
+      setPlaybackLoading(restorePlayback);
       setJumpBackIn([]);
       setJumpBackInLoading(true);
       setNewReleases([]);
@@ -343,97 +364,101 @@ export default function StudioProvider({
       // independent of the feed fetches below — a failed read here must not
       // affect user/collections/feeds, so it gets its own catch and nothing
       // else.
-      void backend.me.playback
-        .get()
-        .then(async (state) => {
-          if (!live || !state) return;
-          // Nothing was ever playing (fresh account, or an already-empty
-          // saved state) — leave the player cold rather than "restoring" a
-          // no-op.
-          const ids = state.queue?.length
-            ? state.queue
-            : state.trackId
-              ? [state.trackId]
-              : [];
-          if (ids.length === 0) return;
+      if (restorePlayback) {
+        void backend.me.playback
+          .get()
+          .then(async (state) => {
+            if (!live || !state) return;
+            // Nothing was ever playing (fresh account, or an already-empty
+            // saved state) — leave the player cold rather than "restoring" a
+            // no-op.
+            const ids = state.queue?.length
+              ? state.queue
+              : state.trackId
+                ? [state.trackId]
+                : [];
+            if (ids.length === 0) return;
 
-          const resolved = await resolveTrackIds(ids);
-          if (!live) return;
-          // Every id failed to resolve (e.g. deleted/unembeddable videos) —
-          // restore nothing rather than seat the player on an empty queue.
-          if (resolved.length === 0) return;
-          // The user may have started playing something themselves while
-          // this read was in flight. `currentIndex` in THIS closure is
-          // always the effect's original -1 (the sign-in effect only re-runs
-          // on [fbUser], so this async continuation never sees a fresher
-          // render) — a live ref is the only way to see a start that
-          // happened after this effect was created. A late restore must
-          // yield, not clobber an active session.
-          if (userStartedRef.current) return;
+            const resolved = await resolveTrackIds(ids);
+            if (!live) return;
+            // Every id failed to resolve (e.g. deleted/unembeddable videos) —
+            // restore nothing rather than seat the player on an empty queue.
+            if (resolved.length === 0) return;
+            // The user may have started playing something themselves while
+            // this read was in flight. `currentIndex` in THIS closure is
+            // always the effect's original -1 (the sign-in effect only re-runs
+            // on [fbUser], so this async continuation never sees a fresher
+            // render) — a live ref is the only way to see a start that
+            // happened after this effect was created. A late restore must
+            // yield, not clobber an active session.
+            if (userStartedRef.current) return;
 
-          // Prefer landing on the exact saved track: queue ids can fail to
-          // resolve (deleted/unembeddable videos), which shifts every index
-          // after the gap — a raw range-clamp of the saved queueIndex could
-          // then land on a completely different track. Only fall back to
-          // the (clamped) saved index when the saved track itself didn't
-          // survive resolution.
-          const byTrackId = state.trackId
-            ? resolved.findIndex((t) => t.id === state.trackId)
-            : -1;
-          const savedIndex = state.queueIndex ?? -1;
-          const finalIndex =
-            byTrackId >= 0
-              ? byTrackId
-              : savedIndex >= 0 && savedIndex < resolved.length
-                ? savedIndex
-                : 0;
+            // Prefer landing on the exact saved track: queue ids can fail to
+            // resolve (deleted/unembeddable videos), which shifts every index
+            // after the gap — a raw range-clamp of the saved queueIndex could
+            // then land on a completely different track. Only fall back to
+            // the (clamped) saved index when the saved track itself didn't
+            // survive resolution.
+            const byTrackId = state.trackId
+              ? resolved.findIndex((t) => t.id === state.trackId)
+              : -1;
+            const savedIndex = state.queueIndex ?? -1;
+            const finalIndex =
+              byTrackId >= 0
+                ? byTrackId
+                : savedIndex >= 0 && savedIndex < resolved.length
+                  ? savedIndex
+                  : 0;
 
-          setQueue(resolved);
-          setPlayingCollection(
-            state.sourceType === "collection" && state.sourceId
-              ? (collectionsRef.current.find(
-                  (collection) => collection.id === state.sourceId
-                ) ?? null)
-              : null
-          );
-          setCurrentIndex(finalIndex);
-          setProgressSec(state.positionSec ?? 0);
-          // Target-aware: onReady fires again on every track change
-          // (react-player re-cues), not just once for the restored track.
-          // Tagging the seek with the track it belongs to means a later,
-          // unrelated track change (next(), prev(), a fresh play()) can
-          // never inherit this stale position.
-          const restoredTrackId = resolved[finalIndex]?.id;
-          if (restoredTrackId) {
-            pendingSeekRef.current = {
-              trackId: restoredTrackId,
-              sec: state.positionSec ?? 0,
-            };
-          }
-          const restoredVolume = Math.min(1, Math.max(0, state.volume ?? 1));
-          setVolumeState((v) => {
-            // Only arm the skip if this actually changes anything.
-            // setVolumeState bails out (no re-render, no effect run) when
-            // the value is unchanged — arming unconditionally would leave
-            // the flag stuck "on" until the user's NEXT real change, which
-            // would then be the one silently dropped instead of this no-op.
-            if (v !== restoredVolume) skipNextVolumeSaveRef.current = true;
-            return restoredVolume;
+            setQueue(resolved);
+            setPlayingCollection(
+              state.sourceType === "collection" && state.sourceId
+                ? (collectionsRef.current.find(
+                    (collection) => collection.id === state.sourceId
+                  ) ?? null)
+                : null
+            );
+            setCurrentIndex(finalIndex);
+            setProgressSec(state.positionSec ?? 0);
+            // Target-aware: onReady fires again on every track change
+            // (react-player re-cues), not just once for the restored track.
+            // Tagging the seek with the track it belongs to means a later,
+            // unrelated track change (next(), prev(), a fresh play()) can
+            // never inherit this stale position.
+            const restoredTrackId = resolved[finalIndex]?.id;
+            if (restoredTrackId) {
+              pendingSeekRef.current = {
+                trackId: restoredTrackId,
+                sec: state.positionSec ?? 0,
+              };
+            }
+            const restoredVolume = Math.min(1, Math.max(0, state.volume ?? 1));
+            setVolumeState((v) => {
+              // Only arm the skip if this actually changes anything.
+              // setVolumeState bails out (no re-render, no effect run) when
+              // the value is unchanged — arming unconditionally would leave
+              // the flag stuck "on" until the user's NEXT real change, which
+              // would then be the one silently dropped instead of this no-op.
+              if (v !== restoredVolume) skipNextVolumeSaveRef.current = true;
+              return restoredVolume;
+            });
+            // A restored 0 should still unmute to something audible later, so
+            // preMute is only updated on an audible restore — leave it at its
+            // default otherwise.
+            if (restoredVolume > 0) preMute.current = restoredVolume;
+            // Restored PAUSED, never playing: browsers block un-gestured audio
+            // autoplay, and a player that claims "playing" while the audio is
+            // actually blocked is worse than an honest paused one. The user
+            // presses play to actually start sound, from pendingSeekRef's
+            // position rather than 0:00.
+          })
+          .catch((err) => console.warn("Playback restore failed", err))
+          .finally(() => {
+            if (live) setPlaybackLoading(false);
           });
-          // A restored 0 should still unmute to something audible later, so
-          // preMute is only updated on an audible restore — leave it at its
-          // default otherwise.
-          if (restoredVolume > 0) preMute.current = restoredVolume;
-          // Restored PAUSED, never playing: browsers block un-gestured audio
-          // autoplay, and a player that claims "playing" while the audio is
-          // actually blocked is worse than an honest paused one. The user
-          // presses play to actually start sound, from pendingSeekRef's
-          // position rather than 0:00.
-        })
-        .catch((err) => console.warn("Playback restore failed", err))
-        .finally(() => {
-          if (live) setPlaybackLoading(false);
-        });
+      } else {
+        setPlaybackLoading(false);
+      }
 
       void backend.me
         .stats(tz)
@@ -458,24 +483,28 @@ export default function StudioProvider({
       live = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fbUser]);
+  }, [fbUser, restorePlayback]);
 
   // ---- playback ----------------------------------------------------------
   const flushEvent = useCallback(() => {
     const t = nowPlaying;
     if (!t || listenedRef.current < 1) return;
-    void backend.events.ingest([
-      {
-        trackId: t.id,
-        collectionId: playingCollection?.id ?? null,
-        listenedSec: Math.floor(listenedRef.current),
-        startedAt: startedAtRef.current,
-        source: playingCollection ? "collection" : "library",
-        clientHourOfDay: new Date().getHours(),
-      },
-    ]);
+    if (fbUser) {
+      void backend.events
+        .ingest([
+          {
+            trackId: t.id,
+            collectionId: playingCollection?.id ?? null,
+            listenedSec: Math.floor(listenedRef.current),
+            startedAt: startedAtRef.current,
+            source: playingCollection ? "collection" : "library",
+            clientHourOfDay: new Date().getHours(),
+          },
+        ])
+        .catch(() => {});
+    }
     listenedRef.current = 0;
-  }, [backend, nowPlaying, playingCollection]);
+  }, [backend, fbUser, nowPlaying, playingCollection]);
 
   const startTrack = useCallback((index: number) => {
     setCurrentIndex(index);
@@ -769,7 +798,7 @@ export default function StudioProvider({
   // state again — harmless and idempotent, not a fight with the restore.
   const hasTrack = nowPlaying !== null;
   useEffect(() => {
-    if (!hasTrack) return;
+    if (!fbUser || !hasTrack) return;
     const id = setInterval(() => {
       const s = persistSnapshotRef.current;
       if (!s.nowPlaying) return;
@@ -786,7 +815,7 @@ export default function StudioProvider({
       });
     }, 10000);
     return () => clearInterval(id);
-  }, [backend, hasTrack]);
+  }, [backend, fbUser, hasTrack]);
 
   // Persist a volume change on its own, debounced ~1s. The interval above
   // only runs `if (nowPlaying)`, so a volume tweak made with nothing loaded
@@ -795,6 +824,10 @@ export default function StudioProvider({
   // route.ts) explicitly accepts a null trackId — so this saves the full
   // current snapshot, not volume in isolation.
   useEffect(() => {
+    if (!fbUser) {
+      skipNextVolumeSaveRef.current = false;
+      return;
+    }
     if (skipNextVolumeSaveRef.current) {
       // Covers both the initial mount (nothing to save yet) and the moment
       // sign-in restore just set this same value from the server — either
@@ -820,7 +853,7 @@ export default function StudioProvider({
     // "whatever else is true right now", the same as the 10s interval above;
     // listing them here would re-debounce on every seek/track-change too.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [volume]);
+  }, [fbUser, volume]);
 
   // ---- search ------------------------------------------------------------
   // Monotonic ticket: a stale response (or one landing after a clear) must
@@ -886,6 +919,7 @@ export default function StudioProvider({
   );
   const toggleLike = useCallback(
     (trackId: string) => {
+      if (!fbUser) return;
       const wasLiked = likedIds.has(trackId);
       setLikedIds((s) => {
         const n = new Set(s);
@@ -914,7 +948,7 @@ export default function StudioProvider({
         .setTrackState(trackId, { isLiked: !wasLiked })
         .then(refreshLibrary);
     },
-    [backend, likedIds, refreshLibrary]
+    [backend, fbUser, likedIds, refreshLibrary]
   );
 
   const togglePin = useCallback(
@@ -965,6 +999,7 @@ export default function StudioProvider({
         desc: input.desc,
         texture: input.texture ?? "tx-k-silk",
         cover: input.cover ?? "texture",
+        artUrl: input.artUrl,
         trackIds: input.trackIds ?? [],
         likes: 0,
         tags: input.tags,
@@ -980,6 +1015,7 @@ export default function StudioProvider({
           contentType: input.kind,
           texture: input.texture,
           cover: input.cover,
+          imageUrl: input.artUrl,
           trackIds: input.trackIds,
         } as any)
         .then((persisted) => {
@@ -1007,6 +1043,7 @@ export default function StudioProvider({
         contentType: input.kind,
         texture: input.texture,
         cover: input.cover,
+        imageUrl: input.artUrl,
         trackIds: input.trackIds,
       } as any);
       const created = toStudioCollection(persisted);

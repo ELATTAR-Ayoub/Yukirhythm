@@ -93,7 +93,14 @@ function UpNextSection() {
           variant="ghost"
           size="sm"
           aria-label="Open queue"
-          onClick={() => router.push(playbackListHref(playingCollection?.id))}
+          onClick={() =>
+            router.push(
+              playbackListHref(
+                playingCollection?.id,
+                playingCollection?.playbackHref
+              )
+            )
+          }
           data-signal="queue_open"
         >
           <ListBulletIcon />

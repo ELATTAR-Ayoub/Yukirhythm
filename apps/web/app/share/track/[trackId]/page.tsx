@@ -49,6 +49,7 @@ export default async function SharedTrackPage({ params }: Props) {
     title: track.title,
     description: `Listen to ${track.title} by ${track.artist}.`,
     ownerName: track.artist,
+    tags: ["shared track"],
     cover: track.artUrl ? "image" : "texture",
     artUrl: track.artUrl,
     artUrls: track.artUrl ? [track.artUrl] : [],

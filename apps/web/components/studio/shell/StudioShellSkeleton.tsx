@@ -32,6 +32,8 @@ export function SkeletonForStudioPath({ pathname }: { pathname: string }) {
   if (/^\/playlist\/[^/]+\/add$/.test(pathname))
     return <PlaylistAddMusicPageSkeleton />;
   if (/^\/playlist\/[^/]+$/.test(pathname)) return <PlaylistPageSkeleton />;
+  if (/^\/share\/(track|playlist)\/[^/]+$/.test(pathname))
+    return <PlaylistPageSkeleton title="Shared music" />;
   if (pathname === "/profile/view") return <ProfileViewPageSkeleton />;
   if (pathname === "/profile/settings") return <SettingsPageSkeleton />;
   if (pathname === "/profile/privacy") return <PrivacyPageSkeleton />;

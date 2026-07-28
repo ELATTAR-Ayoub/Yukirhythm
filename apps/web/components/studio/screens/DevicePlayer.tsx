@@ -243,7 +243,14 @@ export default function DevicePlayer({
           <Transport
             size="lg"
             leading="like"
-            onQueue={() => router.push(playbackListHref(playingCollection?.id))}
+            onQueue={() =>
+              router.push(
+                playbackListHref(
+                  playingCollection?.id,
+                  playingCollection?.playbackHref
+                )
+              )
+            }
           />
         </div>
 

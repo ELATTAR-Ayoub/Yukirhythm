@@ -3,12 +3,12 @@
 import { useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { TextureBackground } from "@/components/ui/texture-background";
 import SocialAuthButtons from "@/components/studio/screens/SocialAuthButtons";
 import ScreensFrame from "@/components/studio/screens/ScreensFrame";
-import { SCREENS } from "@/components/studio/shell/routes";
+import { isSafeAppPath, SCREENS } from "@/components/studio/shell/routes";
 import { useAuthState } from "@/lib/studio/useAuth";
 
 /** Route base — the app lives at the root (see shell/routes.ts). */
@@ -17,16 +17,19 @@ const BASE = SCREENS;
 /** One door for everyone — Firebase social sign-in creates accounts on first login. */
 export default function AuthScreen() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, loading } = useAuthState();
+  const requestedReturnTo = searchParams.get("returnTo");
+  const returnTo = isSafeAppPath(requestedReturnTo) ? requestedReturnTo : "/";
 
   // The page's only exit: the moment Firebase reports a session — whether the
   // user just signed in here or arrived already signed in — hand off to the
-  // root, which decides between Search (new account) and Home (returning).
+  // requested public page, or the root decision for a normal sign-in.
   // `onAuthed` was the wrong trigger: it fires when the popup OPENS, before
   // any session exists.
   useEffect(() => {
-    if (!loading && user) router.replace("/");
-  }, [user, loading, router]);
+    if (!loading && user) router.replace(returnTo);
+  }, [user, loading, router, returnTo]);
 
   return (
     <ScreensFrame>

@@ -138,6 +138,25 @@ describe("CollectionDetail", () => {
       fireEvent.click(screen.getByLabelText("Add music"));
       expect(push).toHaveBeenCalledWith("/queue/add");
     });
+
+    it("keeps public snapshots read-only while retaining track actions", () => {
+      render(
+        <MockStudioProvider>
+          <CollectionDetail collection={LIKED_SONGS} editable={false} />
+        </MockStudioProvider>
+      );
+
+      expect(screen.queryByLabelText("Add music")).toBeNull();
+      expect(
+        screen.queryByLabelText(`More for ${LIKED_SONGS.title}`)
+      ).toBeNull();
+      expect(
+        screen.getByRole("button", { name: "Like Cobalt Dreams" })
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "More for Cobalt Dreams" })
+      ).toBeInTheDocument();
+    });
   });
 
   describe("positional tracks (queue)", () => {

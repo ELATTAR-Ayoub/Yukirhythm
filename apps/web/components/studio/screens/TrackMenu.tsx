@@ -23,6 +23,7 @@ import ShareDialog, { absoluteUrl } from "./ShareDialog";
 import AddToPlaylistDialog from "./AddToPlaylistDialog";
 import { useMockStudio } from "./MockStudioProvider";
 import type { MockTrack } from "./mock-data";
+import SignInRequiredDialog from "./SignInRequiredDialog";
 
 interface TrackMenuProps {
   track: MockTrack;
@@ -36,9 +37,12 @@ interface TrackMenuProps {
 
 /** The ⋯ menu on every track row: like, add to playlists, share. */
 export default function TrackMenu({ track, queueIndex }: TrackMenuProps) {
-  const { isLiked, toggleLike, dequeue } = useMockStudio();
+  const { user, isLiked, toggleLike, dequeue } = useMockStudio();
   const [sharing, setSharing] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [signInAction, setSignInAction] = useState<
+    "like songs" | "add songs to playlists" | null
+  >(null);
   const liked = isLiked(track.id);
 
   // The surrounding queue/playlist is private playback context. The public
@@ -60,7 +64,11 @@ export default function TrackMenu({ track, queueIndex }: TrackMenuProps) {
         <DropdownMenuContent align="end">
           {/* Names the outcome, not the control — "Like" on an already-liked
               track would be a lie about what the click does. */}
-          <DropdownMenuItem onClick={() => toggleLike(track.id)}>
+          <DropdownMenuItem
+            onClick={() =>
+              user ? toggleLike(track.id) : setSignInAction("like songs")
+            }
+          >
             {liked ? (
               <HeartFilledIcon className="mr-2 h-3.5 w-3.5 text-primary" />
             ) : (
@@ -68,7 +76,11 @@ export default function TrackMenu({ track, queueIndex }: TrackMenuProps) {
             )}
             {liked ? "Remove from Liked Songs" : "Like"}
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setAdding(true)}>
+          <DropdownMenuItem
+            onClick={() =>
+              user ? setAdding(true) : setSignInAction("add songs to playlists")
+            }
+          >
             <PlusIcon className="mr-2 h-3.5 w-3.5" /> Add to playlist
           </DropdownMenuItem>
           {queueIndex !== undefined ? (
@@ -95,6 +107,15 @@ export default function TrackMenu({ track, queueIndex }: TrackMenuProps) {
         url={url}
         text={`Listen to ${track.title} by ${track.artist} on Yukirhythm`}
       />
+      {signInAction ? (
+        <SignInRequiredDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setSignInAction(null);
+          }}
+          action={signInAction}
+        />
+      ) : null}
     </>
   );
 }
