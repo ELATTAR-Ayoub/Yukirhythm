@@ -96,6 +96,10 @@ export const endpoints = {
     ingest: () => `${API}/events`,
   },
 
+  shares: {
+    playlists: () => `${API}/shares/playlists`,
+  },
+
   /** Other users — the social surface. Music sharing lives here. (planned — phase 6) */
   users: {
     /** Public profile; 404 unless the user made it public. */

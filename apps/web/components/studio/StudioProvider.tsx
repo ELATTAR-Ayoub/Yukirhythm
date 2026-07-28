@@ -1018,6 +1018,10 @@ export default function StudioProvider({
     },
     [backend]
   );
+  const publishCollectionShare = useCallback(
+    (collectionId: string) => backend.shares.publishPlaylist(collectionId),
+    [backend]
+  );
 
   // Defaults to google so any caller that omits the argument (there are
   // none left post-fix, but the type stays optional-arg compatible with the
@@ -1072,6 +1076,7 @@ export default function StudioProvider({
       addTrackToCollection,
       createCollection,
       createCollectionAsync,
+      publishCollectionShare,
       jumpBackIn,
       newReleases,
       youMightLike,
@@ -1132,6 +1137,7 @@ export default function StudioProvider({
       addTrackToCollection,
       createCollection,
       createCollectionAsync,
+      publishCollectionShare,
       playerExpanded,
       volume,
       setVolume,

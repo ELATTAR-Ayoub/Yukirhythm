@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronDownIcon, MagnifyingGlassIcon } from "@radix-ui/react-icons";
+import {
+  ChevronDownIcon,
+  MagnifyingGlassIcon,
+  Share1Icon,
+} from "@radix-ui/react-icons";
 
 import { cn } from "@/lib/utils";
 import DataText from "@/components/studio/DataText";
@@ -11,9 +15,15 @@ import { Slider } from "@/components/ui/slider";
 import Transport from "./Transport";
 import VinylDisc from "./VinylDisc";
 import { useMockStudio } from "./MockStudioProvider";
-import { QUEUE, QUEUE_ADD, playbackListHref } from "../shell/routes";
+import {
+  QUEUE,
+  QUEUE_ADD,
+  playbackListHref,
+  sharedTrackHref,
+} from "../shell/routes";
 import { formatDuration } from "./mock-data";
 import { IDLE_LABEL, NO_TIME } from "./player-idle";
+import ShareDialog, { absoluteUrl } from "./ShareDialog";
 
 interface DevicePlayerProps {
   onCollapse?: () => void;
@@ -52,6 +62,7 @@ export default function DevicePlayer({
   const router = useRouter();
   const pathname = usePathname();
   const [discExpanded, setDiscExpanded] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const showQueueSearch =
     !docked && pathname === QUEUE && playingCollection === null;
 
@@ -116,6 +127,21 @@ export default function DevicePlayer({
             className="absolute top-4 right-4 z-30"
           >
             <ChevronDownIcon />
+          </PlayerButton>
+        ) : null}
+
+        {nowPlaying ? (
+          <PlayerButton
+            variant="ghost"
+            size="sm"
+            aria-label={`Share ${nowPlaying.title}`}
+            onClick={() => setSharing(true)}
+            className={cn(
+              "absolute top-4 z-30",
+              !docked && onCollapse ? "left-4" : "right-4"
+            )}
+          >
+            <Share1Icon />
           </PlayerButton>
         ) : null}
 
@@ -223,6 +249,15 @@ export default function DevicePlayer({
 
         <div aria-hidden className="w-full pb-8" />
       </section>
+      {nowPlaying ? (
+        <ShareDialog
+          open={sharing}
+          onOpenChange={setSharing}
+          title={nowPlaying.title}
+          url={absoluteUrl(sharedTrackHref(nowPlaying.id))}
+          text={`Listen to ${nowPlaying.title} by ${nowPlaying.artist} on Yukirhythm`}
+        />
+      ) : null}
     </div>
   );
 }

@@ -19,6 +19,7 @@ import EmptyState from "@/components/studio/EmptyState";
 import { PlayerButton } from "@/components/studio/PlayerButton";
 import IconSwap from "@/components/studio/IconSwap";
 import LikeButton from "./LikeButton";
+import CollectionMenu from "./CollectionMenu";
 import TrackMenu from "./TrackMenu";
 import ViewToggle, { type TrackView } from "./ViewToggle";
 import SortControl from "./SortControl";
@@ -239,6 +240,7 @@ export default function CollectionDetail({
         >
           <ShuffleIcon />
         </PlayerButton>
+        {!onPlayAt ? <CollectionMenu collection={collection} /> : null}
         {queueAction}
         <PlayerButton
           variant="primary"
@@ -322,11 +324,7 @@ export default function CollectionDetail({
                   and nesting controls inside it would make each a dead
                   keyboard stop that only works because the click bubbles. */}
               <LikeButton trackId={track.id} trackTitle={track.title} />
-              <TrackMenu
-                track={track}
-                collection={collection}
-                queueIndex={onPlayAt ? i : undefined}
-              />
+              <TrackMenu track={track} queueIndex={onPlayAt ? i : undefined} />
             </div>
           ))}
         </FadeScrollArea>

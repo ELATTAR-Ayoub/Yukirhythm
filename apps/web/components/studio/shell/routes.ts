@@ -46,6 +46,15 @@ export function playlistHref(id: string): string {
   return `${SCREENS}/playlist/${encodeURIComponent(id)}`;
 }
 
+/** Anonymous, social-previewable listening pages. */
+export function sharedTrackHref(id: string): string {
+  return `${SCREENS}/share/track/${encodeURIComponent(id)}`;
+}
+
+export function sharedPlaylistHref(id: string): string {
+  return `${SCREENS}/share/playlist/${encodeURIComponent(id)}`;
+}
+
 /**
  * Where the player's list/queue control should lead.
  *

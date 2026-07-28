@@ -8,10 +8,39 @@ import { fontVariables } from "./fonts";
 import Providers from "./providers";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL ??
+      (process.env.VERCEL_PROJECT_PRODUCTION_URL
+        ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+        : "https://yukirhythm-web.vercel.app")
+  ),
+  applicationName: "Yukirhythm",
   title: "Yukirhythm",
   description:
     "Yukirhythm — a music and podcast player that finds and plays content from YouTube based on your searches.",
   icons: { icon: "/icon" },
+  openGraph: {
+    type: "website",
+    siteName: "Yukirhythm",
+    title: "Yukirhythm",
+    description:
+      "Find, collect, share and listen to music and podcasts with Yukirhythm.",
+    images: [
+      {
+        url: "/social/yukirhythm.png",
+        width: 1800,
+        height: 764,
+        alt: "Yukirhythm music player",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Yukirhythm",
+    description:
+      "Find, collect, share and listen to music and podcasts with Yukirhythm.",
+    images: ["/social/yukirhythm.png"],
+  },
 };
 
 export const viewport: Viewport = {

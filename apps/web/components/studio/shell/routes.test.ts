@@ -8,6 +8,8 @@ import {
   playlistHref,
   playbackListHref,
   addMusicHref,
+  sharedTrackHref,
+  sharedPlaylistHref,
 } from "./routes";
 
 describe("isSystemRoute", () => {
@@ -51,6 +53,15 @@ describe("playlistHref", () => {
   it("builds the playlist route and encodes the id", () => {
     expect(playlistHref("liked")).toBe(`${SCREENS}/playlist/liked`);
     expect(playlistHref("local 1")).toBe(`${SCREENS}/playlist/local%201`);
+  });
+});
+
+describe("public share hrefs", () => {
+  it("builds encoded anonymous listening routes", () => {
+    expect(sharedTrackHref("track 1")).toBe(`${SCREENS}/share/track/track%201`);
+    expect(sharedPlaylistHref("share 1")).toBe(
+      `${SCREENS}/share/playlist/share%201`
+    );
   });
 });
 

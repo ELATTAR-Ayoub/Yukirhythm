@@ -16,8 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { PlayerButton } from "@/components/studio/PlayerButton";
-import { playlistHref } from "@/components/studio/shell/routes";
+import { CircleSpinner, PlayerButton } from "@/components/studio/PlayerButton";
 import ShareDialog, { absoluteUrl } from "./ShareDialog";
 import type { MockCollection } from "./mock-data";
 import { useMockStudio } from "./MockStudioProvider";
@@ -28,12 +27,31 @@ interface CollectionMenuProps {
 
 /** The ⋯ menu on a library playlist: pin it, or share it. */
 export default function CollectionMenu({ collection }: CollectionMenuProps) {
-  const { togglePin } = useMockStudio();
+  const { togglePin, publishCollectionShare } = useMockStudio();
   const [sharing, setSharing] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [shareUrl, setShareUrl] = useState("");
   const pinned = collection.pinned;
 
-  const url = absoluteUrl(playlistHref(collection.id));
   const text = `Listen to ${collection.title} on Yukirhythm`;
+
+  const publishShare = async () => {
+    if (publishing) return;
+    setPublishing(true);
+    const toastId = toast.loading("Preparing public playlist link...");
+    try {
+      const result = await publishCollectionShare(collection.id);
+      setShareUrl(absoluteUrl(result.path));
+      setSharing(true);
+      toast.success("Playlist link is ready", { id: toastId });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Please try again.";
+      toast.error(`Couldn't prepare the link: ${message}`, { id: toastId });
+    } finally {
+      setPublishing(false);
+    }
+  };
 
   return (
     <>
@@ -69,8 +87,18 @@ export default function CollectionMenu({ collection }: CollectionMenuProps) {
               <DropdownMenuSeparator />
             </>
           )}
-          <DropdownMenuItem onClick={() => setSharing(true)}>
-            <Share1Icon className="mr-2 h-3.5 w-3.5" /> Share
+          <DropdownMenuItem
+            disabled={publishing}
+            onSelect={() => void publishShare()}
+          >
+            {publishing ? (
+              <span className="mr-2 h-3.5 w-3.5">
+                <CircleSpinner />
+              </span>
+            ) : (
+              <Share1Icon className="mr-2 h-3.5 w-3.5" />
+            )}
+            {publishing ? "Preparing link..." : "Share"}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -79,7 +107,7 @@ export default function CollectionMenu({ collection }: CollectionMenuProps) {
         open={sharing}
         onOpenChange={setSharing}
         title={collection.title}
-        url={url}
+        url={shareUrl}
         text={text}
       />
     </>

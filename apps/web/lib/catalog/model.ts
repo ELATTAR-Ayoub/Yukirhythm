@@ -115,6 +115,30 @@ export type Collection = {
   updatedAt: Timestamp;
 };
 
+/**
+ * Public, link-only projection of a playlist. Sharing copies only the fields
+ * needed by the anonymous listening page, so a private collection document
+ * and its owner's library remain unreadable.
+ */
+export type SharedPlaylist = {
+  shareId: string;
+  sharedById: string;
+  ownerId: string;
+  ownerName: string;
+  sourceType: "collection" | "liked";
+  sourceId: string;
+
+  title: string;
+  description: string;
+  cover: Collection["cover"];
+  texture: TextureName;
+  imageUrl: string | null;
+  trackIds: string[];
+
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+};
+
 export type UserPrivacy = {
   saveHistory: boolean;
   personalization: boolean;

@@ -49,6 +49,12 @@ function ThreeUp({ tracks }: { tracks: MockTrack[] }) {
 
 interface CollectionArtProps {
   collection: CollectionArtSource;
+  /**
+   * Tracks that have already been resolved by the caller. Most studio
+   * surfaces use the shared track registry; server-backed/public surfaces can
+   * pass their resolved tracks directly and still use this same renderer.
+   */
+  tracks?: MockTrack[];
   className?: string;
 }
 
@@ -64,6 +70,7 @@ interface CollectionArtProps {
  */
 export default function CollectionArt({
   collection,
+  tracks: resolvedTracks,
   className,
 }: CollectionArtProps) {
   const cover = collection.cover ?? "texture";
@@ -81,7 +88,9 @@ export default function CollectionArt({
   }
 
   const tracks =
-    cover === "mosaic" ? tracksFor(collection.trackIds).slice(0, 4) : [];
+    cover === "mosaic"
+      ? (resolvedTracks ?? tracksFor(collection.trackIds)).slice(0, 4)
+      : [];
 
   if (tracks.length === 0) {
     return (

@@ -8,13 +8,7 @@ import {
 } from "@testing-library/react";
 
 import MockStudioProvider, { useMockStudio } from "./MockStudioProvider";
-import {
-  MOCK_COLLECTIONS,
-  MOCK_TRACKS,
-  type MockCollection,
-} from "./mock-data";
-import { QUEUE_COLLECTION_ID } from "./useQueueCollection";
-import { QUEUE } from "@/components/studio/shell/routes";
+import { MOCK_COLLECTIONS, MOCK_TRACKS } from "./mock-data";
 import TrackMenu from "./TrackMenu";
 
 vi.mock("next/navigation", () => ({
@@ -35,7 +29,7 @@ function renderMenu() {
   return render(
     <MockStudioProvider>
       <MembershipProbe collectionId={COLLECTION.id} />
-      <TrackMenu track={TRACK} collection={COLLECTION} />
+      <TrackMenu track={TRACK} />
     </MockStudioProvider>
   );
 }
@@ -55,40 +49,22 @@ describe("TrackMenu", () => {
     window.HTMLElement.prototype.scrollIntoView = () => {};
   });
 
-  it("shares through the same dialog a playlist uses", () => {
+  it("shares a dedicated public track page", () => {
     renderMenu();
     openMenu();
     fireEvent.click(screen.getByText("Share"));
 
     const dialog = within(screen.getByRole("dialog"));
-    // A link that resolves: there is no route for a single track, so it
-    // points at the playlist holding it.
     expect(
-      dialog.getByText(new RegExp(`/playlist/${COLLECTION.id}`))
+      dialog.getByText(new RegExp(`/share/track/${TRACK.id}`))
     ).toBeTruthy();
     expect(dialog.getByText("Copy link")).toBeTruthy();
   });
 
-  it("shares the queue route, not a dead playlist link, for the synthetic queue collection", () => {
-    // useQueueCollection() falls back to a synthetic collection with id
-    // "queue" when nothing has ever played. /playlist/queue does not
-    // resolve — app/(studio)/playlist/[id]/page.tsx renders "Collection not
-    // found" for it — so this must fall back to the queue route itself.
-    const QUEUE_COLLECTION: MockCollection = {
-      id: QUEUE_COLLECTION_ID,
-      title: "Up next",
-      desc: "Everything queued from your library.",
-      texture: "tx-k-silk",
-      trackIds: [],
-      likes: 0,
-      tags: ["queue"],
-      kind: "music",
-      pinned: false,
-    };
-
+  it("does not expose queue context when sharing a track", () => {
     render(
       <MockStudioProvider>
-        <TrackMenu track={TRACK} collection={QUEUE_COLLECTION} />
+        <TrackMenu track={TRACK} queueIndex={0} />
       </MockStudioProvider>
     );
     fireEvent.pointerDown(screen.getByLabelText(`More for ${TRACK.title}`), {
@@ -98,7 +74,9 @@ describe("TrackMenu", () => {
 
     const dialog = within(screen.getByRole("dialog"));
     const urlNode = dialog.getByText(/^https?:\/\//);
-    expect(urlNode.textContent).toBe(`${window.location.origin}${QUEUE}`);
+    expect(urlNode.textContent).toBe(
+      `${window.location.origin}/share/track/${TRACK.id}`
+    );
   });
 
   it("opens a checklist of playlists", () => {

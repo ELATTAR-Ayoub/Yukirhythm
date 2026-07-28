@@ -18,22 +18,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { PlayerButton } from "@/components/studio/PlayerButton";
-import { playlistHref, LIBRARY, QUEUE } from "@/components/studio/shell/routes";
+import { sharedTrackHref } from "@/components/studio/shell/routes";
 import ShareDialog, { absoluteUrl } from "./ShareDialog";
 import AddToPlaylistDialog from "./AddToPlaylistDialog";
 import { useMockStudio } from "./MockStudioProvider";
-import { QUEUE_COLLECTION_ID } from "./useQueueCollection";
-import type { MockCollection, MockTrack } from "./mock-data";
+import type { MockTrack } from "./mock-data";
 
 interface TrackMenuProps {
   track: MockTrack;
-  /**
-   * The collection this row belongs to, where there is one. No route exists
-   * for a single track, so a share link points at the playlist holding it — a
-   * link that actually resolves — rather than inventing a track URL that
-   * would 404.
-   */
-  collection?: MockCollection;
   /**
    * This row's position in the running queue, when it is a queue row. A
    * position, not a boolean: removing must drop the copy the user pointed at,
@@ -43,26 +35,15 @@ interface TrackMenuProps {
 }
 
 /** The ⋯ menu on every track row: like, add to playlists, share. */
-export default function TrackMenu({
-  track,
-  collection,
-  queueIndex,
-}: TrackMenuProps) {
+export default function TrackMenu({ track, queueIndex }: TrackMenuProps) {
   const { isLiked, toggleLike, dequeue } = useMockStudio();
   const [sharing, setSharing] = useState(false);
   const [adding, setAdding] = useState(false);
   const liked = isLiked(track.id);
 
-  // The synthetic "Up next" collection (id QUEUE_COLLECTION_ID) has no
-  // playlist route — /playlist/queue 404s into "Collection not found" — so
-  // it shares the queue route itself rather than a dead playlist link.
-  const url = absoluteUrl(
-    !collection
-      ? LIBRARY
-      : collection.id === QUEUE_COLLECTION_ID
-        ? QUEUE
-        : playlistHref(collection.id)
-  );
+  // The surrounding queue/playlist is private playback context. The public
+  // link always names only the track the user selected.
+  const url = absoluteUrl(sharedTrackHref(track.id));
 
   return (
     <>

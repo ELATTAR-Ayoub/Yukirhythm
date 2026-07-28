@@ -99,6 +99,17 @@ export function createBackendClient(getToken: TokenProvider) {
         }),
     },
 
+    shares: {
+      publishPlaylist: (collectionId: string) =>
+        request<{ shareId: string; path: string }>(
+          endpoints.shares.playlists(),
+          {
+            method: "POST",
+            body: body({ collectionId }),
+          }
+        ),
+    },
+
     /** Recommendation feeds — every item carries a recommendationId + reason. */
     feed: {
       jumpBackIn: () =>

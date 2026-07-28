@@ -77,14 +77,14 @@ describe("CollectionMenu", () => {
     expect(screen.queryByText("Unpin")).toBeNull();
   });
 
-  it("shows the link before sharing it", () => {
+  it("publishes and shows the public link before sharing it", async () => {
     renderMenu();
     openMenu();
     fireEvent.click(screen.getByText("Share"));
 
-    const dialog = within(screen.getByRole("dialog"));
+    const dialog = within(await screen.findByRole("dialog"));
     // Inspectable, and still recoverable if the copy fails.
-    expect(dialog.getByText(/\/playlist\//)).toBeTruthy();
+    expect(dialog.getByText(/\/share\/playlist\/mock-liked/)).toBeTruthy();
     expect(dialog.getByText("Copy link")).toBeTruthy();
   });
 
@@ -100,18 +100,19 @@ describe("CollectionMenu", () => {
     renderMenu();
     openMenu();
     fireEvent.click(screen.getByText("Share"));
+    await screen.findByRole("dialog");
     fireEvent.click(screen.getByText("Copy link"));
 
     expect(writeText).toHaveBeenCalledTimes(1);
-    expect(writeText.mock.calls[0][0]).toContain("/playlist/liked");
+    expect(writeText.mock.calls[0][0]).toContain("/share/playlist/mock-liked");
   });
 
-  it("offers share targets that open rather than post", () => {
+  it("offers share targets that open rather than post", async () => {
     renderMenu();
     openMenu();
     fireEvent.click(screen.getByText("Share"));
 
-    const dialog = within(screen.getByRole("dialog"));
+    const dialog = within(await screen.findByRole("dialog"));
     const x = dialog.getByText("X").closest("a")!;
     // An intent URL: the destination still requires the user to confirm, so
     // nothing is published by clicking here.

@@ -6,10 +6,8 @@ import { useMockStudio } from "./MockStudioProvider";
 import { type MockCollection } from "./mock-data";
 
 /** Id of the synthetic "Up next" collection this hook falls back to when
- *  nothing has ever played. Not a real collection — there is no route that
- *  resolves it by id — so callers that build a link from a collection's id
- *  (TrackMenu's Share) must special-case this rather than assume every
- *  `collection.id` names a real playlist. */
+ *  nothing has ever played. It is playback state, not a stored playlist, so
+ *  callers must never send it to collection APIs or playlist routes. */
 export const QUEUE_COLLECTION_ID = "queue";
 
 /**

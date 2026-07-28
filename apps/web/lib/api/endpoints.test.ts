@@ -36,6 +36,10 @@ describe("endpoints registry", () => {
     );
   });
 
+  it("publishes public playlist snapshots through the shares resource", () => {
+    expect(endpoints.shares.playlists()).toBe("/api/shares/playlists");
+  });
+
   it("keeps other users' resources under /users", () => {
     expect(endpoints.users.profile("u1")).toBe("/api/users/u1");
     expect(endpoints.users.follow("u1")).toBe("/api/users/u1/follow");

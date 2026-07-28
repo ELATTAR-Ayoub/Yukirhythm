@@ -157,6 +157,10 @@ interface MockStudioValue {
   createCollectionAsync: (
     input: CreateStudioCollectionInput
   ) => Promise<MockCollection>;
+  /** Publish/update the link-only public projection used by ShareDialog. */
+  publishCollectionShare: (
+    collectionId: string
+  ) => Promise<{ shareId: string; path: string }>;
   // feeds & profile data (phase 8). Both providers supply these — the mock one
   // from fixtures, the real one from /api/feed, /api/me/stats and /api/me/recents
   // — so the screens read one shape and never import fixtures directly.
@@ -358,6 +362,13 @@ export default function MockStudioProvider({
     async (input: CreateStudioCollectionInput): Promise<MockCollection> =>
       createCollection(input),
     [createCollection]
+  );
+  const publishCollectionShare = useCallback(
+    async (collectionId: string) => ({
+      shareId: `mock-${collectionId}`,
+      path: `/share/playlist/mock-${encodeURIComponent(collectionId)}`,
+    }),
+    []
   );
 
   const nowPlaying = currentIndex >= 0 ? (queue[currentIndex] ?? null) : null;
@@ -699,6 +710,7 @@ export default function MockStudioProvider({
     addTrackToCollection,
     createCollection,
     createCollectionAsync,
+    publishCollectionShare,
     jumpBackIn,
     newReleases,
     youMightLike,

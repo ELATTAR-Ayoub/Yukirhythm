@@ -159,6 +159,43 @@ describe("CollectionArt", () => {
     ).toBeTruthy();
   });
 
+  it("accepts already-resolved tracks from server-backed surfaces", () => {
+    const { container } = render(
+      <CollectionArt
+        collection={{
+          texture: "tx-k-silk",
+          cover: "mosaic",
+          trackIds: ["public-1", "public-2"],
+        }}
+        tracks={[
+          {
+            id: "public-1",
+            title: "Public One",
+            artist: "A",
+            texture: "tx-k-silk",
+            durationSec: 1,
+            artUrl: "https://cdn/public-1.jpg",
+          },
+          {
+            id: "public-2",
+            title: "Public Two",
+            artist: "B",
+            texture: "tx-k-marble",
+            durationSec: 1,
+            artUrl: "https://cdn/public-2.jpg",
+          },
+        ]}
+      />
+    );
+
+    expect(
+      container.querySelector('img[src="https://cdn/public-1.jpg"]')
+    ).toBeTruthy();
+    expect(
+      container.querySelector('img[src="https://cdn/public-2.jpg"]')
+    ).toBeTruthy();
+  });
+
   it("falls back per cell when only some tracks have artwork", () => {
     registerStudioTracks([
       {
