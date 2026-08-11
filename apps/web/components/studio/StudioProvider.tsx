@@ -607,6 +607,20 @@ export default function StudioProvider({
 
   const play = useCallback(
     async (track: MockTrack, from?: MockCollection) => {
+      // Playing the already-selected track is a transport toggle, not a new
+      // load. Re-running startTrack here sets isLoading=true while the hidden
+      // player URL remains unchanged, so onReady never fires again and the UI
+      // can spin forever.
+      if (nowPlaying?.id === track.id) {
+        setIsLoading(false);
+        setIsPlaying((playing) => {
+          if (!playing && !listeningRef.current) {
+            listeningRef.current = freshListeningSession(progressSec);
+          }
+          return !playing;
+        });
+        return;
+      }
       const requestId = ++playRequestRef.current;
       // Clicking a row in the queue you are already inside must not rebuild
       // that queue — everything enqueued from the rail lives only there. See
@@ -676,7 +690,16 @@ export default function StudioProvider({
         });
       }
     },
-    [flushEvent, startTrack, playingCollection, queue, backend, shuffled]
+    [
+      flushEvent,
+      startTrack,
+      playingCollection,
+      queue,
+      backend,
+      shuffled,
+      nowPlaying,
+      progressSec,
+    ]
   );
 
   const dequeue = useCallback(

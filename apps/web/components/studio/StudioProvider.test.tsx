@@ -143,6 +143,7 @@ function PlaybackProbe() {
     progressSec,
     volume,
     isPlaying,
+    isLoading,
     collections,
     setVolume,
     play,
@@ -160,6 +161,7 @@ function PlaybackProbe() {
       <div data-testid="progress">{progressSec}</div>
       <div data-testid="volume">{volume}</div>
       <div data-testid="is-playing">{String(isPlaying)}</div>
+      <div data-testid="is-loading">{String(isLoading)}</div>
       <div data-testid="collections-count">{collections.length}</div>
       <button onClick={() => setVolume(0.7)}>set-volume</button>
       <button
@@ -925,6 +927,27 @@ describe("StudioProvider playback session restore", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it("stops the current song when its card play action is clicked again", async () => {
+    render(
+      <StudioProvider>
+        <PlaybackProbe />
+      </StudioProvider>
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId("collections-count").textContent).toBe("1")
+    );
+
+    fireEvent.click(screen.getByText("play-user-track"));
+    expect(screen.getByTestId("now-playing")).toHaveTextContent("u1");
+    expect(screen.getByTestId("is-playing")).toHaveTextContent("true");
+    expect(screen.getByTestId("is-loading")).toHaveTextContent("true");
+
+    fireEvent.click(screen.getByText("play-user-track"));
+    expect(screen.getByTestId("now-playing")).toHaveTextContent("u1");
+    expect(screen.getByTestId("is-playing")).toHaveTextContent("false");
+    expect(screen.getByTestId("is-loading")).toHaveTextContent("false");
   });
 
   it("persists a volume change in browser storage only", async () => {
