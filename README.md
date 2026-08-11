@@ -97,6 +97,81 @@ them from anywhere in the app.
 
 <br>
 
+## How "You might like" works
+
+Yukirhythm builds this shelf from what you have listened to recently, not from
+a fixed editorial playlist. The engine turns listening history into a taste
+profile, gathers several kinds of related candidates, scores them, and returns
+up to **15 songs**.
+
+### Listening signals
+
+A play is considered completed after the smaller of **30 seconds** or **half
+the track's duration**. Each listening event contributes:
+
+| Behavior                              |        Signal |
+| ------------------------------------- | ------------: |
+| Completed play                        |       `+1.00` |
+| Partial listen of at least 10 seconds | up to `+0.75` |
+| Listen shorter than 10 seconds        |       `-0.35` |
+| Song is liked                         |       `+0.60` |
+
+Recent behavior matters more. Signals use a 14-day half-life and disappear
+from the active taste window after 60 days:
+
+```text
+recency = 0.5 ^ (age in days / 14)
+event score = recency * (engagement + like boost)
+```
+
+Repeated plays accumulate. Positive track scores are normalized so the
+strongest current preference has an affinity of `1.0`. The engine then derives
+separate track, artist, and genre affinities and selects up to six diverse
+radio seeds.
+
+### Finding candidates
+
+Candidates come from four sources:
+
+1. **YouTube Music radio:** up to ten related tracks from each recent seed.
+2. **Co-listening:** tracks found beside your liked songs in other users'
+   public collections.
+3. **Genre matches:** catalog tracks carrying any of your top three genre
+   labels.
+4. **Cold start:** globally popular radio plus searches for `top hits` and
+   `popular songs` when there is not enough history yet.
+
+Songs are excluded when they are already liked, belong to one of your owned
+collections, or were played during the last seven days.
+
+### Ranking
+
+Signals are additive, so a candidate discovered in several ways becomes a
+stronger recommendation:
+
+```text
+radio similarity  = 0.45 * seed affinity
+genre match       = 0.25 * genre affinity
+artist affinity   = 0.15 * artist affinity
+co-listening      = 0.10 * normalized collection appearances
+quality tie-break = 0.05 * normalized log view count
+```
+
+The first matching source also supplies the explanation shown with a result,
+such as `Because you played ...`, `More ...`, or `Similar to ...`.
+
+The final pass prefers no more than two tracks per artist, then backfills from
+the remaining ranked candidates so a sufficiently large pool still returns
+all 15 songs.
+
+### Refreshing the shelf
+
+Each user's result is cached separately in the browser so Home and Search stay
+stable between visits. New listening affects the next generated result; press
+**Refresh** on the shelf to rebuild it immediately from the latest history.
+
+<br>
+
 ## Questions you might have
 
 <details>
