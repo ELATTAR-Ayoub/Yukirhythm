@@ -12,7 +12,7 @@ type CachedFeed = {
   tracks: MockTrack[];
 };
 
-const CACHE_PREFIX = "yukirhythm:feed:v1";
+const CACHE_PREFIX = "yukirhythm:feed:v2";
 
 function cacheKey(userId: string, feed: StudioShelfFeed): string {
   return `${CACHE_PREFIX}:${encodeURIComponent(userId)}:${feed}`;
@@ -106,7 +106,12 @@ export function useCachedStudioFeed({
         feed === "new-releases"
           ? await backend.feed.newReleases()
           : await backend.feed.youMightLike();
-      const next = response.items.map((item) => toStudioTrack(item.track));
+      const next = response.items.map((item) =>
+        toStudioTrack(item.track, {
+          eventSource: "recommendation",
+          recommendationId: item.recommendationId,
+        })
+      );
       registerStudioTracks(next);
       setTracks(next);
       setReady(true);

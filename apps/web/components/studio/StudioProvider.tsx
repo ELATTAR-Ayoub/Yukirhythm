@@ -55,6 +55,63 @@ const HiddenYouTubePlayer = dynamic(
 
 const LIKED_ID = "liked";
 
+type ListeningSession = {
+  eventId: string;
+  startedAt: number;
+  listenedSec: number;
+  lastPositionSec: number | null;
+};
+
+type ListeningEvent = {
+  eventId: string;
+  trackId: string;
+  collectionId: string | null;
+  listenedSec: number;
+  startedAt: number;
+  source: "collection" | "library" | "search" | "recommendation";
+  recommendationId: string | null;
+  clientHourOfDay: number;
+};
+
+const pendingHistoryKey = (uid: string) => `yukirhythm:history:v1:${uid}`;
+
+function readPendingHistory(uid: string): ListeningEvent[] {
+  try {
+    const parsed = JSON.parse(
+      window.localStorage.getItem(pendingHistoryKey(uid)) ?? "[]"
+    );
+    return Array.isArray(parsed) ? (parsed as ListeningEvent[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writePendingHistory(uid: string, events: ListeningEvent[]): void {
+  try {
+    if (events.length) {
+      window.localStorage.setItem(
+        pendingHistoryKey(uid),
+        JSON.stringify(events)
+      );
+    } else {
+      window.localStorage.removeItem(pendingHistoryKey(uid));
+    }
+  } catch {
+    // The immediate network path still works when browser storage is blocked.
+  }
+}
+
+function freshListeningSession(
+  positionSec: number | null = null
+): ListeningSession {
+  return {
+    eventId: crypto.randomUUID(),
+    startedAt: Date.now(),
+    listenedSec: 0,
+    lastPositionSec: positionSec,
+  };
+}
+
 function firebaseUserSnapshot(user: FirebaseUser): MockUser {
   const name = user.displayName || user.email || "You";
   return {
@@ -118,8 +175,7 @@ export default function StudioProvider({
   const [playerExpanded, setPlayerExpanded] = useState(false);
   const [volume, setVolumeState] = useState(1);
   const preMute = useRef(1);
-  const startedAtRef = useRef<number>(0);
-  const listenedRef = useRef<number>(0);
+  const listeningRef = useRef<ListeningSession | null>(null);
   /** Set once by the sign-in restore below; consumed by the hidden player's
    *  onReady so a resumed session continues from the saved position instead
    *  of 0:00. Target-aware (tagged with the track it belongs to) because
@@ -163,12 +219,36 @@ export default function StudioProvider({
 
   const nowPlaying = currentIndex >= 0 ? (queue[currentIndex] ?? null) : null;
 
+  useEffect(() => {
+    if (!fbUser) return;
+    const pending = readPendingHistory(fbUser.uid);
+    if (!pending.length) return;
+    void backend.events
+      .ingest(pending)
+      .then(() => writePendingHistory(fbUser.uid, []))
+      .catch((err) => console.warn("Listening history retry failed", err));
+  }, [backend, fbUser]);
+
   /** Register tracks so the screens' getTrack/getCollectionTracks resolve them. */
   const absorb = useCallback((tracks: Track[]) => {
-    const mocks = tracks.map(toStudioTrack);
+    const mocks = tracks.map((track) => toStudioTrack(track));
     registerStudioTracks(mocks);
     return mocks;
   }, []);
+
+  const absorbFeed = useCallback(
+    (items: { track: Track; recommendationId: string }[]) => {
+      const mocks = items.map((item) =>
+        toStudioTrack(item.track, {
+          eventSource: "recommendation",
+          recommendationId: item.recommendationId,
+        })
+      );
+      registerStudioTracks(mocks);
+      return mocks;
+    },
+    []
+  );
 
   /** Resolve track ids to real catalogue tracks and absorb them, silently
    *  dropping any that fail to fetch. Shared by play() (a queue built from a
@@ -282,7 +362,7 @@ export default function StudioProvider({
         void backend.feed
           .newReleases()
           .then((r) => {
-            if (live) setNewReleases(absorb(r.items.map((i) => i.track)));
+            if (live) setNewReleases(absorbFeed(r.items));
           }, warn("new-releases"))
           .finally(() => {
             if (live) setNewReleasesLoading(false);
@@ -290,7 +370,7 @@ export default function StudioProvider({
         void backend.feed
           .youMightLike()
           .then((r) => {
-            if (live) setYouMightLike(absorb(r.items.map((i) => i.track)));
+            if (live) setYouMightLike(absorbFeed(r.items));
           }, warn("you-might-like"))
           .finally(() => {
             if (live) setYouMightLikeLoading(false);
@@ -461,29 +541,57 @@ export default function StudioProvider({
   }, [fbUser]);
 
   // ---- playback ----------------------------------------------------------
-  const flushEvent = useCallback(() => {
-    const t = nowPlaying;
-    if (!t || listenedRef.current < 1) return;
-    void backend.events.ingest([
-      {
+  const flushEvent = useCallback(
+    (keepalive = false) => {
+      const t = nowPlaying;
+      const session = listeningRef.current;
+      if (!t || !session || session.listenedSec < 1) return;
+
+      const event: ListeningEvent = {
+        eventId: session.eventId,
         trackId: t.id,
         collectionId: playingCollection?.id ?? null,
-        listenedSec: Math.floor(listenedRef.current),
-        startedAt: startedAtRef.current,
-        source: playingCollection ? "collection" : "library",
+        listenedSec: Math.floor(session.listenedSec),
+        startedAt: session.startedAt,
+        source: playingCollection ? "collection" : (t.eventSource ?? "library"),
+        recommendationId: t.recommendationId ?? null,
         clientHourOfDay: new Date().getHours(),
-      },
-    ]);
-    listenedRef.current = 0;
-  }, [backend, nowPlaying, playingCollection]);
+      };
+      // Rotate before sending so pagehide plus a simultaneous track transition
+      // cannot submit the same session twice. The server also dedupes eventId.
+      listeningRef.current = freshListeningSession(session.lastPositionSec);
+      if (fbUser) {
+        const pending = readPendingHistory(fbUser.uid).filter(
+          (item) => item.eventId !== event.eventId
+        );
+        writePendingHistory(fbUser.uid, [...pending, event]);
+      }
+      void backend.events
+        .ingest([event], { keepalive })
+        .then(async () => {
+          if (fbUser) {
+            writePendingHistory(
+              fbUser.uid,
+              readPendingHistory(fbUser.uid).filter(
+                (item) => item.eventId !== event.eventId
+              )
+            );
+          }
+          if (keepalive) return;
+          const recentPage = await backend.me.recents();
+          setRecents(toStudioHistory(recentPage.items, Date.now()));
+        })
+        .catch((err) => console.warn("Listening history persist failed", err));
+    },
+    [backend, fbUser, nowPlaying, playingCollection]
+  );
 
   const startTrack = useCallback((index: number) => {
     setCurrentIndex(index);
     setProgressSec(0);
     setIsLoading(true);
     setIsPlaying(true);
-    startedAtRef.current = Date.now();
-    listenedRef.current = 0;
+    listeningRef.current = freshListeningSession(0);
     // Marks that the user (not the sign-in restore) owns playback from here
     // on — a restore landing later must yield rather than clobber this.
     userStartedRef.current = true;
@@ -632,8 +740,15 @@ export default function StudioProvider({
   );
 
   const toggle = useCallback(
-    () => setIsPlaying((p) => (nowPlaying ? !p : p)),
-    [nowPlaying]
+    () =>
+      setIsPlaying((playing) => {
+        if (!nowPlaying) return playing;
+        if (!playing && !listeningRef.current) {
+          listeningRef.current = freshListeningSession(progressSec);
+        }
+        return !playing;
+      }),
+    [nowPlaying, progressSec]
   );
   const next = useCallback(() => {
     flushEvent();
@@ -646,8 +761,7 @@ export default function StudioProvider({
     setNavDirection("next");
     setProgressSec(0);
     setIsPlaying(true);
-    startedAtRef.current = Date.now();
-    listenedRef.current = 0;
+    listeningRef.current = freshListeningSession(0);
   }, [queue.length, flushEvent]);
 
   const playerRef = useRef<SeekablePlayer | null>(null);
@@ -656,6 +770,9 @@ export default function StudioProvider({
       const max = nowPlaying?.durationSec ?? 0;
       const clamped = Math.min(max, Math.max(0, Math.floor(sec)));
       setProgressSec(clamped);
+      if (listeningRef.current) {
+        listeningRef.current.lastPositionSec = clamped;
+      }
       playerRef.current?.seekTo(clamped);
     },
     [nowPlaying]
@@ -677,8 +794,7 @@ export default function StudioProvider({
     setNavDirection("prev");
     setProgressSec(0);
     setIsPlaying(true);
-    startedAtRef.current = Date.now();
-    listenedRef.current = 0;
+    listeningRef.current = freshListeningSession(0);
   }, [flushEvent, progressSec, seek]);
 
   /**
@@ -722,6 +838,12 @@ export default function StudioProvider({
     },
     [flushEvent, startTrack]
   );
+
+  useEffect(() => {
+    const onPageHide = () => flushEvent(true);
+    window.addEventListener("pagehide", onPageHide);
+    return () => window.removeEventListener("pagehide", onPageHide);
+  }, [flushEvent]);
 
   const setVolume = useCallback((v: number) => {
     const c = Math.min(1, Math.max(0, v));
@@ -842,7 +964,12 @@ export default function StudioProvider({
         ]);
         if (seq !== searchSeq.current) return;
         setSearchResults(
-          cat.status === "fulfilled" ? absorb(cat.value.tracks) : []
+          cat.status === "fulfilled"
+            ? absorb(cat.value.tracks).map((track) => ({
+                ...track,
+                eventSource: "search" as const,
+              }))
+            : []
         );
         setCollectionResults(
           lib.status === "fulfilled"
@@ -863,7 +990,10 @@ export default function StudioProvider({
       if (!q) return [];
       try {
         const res = await backend.catalog.search(q, "song");
-        return absorb(res.tracks);
+        return absorb(res.tracks).map((track) => ({
+          ...track,
+          eventSource: "search" as const,
+        }));
       } catch {
         return [];
       }
@@ -1184,7 +1314,15 @@ export default function StudioProvider({
             onStart={() => setIsLoading(false)}
             onProgress={(s) => {
               setProgressSec(Math.floor(s.playedSeconds));
-              listenedRef.current = s.playedSeconds;
+              const session = listeningRef.current;
+              if (!session) return;
+              const previous = session.lastPositionSec;
+              session.lastPositionSec = s.playedSeconds;
+              if (previous === null || !isPlaying) return;
+              const delta = s.playedSeconds - previous;
+              // Normal progress ticks are about one second. Larger jumps are
+              // seeks or a resumed/restored playhead, not time actually heard.
+              if (delta > 0 && delta <= 5) session.listenedSec += delta;
             }}
             onEnded={() => next()}
           />

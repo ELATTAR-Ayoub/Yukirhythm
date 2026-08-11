@@ -141,6 +141,20 @@ describe("POST /api/events against real Firestore", () => {
     expect(doc.recommendationId).toBe("rec1");
   });
 
+  it("deduplicates a retried client event without incrementing counters twice", async () => {
+    const uid = await currentUid();
+    const event = {
+      eventId: "listen_session_123",
+      trackId: "t1",
+      listenedSec: 60,
+    };
+    const first = await postEvents(auth(token, "POST", { events: [event] }));
+    const retry = await postEvents(auth(token, "POST", { events: [event] }));
+    expect(((await first.json()) as { written: number }).written).toBe(1);
+    expect(((await retry.json()) as { written: number }).written).toBe(0);
+    expect((await trackState(uid, "t1"))?.playCount).toBe(1);
+  });
+
   it("skips malformed events without failing the batch", async () => {
     const uid = await currentUid();
     const res = await postEvents(

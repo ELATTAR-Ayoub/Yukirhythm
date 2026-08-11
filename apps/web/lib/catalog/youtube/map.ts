@@ -123,8 +123,15 @@ export function mapUpNextVideo(raw: unknown): ProviderTrack {
 }
 
 function toIso(v: unknown): string | null {
+  if (v instanceof Date)
+    return Number.isNaN(v.getTime()) ? null : v.toISOString();
   if (typeof v !== "string" || v === "") return null;
-  const d = new Date(v);
+  const cleaned = v
+    .replace(/^Premiered\s+/i, "")
+    .replace(/^Published(?:\s+on)?\s+/i, "")
+    .trim();
+  const dateOnly = /^[A-Za-z]+\s+\d{1,2},\s+\d{4}$/.test(cleaned);
+  const d = new Date(dateOnly ? `${cleaned} UTC` : cleaned);
   // Relative labels like "12 years ago" parse to Invalid Date — drop them
   // rather than storing an unusable value.
   return Number.isNaN(d.getTime()) ? null : d.toISOString();
@@ -162,7 +169,9 @@ export function mapVideoInfo(raw: unknown): ProviderTrack {
     // basic_info carries no publish date — start_timestamp is null for
     // non-live videos. Real dates live on info.primary_info, which phase 7
     // needs for new-release recency and can fetch then.
-    publishedAt: toIso(b.start_timestamp),
+    publishedAt: toIso(
+      b.publish_date ?? b.upload_date ?? b.published ?? b.start_timestamp
+    ),
     keywords: asArray(b.keywords).filter(
       (k): k is string => typeof k === "string"
     ),

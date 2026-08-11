@@ -2,6 +2,8 @@ import { describe, it, expect } from "vitest";
 import {
   pickJumpBackIn,
   artistAffinityFrom,
+  buildRecentTasteProfile,
+  diversifyByArtist,
   scoreNewReleases,
   blendYouMightLike,
 } from "./recommend";
@@ -90,6 +92,79 @@ describe("artistAffinityFrom", () => {
   });
 });
 
+describe("diversifyByArtist", () => {
+  it("prefers artist variety and still backfills all 15 slots", () => {
+    const tracks = new Map<string, Track>();
+    const recommendations = Array.from({ length: 20 }, (_, index) => {
+      const id = `t${index}`;
+      tracks.set(
+        id,
+        track(id, {
+          artists: [
+            {
+              artistId: index === 10 ? "other" : "same",
+              name: index === 10 ? "Other" : "Same",
+            },
+          ],
+        })
+      );
+      return {
+        trackId: id,
+        score: 20 - index,
+        reason: "test",
+        recommendationId: `r:${id}`,
+      };
+    });
+    const out = diversifyByArtist(recommendations, tracks);
+    expect(out).toHaveLength(15);
+    expect(out.slice(0, 3).map((item) => item.trackId)).toEqual([
+      "t0",
+      "t1",
+      "t10",
+    ]);
+  });
+});
+
+describe("buildRecentTasteProfile", () => {
+  it("favours recent completed plays, penalises skips, and diversifies seeds", () => {
+    const tracks = new Map([
+      ["recent", track("recent", { artists: [{ artistId: "A", name: "A" }] })],
+      [
+        "same-artist",
+        track("same-artist", { artists: [{ artistId: "A", name: "A" }] }),
+      ],
+      ["other", track("other", { artists: [{ artistId: "B", name: "B" }] })],
+    ]);
+    const profile = buildRecentTasteProfile(
+      [
+        ev({ trackId: "recent", startedAtMs: NOW }),
+        ev({ trackId: "same-artist", startedAtMs: NOW - DAY }),
+        ev({
+          trackId: "other",
+          startedAtMs: NOW,
+          listenedSec: 5,
+          completed: false,
+          skipped: true,
+        }),
+      ],
+      tracks,
+      NOW
+    );
+    expect(profile.trackAffinity.get("recent")).toBe(1);
+    expect(profile.trackAffinity.has("other")).toBe(false);
+    expect(profile.seedTrackIds).toEqual(["recent"]);
+  });
+
+  it("drops listening outside the 60-day taste window", () => {
+    const profile = buildRecentTasteProfile(
+      [ev({ trackId: "old", startedAtMs: NOW - 61 * DAY })],
+      new Map([["old", track("old")]]),
+      NOW
+    );
+    expect(profile.seedTrackIds).toEqual([]);
+  });
+});
+
 describe("scoreNewReleases", () => {
   it("ranks an affinity artist above an unknown one, all else equal", () => {
     const aff = new Map([["a-known", 1]]);
@@ -106,16 +181,16 @@ describe("scoreNewReleases", () => {
 });
 
 describe("blendYouMightLike", () => {
-  it("weights radio over co-listen over label, dedupes, and keeps a reason", () => {
+  it("weights radio over label over co-listen, dedupes, and keeps a reason", () => {
     const out = blendYouMightLike({
       radio: [{ trackId: "r1", seedTitle: "Instant Crush" }],
       coListen: [{ trackId: "c1", count: 10 }],
       labelMatch: [{ trackId: "l1", label: "lofi" }],
       exclude: new Set(),
     });
-    expect(out[0].trackId).toBe("r1"); // radio weight 0.5 is highest
+    expect(out[0].trackId).toBe("r1");
     expect(out[0].reason).toBe("Because you played Instant Crush");
-    expect(out.map((r) => r.trackId)).toEqual(["r1", "c1", "l1"]);
+    expect(out.map((r) => r.trackId)).toEqual(["r1", "l1", "c1"]);
   });
 
   it("excludes the library / recent set", () => {
@@ -135,6 +210,19 @@ describe("blendYouMightLike", () => {
       labelMatch: [],
       exclude: new Set(),
     });
-    expect(out[0].score).toBeCloseTo(0.8); // 0.5 + 0.3
+    expect(out[0].score).toBeCloseTo(0.55); // 0.45 + 0.10
+  });
+
+  it("returns at most 15 tracks by default", () => {
+    const out = blendYouMightLike({
+      radio: Array.from({ length: 25 }, (_, index) => ({
+        trackId: `r${index}`,
+        seedTitle: "seed",
+      })),
+      coListen: [],
+      labelMatch: [],
+      exclude: new Set(),
+    });
+    expect(out).toHaveLength(15);
   });
 });

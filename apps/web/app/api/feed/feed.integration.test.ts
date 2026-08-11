@@ -97,7 +97,10 @@ describe("feeds against real Firestore", () => {
       pt("seed"),
       pt("rel1"),
       pt("rel2"),
-      pt("pop", { viewCount: 999999 }),
+      pt("pop", {
+        viewCount: 999999,
+        publishedAt: new Date().toISOString(),
+      }),
     ]);
     await ensureUser(post(token, "/api/me", {}));
     uid = await currentUid();
@@ -183,7 +186,7 @@ describe("feeds against real Firestore", () => {
     expect(body.items[0].recommendationId).toMatch(/^nr:/);
   });
 
-  it("new-releases surfaces related tracks for a warm listener", async () => {
+  it("new-releases searches for and date-verifies fresh tracks for a warm listener", async () => {
     // play the seed enough to make it the top track, same pattern as the
     // you-might-like warm test above
     await postEvents(
@@ -202,8 +205,17 @@ describe("feeds against real Firestore", () => {
     // rel1/rel2, the popular fallback can't accidentally surface them.
     setCatalogProvider({
       ...stub,
-      async getRelatedTracks(seed) {
-        return seed === "seed" ? [pt("fresh1"), pt("fresh2")] : [];
+      async search(query) {
+        return {
+          query,
+          type: "song",
+          tracks: [pt("fresh1"), pt("fresh2")],
+          artists: [],
+          playlists: [],
+        };
+      },
+      async getTrack(id) {
+        return pt(id, { publishedAt: new Date().toISOString() });
       },
     });
     try {

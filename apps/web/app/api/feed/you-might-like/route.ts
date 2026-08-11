@@ -2,7 +2,12 @@ import { adminDb } from "@/lib/firebase/admin";
 import { uidFromRequest, unauthorized } from "@/lib/firebase/verify";
 import { getCatalogProvider } from "@/lib/catalog/provider";
 import { ingestTracks } from "@/lib/catalog/ingest";
-import { blendYouMightLike, type BlendInput } from "@/lib/catalog/recommend";
+import {
+  blendYouMightLike,
+  buildRecentTasteProfile,
+  diversifyByArtist,
+  type BlendInput,
+} from "@/lib/catalog/recommend";
 import {
   coldStartTracks,
   YOU_MIGHT_LIKE_QUERIES,
@@ -36,9 +41,36 @@ export async function GET(req: Request): Promise<Response> {
   const user = userSnap.data() as User | undefined;
   const personalized = user?.privacy?.personalization !== false;
 
+  const tasteTrackIds = [
+    ...new Set([
+      ...ctx.events
+        .sort((a, b) => b.startedAtMs - a.startedAtMs)
+        .slice(0, 200)
+        .map((event) => event.trackId),
+      ...ctx.likedTrackIds,
+    ]),
+  ];
+  const tasteDocs = await Promise.all(
+    tasteTrackIds.map((id) => db.collection("tracks").doc(id).get())
+  );
+  const tasteTracks = new Map<string, Track>();
+  tasteDocs.forEach((doc, index) => {
+    if (doc.exists) tasteTracks.set(tasteTrackIds[index], doc.data() as Track);
+  });
+  const taste = buildRecentTasteProfile(
+    personalized ? ctx.events : [],
+    tasteTracks,
+    Date.now(),
+    personalized ? new Set(ctx.likedTrackIds) : new Set()
+  );
+
   // Radio: related tracks off the user's most-played seeds (or a cold seed).
-  const seeds =
-    personalized && ctx.topPlayed.length ? ctx.topPlayed.slice(0, 3) : [];
+  const seeds = personalized
+    ? (taste.seedTrackIds.length ? taste.seedTrackIds : ctx.topPlayed).slice(
+        0,
+        6
+      )
+    : [];
   if (seeds.length === 0) {
     // Needs the popularity composite index; an undeployed index must not 500
     // the feed — the cold-start below covers the gap.
@@ -69,6 +101,7 @@ export async function GET(req: Request): Promise<Response> {
           provider.getRelatedTracks(seedId),
         ]);
         return {
+          seedAffinity: taste.trackAffinity.get(seedId) ?? 1,
           seedTitle: seedDoc.exists
             ? (seedDoc.data() as Track).title
             : "a track you played",
@@ -81,7 +114,11 @@ export async function GET(req: Request): Promise<Response> {
           `feed/you-might-like: radio for seed "${seedId}" failed`,
           err
         );
-        return { seedTitle: "a track you played", tracks: [] };
+        return {
+          seedAffinity: taste.trackAffinity.get(seedId) ?? 1,
+          seedTitle: "a track you played",
+          tracks: [],
+        };
       }
     })
   );
@@ -98,6 +135,7 @@ export async function GET(req: Request): Promise<Response> {
       radio.push({
         trackId: track.providerTrackId,
         seedTitle: group.seedTitle,
+        affinity: group.seedAffinity,
       });
     }
   }
@@ -138,29 +176,83 @@ export async function GET(req: Request): Promise<Response> {
     count,
   }));
 
-  // Label affinity is a no-op until enrichment populates labelIds; wired so it
-  // lights up for free later.
   const labelMatch: BlendInput["labelMatch"] = [];
+  const topLabels = [...taste.labelAffinity.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3);
+  for (const [label, affinity] of topLabels) {
+    try {
+      const snap = await db
+        .collection("tracks")
+        .where("labelIds", "array-contains", label)
+        .limit(20)
+        .get();
+      for (const doc of snap.docs) {
+        labelMatch.push({ trackId: doc.id, label, affinity });
+      }
+    } catch (err) {
+      console.error(`feed/you-might-like: label "${label}" failed`, err);
+    }
+  }
 
-  const recs = blendYouMightLike({
-    radio,
-    coListen,
-    labelMatch,
-    exclude: ctx.exclude,
-  });
-
-  // Resolve to track docs for the UI.
-  const recDocs = await Promise.all(
-    recs.map((recommendation) =>
-      db.collection("tracks").doc(recommendation.trackId).get()
-    )
+  const candidateIds = [
+    ...new Set([
+      ...radio.map((item) => item.trackId),
+      ...coListen.map((item) => item.trackId),
+      ...labelMatch.map((item) => item.trackId),
+    ]),
+  ];
+  const candidateDocs = await Promise.all(
+    candidateIds.map((id) => db.collection("tracks").doc(id).get())
   );
-  const items = recs.flatMap((recommendation, index) => {
-    const doc = recDocs[index];
-    return doc.exists
-      ? [{ ...recommendation, track: doc.data() as Track }]
-      : [];
+  const candidates = new Map<string, Track>();
+  candidateDocs.forEach((doc, index) => {
+    if (doc.exists) candidates.set(candidateIds[index], doc.data() as Track);
   });
+  const maxViews = Math.max(
+    1,
+    ...[...candidates.values()].map((track) => track.stats?.viewCount ?? 0)
+  );
+  const artistMatch: NonNullable<BlendInput["artistMatch"]> = [];
+  const quality: NonNullable<BlendInput["quality"]> = [];
+  for (const [trackId, track] of candidates) {
+    const artistAffinity = Math.max(
+      0,
+      ...track.artists.map(
+        (artist) => taste.artistAffinity.get(artist.artistId) ?? 0
+      )
+    );
+    if (artistAffinity > 0) {
+      artistMatch.push({
+        trackId,
+        artist: track.artists[0]?.name ?? "an artist you play",
+        affinity: artistAffinity,
+      });
+    }
+    quality.push({
+      trackId,
+      score: Math.log1p(track.stats?.viewCount ?? 0) / Math.log1p(maxViews),
+    });
+  }
+
+  const recs = blendYouMightLike(
+    {
+      radio,
+      coListen,
+      labelMatch,
+      artistMatch,
+      quality,
+      exclude: ctx.exclude,
+    },
+    60
+  );
+
+  const items = diversifyByArtist(recs, candidates, 15).map(
+    (recommendation) => ({
+      ...recommendation,
+      track: candidates.get(recommendation.trackId)!,
+    })
+  );
 
   return Response.json({ personalized, items });
 }

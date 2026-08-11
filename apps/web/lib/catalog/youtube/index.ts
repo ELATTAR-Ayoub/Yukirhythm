@@ -88,7 +88,10 @@ export class YoutubeCatalogProvider implements CatalogProvider {
     const yt = await youtubeClient();
     try {
       const info = await yt.getInfo(providerTrackId);
-      return mapVideoInfo(info.basic_info);
+      return mapVideoInfo({
+        ...info.basic_info,
+        published: info.primary_info?.published?.text,
+      });
     } catch {
       return null;
     }

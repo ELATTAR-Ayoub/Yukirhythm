@@ -15,6 +15,9 @@ export interface MockTrack {
   /** The track's real thumbnail. Absent or broken falls back to `texture` —
    *  see components/studio/Artwork.tsx. Fixture tracks have none. */
   artUrl?: string;
+  /** Playback attribution carried into the listening-history event. */
+  eventSource?: "library" | "search" | "recommendation";
+  recommendationId?: string;
 }
 
 export type CollectionKind = "music" | "podcast";

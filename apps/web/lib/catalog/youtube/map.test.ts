@@ -107,6 +107,15 @@ describe("mapVideoInfo", () => {
     });
     expect(t.publishedAt).toBe("2013-12-06T08:00:01.000Z");
   });
+
+  it("parses the exact published label exposed by video info", () => {
+    const t = mapVideoInfo({
+      id: "x",
+      title: "T",
+      published: "Premiered Aug 9, 2026",
+    });
+    expect(t.publishedAt).toBe("2026-08-09T00:00:00.000Z");
+  });
 });
 
 describe("mapUpNextVideo", () => {

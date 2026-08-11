@@ -65,7 +65,7 @@ describe("useCachedStudioFeed", () => {
 
   it("restores the saved result instead of replacing it on a revisit", () => {
     window.localStorage.setItem(
-      "yukirhythm:feed:v1:user-1:new-releases",
+      "yukirhythm:feed:v2:user-1:new-releases",
       JSON.stringify({
         tracks: [{ ...providerTrack, id: "saved-track", title: "Saved" }],
       })
@@ -115,7 +115,7 @@ describe("useCachedStudioFeed", () => {
       "false"
     );
     expect(
-      window.localStorage.getItem("yukirhythm:feed:v1:user-1:new-releases")
+      window.localStorage.getItem("yukirhythm:feed:v2:user-1:new-releases")
     ).toContain("refreshed-track");
   });
 });

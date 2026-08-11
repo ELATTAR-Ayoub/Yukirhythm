@@ -18,7 +18,10 @@ import { collectionArtUrl, trackArtUrl } from "./artwork";
  * component rewrite.
  */
 
-export function toStudioTrack(t: Track): MockTrack {
+export function toStudioTrack(
+  t: Track,
+  attribution: Pick<MockTrack, "eventSource" | "recommendationId"> = {}
+): MockTrack {
   return {
     id: t.trackId,
     title: t.title,
@@ -27,6 +30,7 @@ export function toStudioTrack(t: Track): MockTrack {
     texture: t.texture,
     durationSec: t.durationSec ?? 0,
     artUrl: trackArtUrl(t),
+    ...attribution,
   };
 }
 

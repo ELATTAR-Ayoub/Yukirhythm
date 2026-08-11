@@ -90,6 +90,9 @@ export async function ingestTrack(t: ProviderTrack): Promise<void> {
       },
       labels: userLabels.length ? userLabels : (prev.labels ?? []),
     };
+    if (!prev.publishedAt && next.publishedAt) {
+      merged.publishedAt = next.publishedAt;
+    }
     if (isStale(prev.enrichedAt)) {
       Object.assign(merged, {
         title: next.title,

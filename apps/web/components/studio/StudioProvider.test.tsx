@@ -132,6 +132,7 @@ function PlaybackProbe() {
     setVolume,
     play,
     next,
+    toggle,
     clearQueue,
   } = useMockStudio();
   return (
@@ -151,6 +152,22 @@ function PlaybackProbe() {
         play-user-track
       </button>
       <button onClick={() => next()}>next</button>
+      <button onClick={() => toggle()}>toggle</button>
+      <button
+        onClick={() =>
+          play(
+            toStudioTrack(
+              track({ trackId: "rec-track", title: "Recommended" }),
+              {
+                eventSource: "recommendation",
+                recommendationId: "yml:rec-track",
+              }
+            )
+          )
+        }
+      >
+        play-recommendation
+      </button>
       <button onClick={() => void clearQueue()}>clear-queue</button>
     </>
   );
@@ -472,7 +489,40 @@ describe("StudioProvider playback session restore", () => {
     backend.me.playback.save.mockClear();
     backend.me.playback.clearQueue.mockClear();
     backend.me.playback.clearQueue.mockResolvedValue({});
+    backend.events.ingest.mockClear();
+    backend.events.ingest.mockResolvedValue({ ok: true, written: 1 });
     hiddenPlayer.seekTo.mockClear();
+  });
+
+  it("counts heard seconds instead of seek position and keeps recommendation attribution", async () => {
+    render(
+      <StudioProvider>
+        <PlaybackProbe />
+      </StudioProvider>
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId("collections-count").textContent).toBe("1")
+    );
+
+    fireEvent.click(screen.getByText("play-recommendation"));
+    act(() => {
+      hiddenPlayer.props?.onProgress?.({ playedSeconds: 1 });
+      hiddenPlayer.props?.onProgress?.({ playedSeconds: 2 });
+      hiddenPlayer.props?.onProgress?.({ playedSeconds: 120 });
+      hiddenPlayer.props?.onProgress?.({ playedSeconds: 121 });
+    });
+    fireEvent.click(screen.getByText("next"));
+
+    await waitFor(() => expect(backend.events.ingest).toHaveBeenCalledTimes(1));
+    const [events] = backend.events.ingest.mock.calls[0];
+    expect(events[0]).toMatchObject({
+      trackId: "rec-track",
+      listenedSec: 3,
+      source: "recommendation",
+      recommendationId: "yml:rec-track",
+    });
+    expect(events[0].startedAt).toBeGreaterThan(0);
+    expect(events[0].eventId).toMatch(/^[\w-]{8,}$/);
   });
 
   it("restores queue, current track, position and volume, paused", async () => {

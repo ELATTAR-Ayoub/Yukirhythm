@@ -92,10 +92,11 @@ export function createBackendClient(getToken: TokenProvider) {
 
     /** Batched play/behaviour events — flushed by the transport, gated on consent. */
     events: {
-      ingest: (events: unknown[]) =>
+      ingest: (events: unknown[], opts: { keepalive?: boolean } = {}) =>
         request<{ ok: true; written?: number }>(endpoints.events.ingest(), {
           method: "POST",
           body: body({ events }),
+          keepalive: opts.keepalive,
         }),
     },
 

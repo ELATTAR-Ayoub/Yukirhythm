@@ -19,6 +19,7 @@ const SOURCES: EventSource[] = [
 ];
 
 type RawEvent = {
+  eventId?: unknown;
   trackId?: unknown;
   collectionId?: unknown;
   listenedSec?: unknown;
@@ -79,16 +80,26 @@ export async function POST(req: Request): Promise<Response> {
         ? Timestamp.fromMillis(e.startedAt)
         : Timestamp.now();
 
-    const eventRef = db.collection("playEvents").doc();
+    const suppliedEventId =
+      typeof e.eventId === "string" && /^[A-Za-z0-9_-]{8,128}$/.test(e.eventId)
+        ? e.eventId
+        : null;
+    const eventRef = suppliedEventId
+      ? db.collection("playEvents").doc(suppliedEventId)
+      : db.collection("playEvents").doc();
     const stateRef = db
       .collection("users")
       .doc(uid)
       .collection("trackState")
       .doc(trackId);
 
-    await db.runTransaction(async (tx) => {
+    const didWrite = await db.runTransaction(async (tx) => {
       // reads before writes
-      const stateSnap = await tx.get(stateRef);
+      const [eventSnap, stateSnap] = await Promise.all([
+        tx.get(eventRef),
+        tx.get(stateRef),
+      ]);
+      if (eventSnap.exists) return false;
 
       tx.set(eventRef, {
         eventId: eventRef.id,
@@ -117,9 +128,10 @@ export async function POST(req: Request): Promise<Response> {
       };
       if (!stateSnap.exists) counters.addedAt = Timestamp.now();
       tx.set(stateRef, counters, { merge: true });
+      return true;
     });
 
-    written++;
+    if (didWrite) written++;
   }
 
   // Global tracks.stats.playCount is a per-doc hotspot (spec §14) — deferred to

@@ -8,6 +8,99 @@ import type { StatEvent } from "./stats";
  */
 
 const DAY = 24 * 60 * 60 * 1000;
+const TASTE_WINDOW_DAYS = 60;
+const TASTE_HALF_LIFE_DAYS = 14;
+
+export type TasteProfile = {
+  trackAffinity: Map<string, number>;
+  artistAffinity: Map<string, number>;
+  labelAffinity: Map<string, number>;
+  seedTrackIds: string[];
+};
+
+function normalise(scores: Map<string, number>): Map<string, number> {
+  const peak = Math.max(0, ...scores.values());
+  if (peak <= 0) return new Map();
+  return new Map(
+    [...scores.entries()]
+      .filter(([, score]) => score > 0)
+      .map(([id, score]) => [id, score / peak])
+  );
+}
+
+/** A recent, engagement-weighted taste profile built from actual listening. */
+export function buildRecentTasteProfile(
+  events: StatEvent[],
+  tracksById: Map<string, Track>,
+  nowMs: number,
+  likedTrackIds: Set<string> = new Set()
+): TasteProfile {
+  const trackScores = new Map<string, number>();
+  const cutoff = nowMs - TASTE_WINDOW_DAYS * DAY;
+
+  for (const event of events) {
+    if (event.startedAtMs < cutoff) continue;
+    const ageDays = Math.max(0, (nowMs - event.startedAtMs) / DAY);
+    const recency = Math.pow(0.5, ageDays / TASTE_HALF_LIFE_DAYS);
+    const engagement = event.completed
+      ? 1
+      : event.listenedSec < 10
+        ? -0.35
+        : Math.min(0.75, event.listenedSec / 30);
+    const likedBoost = likedTrackIds.has(event.trackId) ? 0.6 : 0;
+    trackScores.set(
+      event.trackId,
+      (trackScores.get(event.trackId) ?? 0) +
+        recency * (engagement + likedBoost)
+    );
+  }
+
+  // A like remains a useful seed even if it was not played inside the window.
+  for (const trackId of likedTrackIds) {
+    trackScores.set(trackId, Math.max(trackScores.get(trackId) ?? 0, 0.6));
+  }
+
+  const trackAffinity = normalise(trackScores);
+  const artistScores = new Map<string, number>();
+  const labelScores = new Map<string, number>();
+  for (const [trackId, affinity] of trackAffinity) {
+    const track = tracksById.get(trackId);
+    if (!track) continue;
+    for (const artist of track.artists) {
+      if (artist.artistId) {
+        artistScores.set(
+          artist.artistId,
+          (artistScores.get(artist.artistId) ?? 0) + affinity
+        );
+      }
+    }
+    for (const label of track.labels ?? []) {
+      if (label.kind !== "genre") continue;
+      const id = label.label.toLowerCase();
+      labelScores.set(
+        id,
+        (labelScores.get(id) ?? 0) + affinity * label.confidence
+      );
+    }
+  }
+
+  const seenArtists = new Set<string>();
+  const seedTrackIds: string[] = [];
+  for (const [trackId] of [...trackAffinity].sort((a, b) => b[1] - a[1])) {
+    const artistId = tracksById.get(trackId)?.artists[0]?.artistId ?? "";
+    if (artistId && seenArtists.has(artistId)) continue;
+    if (artistId) seenArtists.add(artistId);
+    seedTrackIds.push(trackId);
+    if (seedTrackIds.length >= 6) break;
+  }
+
+  return {
+    trackAffinity,
+    artistAffinity: normalise(artistScores),
+    labelAffinity: normalise(labelScores),
+    seedTrackIds,
+  };
+}
 
 /** A scored candidate carrying why it was picked, for the feed's UI + the loop. */
 export type Recommendation = {
@@ -16,6 +109,32 @@ export type Recommendation = {
   reason: string;
   recommendationId: string;
 };
+
+/** Prefer artist variety, then backfill so a sufficiently large pool stays full. */
+export function diversifyByArtist(
+  recommendations: Recommendation[],
+  tracksById: Map<string, Track>,
+  cap = 15,
+  maxPerArtist = 2
+): Recommendation[] {
+  const selected: Recommendation[] = [];
+  const overflow: Recommendation[] = [];
+  const counts = new Map<string, number>();
+  for (const recommendation of recommendations) {
+    const track = tracksById.get(recommendation.trackId);
+    if (!track) continue;
+    const artistId = track.artists[0]?.artistId ?? track.artists[0]?.name ?? "";
+    const count = counts.get(artistId) ?? 0;
+    if (artistId && count >= maxPerArtist) {
+      overflow.push(recommendation);
+      continue;
+    }
+    selected.push(recommendation);
+    if (artistId) counts.set(artistId, count + 1);
+    if (selected.length >= cap) return selected;
+  }
+  return [...selected, ...overflow].slice(0, cap);
+}
 
 /**
  * Distinct collections from the last 30 days of events, most-recent play first,
@@ -60,14 +179,16 @@ export function artistAffinityFrom(
 }
 
 /**
- * New-releases score: 0.5·artistAffinity + 0.3·recency + 0.2·popularity.
+ * New-releases score: 0.6 recency + 0.25 genre affinity + 0.1 artist
+ * affinity + 0.05 popularity.
  * Recency decays linearly over 90 days; a track with no publish date scores 0
  * on that term rather than being dropped.
  */
 export function scoreNewReleases(
   candidates: Track[],
   artistAffinity: Map<string, number>,
-  nowMs: number
+  nowMs: number,
+  labelAffinity: Map<string, number> = new Map()
 ): Recommendation[] {
   const maxViews = Math.max(
     1,
@@ -86,8 +207,18 @@ export function scoreNewReleases(
       const recency = ageDays <= 90 ? 1 - ageDays / 90 : 0;
       const popularity =
         Math.log1p(t.stats?.viewCount ?? 0) / Math.log1p(maxViews);
+      const genreAffinity = Math.max(
+        0,
+        ...(t.labels ?? [])
+          .filter((label) => label.kind === "genre")
+          .map((label) => labelAffinity.get(label.label.toLowerCase()) ?? 0)
+      );
 
-      const score = 0.5 * affinity + 0.3 * recency + 0.2 * popularity;
+      const score =
+        0.6 * recency +
+        0.25 * genreAffinity +
+        0.1 * affinity +
+        0.05 * popularity;
       const reason =
         affinity > 0
           ? `New from ${t.artists[0]?.name ?? "an artist you play"}`
@@ -104,23 +235,27 @@ export function scoreNewReleases(
 
 export type BlendInput = {
   /** Provider radio seeded from the user's most-played, with the seed's title. */
-  radio: { trackId: string; seedTitle: string }[];
+  radio: { trackId: string; seedTitle: string; affinity?: number }[];
   /** Tracks co-occurring with liked tracks in others' public collections. */
   coListen: { trackId: string; count: number }[];
   /** Tracks matching the user's top labels. */
-  labelMatch: { trackId: string; label: string }[];
+  labelMatch: { trackId: string; label: string; affinity?: number }[];
+  /** Candidate artist affinity derived from recent listening. */
+  artistMatch?: { trackId: string; artist: string; affinity: number }[];
+  /** Small provider-quality tie breaker, normalised to 0..1. */
+  quality?: { trackId: string; score: number }[];
   /** trackIds to drop (library + recently played). */
   exclude: Set<string>;
 };
 
 /**
- * "You might like": blend provider radio (0.5), cross-user co-listening (0.3),
- * and label affinity (0.2). Deduped, excludes the user's own/recent tracks,
- * each item carries the reason it surfaced.
+ * "You might like": blend provider radio similarity, genre and artist taste,
+ * cross-user co-listening, and a small quality tie breaker. Deduped, excludes
+ * the user's own/recent tracks, and carries the reason it surfaced.
  */
 export function blendYouMightLike(
   input: BlendInput,
-  cap = 20
+  cap = 15
 ): Recommendation[] {
   const scores = new Map<string, { score: number; reason: string }>();
   const bump = (trackId: string, add: number, reason: string) => {
@@ -131,15 +266,30 @@ export function blendYouMightLike(
   };
 
   for (const r of input.radio)
-    bump(r.trackId, 0.5, `Because you played ${r.seedTitle}`);
+    bump(
+      r.trackId,
+      0.45 * (r.affinity ?? 1),
+      `Because you played ${r.seedTitle}`
+    );
   const maxCo = Math.max(1, ...input.coListen.map((c) => c.count));
   for (const c of input.coListen)
     bump(
       c.trackId,
-      0.3 * (c.count / maxCo),
+      0.1 * (c.count / maxCo),
       "Listeners like you also played this"
     );
-  for (const l of input.labelMatch) bump(l.trackId, 0.2, `More ${l.label}`);
+  for (const l of input.labelMatch)
+    bump(l.trackId, 0.25 * (l.affinity ?? 1), `More ${l.label}`);
+  for (const artist of input.artistMatch ?? []) {
+    bump(artist.trackId, 0.15 * artist.affinity, `Similar to ${artist.artist}`);
+  }
+  for (const quality of input.quality ?? []) {
+    bump(
+      quality.trackId,
+      0.05 * quality.score,
+      "A strong match for your taste"
+    );
+  }
 
   return [...scores.entries()]
     .map(([trackId, v]) => ({
