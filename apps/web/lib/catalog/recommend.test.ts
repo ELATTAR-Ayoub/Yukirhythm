@@ -126,6 +126,30 @@ describe("diversifyByArtist", () => {
 });
 
 describe("buildRecentTasteProfile", () => {
+  it("weights all four engagement states in order", () => {
+    const tracks = new Map([
+      ["near", track("near")],
+      ["complete", track("complete")],
+      ["sample", track("sample")],
+      ["skip", track("skip")],
+    ]);
+    const profile = buildRecentTasteProfile(
+      [
+        ev({ trackId: "near", engagement: "near-complete" }),
+        ev({ trackId: "complete", engagement: "completed" }),
+        ev({ trackId: "sample", engagement: "sampled" }),
+        ev({ trackId: "skip", engagement: "quick-skip" }),
+      ],
+      tracks,
+      NOW
+    );
+
+    expect(profile.trackAffinity.get("near")).toBe(1);
+    expect(profile.trackAffinity.get("complete")).toBeCloseTo(1 / 1.2);
+    expect(profile.trackAffinity.get("sample")).toBeCloseTo(0.45 / 1.2);
+    expect(profile.trackAffinity.has("skip")).toBe(false);
+  });
+
   it("favours recent completed plays, penalises skips, and diversifies seeds", () => {
     const tracks = new Map([
       ["recent", track("recent", { artists: [{ artistId: "A", name: "A" }] })],

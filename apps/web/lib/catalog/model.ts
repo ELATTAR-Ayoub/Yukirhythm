@@ -230,6 +230,9 @@ export const REPEAT_MODES = ["off", "all", "one"] as const;
 export type EventSource =
   "collection" | "search" | "library" | "radio" | "recommendation";
 
+export type ListenEngagement =
+  "quick-skip" | "sampled" | "completed" | "near-complete";
+
 /**
  * An append-only play event (spec §5.9). `listenedSec` is actual seconds heard,
  * not the track length. `clientHourOfDay` is captured LOCAL to the user so the
@@ -243,6 +246,8 @@ export type PlayEvent = {
 
   startedAt: Timestamp;
   listenedSec: number;
+  /** Optional for events written before engagement classification existed. */
+  engagement?: ListenEngagement;
   completed: boolean;
   skipped: boolean;
 
@@ -274,21 +279,30 @@ export type StatsRollup = {
 };
 
 /**
- * The completion floor. 30s matches industry convention and stops a six-hour
- * mix from being unskippable; below it, a play is a skip.
+ * Under 30 heard seconds is a quick skip unless a short track reached 50%.
  */
-export const COMPLETION_MIN_SEC = 30;
+export const QUICK_SKIP_SEC = 30;
 
-/** `listenedSec >= min(30, durationSec * 0.5)` — see spec §5.9. */
+/** Percentage tiers take precedence so a fully heard short track still counts. */
+export function classifyListen(
+  listenedSec: number,
+  durationSec: number | null
+): ListenEngagement {
+  if (durationSec && durationSec > 0) {
+    const ratio = listenedSec / durationSec;
+    if (ratio >= 0.8) return "near-complete";
+    if (ratio >= 0.5) return "completed";
+  }
+  return listenedSec < QUICK_SKIP_SEC ? "quick-skip" : "sampled";
+}
+
+/** Compatibility helper for callers that only need a boolean. */
 export function isCompleted(
   listenedSec: number,
   durationSec: number | null
 ): boolean {
-  const threshold =
-    durationSec && durationSec > 0
-      ? Math.min(COMPLETION_MIN_SEC, durationSec * 0.5)
-      : COMPLETION_MIN_SEC;
-  return listenedSec >= threshold;
+  const engagement = classifyListen(listenedSec, durationSec);
+  return engagement === "completed" || engagement === "near-complete";
 }
 
 /** Fresh playback state for a user who has never played anything. */

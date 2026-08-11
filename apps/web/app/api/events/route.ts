@@ -2,7 +2,7 @@ import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/firebase/admin";
 import { uidFromRequest, unauthorized } from "@/lib/firebase/verify";
 import {
-  isCompleted,
+  classifyListen,
   type EventSource,
   type Track,
   type User,
@@ -66,7 +66,10 @@ export async function POST(req: Request): Promise<Response> {
     const durationSec = trackSnap.exists
       ? ((trackSnap.data() as Track).durationSec ?? null)
       : null;
-    const completed = isCompleted(listenedSec, durationSec);
+    const engagement = classifyListen(listenedSec, durationSec);
+    const completed =
+      engagement === "completed" || engagement === "near-complete";
+    const skipped = engagement === "quick-skip";
 
     const source = SOURCES.includes(e.source as EventSource)
       ? (e.source as EventSource)
@@ -109,8 +112,9 @@ export async function POST(req: Request): Promise<Response> {
           typeof e.collectionId === "string" ? e.collectionId : null,
         startedAt,
         listenedSec,
+        engagement,
         completed,
-        skipped: !completed,
+        skipped,
         source,
         recommendationId:
           typeof e.recommendationId === "string" ? e.recommendationId : null,
@@ -124,7 +128,7 @@ export async function POST(req: Request): Promise<Response> {
         totalListenedSec: FieldValue.increment(listenedSec),
         lastPlayedAt: Timestamp.now(),
         completedCount: FieldValue.increment(completed ? 1 : 0),
-        skipCount: FieldValue.increment(completed ? 0 : 1),
+        skipCount: FieldValue.increment(skipped ? 1 : 0),
       };
       if (!stateSnap.exists) counters.addedAt = Timestamp.now();
       tx.set(stateRef, counters, { merge: true });

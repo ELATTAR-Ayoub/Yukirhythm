@@ -106,15 +106,21 @@ up to **15 songs**.
 
 ### Listening signals
 
-A play is considered completed after the smaller of **30 seconds** or **half
-the track's duration**. Each listening event contributes:
+Each listening event is classified by heard time and percentage:
 
-| Behavior                              |        Signal |
-| ------------------------------------- | ------------: |
-| Completed play                        |       `+1.00` |
-| Partial listen of at least 10 seconds | up to `+0.75` |
-| Listen shorter than 10 seconds        |       `-0.35` |
-| Song is liked                         |       `+0.60` |
+| Listening state | Rule                         |  Signal |
+| --------------- | ---------------------------- | ------: |
+| Quick skip      | Under 30 seconds             | `-0.35` |
+| Sampled         | 30 seconds to under 50%      | `+0.45` |
+| Completed       | At least 50%, but under 80%  | `+1.00` |
+| Near-complete   | At least 80%                 | `+1.20` |
+| Liked song      | Added to its listening state | `+0.60` |
+
+Percentage tiers take priority for short tracks. For example, hearing 10
+seconds of a 20-second song is completed even though the listen is under 30
+seconds. When duration is unavailable, under 30 seconds is a quick skip and
+30 seconds or more is sampled because a completion percentage cannot be
+calculated.
 
 Recent behavior matters more. Signals use a 14-day half-life and disappear
 from the active taste window after 60 days:

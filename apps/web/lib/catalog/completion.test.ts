@@ -1,23 +1,42 @@
 import { describe, it, expect } from "vitest";
-import { isCompleted } from "./model";
+import { classifyListen, isCompleted } from "./model";
+
+describe("classifyListen", () => {
+  it("classifies under 30 seconds as a quick skip", () => {
+    expect(classifyListen(29, 240)).toBe("quick-skip");
+  });
+
+  it("classifies 30 seconds through under half as sampled", () => {
+    expect(classifyListen(30, 240)).toBe("sampled");
+    expect(classifyListen(119, 240)).toBe("sampled");
+  });
+
+  it("classifies half through under 80% as completed", () => {
+    expect(classifyListen(120, 240)).toBe("completed");
+    expect(classifyListen(191, 240)).toBe("completed");
+  });
+
+  it("classifies at least 80% as near-complete", () => {
+    expect(classifyListen(192, 240)).toBe("near-complete");
+    expect(classifyListen(240, 240)).toBe("near-complete");
+  });
+
+  it("lets percentage completion take precedence for short tracks", () => {
+    expect(classifyListen(10, 20)).toBe("completed");
+    expect(classifyListen(16, 20)).toBe("near-complete");
+  });
+
+  it("cannot call unknown-duration media completed", () => {
+    expect(classifyListen(29, null)).toBe("quick-skip");
+    expect(classifyListen(30, null)).toBe("sampled");
+    expect(classifyListen(600, null)).toBe("sampled");
+  });
+});
 
 describe("isCompleted", () => {
-  it("treats a 20s play of a 6-hour mix as a skip", () => {
-    expect(isCompleted(20, 6 * 60 * 60)).toBe(false);
-  });
-
-  it("treats a 45s play of a 6-hour mix as complete (past the 30s floor)", () => {
-    expect(isCompleted(45, 6 * 60 * 60)).toBe(true);
-  });
-
-  it("uses the 50% rule for short clips", () => {
-    // 20s clip -> threshold 10s
-    expect(isCompleted(10, 20)).toBe(true);
-    expect(isCompleted(9, 20)).toBe(false);
-  });
-
-  it("falls back to the 30s floor when duration is unknown", () => {
-    expect(isCompleted(29, null)).toBe(false);
-    expect(isCompleted(30, null)).toBe(true);
+  it("is true only for completed and near-complete listens", () => {
+    expect(isCompleted(119, 240)).toBe(false);
+    expect(isCompleted(120, 240)).toBe(true);
+    expect(isCompleted(192, 240)).toBe(true);
   });
 });

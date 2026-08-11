@@ -1,4 +1,4 @@
-import type { Track } from "./model";
+import { classifyListen, type Track } from "./model";
 import type { StatEvent } from "./stats";
 
 /**
@@ -42,11 +42,20 @@ export function buildRecentTasteProfile(
     if (event.startedAtMs < cutoff) continue;
     const ageDays = Math.max(0, (nowMs - event.startedAtMs) / DAY);
     const recency = Math.pow(0.5, ageDays / TASTE_HALF_LIFE_DAYS);
-    const engagement = event.completed
-      ? 1
-      : event.listenedSec < 10
-        ? -0.35
-        : Math.min(0.75, event.listenedSec / 30);
+    const engagementType =
+      event.engagement ??
+      classifyListen(
+        event.listenedSec,
+        tracksById.get(event.trackId)?.durationSec ?? null
+      );
+    const engagement =
+      engagementType === "near-complete"
+        ? 1.2
+        : engagementType === "completed"
+          ? 1
+          : engagementType === "sampled"
+            ? 0.45
+            : -0.35;
     const likedBoost = likedTrackIds.has(event.trackId) ? 0.6 : 0;
     trackScores.set(
       event.trackId,

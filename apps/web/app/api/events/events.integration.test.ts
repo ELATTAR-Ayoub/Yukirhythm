@@ -141,6 +141,31 @@ describe("POST /api/events against real Firestore", () => {
     expect(doc.recommendationId).toBe("rec1");
   });
 
+  it("stores sampled and near-complete states without counting samples as skips", async () => {
+    const uid = await currentUid();
+    await postEvents(
+      auth(token, "POST", {
+        events: [
+          { eventId: "sample_event_123", trackId: "t1", listenedSec: 30 },
+          { eventId: "near_event_12345", trackId: "t1", listenedSec: 160 },
+        ],
+      })
+    );
+    const docs = await adminDb()
+      .collection("playEvents")
+      .where("userId", "==", uid)
+      .get();
+    const engagements = docs.docs.map(
+      (doc) => (doc.data() as PlayEvent).engagement
+    );
+    expect(engagements).toContain("sampled");
+    expect(engagements).toContain("near-complete");
+    const state = await trackState(uid, "t1");
+    expect(state?.playCount).toBe(2);
+    expect(state?.completedCount).toBe(1);
+    expect(state?.skipCount).toBe(0);
+  });
+
   it("deduplicates a retried client event without incrementing counters twice", async () => {
     const uid = await currentUid();
     const event = {
