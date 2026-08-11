@@ -53,7 +53,7 @@ const FULLSCREEN_ICONS = {
  * set it before pressing play. That is why this is not gated on `nowPlaying`
  * the way the seek bar and transport are.
  */
-export default function PlayerExtras() {
+export default function PlayerExtras({ onExpand }: { onExpand?: () => void }) {
   const { volume, setVolume, muted, toggleMute, nowPlaying } = useMockStudio();
   const fullscreen = useFullscreen();
 
@@ -88,17 +88,23 @@ export default function PlayerExtras() {
       {/* Hidden rather than disabled where the API is unavailable (an embedded
           frame under a permissions policy, or jsdom): a control that can
           never work is noise, not information. */}
-      {fullscreen.supported ? (
+      {onExpand || fullscreen.supported ? (
         <PlayerButton
           variant="secondary"
           size="sm"
-          aria-label={fullscreen.active ? "Exit full screen" : "Full screen"}
-          aria-pressed={fullscreen.active}
-          onClick={fullscreen.toggle}
+          aria-label={
+            onExpand
+              ? "Open full screen player"
+              : fullscreen.active
+                ? "Exit full screen"
+                : "Full screen"
+          }
+          aria-pressed={onExpand ? false : fullscreen.active}
+          onClick={onExpand ?? fullscreen.toggle}
           data-signal="fullscreen"
         >
           <IconSwap
-            active={fullscreen.active ? "exit" : "enter"}
+            active={!onExpand && fullscreen.active ? "exit" : "enter"}
             icons={FULLSCREEN_ICONS}
           />
         </PlayerButton>

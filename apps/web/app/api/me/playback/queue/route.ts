@@ -1,4 +1,5 @@
 import { Timestamp } from "firebase-admin/firestore";
+import { gone } from "@/lib/api/disabled";
 import { adminDb } from "@/lib/firebase/admin";
 import { uidFromRequest, unauthorized } from "@/lib/firebase/verify";
 import { EMPTY_PLAYBACK, type PlaybackState } from "@/lib/catalog/model";
@@ -14,6 +15,7 @@ const ref = (uid: string) =>
  * concurrent enqueues from two devices do not clobber each other.
  */
 export async function POST(req: Request): Promise<Response> {
+  if (process.env.ENABLE_LEGACY_PLAYBACK_SYNC !== "true") return gone("Playback queue sync");
   const uid = await uidFromRequest(req);
   if (!uid) return unauthorized();
 
@@ -28,6 +30,7 @@ export async function POST(req: Request): Promise<Response> {
 
   const r = ref(uid);
   const db = adminDb();
+  let result: PlaybackState = { ...EMPTY_PLAYBACK, updatedAt: Timestamp.now() };
   await db.runTransaction(async (tx) => {
     const snap = await tx.get(r);
     const state = (
@@ -41,10 +44,11 @@ export async function POST(req: Request): Promise<Response> {
       next.manualQueue = [...(state.manualQueue ?? []), trackId];
     else next.queue = [...(state.queue ?? []), trackId];
 
-    tx.set(r, { ...state, ...next }, { merge: true });
+    result = { ...state, ...next } as PlaybackState;
+    tx.set(r, result, { merge: true });
   });
 
-  return Response.json((await r.get()).data());
+  return Response.json(result);
 }
 
 /**
@@ -53,11 +57,13 @@ export async function POST(req: Request): Promise<Response> {
  * document is read or changed.
  */
 export async function DELETE(req: Request): Promise<Response> {
+  if (process.env.ENABLE_LEGACY_PLAYBACK_SYNC !== "true") return gone("Playback queue sync");
   const uid = await uidFromRequest(req);
   if (!uid) return unauthorized();
 
   const r = ref(uid);
   const db = adminDb();
+  let result: PlaybackState = { ...EMPTY_PLAYBACK, updatedAt: Timestamp.now() };
   await db.runTransaction(async (tx) => {
     const snap = await tx.get(r);
     const state = (
@@ -66,7 +72,7 @@ export async function DELETE(req: Request): Promise<Response> {
         : { ...EMPTY_PLAYBACK, updatedAt: Timestamp.now() }
     ) as PlaybackState;
 
-    tx.set(r, {
+    result = {
       ...state,
       trackId: null,
       sourceType: "library",
@@ -78,8 +84,9 @@ export async function DELETE(req: Request): Promise<Response> {
       isPlaying: false,
       shuffleMode: false,
       updatedAt: Timestamp.now(),
-    });
+    };
+    tx.set(r, result);
   });
 
-  return Response.json((await r.get()).data());
+  return Response.json(result);
 }

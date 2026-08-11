@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 import { useAuthState } from "@/lib/studio/useAuth";
-import { useBackend } from "@/lib/studio/useBackend";
+import { readBrowserPlayback } from "@/lib/studio/browser-playback";
 import { AUTH, HOME, SEARCH } from "@/components/studio/shell/routes";
 
 /**
@@ -17,13 +17,11 @@ import { AUTH, HOME, SEARCH } from "@/components/studio/shell/routes";
  * saved track goes to Home, which is what they expect. Signed-out visitors
  * land on the login page.
  *
- * Client-side because that decision needs the user's playback document, which
- * a server redirect cannot read without their token.
+ * Client-side because that decision uses the user's browser-local playback.
  */
 export default function RootPage() {
   const router = useRouter();
   const { user, loading } = useAuthState();
-  const backend = useBackend();
 
   useEffect(() => {
     // `loading` is true until Firebase's first emit. Treating "not yet known"
@@ -31,30 +29,16 @@ export default function RootPage() {
     // cold load, ahead of the real answer — wait for auth to settle instead.
     if (loading) return;
 
-    let live = true;
-
     // Signed out means the login gate, full stop.
     if (!user) {
       router.replace(AUTH);
       return;
     }
 
-    void backend.me.playback.get().then(
-      (state) => {
-        if (!live) return;
-        const cold = !state?.trackId && (state?.queue?.length ?? 0) === 0;
-        router.replace(cold ? SEARCH : HOME);
-      },
-      () => {
-        // A failed read must not redefine where the app opens.
-        if (live) router.replace(HOME);
-      }
-    );
-
-    return () => {
-      live = false;
-    };
-  }, [user, loading, backend, router]);
+    const state = readBrowserPlayback(user.uid);
+    const cold = !state?.trackId && (state?.queue?.length ?? 0) === 0;
+    router.replace(cold ? SEARCH : HOME);
+  }, [user, loading, router]);
 
   // The shell's own loading state covers the decision, so there is no flash of
   // a page the user is about to be moved off.

@@ -1,8 +1,8 @@
 import { adminDb } from "@/lib/firebase/admin";
 import { uidFromRequest, unauthorized } from "@/lib/firebase/verify";
 import { pickJumpBackIn } from "@/lib/catalog/recommend";
-import type { Collection, PlayEvent } from "@/lib/catalog/model";
-import type { StatEvent } from "@/lib/catalog/stats";
+import type { Collection } from "@/lib/catalog/model";
+import { loadFeedContext } from "../_context";
 
 export const runtime = "nodejs";
 
@@ -16,19 +16,7 @@ export async function GET(req: Request): Promise<Response> {
   if (!uid) return unauthorized();
 
   const db = adminDb();
-  const snap = await db
-    .collection("playEvents")
-    .where("userId", "==", uid)
-    .get();
-  const events: StatEvent[] = snap.docs.map((d) => {
-    const e = d.data() as PlayEvent;
-    return {
-      ...e,
-      startedAtMs: (
-        e.startedAt as unknown as { toMillis(): number }
-      ).toMillis(),
-    };
-  });
+  const { events } = await loadFeedContext(uid);
 
   const ids = pickJumpBackIn(events, Date.now());
   const collections: Collection[] = [];

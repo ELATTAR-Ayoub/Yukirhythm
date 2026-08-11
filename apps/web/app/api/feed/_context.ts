@@ -1,5 +1,10 @@
 import { adminDb } from "@/lib/firebase/admin";
-import type { Collection, PlayEvent, TrackState } from "@/lib/catalog/model";
+import type {
+  Collection,
+  PlayEvent,
+  Track,
+  TrackState,
+} from "@/lib/catalog/model";
 import type { StatEvent } from "@/lib/catalog/stats";
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -13,15 +18,30 @@ export type FeedContext = {
   topPlayed: string[];
   /** The user's liked trackIds. */
   likedTrackIds: string[];
+  tasteTracks: Map<string, Track>;
 };
 
-export async function loadFeedContext(uid: string): Promise<FeedContext> {
+const CACHE_MS = 5 * 60 * 1000;
+type CacheEntry = { expiresAt: number; value: Promise<FeedContext> };
+const globalCache = globalThis as typeof globalThis & {
+  __yukiFeedContextCache?: Map<string, CacheEntry>;
+};
+const contextCache =
+  globalCache.__yukiFeedContextCache ??
+  (globalCache.__yukiFeedContextCache = new Map<string, CacheEntry>());
+
+async function readFeedContext(uid: string): Promise<FeedContext> {
   const db = adminDb();
 
   // These snapshots have no dependency on one another. Reading them together
   // removes two full Firestore round trips from every personalized feed.
   const [evSnap, owned, stateSnap] = await Promise.all([
-    db.collection("playEvents").where("userId", "==", uid).get(),
+    db
+      .collection("playEvents")
+      .where("userId", "==", uid)
+      .orderBy("startedAt", "desc")
+      .limit(200)
+      .get(),
     db.collection("collections").where("ownerId", "==", uid).get(),
     db.collection("users").doc(uid).collection("trackState").get(),
   ]);
@@ -56,5 +76,31 @@ export async function loadFeedContext(uid: string): Promise<FeedContext> {
     .slice(0, 5)
     .map((s) => s.trackId);
 
-  return { events, exclude, topPlayed, likedTrackIds };
+  const tasteIds = [
+    ...new Set([...events.map((event) => event.trackId), ...likedTrackIds]),
+  ];
+  const tasteDocs = await Promise.all(
+    tasteIds.map((id) => db.collection("tracks").doc(id).get())
+  );
+  const tasteTracks = new Map<string, Track>();
+  tasteDocs.forEach((doc, index) => {
+    if (doc.exists) tasteTracks.set(tasteIds[index], doc.data() as Track);
+  });
+
+  return { events, exclude, topPlayed, likedTrackIds, tasteTracks };
+}
+
+export function loadFeedContext(uid: string): Promise<FeedContext> {
+  const cached = contextCache.get(uid);
+  if (cached && cached.expiresAt > Date.now()) return cached.value;
+  const value = readFeedContext(uid).catch((error) => {
+    contextCache.delete(uid);
+    throw error;
+  });
+  contextCache.set(uid, { expiresAt: Date.now() + CACHE_MS, value });
+  return value;
+}
+
+export function invalidateFeedContext(uid: string): void {
+  contextCache.delete(uid);
 }

@@ -1,14 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, waitFor } from "@testing-library/react";
 
-const { replace, backend, authState } = vi.hoisted(() => ({
+const { replace, authState } = vi.hoisted(() => ({
   replace: vi.fn(),
-  backend: { me: { playback: { get: vi.fn() } } },
   authState: { user: null as { uid: string } | null, loading: false },
 }));
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace }) }));
-vi.mock("@/lib/studio/useBackend", () => ({ useBackend: () => backend }));
 vi.mock("@/lib/studio/useAuth", () => ({ useAuthState: () => authState }));
 
 import RootPage from "./page";
@@ -16,9 +14,9 @@ import RootPage from "./page";
 describe("root landing gate", () => {
   beforeEach(() => {
     replace.mockClear();
+    localStorage.clear();
     authState.user = { uid: "u1" };
     authState.loading = false;
-    backend.me.playback.get.mockResolvedValue({ queue: [], trackId: null });
   });
 
   it("sends a signed-out visitor to the login page", async () => {
@@ -35,22 +33,27 @@ describe("root landing gate", () => {
   });
 
   it("sends a returning listener to home", async () => {
-    backend.me.playback.get.mockResolvedValue({ queue: ["t1"], trackId: "t1" });
+    localStorage.setItem(
+      "yukirhythm:playback:v1:u1",
+      JSON.stringify({ queue: ["t1"], trackId: "t1" })
+    );
     render(<RootPage />);
     await waitFor(() => expect(replace).toHaveBeenCalledWith("/home"));
   });
 
   it("sends a listener with a saved track but an empty queue to home", async () => {
-    backend.me.playback.get.mockResolvedValue({ queue: [], trackId: "t1" });
+    localStorage.setItem(
+      "yukirhythm:playback:v1:u1",
+      JSON.stringify({ queue: [], trackId: "t1" })
+    );
     render(<RootPage />);
     await waitFor(() => expect(replace).toHaveBeenCalledWith("/home"));
   });
 
-  it("falls back to home when the playback read fails", async () => {
-    // A network error must not redefine where the app opens.
-    backend.me.playback.get.mockRejectedValue(new Error("offline"));
+  it("treats corrupt browser playback as a cold account", async () => {
+    localStorage.setItem("yukirhythm:playback:v1:u1", "not-json");
     render(<RootPage />);
-    await waitFor(() => expect(replace).toHaveBeenCalledWith("/home"));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/search"));
   });
 
   it("waits for auth to settle before deciding, rather than treating unknown as signed out", async () => {
@@ -69,7 +72,10 @@ describe("root landing gate", () => {
 
     authState.loading = false;
     authState.user = { uid: "u1" };
-    backend.me.playback.get.mockResolvedValue({ queue: ["t1"], trackId: "t1" });
+    localStorage.setItem(
+      "yukirhythm:playback:v1:u1",
+      JSON.stringify({ queue: ["t1"], trackId: "t1" })
+    );
     render(<RootPage />);
     await waitFor(() => expect(replace).toHaveBeenCalledWith("/home"));
   });

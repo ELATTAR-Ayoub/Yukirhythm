@@ -14,6 +14,7 @@ import type {
   MockTrack,
   MockUser,
 } from "@/components/studio/screens/mock-data";
+import { previewStartForTrack } from "@/components/studio/screens/mock-data";
 import type { LibraryFilter } from "@/components/studio/screens/library-utils";
 import {
   insertIntoQueue,
@@ -35,7 +36,6 @@ import {
   initialsOf,
   toStudioCollection,
   toStudioHistory,
-  toStudioStats,
   toStudioTrack,
   toStudioUser,
 } from "@/lib/studio/adapt";
@@ -45,6 +45,10 @@ import type {
   MockStats,
 } from "@/components/studio/screens/mock-data";
 import type { SeekablePlayer } from "@/components/studio/screens/HiddenYouTubePlayer";
+import {
+  readBrowserPlayback,
+  writeBrowserPlayback,
+} from "@/lib/studio/browser-playback";
 
 // react-player pulls in browser-only globals; load it client-side only. The
 // wrapper takes the seek ref as a plain prop — see HiddenYouTubePlayer.
@@ -183,16 +187,15 @@ export default function StudioProvider({
    *  the restored track — an untagged ref would re-apply a stale seek onto
    *  whatever track happens to be current when onReady next fires. */
   const pendingSeekRef = useRef<{ trackId: string; sec: number } | null>(null);
-  /** Guards the volume-persistence effect further down: true across its very
-   *  first run (nothing to save yet) AND right after sign-in restore sets
-   *  volume from a saved session (that value is already on the server — no
-   *  need to echo it straight back). */
-  const skipNextVolumeSaveRef = useRef(true);
   /** Flips true the moment the user starts playback themselves (startTrack).
    *  The sign-in restore reads this right before it writes anything, so a
    *  restore that lands late — after the user already picked their own song
    *  — yields instead of clobbering an active session. */
   const userStartedRef = useRef(false);
+  /** Identifies the latest user play request. Collection hydration finishes in
+   *  the background, so an older request must never replace a queue chosen
+   *  while it was still in flight. */
+  const playRequestRef = useRef(0);
 
   // search
   const [searchResults, setSearchResults] = useState<MockTrack[]>([]);
@@ -222,12 +225,26 @@ export default function StudioProvider({
   useEffect(() => {
     if (!fbUser) return;
     const pending = readPendingHistory(fbUser.uid);
-    if (!pending.length) return;
-    void backend.events
-      .ingest(pending)
-      .then(() => writePendingHistory(fbUser.uid, []))
-      .catch((err) => console.warn("Listening history retry failed", err));
-  }, [backend, fbUser]);
+    let live = true;
+    queueMicrotask(() => {
+      if (!live) return;
+      setRecents(
+        toStudioHistory(
+          pending.map((event) => ({
+            trackId: event.trackId,
+            startedAtMs: event.startedAt,
+            collection: event.collectionId
+              ? { collectionId: event.collectionId }
+              : null,
+          })),
+          Date.now()
+        )
+      );
+    });
+    return () => {
+      live = false;
+    };
+  }, [fbUser]);
 
   /** Register tracks so the screens' getTrack/getCollectionTracks resolve them. */
   const absorb = useCallback((tracks: Track[]) => {
@@ -375,16 +392,8 @@ export default function StudioProvider({
           .finally(() => {
             if (live) setYouMightLikeLoading(false);
           });
-        void backend.feed
-          .jumpBackIn()
-          .then((r) => {
-            if (live) {
-              setJumpBackIn(r.collections.map((c) => toStudioCollection(c)));
-            }
-          }, warn("jump-back-in"))
-          .finally(() => {
-            if (live) setJumpBackInLoading(false);
-          });
+        // Derived from browser-local history and the in-memory library below.
+        if (live) setJumpBackInLoading(false);
 
         const [meResult, libraryResult] = await Promise.allSettled([
           backend.me.get(),
@@ -417,14 +426,11 @@ export default function StudioProvider({
       // Feeds and profile data. Each is independent — one failing rail must
       // not blank the others, so they settle separately. Failures are logged:
       // a silently-empty shelf is indistinguishable from a broken feed.
-      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
       // Restore the session that was playing before the reload. Deliberately
       // independent of the feed fetches below — a failed read here must not
       // affect user/collections/feeds, so it gets its own catch and nothing
       // else.
-      void backend.me.playback
-        .get()
+      void Promise.resolve(readBrowserPlayback(fbUser.uid))
         .then(async (state) => {
           if (!live || !state) return;
           // Nothing was ever playing (fresh account, or an already-empty
@@ -491,15 +497,7 @@ export default function StudioProvider({
             };
           }
           const restoredVolume = Math.min(1, Math.max(0, state.volume ?? 1));
-          setVolumeState((v) => {
-            // Only arm the skip if this actually changes anything.
-            // setVolumeState bails out (no re-render, no effect run) when
-            // the value is unchanged — arming unconditionally would leave
-            // the flag stuck "on" until the user's NEXT real change, which
-            // would then be the one silently dropped instead of this no-op.
-            if (v !== restoredVolume) skipNextVolumeSaveRef.current = true;
-            return restoredVolume;
-          });
+          setVolumeState(restoredVolume);
           // A restored 0 should still unmute to something audible later, so
           // preMute is only updated on an audible restore — leave it at its
           // default otherwise.
@@ -515,24 +513,12 @@ export default function StudioProvider({
           if (live) setPlaybackLoading(false);
         });
 
-      void backend.me
-        .stats(tz)
-        .then((s) => live && setStats(toStudioStats(s)), warn("stats"))
-        .finally(() => {
-          if (live) setStatsLoading(false);
-        });
-      void backend.me
-        .recents()
-        .then((r) => {
-          if (!live) return;
-          absorb(
-            r.items.map((i) => i.track).filter((t): t is Track => t !== null)
-          );
-          setRecents(toStudioHistory(r.items, Date.now()));
-        }, warn("recents"))
-        .finally(() => {
-          if (live) setRecentsLoading(false);
-        });
+      // Playback history and live stats are browser-local while Firestore
+      // protection mode is active. Do not scan playEvents on every app load.
+      if (live) {
+        setStatsLoading(false);
+        setRecentsLoading(false);
+      }
     })();
     return () => {
       live = false;
@@ -540,51 +526,57 @@ export default function StudioProvider({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fbUser]);
 
-  // ---- playback ----------------------------------------------------------
-  const flushEvent = useCallback(
-    (keepalive = false) => {
-      const t = nowPlaying;
-      const session = listeningRef.current;
-      if (!t || !session || session.listenedSec < 1) return;
+  useEffect(() => {
+    const ids = [...new Set(recents.map((entry) => entry.collectionId))];
+    setJumpBackIn(
+      ids
+        .map((id) => collections.find((collection) => collection.id === id))
+        .filter((collection): collection is MockCollection =>
+          Boolean(collection)
+        )
+        .slice(0, 12)
+    );
+  }, [collections, recents]);
 
-      const event: ListeningEvent = {
-        eventId: session.eventId,
-        trackId: t.id,
-        collectionId: playingCollection?.id ?? null,
-        listenedSec: Math.floor(session.listenedSec),
-        startedAt: session.startedAt,
-        source: playingCollection ? "collection" : (t.eventSource ?? "library"),
-        recommendationId: t.recommendationId ?? null,
-        clientHourOfDay: new Date().getHours(),
-      };
-      // Rotate before sending so pagehide plus a simultaneous track transition
-      // cannot submit the same session twice. The server also dedupes eventId.
-      listeningRef.current = freshListeningSession(session.lastPositionSec);
-      if (fbUser) {
-        const pending = readPendingHistory(fbUser.uid).filter(
-          (item) => item.eventId !== event.eventId
-        );
-        writePendingHistory(fbUser.uid, [...pending, event]);
-      }
-      void backend.events
-        .ingest([event], { keepalive })
-        .then(async () => {
-          if (fbUser) {
-            writePendingHistory(
-              fbUser.uid,
-              readPendingHistory(fbUser.uid).filter(
-                (item) => item.eventId !== event.eventId
-              )
-            );
-          }
-          if (keepalive) return;
-          const recentPage = await backend.me.recents();
-          setRecents(toStudioHistory(recentPage.items, Date.now()));
-        })
-        .catch((err) => console.warn("Listening history persist failed", err));
-    },
-    [backend, fbUser, nowPlaying, playingCollection]
-  );
+  // ---- playback ----------------------------------------------------------
+  const flushEvent = useCallback(() => {
+    const t = nowPlaying;
+    const session = listeningRef.current;
+    if (!t || !session || session.listenedSec < 1) return;
+
+    const event: ListeningEvent = {
+      eventId: session.eventId,
+      trackId: t.id,
+      collectionId: playingCollection?.id ?? null,
+      listenedSec: Math.floor(session.listenedSec),
+      startedAt: session.startedAt,
+      source: playingCollection ? "collection" : (t.eventSource ?? "library"),
+      recommendationId: t.recommendationId ?? null,
+      clientHourOfDay: new Date().getHours(),
+    };
+    // Rotate before saving so pagehide plus a simultaneous track transition
+    // cannot record the same browser-local session twice.
+    listeningRef.current = freshListeningSession(session.lastPositionSec);
+    if (fbUser) {
+      const pending = readPendingHistory(fbUser.uid).filter(
+        (item) => item.eventId !== event.eventId
+      );
+      const next = [event, ...pending].slice(0, 200);
+      writePendingHistory(fbUser.uid, next);
+      setRecents(
+        toStudioHistory(
+          next.map((item) => ({
+            trackId: item.trackId,
+            startedAtMs: item.startedAt,
+            collection: item.collectionId
+              ? { collectionId: item.collectionId }
+              : null,
+          })),
+          Date.now()
+        )
+      );
+    }
+  }, [fbUser, nowPlaying, playingCollection]);
 
   const startTrack = useCallback((index: number) => {
     setCurrentIndex(index);
@@ -615,6 +607,7 @@ export default function StudioProvider({
 
   const play = useCallback(
     async (track: MockTrack, from?: MockCollection) => {
+      const requestId = ++playRequestRef.current;
       // Clicking a row in the queue you are already inside must not rebuild
       // that queue — everything enqueued from the rail lives only there. See
       // isSameContext for why `from` omitted (Search, Home) never counts.
@@ -639,22 +632,17 @@ export default function StudioProvider({
         setQueue(joined.queue);
         setNavDirection(null);
         startTrack(joined.index);
-        if (appended) {
-          // Best-effort, same as enqueue: a failed write must not undo the
-          // queue the user is looking at, and the next save() flush re-sends
-          // the whole list.
-          void backend.me.playback.enqueue(track.id, "end").catch(() => {});
-        }
         return;
       }
 
       flushEvent();
-      const q = from ? await resolveTrackIds(from.trackIds) : [track];
-      const idx = q.findIndex((t) => t.id === track.id);
       setPlayingCollection(from ?? null);
-      setQueue(q.length ? q : [track]);
+      // The selected row already carries everything the player needs. Seat it
+      // immediately instead of blocking playback on one catalogue request per
+      // collection item; the complete ordered queue is hydrated below.
+      setQueue([track]);
       setNavDirection(null);
-      startTrack(idx >= 0 ? idx : 0);
+      startTrack(0);
       // A genuinely fresh queue invalidates whatever shuffle was doing to the
       // PREVIOUS one — leaving it on here would show "shuffled" active over
       // an order that was never actually shuffled.
@@ -662,16 +650,33 @@ export default function StudioProvider({
         setShuffled(false);
         preShuffleOrderRef.current = null;
       }
+
+      if (from) {
+        void Promise.all(
+          from.trackIds.map(async (id) => {
+            if (id === track.id) return track;
+            const resolved = await backend.catalog.track(id).catch(() => null);
+            return resolved ? toStudioTrack(resolved) : null;
+          })
+        ).then((items) => {
+          // A newer play owns the player now; discard this stale hydration.
+          if (playRequestRef.current !== requestId) return;
+          const hydrated = items.filter(
+            (item): item is MockTrack => item !== null
+          );
+          if (hydrated.length === 0) return;
+          registerStudioTracks(hydrated);
+          const selectedIndex = hydrated.findIndex(
+            (item) => item.id === track.id
+          );
+          setQueue(hydrated);
+          // Keep the same selected track playing when it moves from slot 0 to
+          // its real collection position. No restart or progress reset occurs.
+          setCurrentIndex(selectedIndex >= 0 ? selectedIndex : 0);
+        });
+      }
     },
-    [
-      resolveTrackIds,
-      flushEvent,
-      startTrack,
-      playingCollection,
-      queue,
-      backend,
-      shuffled,
-    ]
+    [flushEvent, startTrack, playingCollection, queue, backend, shuffled]
   );
 
   const dequeue = useCallback(
@@ -700,16 +705,12 @@ export default function StudioProvider({
       if (result.currentIndex === -1 && currentIndex !== -1) {
         setIsPlaying(false);
       }
-      // Best-effort, same as enqueue: a failed write must not resurrect a row
-      // the user just removed, and the next save() flush re-sends the list.
-      void backend.me.playback.removeFromQueue(index).catch(() => {});
     },
-    [backend, flushEvent, queue, currentIndex, shuffled]
+    [flushEvent, queue, currentIndex, shuffled]
   );
 
   const clearQueue = useCallback(async () => {
     flushEvent();
-    await backend.me.playback.clearQueue();
     setQueue([]);
     setPlayingCollection(null);
     setCurrentIndex(-1);
@@ -720,23 +721,67 @@ export default function StudioProvider({
     setShuffled(false);
     preShuffleOrderRef.current = null;
     pendingSeekRef.current = null;
-  }, [backend, flushEvent]);
+  }, [flushEvent]);
 
   /**
    * Add to the running queue. Local state moves first so the rail updates on
-   * the click, and the same splice is persisted server-side so the queue
-   * survives a reload. Nothing starts playing: the user asked for this track
-   * later, not now.
+   * the click. The browser playback snapshot below keeps it across reloads.
+   * Nothing starts playing: the user asked for this track later, not now.
    */
   const enqueue = useCallback(
     (track: MockTrack, mode: EnqueueMode = "end") => {
       registerStudioTracks([track]);
       setQueue((q) => insertIntoQueue(q, track, mode, currentIndex));
-      // Best-effort persistence — a failed write must not undo the queue the
-      // user is looking at, and the next save() flush re-sends the whole list.
-      void backend.me.playback.enqueue(track.id, mode).catch(() => {});
     },
-    [backend, currentIndex]
+    [currentIndex]
+  );
+
+  /** Browser-local queue mutation for interactions that show success in UI. */
+  const enqueuePersisted = useCallback(
+    async (track: MockTrack, mode: EnqueueMode = "end") => {
+      registerStudioTracks([track]);
+      setQueue((q) => insertIntoQueue(q, track, mode, currentIndex));
+    },
+    [currentIndex]
+  );
+
+  const findSimilarTracks = useCallback(
+    async (trackId: string) => {
+      const response = await backend.feed.similar(trackId);
+      const tracks = response.items.map((item) =>
+        toStudioTrack(item.track, {
+          eventSource: "recommendation",
+          recommendationId: item.recommendationId,
+        })
+      );
+      registerStudioTracks(tracks);
+      return tracks;
+    },
+    [backend]
+  );
+
+  const [previewTrack, setPreviewTrack] = useState<MockTrack | null>(null);
+  const [previewProgressSec, setPreviewProgressSec] = useState(0);
+  const previewPlayerRef = useRef<SeekablePlayer | null>(null);
+  const previewStartRef = useRef(0);
+  const stopPreview = useCallback(() => {
+    setPreviewTrack(null);
+    setPreviewProgressSec(0);
+  }, []);
+  const startPreview = useCallback(
+    (track: MockTrack) => {
+      if (previewTrack?.id === track.id) {
+        stopPreview();
+        return;
+      }
+      // Shared catalogue metadata can replace this deterministic fallback
+      // without changing card or player behavior.
+      const start = previewStartForTrack(track);
+      previewStartRef.current = start;
+      setPreviewProgressSec(start);
+      setPreviewTrack(track);
+    },
+    [previewTrack, stopPreview]
   );
 
   const toggle = useCallback(
@@ -840,7 +885,7 @@ export default function StudioProvider({
   );
 
   useEffect(() => {
-    const onPageHide = () => flushEvent(true);
+    const onPageHide = () => flushEvent();
     window.addEventListener("pagehide", onPageHide);
     return () => window.removeEventListener("pagehide", onPageHide);
   }, [flushEvent]);
@@ -855,14 +900,27 @@ export default function StudioProvider({
     []
   );
 
-  // Latest playback snapshot for the persistence interval below. The interval
-  // must NOT list fast-changing state (progressSec ticks ~1s) in its own deps
-  // — that tore the timer down and recreated it on every tick, so the "10s"
-  // save only actually fired when ticks stalled (throttled tab, buffering).
-  // The interval reads this ref instead; the no-deps effect keeps it current
-  // on every render.
-  const persistSnapshotRef = useRef({
-    nowPlaying,
+  // Playback is intentionally browser-only while database protection mode is
+  // active. Queue, position, volume and shuffle never touch Firestore.
+  useEffect(() => {
+    // Do not overwrite an existing browser snapshot with the provider's empty
+    // initial state before the restore effect has had a chance to read it.
+    if (!fbUser || playbackLoading) return;
+    writeBrowserPlayback(fbUser.uid, {
+      trackId: nowPlaying?.id ?? null,
+      queue: queue.map((track) => track.id),
+      queueIndex: currentIndex,
+      positionSec: progressSec,
+      isPlaying,
+      volume,
+      sourceType: playingCollection ? "collection" : "library",
+      sourceId: playingCollection?.id ?? null,
+      shuffleMode: shuffled,
+    });
+  }, [
+    fbUser,
+    playbackLoading,
+    nowPlaying?.id,
     queue,
     currentIndex,
     progressSec,
@@ -870,79 +928,7 @@ export default function StudioProvider({
     volume,
     playingCollection,
     shuffled,
-  });
-  useEffect(() => {
-    persistSnapshotRef.current = {
-      nowPlaying,
-      queue,
-      currentIndex,
-      progressSec,
-      isPlaying,
-      volume,
-      playingCollection,
-      shuffled,
-    };
-  });
-
-  // Persist playback state, throttled to ~10s. Keyed on "is a track loaded"
-  // alone so the timer survives progress ticks and track changes. Note: a
-  // restored session sets nowPlaying (queue/currentIndex) with isPlaying
-  // false, so this interval starts right back up and saves that same restored
-  // state again — harmless and idempotent, not a fight with the restore.
-  const hasTrack = nowPlaying !== null;
-  useEffect(() => {
-    if (!hasTrack) return;
-    const id = setInterval(() => {
-      const s = persistSnapshotRef.current;
-      if (!s.nowPlaying) return;
-      void backend.me.playback.save({
-        trackId: s.nowPlaying.id,
-        queue: s.queue.map((t) => t.id),
-        queueIndex: s.currentIndex,
-        positionSec: s.progressSec,
-        isPlaying: s.isPlaying,
-        volume: s.volume,
-        sourceType: s.playingCollection ? "collection" : "library",
-        sourceId: s.playingCollection?.id ?? null,
-        shuffleMode: s.shuffled,
-      });
-    }, 10000);
-    return () => clearInterval(id);
-  }, [backend, hasTrack]);
-
-  // Persist a volume change on its own, debounced ~1s. The interval above
-  // only runs `if (nowPlaying)`, so a volume tweak made with nothing loaded
-  // (or right after a track ends) would otherwise never reach the server.
-  // `trackId: null` here is valid — the PUT route (app/api/me/playback/
-  // route.ts) explicitly accepts a null trackId — so this saves the full
-  // current snapshot, not volume in isolation.
-  useEffect(() => {
-    if (skipNextVolumeSaveRef.current) {
-      // Covers both the initial mount (nothing to save yet) and the moment
-      // sign-in restore just set this same value from the server — either
-      // way, nothing here needs writing back.
-      skipNextVolumeSaveRef.current = false;
-      return;
-    }
-    const id = setTimeout(() => {
-      void backend.me.playback
-        .save({
-          trackId: nowPlaying?.id ?? null,
-          queue: queue.map((t) => t.id),
-          queueIndex: currentIndex,
-          positionSec: progressSec,
-          isPlaying,
-          volume,
-        })
-        .catch((err) => console.warn("Volume persist failed", err));
-    }, 1000);
-    return () => clearTimeout(id);
-    // Deliberately only `volume` — this effect debounces volume changes
-    // specifically. nowPlaying/queue/etc. are read as a snapshot of
-    // "whatever else is true right now", the same as the 10s interval above;
-    // listing them here would re-debounce on every seek/track-change too.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [volume]);
+  ]);
 
   // ---- search ------------------------------------------------------------
   // Monotonic ticket: a stale response (or one landing after a clear) must
@@ -1173,6 +1159,12 @@ export default function StudioProvider({
       dequeue,
       clearQueue,
       enqueue,
+      enqueuePersisted,
+      previewTrack,
+      previewPlaying: previewTrack !== null,
+      previewProgressSec,
+      startPreview,
+      stopPreview,
       toggle,
       canNext: currentIndex >= 0 && queue.length > 1,
       canPrev: currentIndex > 0 || (currentIndex >= 0 && progressSec >= 5),
@@ -1209,6 +1201,7 @@ export default function StudioProvider({
       jumpBackInLoading,
       newReleasesLoading,
       youMightLikeLoading,
+      findSimilarTracks,
       collectionResults,
       stats,
       statsLoading,
@@ -1236,6 +1229,11 @@ export default function StudioProvider({
       dequeue,
       clearQueue,
       enqueue,
+      enqueuePersisted,
+      previewTrack,
+      previewProgressSec,
+      startPreview,
+      stopPreview,
       toggle,
       next,
       prev,
@@ -1273,6 +1271,7 @@ export default function StudioProvider({
       jumpBackInLoading,
       newReleasesLoading,
       youMightLikeLoading,
+      findSimilarTracks,
       collectionResults,
       stats,
       statsLoading,
@@ -1293,7 +1292,7 @@ export default function StudioProvider({
           <HiddenYouTubePlayer
             playerRef={playerRef}
             url={`https://www.youtube.com/watch?v=${nowPlaying.id}`}
-            playing={isPlaying}
+            playing={isPlaying && !previewTrack}
             volume={volume}
             onReady={() => {
               setIsLoading(false);
@@ -1325,6 +1324,28 @@ export default function StudioProvider({
               if (delta > 0 && delta <= 5) session.listenedSec += delta;
             }}
             onEnded={() => next()}
+          />
+        </div>
+      )}
+      {previewTrack && (
+        <div
+          style={{ position: "fixed", width: 0, height: 0, overflow: "hidden" }}
+        >
+          <HiddenYouTubePlayer
+            playerRef={previewPlayerRef}
+            url={`https://www.youtube.com/watch?v=${previewTrack.id}`}
+            playing
+            volume={volume}
+            onReady={() =>
+              previewPlayerRef.current?.seekTo(previewStartRef.current)
+            }
+            onStart={() => {}}
+            onProgress={(s) => {
+              setPreviewProgressSec(s.playedSeconds);
+              if (s.playedSeconds >= previewStartRef.current + 10)
+                stopPreview();
+            }}
+            onEnded={stopPreview}
           />
         </div>
       )}

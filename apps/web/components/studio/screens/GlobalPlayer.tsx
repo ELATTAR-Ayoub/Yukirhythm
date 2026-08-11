@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 
 import { useMockStudio } from "./MockStudioProvider";
 import { useIsDesktop } from "../shell/useBreakpoint";
 import PlaybackBar from "../shell/PlaybackBar";
+import ImmersivePlayer from "./ImmersivePlayer";
 import DevicePlayer from "./DevicePlayer";
 import MiniPlayerBar from "./MiniPlayerBar";
 import { PlaybackBarSkeleton } from "./RouteSkeletons";
@@ -23,8 +25,50 @@ export default function GlobalPlayer() {
   const { nowPlaying, playerExpanded, setPlayerExpanded, playbackLoading } =
     useMockStudio();
   const isDesktop = useIsDesktop();
+  const pathname = usePathname();
   const dialogRef = useRef<HTMLDivElement>(null);
   const restoreRef = useRef<HTMLElement | null>(null);
+  const routeRef = useRef(pathname);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [immersive, setImmersive] = useState(false);
+  const [closing, setClosing] = useState(false);
+
+  const closePlayer = useCallback(() => {
+    if (closing) return;
+    setClosing(true);
+    closeTimerRef.current = setTimeout(() => {
+      setPlayerExpanded(false);
+      setImmersive(false);
+      setClosing(false);
+      closeTimerRef.current = null;
+    }, 240);
+  }, [closing, setPlayerExpanded]);
+
+  const openPlayer = useCallback(
+    (fullScreen: boolean) => {
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+      setClosing(false);
+      setImmersive(fullScreen);
+      setPlayerExpanded(true);
+    },
+    [setPlayerExpanded]
+  );
+
+  useEffect(
+    () => () => {
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    },
+    []
+  );
+
+  // Expanded surfaces are route-local UI. Navigation must never carry one
+  // over the destination page.
+  useEffect(() => {
+    if (routeRef.current === pathname) return;
+    routeRef.current = pathname;
+    if (playerExpanded) closePlayer();
+  }, [pathname, playerExpanded, closePlayer]);
 
   // Keyboard support for the expanded overlay: Escape dismisses, focus moves
   // to the collapse control on open and returns to the expand trigger on close.
@@ -45,7 +89,7 @@ export default function GlobalPlayer() {
       ?.focus();
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setPlayerExpanded(false);
+      if (e.key === "Escape") closePlayer();
     };
     document.addEventListener("keydown", onKeyDown);
     return () => {
@@ -62,7 +106,7 @@ export default function GlobalPlayer() {
           ?.focus();
       }
     };
-  }, [playerExpanded, nowPlaying, setPlayerExpanded]);
+  }, [playerExpanded, nowPlaying, closePlayer]);
 
   if (playbackLoading) {
     return isDesktop ? <PlaybackBarSkeleton /> : <PlaybackBarSkeleton mobile />;
@@ -83,20 +127,35 @@ export default function GlobalPlayer() {
           aria-label="Now playing"
         >
           <div
-            className="absolute inset-0 bg-ink/50 backdrop-blur-sm anim-fade-in"
-            onClick={() => setPlayerExpanded(false)}
+            className={
+              closing
+                ? "absolute inset-0 bg-ink/50 backdrop-blur-sm anim-player-backdrop-out"
+                : "absolute inset-0 bg-ink/50 backdrop-blur-sm anim-fade-in"
+            }
+            onClick={closePlayer}
             aria-hidden
           />
-          <div className="absolute inset-0 flex items-center justify-center p-4 pointer-events-none">
-            <div className="pointer-events-auto anim-jelly-in w-full flex justify-center">
-              <DevicePlayer onCollapse={() => setPlayerExpanded(false)} />
-            </div>
+          <div
+            className={`absolute inset-0 pointer-events-auto ${
+              closing ? "anim-player-compress" : "anim-player-expand"
+            }`}
+          >
+            {immersive ? (
+              <ImmersivePlayer onCollapse={closePlayer} />
+            ) : (
+              <div className="flex h-full items-center justify-center px-4 py-20">
+                <DevicePlayer
+                  onCollapse={closePlayer}
+                  onExpand={() => setImmersive(true)}
+                />
+              </div>
+            )}
           </div>
         </div>
       ) : isDesktop ? (
-        <PlaybackBar onExpand={() => setPlayerExpanded(true)} />
+        <PlaybackBar onExpand={() => openPlayer(true)} />
       ) : (
-        <MiniPlayerBar onExpand={() => setPlayerExpanded(true)} />
+        <MiniPlayerBar onExpand={() => openPlayer(false)} />
       )}
     </>
   );

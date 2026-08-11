@@ -55,9 +55,7 @@ describe("FeedShelf", () => {
         />
       </MockStudioProvider>
     );
-    fireEvent.click(
-      screen.getByRole("button", { name: `Play ${MOCK_TRACKS[0].title}` })
-    );
+    fireEvent.click(screen.getAllByRole("button", { name: "Play full song" })[0]);
     expect(screen.getByTestId("now-playing").textContent).toBe(
       MOCK_TRACKS[0].title
     );

@@ -1,4 +1,5 @@
 import { adminDb } from "@/lib/firebase/admin";
+import { gone } from "@/lib/api/disabled";
 import { uidFromRequest, unauthorized } from "@/lib/firebase/verify";
 
 export const runtime = "nodejs";
@@ -9,6 +10,7 @@ export const runtime = "nodejs";
  * unliking, so isLiked/likedAt are left untouched.
  */
 export async function DELETE(req: Request): Promise<Response> {
+  if (process.env.ENABLE_LEGACY_LISTENING_SYNC !== "true") return gone("Listening history");
   const uid = await uidFromRequest(req);
   if (!uid) return unauthorized();
 

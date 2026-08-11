@@ -112,6 +112,10 @@ export function createBackendClient(getToken: TokenProvider) {
         request<{ personalized: boolean; items: FeedItem[] }>(
           endpoints.feed.youMightLike()
         ),
+      similar: (trackId: string) =>
+        request<{ seedTrackId: string; items: FeedItem[] }>(
+          endpoints.feed.similar(trackId)
+        ),
     },
 
     collections: {

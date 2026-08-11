@@ -1,4 +1,5 @@
 import { Timestamp } from "firebase-admin/firestore";
+import { gone } from "@/lib/api/disabled";
 import { adminDb } from "@/lib/firebase/admin";
 import { uidFromRequest, unauthorized } from "@/lib/firebase/verify";
 import type { PlaybackState } from "@/lib/catalog/model";
@@ -21,6 +22,7 @@ export async function DELETE(
   req: Request,
   { params }: Params
 ): Promise<Response> {
+  if (process.env.ENABLE_LEGACY_PLAYBACK_SYNC !== "true") return gone("Playback queue sync");
   const uid = await uidFromRequest(req);
   if (!uid) return unauthorized();
 
@@ -32,6 +34,7 @@ export async function DELETE(
 
   const r = ref(uid);
   let status = 200;
+  let result: Partial<PlaybackState> = {};
   await adminDb().runTransaction(async (tx) => {
     const snap = await tx.get(r);
     if (!snap.exists) {
@@ -58,15 +61,16 @@ export async function DELETE(
       i < state.queueIndex ? state.queueIndex - 1 : state.queueIndex;
     if (nextIndex >= nextQueue.length) nextIndex = -1;
 
-    tx.update(r, {
+    result = {
       queue: nextQueue,
       queueIndex: nextIndex,
       updatedAt: Timestamp.now(),
-    });
+    };
+    tx.update(r, result);
   });
 
   if (status !== 200) {
     return Response.json({ error: "Request failed" }, { status });
   }
-  return Response.json((await r.get()).data());
+  return Response.json(result);
 }

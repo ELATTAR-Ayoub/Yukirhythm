@@ -1,6 +1,8 @@
 import { Timestamp } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/firebase/admin";
 import { uidFromRequest, unauthorized } from "@/lib/firebase/verify";
+import { invalidateRequestCache } from "@/lib/catalog/request-cache";
+import { invalidateFeedContext } from "../../../feed/_context";
 
 export const runtime = "nodejs";
 
@@ -36,5 +38,9 @@ export async function PUT(req: Request, { params }: Params): Promise<Response> {
   if (!snap.exists) patch.addedAt = Timestamp.now();
 
   await ref.set(patch, { merge: true });
-  return Response.json((await ref.get()).data());
+  if (typeof body.isLiked === "boolean") {
+    invalidateRequestCache(`likes:${uid}`);
+    invalidateFeedContext(uid);
+  }
+  return Response.json(patch);
 }

@@ -89,6 +89,8 @@ export const endpoints = {
     jumpBackIn: () => `${API}/feed/jump-back-in`,
     newReleases: () => `${API}/feed/new-releases`,
     youMightLike: () => `${API}/feed/you-might-like`,
+    similar: (trackId: string) =>
+      `${API}/feed/similar${qs({ trackId })}`,
   },
 
   /** Batched play/behaviour events. (planned — phase 4) */

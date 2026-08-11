@@ -24,8 +24,13 @@ vi.mock("@/lib/studio/useBackend", () => ({
 
 /** Surfaces nowPlaying so tests can prove a click did (or didn't) start playback. */
 function NowPlayingProbe() {
-  const { nowPlaying } = useMockStudio();
-  return <div data-testid="now-playing">{nowPlaying?.title ?? "none"}</div>;
+  const { nowPlaying, previewTrack } = useMockStudio();
+  return (
+    <>
+      <div data-testid="now-playing">{nowPlaying?.title ?? "none"}</div>
+      <div data-testid="previewing">{previewTrack?.title ?? "none"}</div>
+    </>
+  );
 }
 
 function renderHome() {
@@ -85,7 +90,7 @@ describe("HomeScreen", () => {
     }
   });
 
-  it("still plays a new release when its card is clicked", () => {
+  it("previews a new release without replacing full playback", () => {
     // The New releases shelf is a play trigger, not a drawer flow — it must
     // keep working exactly as before this route conversion.
     vi.useFakeTimers();
@@ -93,13 +98,16 @@ describe("HomeScreen", () => {
       renderHome();
 
       fireEvent.click(
-        screen.getByRole("button", { name: "Play Equalizer Sunday" })
+        screen.getByRole("button", {
+          name: "Preview Equalizer Sunday for 10 seconds",
+        })
       );
       act(() => vi.advanceTimersByTime(650));
 
-      expect(screen.getByTestId("now-playing").textContent).toBe(
+      expect(screen.getByTestId("previewing").textContent).toBe(
         "Equalizer Sunday"
       );
+      expect(screen.getByTestId("now-playing").textContent).toBe("none");
     } finally {
       vi.useRealTimers();
     }
@@ -151,7 +159,9 @@ describe("HomeScreen", () => {
     );
 
     expect(
-      screen.getByRole("button", { name: "Play Equalizer Sunday" })
+      screen.getByRole("button", {
+        name: "Preview Equalizer Sunday for 10 seconds",
+      })
     ).toBeTruthy();
     expect(
       screen.getByRole("region", { name: "You might like loading" })
@@ -178,7 +188,9 @@ describe("HomeScreen", () => {
       screen.getByRole("region", { name: "Jump back in loading" })
     ).toHaveAttribute("aria-busy", "true");
     expect(
-      screen.getByRole("button", { name: "Play Equalizer Sunday" })
+      screen.getByRole("button", {
+        name: "Preview Equalizer Sunday for 10 seconds",
+      })
     ).toBeTruthy();
     expect(
       screen.queryByRole("region", { name: "New releases loading" })

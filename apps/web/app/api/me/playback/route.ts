@@ -1,4 +1,5 @@
 import { Timestamp } from "firebase-admin/firestore";
+import { gone } from "@/lib/api/disabled";
 import { adminDb } from "@/lib/firebase/admin";
 import { uidFromRequest, unauthorized } from "@/lib/firebase/verify";
 import {
@@ -18,11 +19,12 @@ const asStringArray = (v: unknown): string[] | undefined =>
     : undefined;
 
 export async function GET(req: Request): Promise<Response> {
+  if (process.env.ENABLE_LEGACY_PLAYBACK_SYNC !== "true") return gone("Playback sync");
   const uid = await uidFromRequest(req);
   if (!uid) return unauthorized();
 
   const snap = await ref(uid).get();
-  if (snap.exists) return Response.json(snap.data());
+  if (snap.exists) return Response.json({ ...EMPTY_PLAYBACK, ...snap.data() });
   // Never 404 — a user who has never played anything gets a fresh empty state.
   return Response.json({ ...EMPTY_PLAYBACK, updatedAt: Timestamp.now() });
 }
@@ -34,6 +36,7 @@ export async function GET(req: Request): Promise<Response> {
  * ~10s and on pause/stop/unload, not every tick.
  */
 export async function PUT(req: Request): Promise<Response> {
+  if (process.env.ENABLE_LEGACY_PLAYBACK_SYNC !== "true") return gone("Playback sync");
   const uid = await uidFromRequest(req);
   if (!uid) return unauthorized();
 
@@ -70,12 +73,8 @@ export async function PUT(req: Request): Promise<Response> {
     patch.volume = Math.min(1, Math.max(0, body.volume));
   if (typeof body.deviceId === "string") patch.deviceId = body.deviceId;
 
-  const r = ref(uid);
-  const snap = await r.get();
-  // Seed the full default on first write so a partial PUT yields a complete doc.
-  if (!snap.exists)
-    await r.set({ ...EMPTY_PLAYBACK, updatedAt: Timestamp.now() });
-  await r.set(patch, { merge: true });
-
-  return Response.json((await r.get()).data());
+  // Merge creates the document if absent. GET supplies defaults, so a save
+  // needs no existence read, seed write, or read-after-write.
+  await ref(uid).set(patch, { merge: true });
+  return Response.json(patch);
 }

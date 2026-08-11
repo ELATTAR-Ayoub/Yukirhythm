@@ -118,6 +118,21 @@ function track(over: Partial<Track> = {}): Track {
   } as Track;
 }
 
+function seedPlayback(state: Record<string, unknown>): void {
+  localStorage.setItem(
+    "yukirhythm:playback:v1:u1",
+    JSON.stringify({
+      trackId: null,
+      queue: [],
+      queueIndex: -1,
+      positionSec: 0,
+      isPlaying: false,
+      volume: 1,
+      ...state,
+    })
+  );
+}
+
 /** Exposes the playback slice of the context plus a way to trigger a volume
  *  change, a user-initiated play, and next(), for the restore/persistence
  *  tests below. */
@@ -138,6 +153,9 @@ function PlaybackProbe() {
   return (
     <>
       <div data-testid="queue-length">{queue.length}</div>
+      <div data-testid="queue-ids">
+        {queue.map((item) => item.id).join(",")}
+      </div>
       <div data-testid="now-playing">{nowPlaying?.id ?? "none"}</div>
       <div data-testid="progress">{progressSec}</div>
       <div data-testid="volume">{volume}</div>
@@ -169,6 +187,23 @@ function PlaybackProbe() {
         play-recommendation
       </button>
       <button onClick={() => void clearQueue()}>clear-queue</button>
+      <button
+        onClick={() =>
+          play(toStudioTrack(track({ trackId: "t2", title: "Second" })), {
+            id: "playlist-1",
+            title: "Playlist",
+            desc: "",
+            texture: "tx-k-silk",
+            trackIds: ["t1", "t2", "t3"],
+            likes: 0,
+            tags: [],
+            kind: "music",
+            pinned: false,
+          })
+        }
+      >
+        play-collection-track
+      </button>
     </>
   );
 }
@@ -229,7 +264,7 @@ describe("StudioProvider library load", () => {
     await waitFor(() => {
       expect(backend.feed.newReleases).toHaveBeenCalledTimes(1);
       expect(backend.feed.youMightLike).toHaveBeenCalledTimes(1);
-      expect(backend.feed.jumpBackIn).toHaveBeenCalledTimes(1);
+      expect(backend.feed.jumpBackIn).not.toHaveBeenCalled();
     });
     expect(screen.getByTestId("loading")).toHaveTextContent("true");
 
@@ -480,6 +515,7 @@ describe("StudioProvider search seq-ticket", () => {
 
 describe("StudioProvider playback session restore", () => {
   beforeEach(() => {
+    localStorage.clear();
     backend.collections.list.mockResolvedValue([]);
     backend.me.likes.mockResolvedValue({ trackIds: [], tracks: [] });
     // save's call history is shared across every `it` in this file (the mock
@@ -492,6 +528,44 @@ describe("StudioProvider playback session restore", () => {
     backend.events.ingest.mockClear();
     backend.events.ingest.mockResolvedValue({ ok: true, written: 1 });
     hiddenPlayer.seekTo.mockClear();
+  });
+
+  it("starts a selected playlist track before hydrating the rest of its queue", async () => {
+    let resolveFirst!: (value: Track) => void;
+    let resolveThird!: (value: Track) => void;
+    const first = new Promise<Track>((resolve) => (resolveFirst = resolve));
+    const third = new Promise<Track>((resolve) => (resolveThird = resolve));
+    backend.catalog.track.mockImplementation((id: string) => {
+      if (id === "t1") return first;
+      if (id === "t3") return third;
+      throw new Error(`Unexpected catalogue request for ${id}`);
+    });
+
+    render(
+      <StudioProvider>
+        <PlaybackProbe />
+      </StudioProvider>
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId("collections-count").textContent).toBe("1")
+    );
+
+    fireEvent.click(screen.getByText("play-collection-track"));
+
+    // Neither surrounding catalogue request has completed, but playback is
+    // already seated on the selected track and the selected track was not
+    // redundantly fetched.
+    expect(screen.getByTestId("now-playing").textContent).toBe("t2");
+    expect(screen.getByTestId("queue-ids").textContent).toBe("t2");
+    expect(backend.catalog.track).toHaveBeenCalledTimes(2);
+
+    resolveFirst(track({ trackId: "t1", title: "First" }));
+    resolveThird(track({ trackId: "t3", title: "Third" }));
+
+    await waitFor(() =>
+      expect(screen.getByTestId("queue-ids").textContent).toBe("t1,t2,t3")
+    );
+    expect(screen.getByTestId("now-playing").textContent).toBe("t2");
   });
 
   it("counts heard seconds instead of seek position and keeps recommendation attribution", async () => {
@@ -513,8 +587,9 @@ describe("StudioProvider playback session restore", () => {
     });
     fireEvent.click(screen.getByText("next"));
 
-    await waitFor(() => expect(backend.events.ingest).toHaveBeenCalledTimes(1));
-    const [events] = backend.events.ingest.mock.calls[0];
+    const events = JSON.parse(
+      localStorage.getItem("yukirhythm:history:v1:u1") ?? "[]"
+    );
     expect(events[0]).toMatchObject({
       trackId: "rec-track",
       listenedSec: 3,
@@ -523,10 +598,11 @@ describe("StudioProvider playback session restore", () => {
     });
     expect(events[0].startedAt).toBeGreaterThan(0);
     expect(events[0].eventId).toMatch(/^[\w-]{8,}$/);
+    expect(backend.events.ingest).not.toHaveBeenCalled();
   });
 
   it("restores queue, current track, position and volume, paused", async () => {
-    backend.me.playback.get.mockResolvedValueOnce({
+    seedPlayback({
       trackId: "t2",
       queue: ["t1", "t2"],
       queueIndex: 1,
@@ -559,8 +635,7 @@ describe("StudioProvider playback session restore", () => {
   });
 
   it("a failed playback read leaves the player cold and the rest of sign-in intact", async () => {
-    backend.me.playback.get.mockRejectedValueOnce(new Error("boom"));
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    localStorage.setItem("yukirhythm:playback:v1:u1", "broken-json");
 
     render(
       <StudioProvider>
@@ -573,29 +648,10 @@ describe("StudioProvider playback session restore", () => {
     await waitFor(() =>
       expect(screen.getByTestId("collections-count").textContent).toBe("1")
     );
-    await waitFor(() =>
-      expect(warn).toHaveBeenCalledWith(
-        "Playback restore failed",
-        expect.any(Error)
-      )
-    );
     expect(screen.getByTestId("now-playing").textContent).toBe("none");
-
-    warn.mockRestore();
   });
 
-  it("waits for the clear mutation before stopping and emptying local playback", async () => {
-    let finish!: () => void;
-    backend.me.playback.get.mockResolvedValueOnce({
-      queue: [],
-      trackId: null,
-    });
-    backend.me.playback.clearQueue.mockReturnValueOnce(
-      new Promise((resolve) => {
-        finish = () => resolve({});
-      })
-    );
-
+  it("clears playback locally without calling the database", async () => {
     render(
       <StudioProvider>
         <PlaybackProbe />
@@ -608,19 +664,16 @@ describe("StudioProvider playback session restore", () => {
     expect(screen.getByTestId("queue-length").textContent).toBe("1");
 
     fireEvent.click(screen.getByText("clear-queue"));
-    expect(screen.getByTestId("queue-length").textContent).toBe("1");
-    expect(backend.me.playback.clearQueue).toHaveBeenCalledTimes(1);
-
-    finish();
     await waitFor(() =>
       expect(screen.getByTestId("queue-length").textContent).toBe("0")
     );
     expect(screen.getByTestId("now-playing").textContent).toBe("none");
     expect(screen.getByTestId("is-playing").textContent).toBe("false");
+    expect(backend.me.playback.clearQueue).not.toHaveBeenCalled();
   });
 
   it("clamps an out-of-range queueIndex when the saved track can't be re-anchored", async () => {
-    backend.me.playback.get.mockResolvedValueOnce({
+    seedPlayback({
       // No trackId to re-anchor to, so this exercises the pure range-clamp
       // fallback rather than the trackId-first lookup.
       trackId: null,
@@ -652,7 +705,7 @@ describe("StudioProvider playback session restore", () => {
     // Saved queue was [a, b, c] with b playing at index 1. `a` no longer
     // resolves (deleted/unembeddable) — resolved becomes [b, c], so a raw
     // range-clamp of queueIndex=1 would land on c, the wrong track.
-    backend.me.playback.get.mockResolvedValueOnce({
+    seedPlayback({
       trackId: "b",
       queue: ["a", "b", "c"],
       queueIndex: 1,
@@ -679,13 +732,20 @@ describe("StudioProvider playback session restore", () => {
   });
 
   it("does not clobber a session the user already started before the restore lands", async () => {
-    let resolveGet: (state: unknown) => void = () => {};
-    backend.me.playback.get.mockImplementationOnce(
-      () => new Promise((res) => (resolveGet = res))
-    );
-    backend.catalog.track.mockImplementation((id: string) =>
-      Promise.resolve(track({ trackId: id, title: id }))
-    );
+    seedPlayback({
+      trackId: "t2",
+      queue: ["t1", "t2"],
+      queueIndex: 1,
+      positionSec: 42,
+      isPlaying: true,
+      volume: 0.4,
+    });
+    let finishRestore!: () => void;
+    const gate = new Promise<void>((resolve) => (finishRestore = resolve));
+    backend.catalog.track.mockImplementation(async (id: string) => {
+      await gate;
+      return track({ trackId: id, title: id });
+    });
 
     render(
       <StudioProvider>
@@ -697,7 +757,7 @@ describe("StudioProvider playback session restore", () => {
     // only then is `resolveGet` wired to the real in-flight promise (before
     // that, resolving it early would be a no-op and this test would pass
     // for the wrong reason: the restore never having run yet at all).
-    await waitFor(() => expect(backend.me.playback.get).toHaveBeenCalled());
+    await waitFor(() => expect(backend.catalog.track).toHaveBeenCalled());
 
     // The user starts their own playback while that read is still pending.
     fireEvent.click(screen.getByText("play-user-track"));
@@ -707,14 +767,7 @@ describe("StudioProvider playback session restore", () => {
     // The restore now lands, describing a completely different saved
     // session. It must yield rather than clobber what the user just started.
     await act(async () => {
-      resolveGet({
-        trackId: "t2",
-        queue: ["t1", "t2"],
-        queueIndex: 1,
-        positionSec: 42,
-        isPlaying: true,
-        volume: 0.4,
-      });
+      finishRestore();
       // Let the restore's resolveTrackIds() awaits and .then chain drain.
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
@@ -727,7 +780,7 @@ describe("StudioProvider playback session restore", () => {
   });
 
   it("drops a stale restored seek target when the track changes before its onReady ever fires", async () => {
-    backend.me.playback.get.mockResolvedValueOnce({
+    seedPlayback({
       trackId: "t1",
       queue: ["t1", "t2"],
       queueIndex: 0,
@@ -766,7 +819,7 @@ describe("StudioProvider playback session restore", () => {
   });
 
   it("does not swallow the next real volume change when the restored volume matches the current default", async () => {
-    backend.me.playback.get.mockResolvedValueOnce({
+    seedPlayback({
       trackId: "t1",
       queue: ["t1"],
       queueIndex: 0,
@@ -790,24 +843,18 @@ describe("StudioProvider playback session restore", () => {
       expect(screen.getByTestId("now-playing").textContent).toBe("t1")
     );
 
-    vi.useFakeTimers();
-    try {
-      fireEvent.click(screen.getByText("set-volume"));
-      expect(screen.getByTestId("volume").textContent).toBe("0.7");
-
-      act(() => {
-        vi.advanceTimersByTime(1100);
-      });
-
-      expect(backend.me.playback.save).toHaveBeenCalledWith(
-        expect.objectContaining({ volume: 0.7 })
-      );
-    } finally {
-      vi.useRealTimers();
-    }
+    fireEvent.click(screen.getByText("set-volume"));
+    expect(screen.getByTestId("volume").textContent).toBe("0.7");
+    await waitFor(() =>
+      expect(
+        JSON.parse(localStorage.getItem("yukirhythm:playback:v1:u1") ?? "{}")
+          .volume
+      ).toBe(0.7)
+    );
+    expect(backend.me.playback.save).not.toHaveBeenCalled();
   });
 
-  it("saves at the 10s mark even while progress ticks every second", async () => {
+  it("never writes active playback to the database while progress ticks", async () => {
     // The persistence interval used to list progressSec (and other
     // fast-changing state) in its effect deps, so every ~1s progress tick
     // tore the 10s timer down and recreated it — it only ever fired when
@@ -832,7 +879,7 @@ describe("StudioProvider playback session restore", () => {
       expect(screen.getByTestId("now-playing").textContent).toBe("u1");
 
       // Nine seconds of playback, a progress tick each second.
-      for (let sec = 1; sec <= 9; sec++) {
+      for (let sec = 1; sec <= 29; sec++) {
         act(() => {
           vi.advanceTimersByTime(1000);
           hiddenPlayer.props?.onProgress?.({ playedSeconds: sec });
@@ -846,25 +893,41 @@ describe("StudioProvider playback session restore", () => {
       act(() => {
         vi.advanceTimersByTime(1000);
       });
-      expect(backend.me.playback.save).toHaveBeenCalledTimes(1);
-      expect(backend.me.playback.save).toHaveBeenCalledWith({
-        trackId: "u1",
-        queue: ["u1"],
-        queueIndex: 0,
-        // Latest reported progress, not the 0 the track started from.
-        positionSec: 9,
-        isPlaying: true,
-        volume: 1,
-        sourceType: "library",
-        sourceId: null,
-        shuffleMode: false,
-      });
+      expect(backend.me.playback.save).not.toHaveBeenCalled();
+      expect(backend.events.ingest).not.toHaveBeenCalled();
+      expect(
+        JSON.parse(localStorage.getItem("yukirhythm:playback:v1:u1") ?? "{}")
+          .positionSec
+      ).toBe(29);
     } finally {
       vi.useRealTimers();
     }
   });
 
-  it("persists a volume change after the debounce", async () => {
+  it("does not periodically write a loaded but paused track", async () => {
+    render(
+      <StudioProvider>
+        <PlaybackProbe />
+      </StudioProvider>
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId("collections-count").textContent).toBe("1")
+    );
+
+    vi.useFakeTimers();
+    try {
+      fireEvent.click(screen.getByText("play-user-track"));
+      fireEvent.click(screen.getByText("toggle"));
+      expect(backend.me.playback.save).not.toHaveBeenCalled();
+
+      act(() => vi.advanceTimersByTime(24 * 60 * 60 * 1000));
+      expect(backend.me.playback.save).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("persists a volume change in browser storage only", async () => {
     render(
       <StudioProvider>
         <PlaybackProbe />
@@ -876,22 +939,14 @@ describe("StudioProvider playback session restore", () => {
       expect(screen.getByTestId("collections-count").textContent).toBe("1")
     );
 
-    vi.useFakeTimers();
-    try {
-      fireEvent.click(screen.getByText("set-volume"));
-      expect(screen.getByTestId("volume").textContent).toBe("0.7");
-      // Debounced, not immediate — nothing saved yet.
-      expect(backend.me.playback.save).not.toHaveBeenCalled();
-
-      act(() => {
-        vi.advanceTimersByTime(1100);
-      });
-
-      expect(backend.me.playback.save).toHaveBeenCalledWith(
-        expect.objectContaining({ volume: 0.7 })
-      );
-    } finally {
-      vi.useRealTimers();
-    }
+    fireEvent.click(screen.getByText("set-volume"));
+    expect(screen.getByTestId("volume").textContent).toBe("0.7");
+    await waitFor(() =>
+      expect(
+        JSON.parse(localStorage.getItem("yukirhythm:playback:v1:u1") ?? "{}")
+          .volume
+      ).toBe(0.7)
+    );
+    expect(backend.me.playback.save).not.toHaveBeenCalled();
   });
 });

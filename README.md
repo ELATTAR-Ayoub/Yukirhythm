@@ -97,84 +97,99 @@ them from anywhere in the app.
 
 <br>
 
-## How "You might like" works
+## Inside "You might like"
 
-Yukirhythm builds this shelf from what you have listened to recently, not from
-a fixed editorial playlist. The engine turns listening history into a taste
-profile, gathers several kinds of related candidates, scores them, and returns
-up to **15 songs**.
+<div align="center">
 
-### Listening signals
+**A personal radio built from what you actually play.**
 
-Each listening event is classified by heard time and percentage:
+![Output](https://img.shields.io/badge/output-15%20songs-1450F0?style=flat-square&labelColor=191919)
+![Taste window](https://img.shields.io/badge/taste%20window-60%20days-7DF08A?style=flat-square&labelColor=191919)
+![Half-life](https://img.shields.io/badge/recency%20half--life-14%20days-7DF08A?style=flat-square&labelColor=191919)
+![Replay gap](https://img.shields.io/badge/replay%20cooldown-7%20days-1450F0?style=flat-square&labelColor=191919)
 
-| Listening state | Rule                         |  Signal |
-| --------------- | ---------------------------- | ------: |
-| Quick skip      | Under 30 seconds             | `-0.35` |
-| Sampled         | 30 seconds to under 50%      | `+0.45` |
-| Completed       | At least 50%, but under 80%  | `+1.00` |
-| Near-complete   | At least 80%                 | `+1.20` |
-| Liked song      | Added to its listening state | `+0.60` |
+</div>
 
-Percentage tiers take priority for short tracks. For example, hearing 10
-seconds of a 20-second song is completed even though the listen is under 30
-seconds. When duration is unavailable, under 30 seconds is a quick skip and
-30 seconds or more is sampled because a completion percentage cannot be
-calculated.
+Yukirhythm does not pull this shelf from a fixed editorial playlist. It learns
+a compact taste profile from recent listening, explores several related music
+sources, and blends the strongest results into one set of 15 songs.
 
-Recent behavior matters more. Signals use a 14-day half-life and disappear
-from the active taste window after 60 days:
-
-```text
-recency = 0.5 ^ (age in days / 14)
-event score = recency * (engagement + like boost)
+```mermaid
+flowchart LR
+    A["Recent listens"] --> B["Engagement"]
+    B --> C["Taste profile"]
+    C --> D["Candidate pool"]
+    D --> E["Score and diversify"]
+    E --> F["15 songs"]
 ```
 
-Repeated plays accumulate. Positive track scores are normalized so the
-strongest current preference has an affinity of `1.0`. The engine then derives
-separate track, artist, and genre affinities and selects up to six diverse
-radio seeds.
+### 1. Read the listen
 
-### Finding candidates
+Every play becomes one engagement signal. More of the song heard means a
+stronger vote for that sound:
 
-Candidates come from four sources:
+| State             | What happened                  | Taste effect |
+| :---------------- | :----------------------------- | -----------: |
+| **Quick skip**    | Under 30 seconds               |      `-0.35` |
+| **Sampled**       | 30 seconds to under 50%        |      `+0.45` |
+| **Completed**     | At least 50%, but under 80%    |      `+1.00` |
+| **Near-complete** | At least 80%                   |      `+1.20` |
+| **Liked**         | Added on top of the play state |      `+0.60` |
 
-1. **YouTube Music radio:** up to ten related tracks from each recent seed.
-2. **Co-listening:** tracks found beside your liked songs in other users'
-   public collections.
-3. **Genre matches:** catalog tracks carrying any of your top three genre
-   labels.
-4. **Cold start:** globally popular radio plus searches for `top hits` and
-   `popular songs` when there is not enough history yet.
+> [!IMPORTANT]
+> **Percentage wins for short tracks.** Hearing 10 seconds of a 20-second song
+> counts as completed, not as a quick skip. If duration is unavailable, under
+> 30 seconds is a quick skip and 30 seconds or more is sampled.
 
-Songs are excluded when they are already liked, belong to one of your owned
-collections, or were played during the last seven days.
+### 2. Build the taste profile
 
-### Ranking
-
-Signals are additive, so a candidate discovered in several ways becomes a
-stronger recommendation:
+New behavior matters most. Each signal fades with a **14-day half-life** and
+leaves the active taste window after **60 days**.
 
 ```text
-radio similarity  = 0.45 * seed affinity
-genre match       = 0.25 * genre affinity
-artist affinity   = 0.15 * artist affinity
-co-listening      = 0.10 * normalized collection appearances
-quality tie-break = 0.05 * normalized log view count
+recency    = 0.5 ^ (age in days / 14)
+eventScore = recency * (engagement + like boost)
 ```
 
-The first matching source also supplies the explanation shown with a result,
-such as `Because you played ...`, `More ...`, or `Similar to ...`.
+Repeated plays accumulate. Positive scores are normalized so the strongest
+current track preference becomes `1.0`. From there, Yukirhythm derives track,
+artist, and genre affinities and chooses up to six diverse radio seeds.
 
-The final pass prefers no more than two tracks per artist, then backfills from
-the remaining ranked candidates so a sufficiently large pool still returns
-all 15 songs.
+### 3. Explore related music
 
-### Refreshing the shelf
+| Candidate source        | What it contributes                                      |
+| :---------------------- | :------------------------------------------------------- |
+| **YouTube Music radio** | Up to 10 related tracks for each recent seed             |
+| **Co-listening**        | Tracks beside your liked songs in public collections     |
+| **Genre matches**       | Catalog tracks from your three strongest recent genres   |
+| **Cold start**          | Popular radio and searches when history is still limited |
 
-Each user's result is cached separately in the browser so Home and Search stay
-stable between visits. New listening affects the next generated result; press
-**Refresh** on the shelf to rebuild it immediately from the latest history.
+Already-liked songs, songs in your own collections, and anything played in
+the last seven days are removed before ranking. That keeps the shelf focused
+on discovery instead of replaying your library back to you.
+
+### 4. Rank and diversify
+
+A song can earn points from several sources at once:
+
+| Ranking signal        | Weight |
+| :-------------------- | -----: |
+| Radio similarity      | `0.45` |
+| Genre affinity        | `0.25` |
+| Artist affinity       | `0.15` |
+| Co-listening strength | `0.10` |
+| View-count tie-break  | `0.05` |
+
+The first matching source supplies the reason shown with each result, such as
+`Because you played ...`, `More ...`, or `Similar to ...`. The final pass
+prefers no more than two songs per artist, then backfills the open positions
+from the remaining ranked tracks until the shelf reaches 15.
+
+### 5. Refresh when you want
+
+The result is cached per user so Home and Search stay stable between visits.
+New listening shapes the next generated set; **Refresh** rebuilds it immediately
+from the latest history.
 
 <br>
 

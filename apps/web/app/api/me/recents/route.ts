@@ -1,4 +1,5 @@
 import { Timestamp } from "firebase-admin/firestore";
+import { gone } from "@/lib/api/disabled";
 import { adminDb } from "@/lib/firebase/admin";
 import { uidFromRequest, unauthorized } from "@/lib/firebase/verify";
 import type { Collection, PlayEvent, Track } from "@/lib/catalog/model";
@@ -25,6 +26,7 @@ type RecentItem = {
  * collection's title.
  */
 export async function GET(req: Request): Promise<Response> {
+  if (process.env.ENABLE_LEGACY_LISTENING_SYNC !== "true") return gone("Listening history");
   const uid = await uidFromRequest(req);
   if (!uid) return unauthorized();
 

@@ -29,6 +29,7 @@ export function toStudioTrack(
     artist: t.artists.map((a) => a.name).join(", ") || "Unknown",
     texture: t.texture,
     durationSec: t.durationSec ?? 0,
+    previewStartSec: t.preview?.startSec,
     artUrl: trackArtUrl(t),
     ...attribution,
   };

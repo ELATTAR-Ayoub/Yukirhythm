@@ -1,4 +1,7 @@
-import { PauseIcon, PlayIcon } from "@radix-ui/react-icons";
+"use client";
+
+import { useEffect, useRef } from "react";
+import { PauseIcon, PlayIcon, PlusIcon } from "@radix-ui/react-icons";
 
 import { cn } from "@/lib/utils";
 import Artwork from "@/components/studio/Artwork";
@@ -25,6 +28,8 @@ interface MediaCardProps {
   size?: MediaCardSize;
   variant?: MediaCardVariant;
   playing?: boolean;
+  /** Seconds left in the active ten-second audition. */
+  previewSecondsRemaining?: number;
   /**
    * The hover play overlay renders a real <button>. Callers that wrap the card
    * in their own interactive element (an anchor, a row button) must opt out —
@@ -33,7 +38,59 @@ interface MediaCardProps {
    */
   playable?: boolean;
   className?: string;
+  /** Card-body action. Delayed briefly so a double click never previews. */
+  onPreview?: () => void;
+  /** Explicit full playback; deliberately separate from card-body preview. */
+  onPlayFull?: () => void;
+  /** Double-click shortcut and visible accessible queue action. */
+  onAddToQueue?: () => void;
   /** Emitted signal (documented; wiring comes with the data layer): card_play, card_open */
+}
+
+function PreviewCountdown({ seconds }: { seconds: number }) {
+  const remaining = Math.max(0, Math.min(10, seconds));
+  const circumference = 2 * Math.PI * 18;
+  const offset = circumference * (1 - remaining / 10);
+  return (
+    <span
+      role="status"
+      aria-label={`${Math.ceil(remaining)} seconds left in preview`}
+      className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-ink/35 backdrop-blur-[1px]"
+    >
+      <span className="relative grid h-14 w-14 place-items-center rounded-full bg-ink/75 text-paper shadow-e4">
+        <svg
+          className="absolute inset-0 -rotate-90"
+          viewBox="0 0 44 44"
+          aria-hidden
+        >
+          <circle
+            cx="22"
+            cy="22"
+            r="18"
+            fill="none"
+            stroke="currentColor"
+            strokeOpacity="0.2"
+            strokeWidth="3"
+          />
+          <circle
+            cx="22"
+            cy="22"
+            r="18"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+            className="text-primary transition-[stroke-dashoffset] duration-300 ease-linear"
+          />
+        </svg>
+        <span className="font-data text-sm font-semibold tabular-nums">
+          {Math.ceil(remaining)}
+        </span>
+      </span>
+    </span>
+  );
 }
 
 const BOXY_WIDTHS: Record<MediaCardSize, string> = {
@@ -74,7 +131,14 @@ function CardArt({
   );
 }
 
-function PlayOverlay({ playing }: { playing: boolean }) {
+function PlayOverlay({
+  playing,
+  onPlayFull,
+}: {
+  playing: boolean;
+  onPlayFull?: () => void;
+}) {
+  const interactive = Boolean(onPlayFull);
   return (
     // Every consumer (FeedShelf, search results, queue rows) already wraps
     // the card in its own role="button" element — that wrapper is the
@@ -84,7 +148,7 @@ function PlayOverlay({ playing }: { playing: boolean }) {
     // container that still held a focusable element would trap keyboard
     // focus on an invisible node.
     <span
-      aria-hidden="true"
+      aria-hidden={interactive ? undefined : "true"}
       className={cn(
         "absolute inset-0 flex items-center justify-center bg-ink/0 opacity-0",
         "group-hover:opacity-100 group-hover:bg-ink/30 transition-all duration-base"
@@ -95,8 +159,20 @@ function PlayOverlay({ playing }: { playing: boolean }) {
         <PlayerButton
           variant="primary"
           size="lg"
-          tabIndex={-1}
-          aria-label={playing ? "Pause" : "Play"}
+          tabIndex={interactive ? 0 : -1}
+          aria-label={
+            interactive
+              ? playing
+                ? "Pause full song"
+                : "Play full song"
+              : playing
+                ? "Pause"
+                : "Play"
+          }
+          onClick={(event) => {
+            event.stopPropagation();
+            onPlayFull?.();
+          }}
           data-signal="card_play"
         >
           <IconSwap
@@ -123,12 +199,72 @@ export default function MediaCard({
   size = "md",
   variant = "boxy",
   playing = false,
+  previewSecondsRemaining,
   playable = true,
   className,
+  onPreview,
+  onPlayFull,
+  onAddToQueue,
 }: MediaCardProps) {
+  const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (clickTimer.current) clearTimeout(clickTimer.current);
+    },
+    []
+  );
+
+  const interactive = Boolean(onPreview || onAddToQueue);
+  const activate = (event: React.MouseEvent) => {
+    if (event.detail >= 2 && onAddToQueue) {
+      if (clickTimer.current) clearTimeout(clickTimer.current);
+      clickTimer.current = null;
+      onAddToQueue();
+      return;
+    }
+    if (!onPreview) return;
+    if (clickTimer.current) clearTimeout(clickTimer.current);
+    clickTimer.current = setTimeout(() => {
+      clickTimer.current = null;
+      onPreview();
+    }, 220);
+  };
+  const onKeyDown = (event: React.KeyboardEvent) => {
+    if ((event.key === "Enter" || event.key === " ") && onPreview) {
+      event.preventDefault();
+      onPreview();
+    }
+  };
+  const interaction = interactive
+    ? {
+        role: "button",
+        tabIndex: 0,
+        "aria-label": `Preview ${title} for 10 seconds`,
+        onClick: activate,
+        onDoubleClick: (event: React.MouseEvent) => event.preventDefault(),
+        onKeyDown,
+      }
+    : {};
+
+  const queueButton = onAddToQueue ? (
+    <PlayerButton
+      variant="secondary"
+      size="sm"
+      aria-label={`Add ${title} to queue`}
+      onClick={(event) => {
+        event.stopPropagation();
+        onAddToQueue();
+      }}
+      className="absolute right-2 top-2 z-20 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
+    >
+      <PlusIcon />
+    </PlayerButton>
+  ) : null;
+
   if (variant === "extended") {
     return (
       <div
+        {...interaction}
         className={cn(
           "group relative w-full flex items-center gap-4 p-3 rounded-lg bg-card border border-border shadow-e1",
           "hover:shadow-e3 hover:-translate-y-0.5 transition-all duration-base cursor-pointer",
@@ -153,7 +289,13 @@ export default function MediaCard({
             title={title}
             className="absolute inset-0 w-full h-full"
           />
-          {playable ? <PlayOverlay playing={playing} /> : null}
+          {playable ? (
+            <PlayOverlay playing={playing} onPlayFull={onPlayFull} />
+          ) : null}
+          {queueButton}
+          {previewSecondsRemaining != null ? (
+            <PreviewCountdown seconds={previewSecondsRemaining} />
+          ) : null}
         </div>
         <div className="min-w-0 flex-1">
           <div
@@ -185,6 +327,7 @@ export default function MediaCard({
 
   return (
     <div
+      {...interaction}
       className={cn(
         "group relative shrink-0 rounded-lg bg-card border border-border shadow-e1 p-2.5",
         "hover:shadow-e3 hover:-translate-y-1 transition-all duration-base cursor-pointer",
@@ -201,7 +344,13 @@ export default function MediaCard({
           title={title}
           className="absolute inset-0 w-full h-full"
         />
-        {playable ? <PlayOverlay playing={playing} /> : null}
+        {playable ? (
+          <PlayOverlay playing={playing} onPlayFull={onPlayFull} />
+        ) : null}
+        {queueButton}
+        {previewSecondsRemaining != null ? (
+          <PreviewCountdown seconds={previewSecondsRemaining} />
+        ) : null}
         {playing ? (
           <span className="absolute bottom-2 right-2 bg-ink/70 rounded-sm px-1.5 py-1">
             <EqIndicator />

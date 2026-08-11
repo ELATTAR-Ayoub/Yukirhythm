@@ -5,11 +5,13 @@ import MockStudioProvider, { useMockStudio } from "./MockStudioProvider";
 import GlobalPlayer from "./GlobalPlayer";
 import { MOCK_TRACKS } from "./mock-data";
 
+const nav = vi.hoisted(() => ({ pathname: "/design-system/screens/home" }));
+
 // The queue control on every player surface (NowPlayingRail, DevicePlayer,
 // PlaybackBar) now calls useRouter() unconditionally to route to the queue
 // page; none of these tests click that control, so a no-op push is enough.
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/design-system/screens/home",
+  usePathname: () => nav.pathname,
   useRouter: () => ({ push: () => {} }),
 }));
 
@@ -38,7 +40,10 @@ function stubViewportWidth(width: number) {
 }
 
 describe("GlobalPlayer", () => {
-  beforeEach(() => vi.useFakeTimers());
+  beforeEach(() => {
+    vi.useFakeTimers();
+    nav.pathname = "/design-system/screens/home";
+  });
   afterEach(() => {
     vi.useRealTimers();
     vi.unstubAllGlobals();
@@ -61,8 +66,52 @@ describe("GlobalPlayer", () => {
     expect(screen.getByRole("dialog", { name: "Now playing" })).toBeTruthy();
 
     fireEvent.click(screen.getByLabelText("Collapse player"));
+    act(() => vi.advanceTimersByTime(250));
     expect(screen.queryByRole("dialog", { name: "Now playing" })).toBeNull();
     expect(screen.getByLabelText("Expand player")).toBeTruthy();
+  });
+
+  it("uses the existing device card before immersive mode on small screens", () => {
+    stubViewportWidth(500);
+    render(
+      <MockStudioProvider>
+        <PlayFirst />
+        <GlobalPlayer />
+      </MockStudioProvider>
+    );
+    fireEvent.click(screen.getByText("seed"));
+    act(() => vi.advanceTimersByTime(650));
+
+    fireEvent.click(screen.getByLabelText("Expand player"));
+    expect(screen.getByLabelText("Open full screen player")).toBeTruthy();
+    expect(screen.queryByRole("region", { name: "Queue" })).toBeNull();
+
+    fireEvent.click(screen.getByLabelText("Open full screen player"));
+    expect(screen.getByRole("region", { name: "Queue" })).toBeTruthy();
+  });
+
+  it("closes expanded player UI when the route changes", () => {
+    stubViewportWidth(1000);
+    const view = render(
+      <MockStudioProvider>
+        <PlayFirst />
+        <GlobalPlayer />
+      </MockStudioProvider>
+    );
+    fireEvent.click(screen.getByText("seed"));
+    act(() => vi.advanceTimersByTime(650));
+    fireEvent.click(screen.getByLabelText("Expand player"));
+    expect(screen.getByRole("dialog", { name: "Now playing" })).toBeTruthy();
+
+    nav.pathname = "/search";
+    view.rerender(
+      <MockStudioProvider>
+        <PlayFirst />
+        <GlobalPlayer />
+      </MockStudioProvider>
+    );
+    act(() => vi.advanceTimersByTime(250));
+    expect(screen.queryByRole("dialog", { name: "Now playing" })).toBeNull();
   });
 
   it("renders MiniPlayerBar below 768px and PlaybackBar at 768px and up", () => {

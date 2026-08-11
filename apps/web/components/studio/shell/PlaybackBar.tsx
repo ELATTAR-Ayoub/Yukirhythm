@@ -10,7 +10,6 @@ import Transport from "@/components/studio/screens/Transport";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
 import { formatDuration } from "@/components/studio/screens/mock-data";
 import { IDLE_LABEL, NO_TIME } from "@/components/studio/screens/player-idle";
-import { useIsWide } from "./useBreakpoint";
 import PlayerExtras from "./PlayerExtras";
 import { playbackListHref } from "./routes";
 
@@ -47,7 +46,6 @@ export default function PlaybackBar({ onExpand }: PlaybackBarProps) {
   const { nowPlaying, isPlaying, progressSec, seek, playingCollection } =
     useMockStudio();
   const router = useRouter();
-  const isWide = useIsWide();
 
   const identity = nowPlaying ? (
     <>
@@ -98,7 +96,7 @@ export default function PlaybackBar({ onExpand }: PlaybackBarProps) {
             also whenever nothing is loaded — with no track there is no
             fullscreen player to expand into, and a focusable control that
             does nothing is worse than no control at all. */}
-        {isWide || !nowPlaying ? (
+        {!nowPlaying ? (
           <div className="flex items-center gap-3 min-w-0">{identity}</div>
         ) : (
           <button
@@ -149,7 +147,7 @@ export default function PlaybackBar({ onExpand }: PlaybackBarProps) {
       </div>
 
       <div className={sideBlockClass}>
-        <PlayerExtras />
+        <PlayerExtras onExpand={nowPlaying ? onExpand : undefined} />
       </div>
     </div>
   );

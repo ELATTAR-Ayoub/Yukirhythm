@@ -21,6 +21,7 @@ import {
   YOU_MIGHT_LIKE_IDS,
   getCollectionTracks,
   getTrack,
+  previewStartForTrack,
   recentCollections,
   searchMockCollections,
   searchMockTracks,
@@ -89,6 +90,14 @@ interface MockStudioValue {
    *  This is playback state, not library state: nothing is written to any
    *  playlist, and no playlist needs to be open for it to work. */
   enqueue: (track: MockTrack, mode?: EnqueueMode) => void;
+  /** Queue a track and settle only after durable persistence succeeds. */
+  enqueuePersisted: (track: MockTrack, mode?: EnqueueMode) => Promise<void>;
+  /** A short, queue-neutral audition. Preview never changes nowPlaying. */
+  previewTrack: MockTrack | null;
+  previewPlaying: boolean;
+  previewProgressSec: number;
+  startPreview: (track: MockTrack) => void;
+  stopPreview: () => void;
   toggle: () => void;
   /** There is always a next track when a multi-track queue is active because
    *  advancing from the tail wraps to the first track. */
@@ -173,6 +182,7 @@ interface MockStudioValue {
   jumpBackInLoading: boolean;
   newReleasesLoading: boolean;
   youMightLikeLoading: boolean;
+  findSimilarTracks: (trackId: string) => Promise<MockTrack[]>;
   /** Collections matching the current search query (the caller's own library). */
   collectionResults: MockCollection[];
   /** Listening stats; null while loading or signed out. */
@@ -469,6 +479,39 @@ export default function MockStudioProvider({
     [currentIndex]
   );
 
+  const enqueuePersisted = useCallback(
+    async (track: MockTrack, mode: EnqueueMode = "end") => {
+      enqueue(track, mode);
+    },
+    [enqueue]
+  );
+
+  const [previewTrack, setPreviewTrack] = useState<MockTrack | null>(null);
+  const [previewProgressSec, setPreviewProgressSec] = useState(0);
+  const previewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const stopPreview = useCallback(() => {
+    if (previewTimerRef.current) clearTimeout(previewTimerRef.current);
+    previewTimerRef.current = null;
+    setPreviewTrack(null);
+    setPreviewProgressSec(0);
+  }, []);
+  const startPreview = useCallback(
+    (track: MockTrack) => {
+      if (previewTrack?.id === track.id) {
+        stopPreview();
+        return;
+      }
+      if (previewTimerRef.current) clearTimeout(previewTimerRef.current);
+      const start = previewStartForTrack(track);
+      setPreviewTrack(track);
+      setPreviewProgressSec(start);
+      previewTimerRef.current = setTimeout(stopPreview, 10_000);
+    },
+    [previewTrack, stopPreview]
+  );
+
+  useEffect(() => stopPreview, [stopPreview]);
+
   const toggle = useCallback(() => {
     setIsPlaying((p) => (nowPlaying ? !p : p));
   }, [nowPlaying]);
@@ -644,6 +687,11 @@ export default function MockStudioProvider({
     () => feeds?.youMightLike ?? resolve(YOU_MIGHT_LIKE_IDS),
     [feeds]
   );
+  const findSimilarTracks = useCallback(
+    async (trackId: string) =>
+      youMightLike.filter((track) => track.id !== trackId),
+    [youMightLike]
+  );
   const collectionResults = useMemo(
     () => (query.trim() ? searchMockCollections(query, collections) : []),
     [query, collections]
@@ -670,6 +718,12 @@ export default function MockStudioProvider({
     dequeue,
     clearQueue,
     enqueue,
+    enqueuePersisted,
+    previewTrack,
+    previewPlaying: previewTrack !== null,
+    previewProgressSec,
+    startPreview,
+    stopPreview,
     toggle,
     canNext: currentIndex >= 0 && queue.length > 1,
     canPrev: currentIndex > 0 || (currentIndex >= 0 && progressSec >= 5),
@@ -707,6 +761,7 @@ export default function MockStudioProvider({
     jumpBackInLoading,
     newReleasesLoading,
     youMightLikeLoading,
+    findSimilarTracks,
     collectionResults,
     stats,
     statsLoading: false,

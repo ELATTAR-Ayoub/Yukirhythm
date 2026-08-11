@@ -1,5 +1,7 @@
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
+import { gone } from "@/lib/api/disabled";
 import { adminDb } from "@/lib/firebase/admin";
+import { invalidateFeedContext } from "../feed/_context";
 import { uidFromRequest, unauthorized } from "@/lib/firebase/verify";
 import {
   classifyListen,
@@ -40,6 +42,7 @@ type RawEvent = {
  * written-then-hidden.
  */
 export async function POST(req: Request): Promise<Response> {
+  if (process.env.ENABLE_LEGACY_LISTENING_SYNC !== "true") return gone("Listening history sync");
   const uid = await uidFromRequest(req);
   if (!uid) return unauthorized();
 
@@ -140,5 +143,6 @@ export async function POST(req: Request): Promise<Response> {
 
   // Global tracks.stats.playCount is a per-doc hotspot (spec §14) — deferred to
   // a sharded counter / scheduled aggregation rather than incremented inline.
+  if (written > 0) invalidateFeedContext(uid);
   return Response.json({ ok: true, written });
 }

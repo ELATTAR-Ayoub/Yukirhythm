@@ -138,7 +138,7 @@ describe("PlaybackBar", () => {
     expect(onExpand).toHaveBeenCalledTimes(1);
   });
 
-  it("at 1440px+ has no Expand player control", () => {
+  it("at 1440px+ keeps the Expand player control", () => {
     stubMatchMedia(true);
     render(
       <MockStudioProvider>
@@ -149,7 +149,7 @@ describe("PlaybackBar", () => {
     fireEvent.click(screen.getByText("seed"));
     act(() => vi.advanceTimersByTime(650));
 
-    expect(screen.queryByLabelText("Expand player")).toBeNull();
+    expect(screen.getByLabelText("Expand player")).toBeTruthy();
     // The track identity must still be on screen even without the control.
     expect(screen.getByText(MOCK_TRACKS[0].title)).toBeTruthy();
   });

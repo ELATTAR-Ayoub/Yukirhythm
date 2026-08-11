@@ -20,6 +20,12 @@ describe("endpoints registry", () => {
     expect(endpoints.me.recents()).toBe("/api/me/recents");
   });
 
+  it("builds an encoded seed-specific similarity URL", () => {
+    expect(endpoints.feed.similar("song/a b")).toBe(
+      "/api/feed/similar?trackId=song%2Fa%20b"
+    );
+  });
+
   it("scopes per-user resources under /me and never puts a uid in the path", () => {
     expect(endpoints.me.likes()).toBe("/api/me/likes");
     expect(endpoints.me.track("t1")).toBe("/api/me/tracks/t1");

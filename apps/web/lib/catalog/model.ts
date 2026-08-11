@@ -37,6 +37,21 @@ export type Track = {
   artists: { artistId: string; name: string }[];
   album: { albumId: string; name: string } | null;
   durationSec: number | null;
+  /** Shared, server-owned preview window; never recomputed per card/browser. */
+  preview?: {
+    startSec: number;
+    durationSec: 10;
+    source: "provider_heatmap" | "provider_highlight" | "energy" | "fallback";
+    confidence: number;
+    version: number;
+    computedAt: Timestamp;
+  };
+  /** Provider radio cached on the shared track, not separately per browser. */
+  related?: {
+    trackIds: string[];
+    computedAt: Timestamp;
+    version: number;
+  };
   /** Provider thumbnails (spec D6). */
   artwork: Image[];
   /** Deterministic from trackId (spec D6, §5.11) — the design-system fallback. */

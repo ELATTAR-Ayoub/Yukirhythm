@@ -3,19 +3,10 @@
 import { ReloadIcon } from "@radix-ui/react-icons";
 
 import RailShelf from "@/components/studio/RailShelf";
-import MediaCard from "@/components/studio/MediaCard";
+import StudioMediaCard from "./StudioMediaCard";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useMockStudio } from "./MockStudioProvider";
-import { formatDuration, type MockTrack } from "./mock-data";
-
-/** Enter/Space activation for non-button click targets. */
-const playKeyHandler = (fn: () => void) => (e: React.KeyboardEvent) => {
-  if (e.key === "Enter" || e.key === " ") {
-    e.preventDefault();
-    fn();
-  }
-};
+import { type MockTrack } from "./mock-data";
 
 interface FeedShelfProps {
   label: string;
@@ -47,7 +38,6 @@ export default function FeedShelf({
   onRefresh,
   refreshing = false,
 }: FeedShelfProps) {
-  const { play, nowPlaying, isPlaying } = useMockStudio();
   const refreshAction = onRefresh ? (
     <Button
       type="button"
@@ -88,23 +78,10 @@ export default function FeedShelf({
       headerAction={refreshAction}
     >
       {tracks.map((track) => (
-        <div
-          key={track.id}
-          role="button"
-          tabIndex={0}
-          aria-label={`Play ${track.title}`}
-          onClick={() => play(track)}
-          onKeyDown={playKeyHandler(() => play(track))}
-          className="text-left shrink-0 cursor-pointer"
-        >
-          <MediaCard
-            title={track.title}
-            artist={track.artist}
-            texture={track.texture}
-            artUrl={track.artUrl}
-            duration={formatDuration(track.durationSec)}
+        <div key={track.id} className="text-left shrink-0">
+          <StudioMediaCard
+            track={track}
             size={size}
-            playing={nowPlaying?.id === track.id && isPlaying}
             className={cardClassName}
           />
         </div>

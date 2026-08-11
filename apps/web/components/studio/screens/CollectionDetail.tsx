@@ -13,7 +13,7 @@ import {
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import FadeScrollArea from "@/components/studio/FadeScrollArea";
-import MediaCard from "@/components/studio/MediaCard";
+import StudioMediaCard from "./StudioMediaCard";
 import TrackRow from "@/components/studio/TrackRow";
 import EmptyState from "@/components/studio/EmptyState";
 import { PlayerButton } from "@/components/studio/PlayerButton";
@@ -333,23 +333,12 @@ export default function CollectionDetail({
       ) : (
         <FadeScrollArea className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 pr-0.5">
           {tracks.map((track, i) => (
-            <div
-              key={`${track.id}:${i}`}
-              role="button"
-              tabIndex={0}
-              aria-label={`Play ${track.title}`}
-              className="text-left cursor-pointer"
-              onClick={() => activate(track, i)}
-              onKeyDown={playKeyHandler(track, i)}
-            >
-              <MediaCard
-                title={track.title}
-                artist={track.artist}
-                texture={track.texture}
-                artUrl={track.artUrl}
+            <div key={`${track.id}:${i}`} className="text-left">
+              <StudioMediaCard
+                track={track}
                 size="sm"
-                playing={isRowPlaying(track, i)}
                 className="w-full"
+                onPlayFull={() => activate(track, i)}
               />
             </div>
           ))}

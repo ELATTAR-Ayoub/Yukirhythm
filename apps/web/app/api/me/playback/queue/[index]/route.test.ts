@@ -51,6 +51,7 @@ const seed = (queue: string[], queueIndex: number) => {
 
 describe("DELETE /api/me/playback/queue/[index]", () => {
   beforeEach(() => {
+    process.env.ENABLE_LEGACY_PLAYBACK_SYNC = "true";
     stored = null;
   });
 

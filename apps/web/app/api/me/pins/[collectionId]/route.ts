@@ -27,5 +27,5 @@ export async function PUT(req: Request, { params }: Params): Promise<Response> {
     .collection("collectionState")
     .doc(collectionId);
   await ref.set(patch, { merge: true });
-  return Response.json((await ref.get()).data());
+  return Response.json(patch);
 }

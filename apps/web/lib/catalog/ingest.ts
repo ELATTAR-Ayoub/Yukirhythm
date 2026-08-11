@@ -8,6 +8,11 @@ import type { ProviderArtist, ProviderTrack } from "./types";
 const STALE_AFTER_MS = 30 * 24 * 60 * 60 * 1000;
 
 export function toTrackDoc(t: ProviderTrack): Track {
+  const duration = t.durationSec ?? 0;
+  const previewStartSec = Math.max(
+    0,
+    Math.min(Math.round(duration * 0.45) - 2, duration - 10)
+  );
   return {
     trackId: t.providerTrackId,
     type: t.type,
@@ -15,6 +20,14 @@ export function toTrackDoc(t: ProviderTrack): Track {
     artists: t.artists,
     album: t.album,
     durationSec: t.durationSec,
+    preview: {
+      startSec: previewStartSec,
+      durationSec: 10,
+      source: "fallback",
+      confidence: 0.25,
+      version: 1,
+      computedAt: Timestamp.now(),
+    },
     artwork: t.artwork,
     texture: textureForId(t.providerTrackId),
     source: {
@@ -79,7 +92,16 @@ export async function ingestTrack(t: ProviderTrack): Promise<void> {
     const aliases = new Set(prev.source?.aliasVideoIds ?? []);
     // A second video resolving to the same song is recorded, not duplicated —
     // this is what keeps play counts from fragmenting across reuploads.
+    const aliasCount = aliases.size;
     if (t.videoId && t.videoId !== prev.source?.videoId) aliases.add(t.videoId);
+    const aliasAdded = aliases.size !== aliasCount;
+    const publishedAdded = !prev.publishedAt && Boolean(next.publishedAt);
+    const stale = isStale(prev.enrichedAt);
+
+    // Feed/search results repeatedly contain the same fresh catalogue rows.
+    // They used to rewrite every track and re-read every artist on every home
+    // load even when not one field changed.
+    if (!aliasAdded && !publishedAdded && !stale) return;
 
     const userLabels = (prev.labels ?? []).filter((l) => l.source === "user");
     const merged: Partial<Track> = {
@@ -90,15 +112,17 @@ export async function ingestTrack(t: ProviderTrack): Promise<void> {
       },
       labels: userLabels.length ? userLabels : (prev.labels ?? []),
     };
-    if (!prev.publishedAt && next.publishedAt) {
+    if (publishedAdded) {
       merged.publishedAt = next.publishedAt;
     }
-    if (isStale(prev.enrichedAt)) {
+    if (stale) {
       Object.assign(merged, {
         title: next.title,
         artists: next.artists,
         album: next.album,
         durationSec: next.durationSec,
+        // Preserve a higher-quality analysis if a later worker upgraded it.
+        preview: prev.preview ?? next.preview,
         artwork: next.artwork,
         isEmbeddable: next.isEmbeddable,
         stats: {

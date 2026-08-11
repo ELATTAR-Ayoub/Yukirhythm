@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronDownIcon, MagnifyingGlassIcon } from "@radix-ui/react-icons";
+import {
+  ChevronDownIcon,
+  EnterFullScreenIcon,
+  MagnifyingGlassIcon,
+} from "@radix-ui/react-icons";
 
 import { cn } from "@/lib/utils";
 import DataText from "@/components/studio/DataText";
@@ -17,6 +21,7 @@ import { IDLE_LABEL, NO_TIME } from "./player-idle";
 
 interface DevicePlayerProps {
   onCollapse?: () => void;
+  onExpand?: () => void;
   /**
    * Docked in the now-playing rail rather than presented as an overlay:
    * fills its column, no collapse control, and no search tray (the tray hangs
@@ -39,6 +44,7 @@ interface DevicePlayerProps {
  */
 export default function DevicePlayer({
   onCollapse,
+  onExpand,
   docked = false,
 }: DevicePlayerProps) {
   const {
@@ -116,6 +122,17 @@ export default function DevicePlayer({
             className="absolute top-4 right-4 z-30"
           >
             <ChevronDownIcon />
+          </PlayerButton>
+        ) : null}
+        {!docked && onExpand ? (
+          <PlayerButton
+            variant="ghost"
+            size="sm"
+            aria-label="Open full screen player"
+            onClick={onExpand}
+            className="absolute left-4 top-4 z-30"
+          >
+            <EnterFullScreenIcon />
           </PlayerButton>
         ) : null}
 

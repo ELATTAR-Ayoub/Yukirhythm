@@ -15,9 +15,22 @@ export interface MockTrack {
   /** The track's real thumbnail. Absent or broken falls back to `texture` —
    *  see components/studio/Artwork.tsx. Fixture tracks have none. */
   artUrl?: string;
+  /** Shared catalogue-selected start of the ten-second audition. */
+  previewStartSec?: number;
   /** Playback attribution carried into the listening-history event. */
   eventSource?: "library" | "search" | "recommendation";
   recommendationId?: string;
+}
+
+/** Shared audition start so playback and its ten-second UI stay in lockstep. */
+export function previewStartForTrack(track: MockTrack): number {
+  return (
+    track.previewStartSec ??
+    Math.max(
+      0,
+      Math.min(Math.round(track.durationSec * 0.45) - 2, track.durationSec - 10)
+    )
+  );
 }
 
 export type CollectionKind = "music" | "podcast";
