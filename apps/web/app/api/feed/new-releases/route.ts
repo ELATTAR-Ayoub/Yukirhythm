@@ -164,8 +164,17 @@ export async function GET(req: Request): Promise<Response> {
     });
   }
 
+  // Keep freshness as the primary ranking signal, but do not collapse the
+  // shelf to two or three cards when YouTube omits publish dates or the
+  // verified recent pool is temporarily small. The broader candidate pool is
+  // still query/taste matched and embeddable; it only backfills empty slots.
+  const rankedPool = [
+    ...dated,
+    ...all.filter((track) => !dated.some((recent) => recent.trackId === track.trackId)),
+  ];
+
   const ranked = scoreNewReleases(
-    dated,
+    rankedPool,
     taste.artistAffinity,
     now,
     taste.labelAffinity
