@@ -92,6 +92,8 @@ interface MockStudioValue {
   enqueue: (track: MockTrack, mode?: EnqueueMode) => void;
   /** Queue a track and settle only after durable persistence succeeds. */
   enqueuePersisted: (track: MockTrack, mode?: EnqueueMode) => Promise<void>;
+  /** Insert immediately after the playhead and start it now. */
+  playNext: (track: MockTrack) => void;
   /** A short, queue-neutral audition. Preview never changes nowPlaying. */
   previewTrack: MockTrack | null;
   previewPlaying: boolean;
@@ -486,6 +488,16 @@ export default function MockStudioProvider({
     [enqueue]
   );
 
+  const playNext = useCallback(
+    (track: MockTrack) => {
+      setQueue((current) => insertIntoQueue(current, track, "next", currentIndex));
+      setCurrentIndex((index) => (index < 0 ? 0 : index + 1));
+      setProgressSec(0);
+      setIsPlaying(true);
+    },
+    [currentIndex]
+  );
+
   const [previewTrack, setPreviewTrack] = useState<MockTrack | null>(null);
   const [previewProgressSec, setPreviewProgressSec] = useState(0);
   const previewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -719,6 +731,7 @@ export default function MockStudioProvider({
     clearQueue,
     enqueue,
     enqueuePersisted,
+    playNext,
     previewTrack,
     previewPlaying: previewTrack !== null,
     previewProgressSec,

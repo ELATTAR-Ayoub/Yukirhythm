@@ -20,7 +20,8 @@
     "coverage": "vitest run --coverage",
     "emulator": "firebase emulators:start --only firestore,auth --project demo-yukirhythm",
     "capture:fixtures": "tsx scripts/capture-catalog-fixtures.ts",
-    "migrate:users": "tsx scripts/migrate-users-to-uid.ts"
+    "migrate:users": "tsx scripts/migrate-users-to-uid.ts",
+    "migrate:collection-memberships": "tsx scripts/migrate-collection-memberships.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",

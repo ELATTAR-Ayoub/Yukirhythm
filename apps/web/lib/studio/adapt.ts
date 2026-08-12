@@ -8,6 +8,7 @@ import type {
   MockUser,
 } from "@/components/studio/screens/mock-data";
 import { collectionArtUrl, trackArtUrl } from "./artwork";
+import { trackFromMembership } from "@/lib/catalog/membership";
 
 /**
  * Maps backend documents onto the shapes the design-system screens render.
@@ -29,6 +30,8 @@ export function toStudioTrack(
     artist: t.artists.map((a) => a.name).join(", ") || "Unknown",
     texture: t.texture,
     durationSec: t.durationSec ?? 0,
+    artists: t.artists,
+    labels: t.labels,
     previewStartSec: t.preview?.startSec,
     artUrl: trackArtUrl(t),
     ...attribution,
@@ -39,6 +42,10 @@ export function toStudioCollection(
   c: Collection,
   opts: { pinned?: boolean } = {}
 ): MockCollection {
+  const tracks = (c.tracks ?? [])
+    .map(trackFromMembership)
+    .filter((track): track is Track => track !== null)
+    .map((track) => toStudioTrack(track));
   return {
     id: c.collectionId,
     title: c.title,
@@ -49,6 +56,7 @@ export function toStudioCollection(
     cover: c.cover,
     artUrl: collectionArtUrl(c),
     trackIds: (c.tracks ?? []).map((m) => m.trackId),
+    tracks: tracks.length === (c.tracks ?? []).length ? tracks : undefined,
     likes: c.stats?.saveCount ?? 0,
     tags: c.tags ?? [],
     kind: c.contentType,

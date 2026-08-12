@@ -95,12 +95,27 @@ export type Artist = {
 /** Membership carries its own timestamp so "Recently added" can sort (spec D7). */
 export type CollectionTrack = {
   trackId: string;
+  type?: Track["type"];
+  title?: string;
+  artists?: Track["artists"];
+  album?: Track["album"];
+  durationSec?: number | null;
+  artwork?: Track["artwork"];
+  texture?: Track["texture"];
+  source?: Track["source"];
+  isEmbeddable?: boolean;
+  isLive?: boolean;
+  isFamilySafe?: boolean;
+  publishedAt?: Timestamp | null;
+  labels?: Track["labels"];
+  preview?: Track["preview"];
   addedAt: Timestamp;
   addedBy: string;
 };
 
 export type Collection = {
   collectionId: string;
+  schemaVersion?: number;
   ownerId: string;
 
   /** Container role. There is no "liked" role — that collection is virtual (D8). */

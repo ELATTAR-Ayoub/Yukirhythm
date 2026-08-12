@@ -1,6 +1,11 @@
+import type { MockTrack } from "@/components/studio/screens/mock-data";
+
 export type BrowserPlaybackState = {
   trackId: string | null;
   queue: string[];
+  /** Complete browser-local queue snapshots avoid one catalogue request per
+   * queue item when restoring a playlist after reload. */
+  queueTracks?: MockTrack[];
   queueIndex: number;
   positionSec: number;
   isPlaying: boolean;

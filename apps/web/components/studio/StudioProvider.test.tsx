@@ -570,7 +570,35 @@ describe("StudioProvider playback session restore", () => {
     expect(screen.getByTestId("now-playing").textContent).toBe("t2");
   });
 
-  it("counts heard seconds instead of seek position and keeps recommendation attribution", async () => {
+  it("handles global playback and volume keyboard shortcuts outside form fields", async () => {
+    render(
+      <StudioProvider>
+        <PlaybackProbe />
+        <input aria-label="Typing field" />
+      </StudioProvider>
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId("collections-count").textContent).toBe("1")
+    );
+    fireEvent.click(screen.getByText("play-user-track"));
+
+    fireEvent.keyDown(document, { code: "Space", key: " " });
+    expect(screen.getByTestId("is-playing").textContent).toBe("false");
+    fireEvent.keyDown(document, { code: "Space", key: " " });
+    expect(screen.getByTestId("is-playing").textContent).toBe("true");
+
+    fireEvent.keyDown(document, { code: "ArrowDown", key: "ArrowDown" });
+    expect(screen.getByTestId("volume").textContent).toBe("0.95");
+    fireEvent.keyDown(document, { code: "ArrowUp", key: "ArrowUp" });
+    expect(screen.getByTestId("volume").textContent).toBe("1");
+
+    const input = screen.getByLabelText("Typing field");
+    input.focus();
+    fireEvent.keyDown(input, { code: "Space", key: " " });
+    expect(screen.getByTestId("is-playing").textContent).toBe("true");
+  });
+
+  it("drops sub-threshold listens without a request", async () => {
     render(
       <StudioProvider>
         <PlaybackProbe />
@@ -592,15 +620,43 @@ describe("StudioProvider playback session restore", () => {
     const events = JSON.parse(
       localStorage.getItem("yukirhythm:history:v1:u1") ?? "[]"
     );
+    expect(events).toEqual([]);
+    expect(backend.events.ingest).not.toHaveBeenCalled();
+  });
+
+  it("counts heard seconds instead of seek position and persists recommendation attribution once", async () => {
+    render(
+      <StudioProvider>
+        <PlaybackProbe />
+      </StudioProvider>
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId("collections-count").textContent).toBe("1")
+    );
+
+    fireEvent.click(screen.getByText("play-recommendation"));
+    act(() => {
+      hiddenPlayer.props?.onProgress?.({ playedSeconds: 1 });
+      hiddenPlayer.props?.onProgress?.({ playedSeconds: 2 });
+      hiddenPlayer.props?.onProgress?.({ playedSeconds: 3 });
+      hiddenPlayer.props?.onProgress?.({ playedSeconds: 120 });
+      hiddenPlayer.props?.onProgress?.({ playedSeconds: 121 });
+      hiddenPlayer.props?.onProgress?.({ playedSeconds: 122 });
+    });
+    fireEvent.click(screen.getByText("next"));
+
+    const events = JSON.parse(
+      localStorage.getItem("yukirhythm:history:v1:u1") ?? "[]"
+    );
     expect(events[0]).toMatchObject({
       trackId: "rec-track",
-      listenedSec: 3,
+      listenedSec: 5,
       source: "recommendation",
       recommendationId: "yml:rec-track",
     });
     expect(events[0].startedAt).toBeGreaterThan(0);
     expect(events[0].eventId).toMatch(/^[\w-]{8,}$/);
-    expect(backend.events.ingest).not.toHaveBeenCalled();
+    expect(backend.events.ingest).toHaveBeenCalledTimes(1);
   });
 
   it("restores queue, current track, position and volume, paused", async () => {
@@ -634,6 +690,38 @@ describe("StudioProvider playback session restore", () => {
     // The restore itself must never echo the value it just read straight
     // back to the server — pins the skip-ref, not just its visible effect.
     expect(backend.me.playback.save).not.toHaveBeenCalled();
+  });
+
+  it("restores a complete browser queue without catalogue fan-out", async () => {
+    const savedTracks = [
+      toStudioTrack(track({ trackId: "t1", title: "First" })),
+      toStudioTrack(track({ trackId: "t2", title: "Second" })),
+    ];
+    localStorage.setItem(
+      "yukirhythm:playback:v1:u1",
+      JSON.stringify({
+        trackId: "t2",
+        queue: ["t1", "t2"],
+        queueTracks: savedTracks,
+        queueIndex: 1,
+        positionSec: 12,
+        isPlaying: false,
+        volume: 0.8,
+      })
+    );
+    backend.catalog.track.mockClear();
+
+    render(
+      <StudioProvider>
+        <PlaybackProbe />
+      </StudioProvider>
+    );
+
+    await waitFor(() =>
+      expect(screen.getByTestId("queue-ids").textContent).toBe("t1,t2")
+    );
+    expect(screen.getByTestId("now-playing").textContent).toBe("t2");
+    expect(backend.catalog.track).not.toHaveBeenCalled();
   });
 
   it("a failed playback read leaves the player cold and the rest of sign-in intact", async () => {

@@ -1,10 +1,5 @@
 import { adminDb } from "@/lib/firebase/admin";
-import type {
-  Collection,
-  PlayEvent,
-  Track,
-  TrackState,
-} from "@/lib/catalog/model";
+import type { Collection, Track, TrackState } from "@/lib/catalog/model";
 import type { StatEvent } from "@/lib/catalog/stats";
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -35,23 +30,27 @@ async function readFeedContext(uid: string): Promise<FeedContext> {
 
   // These snapshots have no dependency on one another. Reading them together
   // removes two full Firestore round trips from every personalized feed.
-  const [evSnap, owned, stateSnap] = await Promise.all([
-    db
-      .collection("playEvents")
-      .where("userId", "==", uid)
-      .orderBy("startedAt", "desc")
-      .limit(200)
-      .get(),
+  const [tasteSnap, owned, stateSnap] = await Promise.all([
+    db.collection("users").doc(uid).collection("views").doc("taste").get(),
     db.collection("collections").where("ownerId", "==", uid).get(),
     db.collection("users").doc(uid).collection("trackState").get(),
   ]);
-  const events: StatEvent[] = evSnap.docs.map((d) => {
-    const e = d.data() as PlayEvent;
+  type TasteEvent = Omit<StatEvent, "startedAtMs"> &
+    Pick<Track, "artists" | "labels"> & {
+      startedAt?: number | { toMillis?: () => number };
+      startedAtMs?: number;
+    };
+  const storedEvents = tasteSnap.exists
+    ? ((tasteSnap.data()?.events ?? []) as TasteEvent[])
+    : [];
+  const events: StatEvent[] = storedEvents.map((e) => {
     return {
       ...e,
-      startedAtMs: (
-        e.startedAt as unknown as { toMillis(): number }
-      ).toMillis(),
+      startedAtMs: typeof e.startedAtMs === "number"
+        ? e.startedAtMs
+        : typeof e.startedAt === "number"
+          ? e.startedAt
+          : (e.startedAt as unknown as { toMillis?: () => number })?.toMillis?.() ?? 0,
     };
   });
 
@@ -71,21 +70,36 @@ async function readFeedContext(uid: string): Promise<FeedContext> {
   const likedTrackIds = states.filter((s) => s.isLiked).map((s) => s.trackId);
   for (const id of likedTrackIds) exclude.add(id);
 
-  const topPlayed = [...states]
-    .sort((a, b) => (b.completedCount ?? 0) - (a.completedCount ?? 0))
+  const completionCounts = new Map<string, number>();
+  for (const event of events) {
+    if (event.completed) {
+      completionCounts.set(event.trackId, (completionCounts.get(event.trackId) ?? 0) + 1);
+    }
+  }
+  const topPlayed = [...completionCounts]
+    .sort((a, b) => b[1] - a[1])
     .slice(0, 5)
-    .map((s) => s.trackId);
+    .map(([trackId]) => trackId);
 
-  const tasteIds = [
-    ...new Set([...events.map((event) => event.trackId), ...likedTrackIds]),
-  ];
-  const tasteDocs = await Promise.all(
-    tasteIds.map((id) => db.collection("tracks").doc(id).get())
-  );
   const tasteTracks = new Map<string, Track>();
-  tasteDocs.forEach((doc, index) => {
-    if (doc.exists) tasteTracks.set(tasteIds[index], doc.data() as Track);
-  });
+  for (const event of storedEvents) {
+    // Recommendation profiling reads only artists and labels. Supplying those
+    // signals from the bounded view avoids a catalogue document read per song.
+    tasteTracks.set(event.trackId, {
+      trackId: event.trackId,
+      artists: event.artists ?? [],
+      labels: event.labels ?? [],
+    } as Track);
+  }
+  const missingLiked = likedTrackIds.filter((id) => !tasteTracks.has(id));
+  if (missingLiked.length) {
+    const likedDocs = await db.getAll(
+      ...missingLiked.map((id) => db.collection("tracks").doc(id))
+    );
+    likedDocs.forEach((doc) => {
+      if (doc.exists) tasteTracks.set(doc.id, doc.data() as Track);
+    });
+  }
 
   return { events, exclude, topPlayed, likedTrackIds, tasteTracks };
 }

@@ -79,8 +79,10 @@ export async function GET(req: Request): Promise<Response> {
   const trackIds = docs.map((d) => d.id);
   const tracks: Track[] = [];
   let totalDurationSec = 0;
-  for (const id of trackIds) {
-    const ts = await db.collection("tracks").doc(id).get();
+  const trackDocs = trackIds.length
+    ? await db.getAll(...trackIds.map((id) => db.collection("tracks").doc(id)))
+    : [];
+  for (const ts of trackDocs) {
     if (ts.exists) {
       const t = ts.data() as Track;
       tracks.push(t);

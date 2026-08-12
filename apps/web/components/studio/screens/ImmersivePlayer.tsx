@@ -20,7 +20,7 @@ export default function ImmersivePlayer({
 }: {
   onCollapse: () => void;
 }) {
-  const { nowPlaying, queue, currentIndex, playAt, findSimilarTracks } =
+  const { nowPlaying, queue, currentIndex, playAt, playNext, findSimilarTracks } =
     useMockStudio();
   const isDesktop = useIsDesktop();
   const [similarResult, setSimilarResult] = useState<{
@@ -120,14 +120,14 @@ export default function ImmersivePlayer({
       <div className="relative z-20 mx-auto -mt-28 grid max-w-7xl items-start gap-6 px-4 pb-36 md:grid-cols-2">
         <section
           aria-labelledby="immersive-queue"
-          className="flex max-h-[62dvh] flex-col overflow-hidden rounded-[2rem] border border-border bg-card/90 p-5 shadow-e4 backdrop-blur-xl md:max-h-[42rem]"
+          className="flex h-[min(62dvh,42rem)] min-h-0 flex-col overflow-hidden rounded-[2rem] border border-border bg-card/90 p-5 shadow-e4 backdrop-blur-xl"
         >
           <h2 id="immersive-queue" className="font-display text-2xl font-bold">
             Queue
           </h2>
           <div className="relative mt-4 min-h-0 flex-1">
             <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-7 bg-gradient-to-b from-card to-transparent" />
-            <div className="h-full space-y-1 overflow-y-auto pr-1 no-scrollbar">
+            <div className="h-full touch-pan-y space-y-1 overflow-y-auto overscroll-contain pr-1 no-scrollbar">
               {upcoming.length ? (
                 upcoming.map((track, offset) => {
                   const at = upcomingStart + offset;
@@ -161,7 +161,7 @@ export default function ImmersivePlayer({
 
         <section
           aria-labelledby="immersive-similar"
-          className="flex max-h-[62dvh] flex-col overflow-hidden rounded-[2rem] border border-border bg-card/90 p-5 shadow-e4 backdrop-blur-xl md:max-h-[42rem]"
+          className="flex h-[min(62dvh,42rem)] min-h-0 flex-col overflow-hidden rounded-[2rem] border border-border bg-card/90 p-5 shadow-e4 backdrop-blur-xl"
         >
           <h2
             id="immersive-similar"
@@ -175,13 +175,14 @@ export default function ImmersivePlayer({
           {similar.length ? (
             <div className="relative mt-4 min-h-0 flex-1">
               <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-7 bg-gradient-to-b from-card to-transparent" />
-              <div className="grid h-full grid-cols-2 gap-3 overflow-y-auto pr-1 no-scrollbar">
+              <div className="grid h-full touch-pan-y grid-cols-2 gap-3 overflow-y-auto overscroll-contain pr-1 no-scrollbar">
                 {similar.map((track) => (
                   <StudioMediaCard
                     key={track.id}
                     track={track}
                     size="sm"
                     className="w-full"
+                    onPlayFull={() => playNext(track)}
                   />
                 ))}
               </div>

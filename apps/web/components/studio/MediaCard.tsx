@@ -94,9 +94,11 @@ function PreviewCountdown({ seconds }: { seconds: number }) {
 }
 
 const BOXY_WIDTHS: Record<MediaCardSize, string> = {
-  sm: "w-36",
-  md: "w-48",
-  lg: "w-64",
+  // Touch layouts show two complete cards across the viewport and keep the
+  // CTA visible; desktop restores the authored fixed card sizes + hover UI.
+  sm: "w-[calc((100vw-3.5rem)/2)] sm:w-[calc((100vw-5rem)/2)] lg:w-36",
+  md: "w-[calc((100vw-3.5rem)/2)] sm:w-[calc((100vw-5rem)/2)] lg:w-48",
+  lg: "w-[calc((100vw-3.5rem)/2)] sm:w-[calc((100vw-5rem)/2)] lg:w-64",
 };
 
 const TITLE_SIZES: Record<MediaCardSize, string> = {
@@ -150,12 +152,12 @@ function PlayOverlay({
     <span
       aria-hidden={interactive ? undefined : "true"}
       className={cn(
-        "absolute inset-0 flex items-center justify-center bg-ink/0 opacity-0",
-        "group-hover:opacity-100 group-hover:bg-ink/30 transition-all duration-base"
+        "absolute inset-0 flex items-center justify-center bg-ink/20 opacity-100 lg:bg-ink/0 lg:opacity-0",
+        "lg:group-hover:opacity-100 lg:group-hover:bg-ink/30 transition-all duration-base"
       )}
     >
       {/* composed from OUR PlayerButton — never a hand-rolled circle */}
-      <span className="translate-y-1 group-hover:translate-y-0 transition-transform duration-base">
+      <span className="translate-y-0 lg:translate-y-1 lg:group-hover:translate-y-0 transition-transform duration-base">
         <PlayerButton
           variant="primary"
           size="lg"
@@ -255,7 +257,7 @@ export default function MediaCard({
         event.stopPropagation();
         onAddToQueue();
       }}
-      className="absolute right-2 top-2 z-20 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
+      className="absolute right-2 top-2 z-20 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 group-focus-within:opacity-100"
     >
       <PlusIcon />
     </PlayerButton>

@@ -7,6 +7,11 @@ import {
   type CollectionTrack,
   type Track,
 } from "@/lib/catalog/model";
+import {
+  COLLECTION_MAX_BYTES,
+  estimatedDocumentBytes,
+  membershipFromTrack,
+} from "@/lib/catalog/membership";
 
 export const runtime = "nodejs";
 
@@ -61,17 +66,22 @@ export async function POST(req: Request): Promise<Response> {
   const rawTrackIds = Array.isArray(body.trackIds)
     ? body.trackIds.filter((t): t is string => typeof t === "string")
     : [];
-  const tracks: CollectionTrack[] = rawTrackIds.map((trackId) => ({
-    trackId,
-    addedAt: now,
-    addedBy: uid,
-  }));
-
-  // Sum durations from the real track docs so totalDurationSec is honest.
+  const uniqueTrackIds = [...new Set(rawTrackIds)];
+  const trackRefs = uniqueTrackIds.map((trackId) =>
+    db.collection("tracks").doc(trackId)
+  );
+  const trackSnaps = trackRefs.length ? await db.getAll(...trackRefs) : [];
+  const trackById = new Map<string, Track>();
+  for (const snap of trackSnaps) {
+    if (snap.exists) trackById.set(snap.id, snap.data() as Track);
+  }
+  const tracks: CollectionTrack[] = [];
   let totalDurationSec = 0;
-  for (const t of tracks) {
-    const ts = await db.collection("tracks").doc(t.trackId).get();
-    if (ts.exists) totalDurationSec += (ts.data() as Track).durationSec ?? 0;
+  for (const trackId of uniqueTrackIds) {
+    const track = trackById.get(trackId);
+    if (!track) continue;
+    tracks.push(membershipFromTrack(track, now, uid));
+    totalDurationSec += track.durationSec ?? 0;
   }
 
   const cover = COVERS.includes(body.cover as (typeof COVERS)[number])
@@ -82,6 +92,7 @@ export async function POST(req: Request): Promise<Response> {
 
   const collection: Collection = {
     collectionId: ref.id,
+    schemaVersion: 2,
     ownerId: uid,
     role: body.role === "show" ? "show" : "playlist",
     contentType: body.contentType === "podcast" ? "podcast" : "music",
@@ -107,6 +118,10 @@ export async function POST(req: Request): Promise<Response> {
     createdAt: now,
     updatedAt: now,
   };
+
+  if (estimatedDocumentBytes(collection) > COLLECTION_MAX_BYTES) {
+    return Response.json({ error: "Collection is too large" }, { status: 413 });
+  }
 
   await db.runTransaction(async (tx) => {
     tx.set(ref, collection);

@@ -7,6 +7,11 @@ import {
   type CollectionTrack,
   type Track,
 } from "@/lib/catalog/model";
+import {
+  COLLECTION_MAX_BYTES,
+  estimatedDocumentBytes,
+  membershipFromTrack,
+} from "@/lib/catalog/membership";
 
 export const runtime = "nodejs";
 
@@ -28,10 +33,14 @@ async function mutate(
   const { collectionId, trackId } = await params;
   const db = adminDb();
   const ref = db.collection("collections").doc(collectionId);
+  const trackRef = db.collection("tracks").doc(trackId);
 
   let status = 200;
   await db.runTransaction(async (tx) => {
-    const snap = await tx.get(ref);
+    const [snap, trackSnap] =
+      op === "add"
+        ? await Promise.all([tx.get(ref), tx.get(trackRef)])
+        : [await tx.get(ref), null];
     if (!snap.exists) {
       status = 404;
       return;
@@ -52,23 +61,31 @@ async function mutate(
         status = 409;
         return;
       } else {
+        if (!trackSnap?.exists) {
+          status = 404;
+          return;
+        }
         next = [
           ...current,
-          { trackId, addedAt: Timestamp.now(), addedBy: uid },
+          membershipFromTrack(trackSnap.data() as Track, Timestamp.now(), uid),
         ];
       }
     } else {
       next = current.filter((t) => t.trackId !== trackId);
     }
 
-    // Recompute totalDurationSec from the real track docs.
-    let totalDurationSec = 0;
-    for (const t of next) {
-      const ts = await tx.get(db.collection("tracks").doc(t.trackId));
-      if (ts.exists) totalDurationSec += (ts.data() as Track).durationSec ?? 0;
-    }
+    const changed = current.find((entry) => entry.trackId === trackId);
+    const previousDuration = c.stats?.totalDurationSec ?? 0;
+    const totalDurationSec =
+      op === "add"
+        ? has
+          ? previousDuration
+          : previousDuration + ((trackSnap!.data() as Track).durationSec ?? 0)
+        : has
+          ? Math.max(0, previousDuration - (changed?.durationSec ?? 0))
+          : previousDuration;
 
-    tx.update(ref, {
+    const patch = {
       tracks: next,
       stats: {
         ...(c.stats ?? { saveCount: 0, playCount: 0 }),
@@ -76,7 +93,14 @@ async function mutate(
         totalDurationSec,
       },
       updatedAt: Timestamp.now(),
-    });
+      schemaVersion: 2,
+    };
+    if (estimatedDocumentBytes({ ...c, ...patch }) > COLLECTION_MAX_BYTES) {
+      status = 413;
+      return;
+    }
+
+    tx.update(ref, patch);
   });
 
   if (status !== 200) {

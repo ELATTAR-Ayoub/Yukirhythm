@@ -39,8 +39,12 @@ export async function GET(req: Request): Promise<Response> {
     .get();
 
   const tracks: Track[] = [];
-  for (const d of liked.docs) {
-    const ts = await db.collection("tracks").doc(d.id).get();
+  const likedDocs = liked.docs.length
+    ? await db.getAll(
+        ...liked.docs.map((d) => db.collection("tracks").doc(d.id))
+      )
+    : [];
+  for (const ts of likedDocs) {
     if (!ts.exists) continue;
     const t = ts.data() as Track;
     const hit =

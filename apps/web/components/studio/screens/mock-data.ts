@@ -15,6 +15,15 @@ export interface MockTrack {
   /** The track's real thumbnail. Absent or broken falls back to `texture` —
    *  see components/studio/Artwork.tsx. Fixture tracks have none. */
   artUrl?: string;
+  /** Structured recommendation signals retained from the catalogue so a
+   * completed listening transition never needs to read the track again. */
+  artists?: { artistId: string; name: string }[];
+  labels?: {
+    label: string;
+    kind: "genre" | "mood";
+    source: "youtube-category" | "youtube-keywords" | "provider-topic" | "inferred" | "user";
+    confidence: number;
+  }[];
   /** Shared catalogue-selected start of the ten-second audition. */
   previewStartSec?: number;
   /** Playback attribution carried into the listening-history event. */
@@ -51,6 +60,8 @@ export interface MockCollection {
    *  and always sorts first in the library. */
   system?: boolean;
   trackIds: string[];
+  /** Complete server-backed memberships. Legacy/mock collections may omit it. */
+  tracks?: MockTrack[];
   likes: number;
   tags: string[];
   kind: CollectionKind;
@@ -399,6 +410,8 @@ export function getTrack(id: string): MockTrack | undefined {
 }
 
 export function getCollectionTracks(collection: MockCollection): MockTrack[] {
+  if (collection.tracks?.length === collection.trackIds.length)
+    return collection.tracks;
   return collection.trackIds
     .map(getTrack)
     .filter((t): t is MockTrack => t !== undefined);

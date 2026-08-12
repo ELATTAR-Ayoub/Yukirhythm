@@ -75,7 +75,12 @@ type ListeningEvent = {
   source: "collection" | "library" | "search" | "recommendation";
   recommendationId: string | null;
   clientHourOfDay: number;
+  durationSec: number;
+  artists: { artistId: string; name: string }[];
+  labels: NonNullable<MockTrack["labels"]>;
 };
+
+const MIN_DURABLE_LISTEN_SEC = 5;
 
 const pendingHistoryKey = (uid: string) => `yukirhythm:history:v1:${uid}`;
 
@@ -196,6 +201,9 @@ export default function StudioProvider({
    *  the background, so an older request must never replace a queue chosen
    *  while it was still in flight. */
   const playRequestRef = useRef(0);
+  /** Loaded once with the profile. Privacy-off sessions never issue a history
+   * request; the event endpoint therefore does not reread privacy per song. */
+  const saveHistoryRef = useRef(false);
 
   // search
   const [searchResults, setSearchResults] = useState<MockTrack[]>([]);
@@ -327,6 +335,7 @@ export default function StudioProvider({
     let live = true;
     (async () => {
       if (!fbUser) {
+        saveHistoryRef.current = false;
         setUser(null);
         collectionsRef.current = [];
         setCollections([]);
@@ -401,6 +410,7 @@ export default function StudioProvider({
         ]);
         if (!live) return;
         if (meResult.status === "fulfilled" && meResult.value) {
+          saveHistoryRef.current = meResult.value.privacy?.saveHistory !== false;
           setUser(toStudioUser(meResult.value));
         } else if (meResult.status === "rejected") {
           console.error("Failed to load user profile", meResult.reason);
@@ -443,7 +453,13 @@ export default function StudioProvider({
               : [];
           if (ids.length === 0) return;
 
-          const resolved = await resolveTrackIds(ids);
+          const savedTracks = Array.isArray(state.queueTracks)
+            ? state.queueTracks.filter((track) => ids.includes(track.id))
+            : [];
+          const resolved = savedTracks.length === ids.length
+            ? savedTracks
+            : await resolveTrackIds(ids);
+          if (savedTracks.length === ids.length) registerStudioTracks(resolved);
           if (!live) return;
           // Every id failed to resolve (e.g. deleted/unembeddable videos) —
           // restore nothing rather than seat the player on an empty queue.
@@ -542,7 +558,7 @@ export default function StudioProvider({
   const flushEvent = useCallback(() => {
     const t = nowPlaying;
     const session = listeningRef.current;
-    if (!t || !session || session.listenedSec < 1) return;
+    if (!t || !session || session.listenedSec < MIN_DURABLE_LISTEN_SEC) return;
 
     const event: ListeningEvent = {
       eventId: session.eventId,
@@ -553,6 +569,9 @@ export default function StudioProvider({
       source: playingCollection ? "collection" : (t.eventSource ?? "library"),
       recommendationId: t.recommendationId ?? null,
       clientHourOfDay: new Date().getHours(),
+      durationSec: t.durationSec,
+      artists: t.artists ?? [],
+      labels: t.labels ?? [],
     };
     // Rotate before saving so pagehide plus a simultaneous track transition
     // cannot record the same browser-local session twice.
@@ -563,6 +582,20 @@ export default function StudioProvider({
       );
       const next = [event, ...pending].slice(0, 200);
       writePendingHistory(fbUser.uid, next);
+      if (saveHistoryRef.current) {
+        void backend.events
+          .ingest([event], {
+            tasteSnapshot: next.slice(0, 100),
+          })
+          .then((result) => {
+            if ((result.written ?? 0) < 1) return;
+            const remaining = readPendingHistory(fbUser.uid).filter(
+              (item) => item.eventId !== event.eventId
+            );
+            writePendingHistory(fbUser.uid, remaining);
+          })
+          .catch((err) => console.warn("Listening history sync failed", err));
+      }
       setRecents(
         toStudioHistory(
           next.map((item) => ({
@@ -576,7 +609,7 @@ export default function StudioProvider({
         )
       );
     }
-  }, [fbUser, nowPlaying, playingCollection]);
+  }, [backend, fbUser, nowPlaying, playingCollection]);
 
   const startTrack = useCallback((index: number) => {
     setCurrentIndex(index);
@@ -666,6 +699,17 @@ export default function StudioProvider({
       }
 
       if (from) {
+        if (from.tracks?.length === from.trackIds.length) {
+          if (playRequestRef.current === requestId) {
+            registerStudioTracks(from.tracks);
+            const selectedIndex = from.tracks.findIndex(
+              (item) => item.id === track.id
+            );
+            setQueue(from.tracks);
+            setCurrentIndex(selectedIndex >= 0 ? selectedIndex : 0);
+          }
+          return;
+        }
         void Promise.all(
           from.trackIds.map(async (id) => {
             if (id === track.id) return track;
@@ -766,6 +810,21 @@ export default function StudioProvider({
       setQueue((q) => insertIntoQueue(q, track, mode, currentIndex));
     },
     [currentIndex]
+  );
+
+  const playNext = useCallback(
+    (track: MockTrack) => {
+      flushEvent();
+      registerStudioTracks([track]);
+      setQueue((current) => insertIntoQueue(current, track, "next", currentIndex));
+      setCurrentIndex((index) => (index < 0 ? 0 : index + 1));
+      setPlayingCollection(null);
+      setProgressSec(0);
+      setIsLoading(true);
+      setIsPlaying(true);
+      listeningRef.current = freshListeningSession(0);
+    },
+    [currentIndex, flushEvent]
   );
 
   const findSimilarTracks = useCallback(
@@ -923,6 +982,49 @@ export default function StudioProvider({
     []
   );
 
+  // Global transport shortcuts live with the shared playback state, so every
+  // studio route and every player surface behaves identically. Never capture
+  // keys while the user is typing or choosing a form value.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.altKey || event.ctrlKey || event.metaKey) return;
+      const target = event.target;
+      if (
+        target instanceof HTMLElement &&
+        (target.isContentEditable ||
+          target.matches("input, textarea, select, [role='textbox']"))
+      ) {
+        return;
+      }
+      if (!nowPlaying) return;
+
+      switch (event.code) {
+        case "Space":
+          event.preventDefault();
+          toggle();
+          break;
+        case "ArrowLeft":
+          event.preventDefault();
+          prev();
+          break;
+        case "ArrowRight":
+          event.preventDefault();
+          next();
+          break;
+        case "ArrowUp":
+          event.preventDefault();
+          setVolume(volume + 0.05);
+          break;
+        case "ArrowDown":
+          event.preventDefault();
+          setVolume(volume - 0.05);
+          break;
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [next, nowPlaying, prev, setVolume, toggle, volume]);
+
   // Playback is intentionally browser-only while database protection mode is
   // active. Queue, position, volume and shuffle never touch Firestore.
   useEffect(() => {
@@ -932,6 +1034,7 @@ export default function StudioProvider({
     writeBrowserPlayback(fbUser.uid, {
       trackId: nowPlaying?.id ?? null,
       queue: queue.map((track) => track.id),
+      queueTracks: queue,
       queueIndex: currentIndex,
       positionSec: progressSec,
       isPlaying,
@@ -1183,6 +1286,7 @@ export default function StudioProvider({
       clearQueue,
       enqueue,
       enqueuePersisted,
+      playNext,
       previewTrack,
       previewPlaying: previewTrack !== null,
       previewProgressSec,
@@ -1253,6 +1357,7 @@ export default function StudioProvider({
       clearQueue,
       enqueue,
       enqueuePersisted,
+      playNext,
       previewTrack,
       previewProgressSec,
       startPreview,

@@ -1,14 +1,8 @@
-import { FieldValue, Timestamp } from "firebase-admin/firestore";
-import { gone } from "@/lib/api/disabled";
+import { Timestamp } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/firebase/admin";
 import { invalidateFeedContext } from "../feed/_context";
 import { uidFromRequest, unauthorized } from "@/lib/firebase/verify";
-import {
-  classifyListen,
-  type EventSource,
-  type Track,
-  type User,
-} from "@/lib/catalog/model";
+import { classifyListen, type EventSource, type TrackLabel } from "@/lib/catalog/model";
 
 export const runtime = "nodejs";
 
@@ -19,130 +13,148 @@ const SOURCES: EventSource[] = [
   "radio",
   "recommendation",
 ];
+const MAX_EVENTS_PER_REQUEST = 20;
+const MAX_TASTE_EVENTS = 100;
+const MIN_LISTEN_SEC = 5;
 
 type RawEvent = {
   eventId?: unknown;
   trackId?: unknown;
   collectionId?: unknown;
   listenedSec?: unknown;
+  durationSec?: unknown;
   startedAt?: unknown;
   source?: unknown;
   recommendationId?: unknown;
   deviceId?: unknown;
   clientHourOfDay?: unknown;
+  artists?: unknown;
+  labels?: unknown;
 };
 
-/**
- * Batched play events. Accepts `{ events: [...] }`. Each event is scored
- * against the completion threshold, written to the append-only `playEvents`
- * store, and rolled into the user's per-track overlay counters.
- *
- * Gated on consent: with `privacy.saveHistory === false` the request succeeds
- * but nothing is written — the toggle suppresses the write, it is not
- * written-then-hidden.
- */
+function cleanArtists(value: unknown) {
+  if (!Array.isArray(value)) return [];
+  return value.slice(0, 10).flatMap((artist) => {
+    if (!artist || typeof artist !== "object") return [];
+    const item = artist as Record<string, unknown>;
+    return typeof item.artistId === "string" && typeof item.name === "string"
+      ? [{ artistId: item.artistId.slice(0, 200), name: item.name.slice(0, 300) }]
+      : [];
+  });
+}
+
+function cleanLabels(value: unknown): TrackLabel[] {
+  if (!Array.isArray(value)) return [];
+  const kinds = new Set(["genre", "mood"]);
+  const sources = new Set([
+    "youtube-category",
+    "youtube-keywords",
+    "provider-topic",
+    "inferred",
+    "user",
+  ]);
+  return value.slice(0, 20).flatMap((label) => {
+    if (!label || typeof label !== "object") return [];
+    const item = label as Record<string, unknown>;
+    if (
+      typeof item.label !== "string" ||
+      !kinds.has(String(item.kind)) ||
+      !sources.has(String(item.source)) ||
+      typeof item.confidence !== "number"
+    ) return [];
+    return [{
+      label: item.label.slice(0, 120),
+      kind: item.kind as TrackLabel["kind"],
+      source: item.source as TrackLabel["source"],
+      confidence: Math.min(1, Math.max(0, item.confidence)),
+    }];
+  });
+}
+
+function normalize(raw: RawEvent) {
+  const eventId =
+    typeof raw.eventId === "string" && /^[A-Za-z0-9_-]{8,128}$/.test(raw.eventId)
+      ? raw.eventId
+      : null;
+  const trackId = typeof raw.trackId === "string" ? raw.trackId.slice(0, 300) : "";
+  const listenedSec =
+    typeof raw.listenedSec === "number" && Number.isFinite(raw.listenedSec)
+      ? Math.floor(raw.listenedSec)
+      : -1;
+  const durationSec =
+    typeof raw.durationSec === "number" && Number.isFinite(raw.durationSec)
+      ? Math.max(0, Math.floor(raw.durationSec))
+      : null;
+  if (!eventId || !trackId || listenedSec < MIN_LISTEN_SEC) return null;
+  const source = SOURCES.includes(raw.source as EventSource)
+    ? (raw.source as EventSource)
+    : "library";
+  const engagement = classifyListen(listenedSec, durationSec);
+  return {
+    eventId,
+    trackId,
+    collectionId: typeof raw.collectionId === "string" ? raw.collectionId.slice(0, 300) : null,
+    listenedSec,
+    durationSec,
+    startedAt: typeof raw.startedAt === "number" && Number.isFinite(raw.startedAt)
+      ? Timestamp.fromMillis(raw.startedAt)
+      : Timestamp.now(),
+    engagement,
+    completed: engagement === "completed" || engagement === "near-complete",
+    skipped: engagement === "quick-skip",
+    source,
+    recommendationId: typeof raw.recommendationId === "string"
+      ? raw.recommendationId.slice(0, 300)
+      : null,
+    deviceId: typeof raw.deviceId === "string" ? raw.deviceId.slice(0, 200) : "",
+    clientHourOfDay: typeof raw.clientHourOfDay === "number"
+      ? Math.min(23, Math.max(0, Math.floor(raw.clientHourOfDay)))
+      : 0,
+    artists: cleanArtists(raw.artists),
+    labels: cleanLabels(raw.labels),
+  };
+}
+
+/** One transition request, zero Firestore reads. The browser already loaded
+ * privacy once with `/api/me`; privacy-off sessions never call this endpoint.
+ * A deterministic play-event write is retry-safe, and the compact taste view
+ * replaces itself rather than growing an unbounded history document. */
 export async function POST(req: Request): Promise<Response> {
-  if (process.env.ENABLE_LEGACY_LISTENING_SYNC !== "true") return gone("Listening history sync");
   const uid = await uidFromRequest(req);
   if (!uid) return unauthorized();
 
+  const body = (await req.json().catch(() => ({}))) as {
+    events?: unknown;
+    tasteSnapshot?: unknown;
+  };
+  const events = (Array.isArray(body.events) ? body.events : [])
+    .slice(0, MAX_EVENTS_PER_REQUEST)
+    .map((event) => normalize(event as RawEvent))
+    .filter((event): event is NonNullable<typeof event> => event !== null);
+  if (!events.length) return Response.json({ ok: true, written: 0 });
+
+  const tasteSnapshot = (Array.isArray(body.tasteSnapshot) ? body.tasteSnapshot : [])
+    .slice(0, MAX_TASTE_EVENTS)
+    .map((event) => normalize(event as RawEvent))
+    .filter((event): event is NonNullable<typeof event> => event !== null)
+    .map((event) => ({ ...event, startedAt: event.startedAt.toMillis() }));
+
   const db = adminDb();
-  const user = (await db.collection("users").doc(uid).get()).data() as
-    User | undefined;
-  if (user?.privacy?.saveHistory === false) {
-    return Response.json({ ok: true, written: 0, skipped: "saveHistory off" });
-  }
-
-  const body = (await req.json().catch(() => ({}))) as { events?: unknown };
-  const raw = Array.isArray(body.events) ? (body.events as RawEvent[]) : [];
-
-  let written = 0;
-  for (const e of raw) {
-    const trackId = typeof e.trackId === "string" ? e.trackId : "";
-    const listenedSec =
-      typeof e.listenedSec === "number" && e.listenedSec >= 0
-        ? Math.floor(e.listenedSec)
-        : -1;
-    if (!trackId || listenedSec < 0) continue; // skip malformed, don't fail the batch
-
-    const trackSnap = await db.collection("tracks").doc(trackId).get();
-    const durationSec = trackSnap.exists
-      ? ((trackSnap.data() as Track).durationSec ?? null)
-      : null;
-    const engagement = classifyListen(listenedSec, durationSec);
-    const completed =
-      engagement === "completed" || engagement === "near-complete";
-    const skipped = engagement === "quick-skip";
-
-    const source = SOURCES.includes(e.source as EventSource)
-      ? (e.source as EventSource)
-      : "library";
-    const hour =
-      typeof e.clientHourOfDay === "number"
-        ? Math.min(23, Math.max(0, Math.floor(e.clientHourOfDay)))
-        : 0;
-    const startedAt =
-      typeof e.startedAt === "number"
-        ? Timestamp.fromMillis(e.startedAt)
-        : Timestamp.now();
-
-    const suppliedEventId =
-      typeof e.eventId === "string" && /^[A-Za-z0-9_-]{8,128}$/.test(e.eventId)
-        ? e.eventId
-        : null;
-    const eventRef = suppliedEventId
-      ? db.collection("playEvents").doc(suppliedEventId)
-      : db.collection("playEvents").doc();
-    const stateRef = db
-      .collection("users")
-      .doc(uid)
-      .collection("trackState")
-      .doc(trackId);
-
-    const didWrite = await db.runTransaction(async (tx) => {
-      // reads before writes
-      const [eventSnap, stateSnap] = await Promise.all([
-        tx.get(eventRef),
-        tx.get(stateRef),
-      ]);
-      if (eventSnap.exists) return false;
-
-      tx.set(eventRef, {
-        eventId: eventRef.id,
-        userId: uid,
-        trackId,
-        collectionId:
-          typeof e.collectionId === "string" ? e.collectionId : null,
-        startedAt,
-        listenedSec,
-        engagement,
-        completed,
-        skipped,
-        source,
-        recommendationId:
-          typeof e.recommendationId === "string" ? e.recommendationId : null,
-        deviceId: typeof e.deviceId === "string" ? e.deviceId : "",
-        clientHourOfDay: hour,
-      });
-
-      const counters: Record<string, unknown> = {
-        trackId,
-        playCount: FieldValue.increment(1),
-        totalListenedSec: FieldValue.increment(listenedSec),
-        lastPlayedAt: Timestamp.now(),
-        completedCount: FieldValue.increment(completed ? 1 : 0),
-        skipCount: FieldValue.increment(skipped ? 1 : 0),
-      };
-      if (!stateSnap.exists) counters.addedAt = Timestamp.now();
-      tx.set(stateRef, counters, { merge: true });
-      return true;
+  const batch = db.batch();
+  for (const event of events) {
+    batch.set(db.collection("playEvents").doc(event.eventId), {
+      ...event,
+      userId: uid,
+      syncedAt: Timestamp.now(),
     });
-
-    if (didWrite) written++;
   }
-
-  // Global tracks.stats.playCount is a per-doc hotspot (spec §14) — deferred to
-  // a sharded counter / scheduled aggregation rather than incremented inline.
-  if (written > 0) invalidateFeedContext(uid);
-  return Response.json({ ok: true, written });
+  batch.set(db.collection("users").doc(uid).collection("views").doc("taste"), {
+    events: tasteSnapshot,
+    eventCount: tasteSnapshot.length,
+    updatedAt: Timestamp.now(),
+    schemaVersion: 1,
+  });
+  await batch.commit();
+  invalidateFeedContext(uid);
+  return Response.json({ ok: true, written: events.length });
 }

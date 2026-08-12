@@ -61,6 +61,24 @@ describe("MediaCard play overlay", () => {
     ).toBe("true");
   });
 
+  it("exposes touch CTAs and a two-up card width before the desktop breakpoint", () => {
+    render(
+      <MediaCard
+        title="Cobalt Dreams"
+        onPlayFull={vi.fn()}
+        onAddToQueue={vi.fn()}
+      />
+    );
+    const card = screen.getByRole("button", {
+      name: "Preview Cobalt Dreams for 10 seconds",
+    });
+    expect(card.className).toContain("w-[calc((100vw-3.5rem)/2)]");
+    const play = screen.getByRole("button", { name: "Play full song" });
+    expect(play.parentElement?.parentElement?.className).toContain("opacity-100");
+    expect(screen.getByRole("button", { name: "Add Cobalt Dreams to queue" }).className)
+      .toContain("opacity-100");
+  });
+
   it("rolls the strip to the pause face when playing is true", () => {
     render(<MediaCard title="Cobalt Dreams" artist="Aoi Waves" playing />);
 

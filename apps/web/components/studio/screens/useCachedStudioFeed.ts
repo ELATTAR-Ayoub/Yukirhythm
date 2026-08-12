@@ -104,8 +104,8 @@ export function useCachedStudioFeed({
     try {
       const response =
         feed === "new-releases"
-          ? await backend.feed.newReleases()
-          : await backend.feed.youMightLike();
+          ? await backend.feed.newReleases(true)
+          : await backend.feed.youMightLike(true);
       const next = response.items.map((item) =>
         toStudioTrack(item.track, {
           eventSource: "recommendation",

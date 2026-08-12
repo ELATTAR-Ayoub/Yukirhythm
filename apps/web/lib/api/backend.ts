@@ -92,10 +92,13 @@ export function createBackendClient(getToken: TokenProvider) {
 
     /** Batched play/behaviour events — flushed by the transport, gated on consent. */
     events: {
-      ingest: (events: unknown[], opts: { keepalive?: boolean } = {}) =>
+      ingest: (
+        events: unknown[],
+        opts: { keepalive?: boolean; tasteSnapshot?: unknown[] } = {}
+      ) =>
         request<{ ok: true; written?: number }>(endpoints.events.ingest(), {
           method: "POST",
-          body: body({ events }),
+          body: body({ events, tasteSnapshot: opts.tasteSnapshot }),
           keepalive: opts.keepalive,
         }),
     },
@@ -104,13 +107,13 @@ export function createBackendClient(getToken: TokenProvider) {
     feed: {
       jumpBackIn: () =>
         request<{ collections: Collection[] }>(endpoints.feed.jumpBackIn()),
-      newReleases: () =>
+      newReleases: (refresh = false) =>
         request<{ personalized: boolean; items: FeedItem[] }>(
-          endpoints.feed.newReleases()
+          endpoints.feed.newReleases(refresh)
         ),
-      youMightLike: () =>
+      youMightLike: (refresh = false) =>
         request<{ personalized: boolean; items: FeedItem[] }>(
-          endpoints.feed.youMightLike()
+          endpoints.feed.youMightLike(refresh)
         ),
       similar: (trackId: string) =>
         request<{ seedTrackId: string; items: FeedItem[] }>(

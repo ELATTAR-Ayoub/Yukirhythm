@@ -87,8 +87,10 @@ export const endpoints = {
   /** Recommendation feeds. (planned — phase 7) */
   feed: {
     jumpBackIn: () => `${API}/feed/jump-back-in`,
-    newReleases: () => `${API}/feed/new-releases`,
-    youMightLike: () => `${API}/feed/you-might-like`,
+    newReleases: (refresh = false) =>
+      `${API}/feed/new-releases${refresh ? "?refresh=1" : ""}`,
+    youMightLike: (refresh = false) =>
+      `${API}/feed/you-might-like${refresh ? "?refresh=1" : ""}`,
     similar: (trackId: string) =>
       `${API}/feed/similar${qs({ trackId })}`,
   },
