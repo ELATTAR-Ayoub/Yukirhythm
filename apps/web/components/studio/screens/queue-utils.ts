@@ -3,6 +3,22 @@ import type { MockCollection, MockTrack } from "./mock-data";
 /** Where an enqueued track lands relative to what's playing. */
 export type EnqueueMode = "next" | "end";
 
+/** Every queue position after the playhead in actual looping playback order.
+ * The current position is excluded, so a one-song queue has no "up next" row. */
+export function loopingUpcomingIndexes(
+  queueLength: number,
+  currentIndex: number
+): number[] {
+  if (queueLength <= 0 || currentIndex >= queueLength) return [];
+  if (currentIndex < 0)
+    return Array.from({ length: queueLength }, (_, index) => index);
+  if (queueLength === 1) return [];
+  return Array.from(
+    { length: queueLength - 1 },
+    (_, offset) => (currentIndex + 1 + offset) % queueLength
+  );
+}
+
 /**
  * Put a track into the running queue.
  *

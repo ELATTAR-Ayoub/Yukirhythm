@@ -1,12 +1,27 @@
 import { describe, it, expect } from "vitest";
 
 import {
+  loopingUpcomingIndexes,
   insertIntoQueue,
   isSameContext,
   removeQueueIndex,
   restoreOrder,
   shuffleOrder,
 } from "./queue-utils";
+
+describe("loopingUpcomingIndexes", () => {
+  it("wraps from the final song to the beginning in playback order", () => {
+    expect(loopingUpcomingIndexes(4, 3)).toEqual([0, 1, 2]);
+  });
+
+  it("does not repeat the only song in a one-track queue", () => {
+    expect(loopingUpcomingIndexes(1, 0)).toEqual([]);
+  });
+
+  it("shows the queue head before playback starts", () => {
+    expect(loopingUpcomingIndexes(3, -1)).toEqual([0, 1, 2]);
+  });
+});
 import {
   MOCK_COLLECTIONS,
   MOCK_TRACKS,

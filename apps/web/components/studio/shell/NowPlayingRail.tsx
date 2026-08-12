@@ -13,6 +13,7 @@ import LikeButton from "@/components/studio/screens/LikeButton";
 import TrackMenu from "@/components/studio/screens/TrackMenu";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
 import { formatDuration } from "@/components/studio/screens/mock-data";
+import { loopingUpcomingIndexes } from "@/components/studio/screens/queue-utils";
 import {
   QUEUE_ADD,
   addMusicHref,
@@ -67,8 +68,9 @@ function UpNextSection() {
   // `start + i` in the queue, and that absolute position — never a findIndex
   // on the track id — is what a click acts on. A track may sit in the queue
   // more than once, and id lookup would answer with the wrong copy.
-  const start = currentIndex >= 0 ? currentIndex + 1 : 0;
-  const upcoming = queue.slice(start, start + UPCOMING_CAP);
+  const upcoming = loopingUpcomingIndexes(queue.length, currentIndex)
+    .slice(0, UPCOMING_CAP)
+    .map((index) => ({ index, track: queue[index] }));
 
   const playKeyHandler = (at: number) => (e: React.KeyboardEvent) => {
     if (e.key === "Enter" || e.key === " ") {
@@ -108,8 +110,7 @@ function UpNextSection() {
         </p>
       ) : (
         <div className="px-3 pb-2 space-y-1">
-          {upcoming.map((track, i) => {
-            const at = start + i;
+          {upcoming.map(({ track, index: at }) => {
             return (
               // Keyed by POSITION, not by track id. The queue is a list, not a
               // set: the same track may legitimately appear twice, and two

@@ -150,7 +150,7 @@ describe("NowPlayingRail", () => {
       ).toBeNull();
     });
 
-    it("shows an empty state when nothing follows the current track", () => {
+    it("wraps to the first tracks when the final track is playing", () => {
       const source = LIKED_SONGS; // trackIds: t2, t5, t7, t10, t8 — t8 is last
       render(
         <MockStudioProvider>
@@ -161,8 +161,9 @@ describe("NowPlayingRail", () => {
 
       fireEvent.click(screen.getByText("seed"));
 
-      expect(screen.getByText("Nothing queued yet.")).toBeTruthy();
-      expect(screen.queryByText("Topographic Heart")).toBeNull();
+      expect(screen.queryByText("Nothing queued yet.")).toBeNull();
+      expect(screen.getByText("Cobalt Dreams")).toBeTruthy();
+      expect(screen.getByText("Topographic Heart")).toBeTruthy();
     });
 
     it("previews the head of the library queue before anything has played", () => {
@@ -406,7 +407,7 @@ describe("up next reads the queue by position", () => {
     // see AdvancePlayhead) onto the LAST copy of the duplicated track `b`.
     //
     // Queue after seeding is [t1, t4, t10, t5, t4, t4] (b = t4); index 5 is
-    // the final slot, so nothing should preview as upcoming. A
+    // the final slot, so the looping queue should preview from the beginning. A
     // findIndex-by-id derivation instead resolves nowPlaying's FIRST
     // occurrence of t4 (index 1) and would wrongly show t10/t5/t4 —
     // already-played tracks — as "up next".
@@ -421,8 +422,8 @@ describe("up next reads the queue by position", () => {
     fireEvent.click(screen.getByText("advance-playhead"));
 
     const upNext = within(screen.getByRole("region", { name: "Up next" }));
-    expect(upNext.getByText("Nothing queued yet.")).toBeTruthy();
-    expect(upNext.queryByText("ASCII Rain")).toBeNull();
-    expect(upNext.queryByText("Topographic Heart")).toBeNull();
+    expect(upNext.queryByText("Nothing queued yet.")).toBeNull();
+    expect(upNext.getByText("Midnight Snowfall")).toBeTruthy();
+    expect(upNext.getByText("ASCII Rain")).toBeTruthy();
   });
 });

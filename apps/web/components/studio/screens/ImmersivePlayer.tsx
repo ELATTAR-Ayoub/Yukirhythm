@@ -13,6 +13,7 @@ import { formatDuration, type MockTrack } from "./mock-data";
 import { useMockStudio } from "./MockStudioProvider";
 import MiniPlayerBar from "./MiniPlayerBar";
 import StudioMediaCard from "./StudioMediaCard";
+import { loopingUpcomingIndexes } from "./queue-utils";
 
 /** Full-page player assembled from Yuki's existing playback primitives. */
 export default function ImmersivePlayer({
@@ -37,8 +38,9 @@ export default function ImmersivePlayer({
   const similar =
     similarResult?.seedId === nowPlaying.id ? similarResult.tracks : [];
   const similarError = similarErrorSeed === nowPlaying.id;
-  const upcomingStart = Math.max(0, currentIndex + 1);
-  const upcoming = queue.slice(upcomingStart);
+  const upcoming = loopingUpcomingIndexes(queue.length, currentIndex).map(
+    (index) => ({ index, track: queue[index] })
+  );
 
   const findSimilar = async () => {
     if (similarLoading) return;
@@ -129,8 +131,7 @@ export default function ImmersivePlayer({
             <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-7 bg-gradient-to-b from-card to-transparent" />
             <div className="h-full touch-pan-y space-y-1 overflow-y-auto overscroll-contain pr-1 no-scrollbar">
               {upcoming.length ? (
-                upcoming.map((track, offset) => {
-                  const at = upcomingStart + offset;
+                upcoming.map(({ track, index: at }) => {
                   return (
                     <button
                       key={`${track.id}:${at}`}
