@@ -22,7 +22,15 @@ export async function GET(req: Request): Promise<Response> {
   const collections: Collection[] = [];
   for (const id of ids) {
     const c = await db.collection("collections").doc(id).get();
-    if (c.exists) collections.push(c.data() as Collection);
+    if (c.exists) {
+      const collection = c.data() as Collection;
+      if (
+        collection.ownerId === uid ||
+        collection.visibility === "public" ||
+        collection.visibility === "unlisted"
+      )
+        collections.push(collection);
+    }
   }
 
   // Cold pad from owned collections, newest first, skipping ones already shown.
@@ -36,8 +44,10 @@ export async function GET(req: Request): Promise<Response> {
       .filter((c) => !ids.includes(c.collectionId))
       .sort(
         (a, b) =>
-          (b.createdAt as unknown as { toMillis(): number }).toMillis() -
-          (a.createdAt as unknown as { toMillis(): number }).toMillis()
+          ((b.createdAt as unknown as { toMillis?(): number })?.toMillis?.() ??
+            0) -
+          ((a.createdAt as unknown as { toMillis?(): number })?.toMillis?.() ??
+            0)
       );
     for (const c of extra) {
       collections.push(c);

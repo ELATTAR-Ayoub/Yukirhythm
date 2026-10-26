@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import type { User as FirebaseUser } from "firebase/auth";
+import type { StudioIdentity as FirebaseUser } from "@/lib/studio/useAuth";
+import { toast } from "sonner";
 
 import {
   MockStudioContext,
@@ -39,7 +40,26 @@ import {
   toStudioTrack,
   toStudioUser,
 } from "@/lib/studio/adapt";
-import type { Track } from "@/lib/catalog/model";
+import {
+  DEFAULT_PRIVACY,
+  type UserPrivacy,
+  type Track,
+} from "@/lib/catalog/model";
+import { toStudioStats } from "@/lib/studio/adapt";
+import {
+  acknowledgeListens,
+  clearSavedListens,
+  localListeningStats,
+  pendingListens,
+  savedListens,
+  storeListen,
+  type LocalListen,
+} from "@/lib/studio/browser-history";
+import {
+  clearCachedStudioFeeds,
+  readCachedStudioFeed,
+  saveCachedStudioFeed,
+} from "@/components/studio/screens/useCachedStudioFeed";
 import type {
   MockHistoryEntry,
   MockStats,
@@ -66,49 +86,9 @@ type ListeningSession = {
   lastPositionSec: number | null;
 };
 
-type ListeningEvent = {
-  eventId: string;
-  trackId: string;
-  collectionId: string | null;
-  listenedSec: number;
-  startedAt: number;
-  source: "collection" | "library" | "search" | "recommendation";
-  recommendationId: string | null;
-  clientHourOfDay: number;
-  durationSec: number;
-  artists: { artistId: string; name: string }[];
-  labels: NonNullable<MockTrack["labels"]>;
-};
+type ListeningEvent = LocalListen;
 
 const MIN_DURABLE_LISTEN_SEC = 5;
-
-const pendingHistoryKey = (uid: string) => `yukirhythm:history:v1:${uid}`;
-
-function readPendingHistory(uid: string): ListeningEvent[] {
-  try {
-    const parsed = JSON.parse(
-      window.localStorage.getItem(pendingHistoryKey(uid)) ?? "[]"
-    );
-    return Array.isArray(parsed) ? (parsed as ListeningEvent[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-function writePendingHistory(uid: string, events: ListeningEvent[]): void {
-  try {
-    if (events.length) {
-      window.localStorage.setItem(
-        pendingHistoryKey(uid),
-        JSON.stringify(events)
-      );
-    } else {
-      window.localStorage.removeItem(pendingHistoryKey(uid));
-    }
-  } catch {
-    // The immediate network path still works when browser storage is blocked.
-  }
-}
 
 function freshListeningSession(
   positionSec: number | null = null
@@ -141,6 +121,7 @@ function firebaseUserSnapshot(user: FirebaseUser): MockUser {
 export default function StudioProvider({
   children,
   authenticatedUser,
+  authOnly = false,
 }: {
   children: React.ReactNode;
   /**
@@ -148,19 +129,32 @@ export default function StudioProvider({
    * omitted (the auth page and isolated tests), observe auth here as before.
    */
   authenticatedUser?: FirebaseUser | null;
+  authOnly?: boolean;
 }) {
-  const backend = useBackend();
   const { user: observedFbUser } = useAuthState();
   const fbUser =
     authenticatedUser === undefined ? observedFbUser : authenticatedUser;
+  const backend = useBackend(fbUser?.uid);
 
   const [user, setUser] = useState<MockUser | null>(() =>
     fbUser ? firebaseUserSnapshot(fbUser) : null
   );
+  const [privacy, setPrivacy] = useState<UserPrivacy>({ ...DEFAULT_PRIVACY });
+  const [privacyLoading, setPrivacyLoading] = useState(true);
   const [collections, setCollections] = useState<MockCollection[]>([]);
   const collectionsRef = useRef<MockCollection[]>([]);
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
+  const likedIdsRef = useRef<Set<string>>(new Set());
+  const pendingLikesRef = useRef(new Set<string>());
+  const likeWritesRef = useRef(
+    new Map<
+      string,
+      { confirmed: boolean; desired: boolean; task: Promise<void> }
+    >()
+  );
+  const likesRevisionRef = useRef(0);
   const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set());
+  const pendingPinsRef = useRef(new Set<string>());
   const [libraryFilter, setLibraryFilter] =
     useState<LibraryFilter>("playlists");
   const [libraryLoading, setLibraryLoading] = useState(true);
@@ -172,6 +166,7 @@ export default function StudioProvider({
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [playerEpoch, setPlayerEpoch] = useState(0);
   const [progressSec, setProgressSec] = useState(0);
   const [navDirection, setNavDirection] = useState<"next" | "prev" | null>(
     null
@@ -201,9 +196,10 @@ export default function StudioProvider({
    *  the background, so an older request must never replace a queue chosen
    *  while it was still in flight. */
   const playRequestRef = useRef(0);
-  /** Loaded once with the profile. Privacy-off sessions never issue a history
-   * request; the event endpoint therefore does not reread privacy per song. */
+  /** Loaded with the profile to avoid recording privacy-off sessions locally.
+   * The server independently enforces the saved consent on every upload. */
   const saveHistoryRef = useRef(false);
+  const feedRevisionRef = useRef(0);
 
   // search
   const [searchResults, setSearchResults] = useState<MockTrack[]>([]);
@@ -232,10 +228,14 @@ export default function StudioProvider({
 
   useEffect(() => {
     if (!fbUser) return;
-    const pending = readPendingHistory(fbUser.uid);
+    const pending = savedListens(fbUser.uid);
     let live = true;
     queueMicrotask(() => {
       if (!live) return;
+      registerStudioTracks(
+        pending.flatMap((event) => (event.track ? [event.track] : []))
+      );
+      setStats(toStudioStats(localListeningStats(pending)));
       setRecents(
         toStudioHistory(
           pending.map((event) => ({
@@ -253,6 +253,72 @@ export default function StudioProvider({
       live = false;
     };
   }, [fbUser]);
+
+  const syncHistory = useCallback(
+    function sync(uid: string, keepalive = false) {
+      if (!saveHistoryRef.current) return;
+      const events = pendingListens(uid).slice(0, 20);
+      if (!events.length) return;
+      const upload = events.map((event) => ({ ...event, track: undefined }));
+      void backend.events
+        .ingest(upload, { keepalive })
+        .then((result) => {
+          if (result.ok) {
+            const before = pendingListens(uid).length;
+            acknowledgeListens(
+              uid,
+              new Set(events.map((event) => event.eventId))
+            );
+            const remaining = pendingListens(uid).length;
+            if (!keepalive && remaining > 0 && remaining < before) sync(uid);
+          }
+        })
+        .catch((error) => console.warn("Listening history sync failed", error));
+    },
+    [backend]
+  );
+
+  const updatePrivacy = useCallback(
+    async (patch: Partial<UserPrivacy>) => {
+      const previous = saveHistoryRef.current;
+      if (patch.saveHistory === false) saveHistoryRef.current = false;
+      try {
+        const updated = await backend.me.update({ privacy: patch });
+        setPrivacy({ ...DEFAULT_PRIVACY, ...updated.privacy });
+        saveHistoryRef.current = updated.privacy.saveHistory;
+        if (patch.saveHistory !== undefined) {
+          // Never include seconds heard while consent was off in a later,
+          // newly-consented listen.
+          listeningRef.current = freshListeningSession();
+        }
+        if (fbUser) {
+          feedRevisionRef.current += 1;
+          clearCachedStudioFeeds(fbUser.uid);
+          if (!updated.privacy.saveHistory)
+            acknowledgeListens(
+              fbUser.uid,
+              new Set(pendingListens(fbUser.uid).map((e) => e.eventId))
+            );
+        }
+      } catch (error) {
+        saveHistoryRef.current = previous;
+        throw error;
+      }
+    },
+    [backend, fbUser]
+  );
+
+  const clearListeningHistory = useCallback(async () => {
+    await backend.me.clearHistory();
+    if (fbUser) {
+      feedRevisionRef.current += 1;
+      clearSavedListens(fbUser.uid);
+      clearCachedStudioFeeds(fbUser.uid);
+    }
+    listeningRef.current = freshListeningSession(progressSec);
+    setRecents([]);
+    setStats(toStudioStats(localListeningStats([])));
+  }, [backend, fbUser, progressSec]);
 
   /** Register tracks so the screens' getTrack/getCollectionTracks resolve them. */
   const absorb = useCallback((tracks: Track[]) => {
@@ -291,10 +357,8 @@ export default function StudioProvider({
 
   // ---- load the user + library on sign-in --------------------------------
   const refreshLibrary = useCallback(async () => {
-    // allSettled, not all: these are independent reads, and the Liked Songs
-    // endpoint needs a composite index that is not deployed yet. One rejection
-    // used to throw out of here, out of the sign-in effect above it, and leave
-    // the user with NO library and libraryLoading stuck true.
+    // Independent reads: one unavailable endpoint must not hide the other.
+    const likesRevision = likesRevisionRef.current;
     const [ownedRes, likedRes] = await Promise.allSettled([
       backend.collections.list(),
       backend.me.likes(),
@@ -303,7 +367,17 @@ export default function StudioProvider({
     const likedTracks =
       likedRes.status === "fulfilled" ? likedRes.value.tracks : [];
     absorb(likedTracks);
-    const likedSet = new Set(likedTracks.map((t) => t.trackId));
+    const likedSet = new Set(
+      likedRes.status === "fulfilled" &&
+        likesRevision === likesRevisionRef.current
+        ? likedRes.value.trackIds
+        : likedIdsRef.current
+    );
+    for (const id of pendingLikesRef.current) {
+      if (likedIdsRef.current.has(id)) likedSet.add(id);
+      else likedSet.delete(id);
+    }
+    likedIdsRef.current = likedSet;
     setLikedIds(likedSet);
 
     // Every user always has Liked Songs, even when the likes call itself
@@ -313,7 +387,7 @@ export default function StudioProvider({
       title: "Liked Songs",
       desc: "Everything you liked.",
       texture: "tx-k2-vinyl",
-      trackIds: likedTracks.map((t) => t.trackId),
+      trackIds: [...likedSet],
       likes: 0,
       tags: ["liked"],
       kind: "music",
@@ -323,9 +397,13 @@ export default function StudioProvider({
     const owns =
       ownedRes.status === "fulfilled"
         ? ownedRes.value.map((c) =>
-            toStudioCollection(c, { pinned: pinnedIds.has(c.collectionId) })
+            toStudioCollection(c, {
+              pinned: c.isPinned ?? pinnedIds.has(c.collectionId),
+            })
           )
-        : [];
+        : collectionsRef.current.filter(
+            (collection) => collection.id !== LIKED_ID
+          );
     const nextCollections = [likedCollection, ...owns];
     collectionsRef.current = nextCollections;
     setCollections(nextCollections);
@@ -334,8 +412,12 @@ export default function StudioProvider({
   useEffect(() => {
     let live = true;
     (async () => {
+      if (authOnly) return;
       if (!fbUser) {
         saveHistoryRef.current = false;
+        likedIdsRef.current = new Set();
+        setLikedIds(new Set());
+        pendingLikesRef.current.clear();
         setUser(null);
         collectionsRef.current = [];
         setCollections([]);
@@ -353,8 +435,10 @@ export default function StudioProvider({
       // immediately instead of briefly rendering a signed-out shell while the
       // backend profile document is still in flight.
       setUser(firebaseUserSnapshot(fbUser));
+      saveHistoryRef.current = false;
+      setPrivacyLoading(true);
       setLibraryLoading(true);
-      setStats(null);
+      setStats(toStudioStats(localListeningStats(savedListens(fbUser.uid))));
       setRecents([]);
       setStatsLoading(true);
       setRecentsLoading(true);
@@ -385,22 +469,49 @@ export default function StudioProvider({
         });
         if (!live) return;
 
-        void backend.feed
-          .newReleases()
-          .then((r) => {
-            if (live) setNewReleases(absorbFeed(r.items));
-          }, warn("new-releases"))
-          .finally(() => {
-            if (live) setNewReleasesLoading(false);
-          });
-        void backend.feed
-          .youMightLike()
-          .then((r) => {
-            if (live) setYouMightLike(absorbFeed(r.items));
-          }, warn("you-might-like"))
-          .finally(() => {
-            if (live) setYouMightLikeLoading(false);
-          });
+        const feedRevision = feedRevisionRef.current;
+        const cachedNewReleases = readCachedStudioFeed(
+          fbUser.uid,
+          "new-releases"
+        );
+        const cachedSuggestions = readCachedStudioFeed(
+          fbUser.uid,
+          "you-might-like"
+        );
+        if (cachedNewReleases) {
+          registerStudioTracks(cachedNewReleases);
+          setNewReleases(cachedNewReleases);
+          setNewReleasesLoading(false);
+        } else
+          void backend.feed
+            .newReleases()
+            .then((r) => {
+              if (live && feedRevision === feedRevisionRef.current) {
+                const tracks = absorbFeed(r.items);
+                setNewReleases(tracks);
+                saveCachedStudioFeed(fbUser.uid, "new-releases", tracks);
+              }
+            }, warn("new-releases"))
+            .finally(() => {
+              if (live) setNewReleasesLoading(false);
+            });
+        if (cachedSuggestions) {
+          registerStudioTracks(cachedSuggestions);
+          setYouMightLike(cachedSuggestions);
+          setYouMightLikeLoading(false);
+        } else
+          void backend.feed
+            .youMightLike()
+            .then((r) => {
+              if (live && feedRevision === feedRevisionRef.current) {
+                const tracks = absorbFeed(r.items);
+                setYouMightLike(tracks);
+                saveCachedStudioFeed(fbUser.uid, "you-might-like", tracks);
+              }
+            }, warn("you-might-like"))
+            .finally(() => {
+              if (live) setYouMightLikeLoading(false);
+            });
         // Derived from browser-local history and the in-memory library below.
         if (live) setJumpBackInLoading(false);
 
@@ -410,7 +521,11 @@ export default function StudioProvider({
         ]);
         if (!live) return;
         if (meResult.status === "fulfilled" && meResult.value) {
-          saveHistoryRef.current = meResult.value.privacy?.saveHistory !== false;
+          saveHistoryRef.current =
+            meResult.value.privacy?.saveHistory !== false;
+          setPrivacy({ ...DEFAULT_PRIVACY, ...meResult.value.privacy });
+          setPrivacyLoading(false);
+          syncHistory(fbUser.uid);
           setUser(toStudioUser(meResult.value));
         } else if (meResult.status === "rejected") {
           console.error("Failed to load user profile", meResult.reason);
@@ -443,6 +558,9 @@ export default function StudioProvider({
       void Promise.resolve(readBrowserPlayback(fbUser.uid))
         .then(async (state) => {
           if (!live || !state) return;
+          const savedVolume = Math.min(1, Math.max(0, state.volume ?? 1));
+          setVolumeState(savedVolume);
+          if (savedVolume > 0) preMute.current = savedVolume;
           // Nothing was ever playing (fresh account, or an already-empty
           // saved state) — leave the player cold rather than "restoring" a
           // no-op.
@@ -456,9 +574,10 @@ export default function StudioProvider({
           const savedTracks = Array.isArray(state.queueTracks)
             ? state.queueTracks.filter((track) => ids.includes(track.id))
             : [];
-          const resolved = savedTracks.length === ids.length
-            ? savedTracks
-            : await resolveTrackIds(ids);
+          const resolved =
+            savedTracks.length === ids.length
+              ? savedTracks
+              : await resolveTrackIds(ids);
           if (savedTracks.length === ids.length) registerStudioTracks(resolved);
           if (!live) return;
           // Every id failed to resolve (e.g. deleted/unembeddable videos) —
@@ -491,6 +610,7 @@ export default function StudioProvider({
                 : 0;
 
           setQueue(resolved);
+          setShuffled(state.shuffleMode === true);
           setPlayingCollection(
             state.sourceType === "collection" && state.sourceId
               ? (collectionsRef.current.find(
@@ -540,7 +660,7 @@ export default function StudioProvider({
       live = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fbUser]);
+  }, [fbUser, authOnly]);
 
   useEffect(() => {
     const ids = [...new Set(recents.map((entry) => entry.collectionId))];
@@ -555,61 +675,64 @@ export default function StudioProvider({
   }, [collections, recents]);
 
   // ---- playback ----------------------------------------------------------
-  const flushEvent = useCallback(() => {
-    const t = nowPlaying;
-    const session = listeningRef.current;
-    if (!t || !session || session.listenedSec < MIN_DURABLE_LISTEN_SEC) return;
+  const flushEvent = useCallback(
+    (keepalive = false) => {
+      const t = nowPlaying;
+      const session = listeningRef.current;
+      if (
+        !t ||
+        !session ||
+        session.listenedSec < MIN_DURABLE_LISTEN_SEC ||
+        !saveHistoryRef.current
+      )
+        return;
 
-    const event: ListeningEvent = {
-      eventId: session.eventId,
-      trackId: t.id,
-      collectionId: playingCollection?.id ?? null,
-      listenedSec: Math.floor(session.listenedSec),
-      startedAt: session.startedAt,
-      source: playingCollection ? "collection" : (t.eventSource ?? "library"),
-      recommendationId: t.recommendationId ?? null,
-      clientHourOfDay: new Date().getHours(),
-      durationSec: t.durationSec,
-      artists: t.artists ?? [],
-      labels: t.labels ?? [],
-    };
-    // Rotate before saving so pagehide plus a simultaneous track transition
-    // cannot record the same browser-local session twice.
-    listeningRef.current = freshListeningSession(session.lastPositionSec);
-    if (fbUser) {
-      const pending = readPendingHistory(fbUser.uid).filter(
-        (item) => item.eventId !== event.eventId
-      );
-      const next = [event, ...pending].slice(0, 200);
-      writePendingHistory(fbUser.uid, next);
-      if (saveHistoryRef.current) {
-        void backend.events
-          .ingest([event], {
-            tasteSnapshot: next.slice(0, 100),
-          })
-          .then((result) => {
-            if ((result.written ?? 0) < 1) return;
-            const remaining = readPendingHistory(fbUser.uid).filter(
-              (item) => item.eventId !== event.eventId
-            );
-            writePendingHistory(fbUser.uid, remaining);
-          })
-          .catch((err) => console.warn("Listening history sync failed", err));
+      const event: ListeningEvent = {
+        eventId: session.eventId,
+        trackId: t.id,
+        collectionId: playingCollection?.id ?? null,
+        listenedSec: Math.floor(session.listenedSec),
+        startedAt: session.startedAt,
+        source: playingCollection ? "collection" : (t.eventSource ?? "library"),
+        recommendationId: t.recommendationId ?? null,
+        clientHourOfDay: new Date().getHours(),
+        durationSec: t.durationSec,
+        artists: t.artists ?? [],
+        labels: t.labels ?? [],
+        track: t,
+      };
+      // Rotate before saving so pagehide plus a simultaneous track transition
+      // cannot record the same browser-local session twice.
+      listeningRef.current = freshListeningSession(session.lastPositionSec);
+      if (fbUser) {
+        try {
+          storeListen(fbUser.uid, event);
+        } catch {
+          toast.error(
+            "Couldn't save listening history. Browser storage may be full or blocked.",
+            { id: "guest-history-storage" }
+          );
+          return;
+        }
+        const next = savedListens(fbUser.uid);
+        setStats(toStudioStats(localListeningStats(next)));
+        syncHistory(fbUser.uid, keepalive);
+        setRecents(
+          toStudioHistory(
+            next.map((item) => ({
+              trackId: item.trackId,
+              startedAtMs: item.startedAt,
+              collection: item.collectionId
+                ? { collectionId: item.collectionId }
+                : null,
+            })),
+            Date.now()
+          )
+        );
       }
-      setRecents(
-        toStudioHistory(
-          next.map((item) => ({
-            trackId: item.trackId,
-            startedAtMs: item.startedAt,
-            collection: item.collectionId
-              ? { collectionId: item.collectionId }
-              : null,
-          })),
-          Date.now()
-        )
-      );
-    }
-  }, [backend, fbUser, nowPlaying, playingCollection]);
+    },
+    [fbUser, nowPlaying, playingCollection, syncHistory]
+  );
 
   const startTrack = useCallback((index: number) => {
     setCurrentIndex(index);
@@ -816,7 +939,9 @@ export default function StudioProvider({
     (track: MockTrack) => {
       flushEvent();
       registerStudioTracks([track]);
-      setQueue((current) => insertIntoQueue(current, track, "next", currentIndex));
+      setQueue((current) =>
+        insertIntoQueue(current, track, "next", currentIndex)
+      );
       setCurrentIndex((index) => (index < 0 ? 0 : index + 1));
       setPlayingCollection(null);
       setProgressSec(0);
@@ -878,7 +1003,15 @@ export default function StudioProvider({
     [nowPlaying, progressSec]
   );
   const next = useCallback(() => {
+    if (!queue.length || currentIndex < 0) return;
     flushEvent();
+    const nextIndex = (currentIndex + 1) % queue.length;
+    if (queue[nextIndex]?.id === nowPlaying?.id) {
+      // A repeated video keeps the same URL; remount so an ended iframe really
+      // restarts rather than leaving the transport claiming it is playing.
+      setPlayerEpoch((epoch) => epoch + 1);
+      setIsLoading(true);
+    }
     // The wrap IS the point: onEnded() calls next() with nothing else
     // special-cased, so a finished queue — shuffled or not — restarts from
     // the top instead of stopping dead at the last track.
@@ -889,7 +1022,7 @@ export default function StudioProvider({
     setProgressSec(0);
     setIsPlaying(true);
     listeningRef.current = freshListeningSession(0);
-  }, [queue.length, flushEvent]);
+  }, [queue, currentIndex, nowPlaying?.id, flushEvent]);
 
   const playerRef = useRef<SeekablePlayer | null>(null);
   const seek = useCallback(
@@ -967,7 +1100,7 @@ export default function StudioProvider({
   );
 
   useEffect(() => {
-    const onPageHide = () => flushEvent();
+    const onPageHide = () => flushEvent(true);
     window.addEventListener("pagehide", onPageHide);
     return () => window.removeEventListener("pagehide", onPageHide);
   }, [flushEvent]);
@@ -1127,75 +1260,139 @@ export default function StudioProvider({
     [likedIds]
   );
   const toggleLike = useCallback(
-    (trackId: string) => {
-      const wasLiked = likedIds.has(trackId);
-      setLikedIds((s) => {
-        const n = new Set(s);
-        if (wasLiked) n.delete(trackId);
-        else n.add(trackId);
-        return n;
-      });
+    async (trackId: string) => {
+      likesRevisionRef.current += 1;
+      const wasLiked = likedIdsRef.current.has(trackId);
+      pendingLikesRef.current.add(trackId);
+      const apply = (liked: boolean) => {
+        const next = new Set(likedIdsRef.current);
+        if (liked) next.add(trackId);
+        else next.delete(trackId);
+        likedIdsRef.current = next;
+        setLikedIds(next);
+        setCollections((cs) => {
+          const updated = cs.map((c) =>
+            c.id === LIKED_ID
+              ? {
+                  ...c,
+                  trackIds: liked
+                    ? [trackId, ...c.trackIds.filter((id) => id !== trackId)]
+                    : c.trackIds.filter((id) => id !== trackId),
+                }
+              : c
+          );
+          collectionsRef.current = updated;
+          return updated;
+        });
+      };
       // Update the Liked Songs collection itself, not just the likedIds set,
       // so the playlist reflects the like on the click rather than after the
       // round-trip to the server and back through refreshLibrary. The
       // endpoint returns newest-first, so a newly liked track goes to the
       // front here too.
-      setCollections((cs) =>
-        cs.map((c) =>
-          c.id === LIKED_ID
-            ? {
-                ...c,
-                trackIds: wasLiked
-                  ? c.trackIds.filter((id) => id !== trackId)
-                  : [trackId, ...c.trackIds.filter((id) => id !== trackId)],
-              }
-            : c
-        )
-      );
-      void backend.me
-        .setTrackState(trackId, { isLiked: !wasLiked })
-        .then(refreshLibrary);
+      apply(!wasLiked);
+      const running = likeWritesRef.current.get(trackId);
+      if (running) {
+        running.desired = !wasLiked;
+        return running.task;
+      }
+      const operation = {
+        confirmed: wasLiked,
+        desired: !wasLiked,
+        task: Promise.resolve(),
+      };
+      likeWritesRef.current.set(trackId, operation);
+      operation.task = (async () => {
+        try {
+          while (operation.confirmed !== operation.desired) {
+            const target = operation.desired;
+            await backend.me.setTrackState(trackId, { isLiked: target });
+            operation.confirmed = target;
+          }
+        } catch {
+          apply(operation.confirmed);
+          toast.error("Couldn't save your like. Please try again.");
+        } finally {
+          pendingLikesRef.current.delete(trackId);
+          likeWritesRef.current.delete(trackId);
+        }
+      })();
+      return operation.task;
     },
-    [backend, likedIds, refreshLibrary]
+    [backend]
   );
 
   const togglePin = useCallback(
     (id: string) => {
       // Liked Songs is permanent: nothing can unpin it, no matter what calls in.
       if (id === LIKED_ID) return;
-      const wasPinned = pinnedIds.has(id);
+      if (pendingPinsRef.current.has(id)) return;
+      pendingPinsRef.current.add(id);
+      const wasPinned =
+        collectionsRef.current.find((c) => c.id === id)?.pinned ??
+        pinnedIds.has(id);
       setPinnedIds((s) => {
         const n = new Set(s);
         if (wasPinned) n.delete(id);
         else n.add(id);
         return n;
       });
-      setCollections((cs) =>
-        cs.map((c) => (c.id === id ? { ...c, pinned: !wasPinned } : c))
-      );
-      void backend.me.setPin(id, { isPinned: !wasPinned });
+      setCollections((cs) => {
+        const next = cs.map((c) =>
+          c.id === id ? { ...c, pinned: !wasPinned } : c
+        );
+        collectionsRef.current = next;
+        return next;
+      });
+      void backend.me
+        .setPin(id, { isPinned: !wasPinned })
+        .catch(() => {
+          setPinnedIds((current) => {
+            const next = new Set(current);
+            if (wasPinned) next.add(id);
+            else next.delete(id);
+            return next;
+          });
+          setCollections((cs) => {
+            const next = cs.map((c) =>
+              c.id === id ? { ...c, pinned: wasPinned } : c
+            );
+            collectionsRef.current = next;
+            return next;
+          });
+          toast.error("Couldn't save the pin. Please try again.");
+        })
+        .finally(() => pendingPinsRef.current.delete(id));
     },
     [backend, pinnedIds]
   );
 
   const toggleTrackInCollection = useCallback(
     (collectionId: string, trackId: string) => {
+      if (collectionId === LIKED_ID) return toggleLike(trackId);
       const c = collections.find((x) => x.id === collectionId);
       const has = c?.trackIds.includes(trackId);
       const op = has
         ? backend.collections.removeTrack(collectionId, trackId)
         : backend.collections.addTrack(collectionId, trackId);
-      void op.then(refreshLibrary);
+      return op.then(refreshLibrary).catch(() => {
+        toast.error("Couldn't update the playlist. Please try again.");
+      });
     },
-    [backend, collections, refreshLibrary]
+    [backend, collections, refreshLibrary, toggleLike]
   );
   const addTrackToCollection = useCallback(
     (collectionId: string, trackId: string) => {
+      if (collectionId === LIKED_ID) {
+        if (!likedIdsRef.current.has(trackId)) return toggleLike(trackId);
+        return;
+      }
       void backend.collections
         .addTrack(collectionId, trackId)
-        .then(refreshLibrary);
+        .then(refreshLibrary)
+        .catch(() => toast.error("Couldn't add the track. Please try again."));
     },
-    [backend, refreshLibrary]
+    [backend, refreshLibrary, toggleLike]
   );
 
   const createCollection = useCallback(
@@ -1264,11 +1461,35 @@ export default function StudioProvider({
   // Defaults to google so any caller that omits the argument (there are
   // none left post-fix, but the type stays optional-arg compatible with the
   // mock provider) still gets a sane popup rather than a runtime crash.
-  const signIn = useCallback(
-    (provider: "google" | "facebook" = "google") => void fbSignIn(provider),
-    []
+  const signIn = useCallback((provider: "google" | "facebook" = "google") => {
+    void fbSignIn(provider).catch((error: { code?: string }) => {
+      if (
+        error.code !== "auth/popup-closed-by-user" &&
+        error.code !== "auth/cancelled-popup-request"
+      ) {
+        toast.error("Couldn't sign in. Please try again.");
+      }
+    });
+  }, []);
+  const signOut = useCallback(() => {
+    void signOutUser().catch(() =>
+      toast.error("Couldn't sign out. Please try again.")
+    );
+  }, []);
+
+  const makeCollectionShareable = useCallback(
+    async (id: string) => {
+      const saved = await backend.collections.update(id, {
+        visibility: "unlisted",
+      });
+      setCollections((current) =>
+        current.map((c) =>
+          c.id === id ? { ...c, visibility: saved.visibility } : c
+        )
+      );
+    },
+    [backend]
   );
-  const signOut = useCallback(() => void signOutUser(), []);
 
   const value: MockStudioValue = useMemo(
     () => ({
@@ -1302,6 +1523,11 @@ export default function StudioProvider({
       toggleShuffle,
       playShuffled,
       user,
+      privacy,
+      privacyLoading,
+      updatePrivacy,
+      clearListeningHistory,
+      makeCollectionShareable,
       signIn,
       signOut,
       searchResults,
@@ -1370,6 +1596,11 @@ export default function StudioProvider({
       toggleShuffle,
       playShuffled,
       user,
+      privacy,
+      privacyLoading,
+      updatePrivacy,
+      clearListeningHistory,
+      makeCollectionShareable,
       signIn,
       signOut,
       searchResults,
@@ -1418,6 +1649,7 @@ export default function StudioProvider({
           style={{ position: "fixed", width: 0, height: 0, overflow: "hidden" }}
         >
           <HiddenYouTubePlayer
+            key={playerEpoch}
             playerRef={playerRef}
             url={`https://www.youtube.com/watch?v=${nowPlaying.id}`}
             playing={isPlaying && !previewTrack}
@@ -1452,6 +1684,13 @@ export default function StudioProvider({
               if (delta > 0 && delta <= 5) session.listenedSec += delta;
             }}
             onEnded={() => next()}
+            onError={() => {
+              setIsLoading(false);
+              setIsPlaying(false);
+              toast.error(
+                "This track couldn't play. Try another song or press play to retry."
+              );
+            }}
           />
         </div>
       )}
@@ -1474,6 +1713,10 @@ export default function StudioProvider({
                 stopPreview();
             }}
             onEnded={stopPreview}
+            onError={() => {
+              stopPreview();
+              toast.error("Preview unavailable for this track.");
+            }}
           />
         </div>
       )}

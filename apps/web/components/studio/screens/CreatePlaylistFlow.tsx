@@ -588,7 +588,8 @@ function ReviewStep({ draft }: { draft: Draft }) {
 export default function CreatePlaylistFlow({
   onCreated,
 }: CreatePlaylistFlowProps) {
-  const { createCollection } = useMockStudio();
+  const { createCollectionAsync } = useMockStudio();
+  const [saving, setSaving] = useState(false);
   const [step, setStep] = useState<Step>(1);
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
 
@@ -603,20 +604,27 @@ export default function CreatePlaylistFlow({
     }));
   };
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     const title = draft.title.trim();
-    if (!title) return;
-    const created = createCollection({
-      title,
-      desc: draft.desc.trim(),
-      tags: draft.tags,
-      kind: draft.kind,
-      texture: draft.texture,
-      cover: draft.cover,
-      trackIds: draft.trackIds,
-    });
-    toast(`Created “${title}”`);
-    onCreated(created);
+    if (!title || saving) return;
+    setSaving(true);
+    try {
+      const created = await createCollectionAsync({
+        title,
+        desc: draft.desc.trim(),
+        tags: draft.tags,
+        kind: draft.kind,
+        texture: draft.texture,
+        cover: draft.cover,
+        trackIds: draft.trackIds,
+      });
+      toast(`Created “${title}”`);
+      onCreated(created);
+    } catch {
+      toast.error("Couldn't create the playlist. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   // A fixed-height flex column, not `space-y-6` around three siblings: the
@@ -653,6 +661,7 @@ export default function CreatePlaylistFlow({
             type="button"
             variant="outline"
             className="flex-1"
+            disabled={saving}
             onClick={() => setStep((s) => (s - 1) as Step)}
           >
             Back
@@ -668,8 +677,13 @@ export default function CreatePlaylistFlow({
             Next
           </Button>
         ) : (
-          <Button type="button" className="flex-1" onClick={handleCreate}>
-            Create playlist
+          <Button
+            type="button"
+            className="flex-1"
+            disabled={saving}
+            onClick={handleCreate}
+          >
+            {saving ? "Creating playlist…" : "Create playlist"}
           </Button>
         )}
       </div>

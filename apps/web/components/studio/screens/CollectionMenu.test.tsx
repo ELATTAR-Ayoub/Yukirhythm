@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 
 import MockStudioProvider, { useMockStudio } from "./MockStudioProvider";
-import { LIKED_SONGS, LIKED_SONGS_ID, MOCK_COLLECTIONS } from "./mock-data";
+import { LIKED_SONGS, MOCK_COLLECTIONS } from "./mock-data";
 import CollectionMenu from "./CollectionMenu";
 
 /** Surfaces the store's pinned flag so pinning is asserted as state. */
@@ -23,8 +23,8 @@ function Harness({ collectionId }: { collectionId: string }) {
 function renderMenu() {
   return render(
     <MockStudioProvider>
-      <PinProbe collectionId={LIKED_SONGS_ID} />
-      <Harness collectionId={LIKED_SONGS_ID} />
+      <PinProbe collectionId={MOCK_COLLECTIONS[0].id} />
+      <Harness collectionId={MOCK_COLLECTIONS[0].id} />
     </MockStudioProvider>
   );
 }
@@ -103,7 +103,9 @@ describe("CollectionMenu", () => {
     fireEvent.click(screen.getByText("Copy link"));
 
     expect(writeText).toHaveBeenCalledTimes(1);
-    expect(writeText.mock.calls[0][0]).toContain("/playlist/liked");
+    expect(writeText.mock.calls[0][0]).toContain(
+      `/playlist/${MOCK_COLLECTIONS[0].id}`
+    );
   });
 
   it("offers share targets that open rather than post", () => {

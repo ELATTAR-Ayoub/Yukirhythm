@@ -165,6 +165,7 @@ export default function CollectionDetail({
     shuffled,
     toggleShuffle,
     playShuffled,
+    user,
   } = useMockStudio();
   const router = useRouter();
   const [view, setView] = useState<TrackView>("rows");
@@ -267,15 +268,19 @@ export default function CollectionDetail({
       <div className="flex items-center justify-between gap-3 mt-6 mb-2">
         {onPlayAt ? <span /> : <SortControl sort={sort} onChange={setSort} />}
         <div className="flex items-center gap-2">
-          <PlayerButton
-            variant="outline"
-            size="sm"
-            aria-label="Add music"
-            onClick={() => router.push(addHref ?? addMusicHref(collection.id))}
-            data-signal="add_music_open"
-          >
-            <PlusIcon />
-          </PlayerButton>
+          {(!collection.ownerId || collection.ownerId === user?.id) && (
+            <PlayerButton
+              variant="outline"
+              size="sm"
+              aria-label="Add music"
+              onClick={() =>
+                router.push(addHref ?? addMusicHref(collection.id))
+              }
+              data-signal="add_music_open"
+            >
+              <PlusIcon />
+            </PlayerButton>
+          )}
           <ViewToggle view={view} onChange={setView} />
         </div>
       </div>

@@ -10,34 +10,34 @@ const BASE = SCREENS;
 
 export const metadata: Metadata = {
   title: "Terms · Yukirhythm",
-  description: "The mock terms of service for the Yukirhythm screens preview.",
+  description: "How Yukirhythm handles sign-in, playback, and saved data.",
 };
 
 const SECTIONS = [
   {
     label: "01",
-    title: "This is a preview",
-    body: "Yukirhythm's screens area is a design-system prototype. Nothing you do here reaches a server, no account is created, and no data leaves your browser. State resets when you reload the page.",
+    title: "Using Yukirhythm",
+    body: "Yukirhythm searches music and plays available tracks through YouTube. Track availability depends on YouTube, and some videos may be unavailable in your region or unable to play in an embedded player.",
   },
   {
     label: "02",
-    title: "The music is fake",
-    body: "Every track, artist, playlist and cover you see is generated placeholder content. Artwork is drawn from the studio texture pack, not from any real release. Playback is simulated, so no audio is streamed or downloaded.",
+    title: "Playback",
+    body: "Playback uses YouTube's embedded player and contacts YouTube. Audio files are not stored by Yukirhythm. Search results, artwork, and track information come from external providers.",
   },
   {
     label: "03",
-    title: "Sign-in is simulated",
-    body: "The Google and Facebook buttons flip a local flag and nothing more. No OAuth flow runs, no credentials are collected, and no provider is contacted. The email shown on the settings screen is fixture data.",
+    title: "Your account",
+    body: "Google and Facebook sign-in use Firebase Authentication. Yukirhythm stores your account identifier and basic profile information so your library can be associated with your account.",
   },
   {
     label: "04",
     title: "What we store",
-    body: "One thing: your appearance preference, kept in this browser's local storage so the theme survives a reload. Clearing site data removes it. There are no cookies, analytics or third-party scripts on these screens.",
+    body: "Your profile preferences, likes, and playlists are saved to the server. When Save listening history is enabled, meaningful listens are also saved and can be used for recommendations when personalization is enabled. Privacy settings let you change these preferences and clear listening history.",
   },
   {
     label: "05",
-    title: "No warranty, no service",
-    body: "This prototype is provided as-is to demonstrate interface and motion decisions. It is not a product, carries no availability guarantee, and may change or disappear without notice.",
+    title: "Data in this browser",
+    body: "Playback position, queue, volume, appearance, cached recommendations, and a recent listening archive are stored in this browser. Clearing site data removes these local copies. Playback state and local listening statistics do not currently sync between devices.",
   },
 ];
 
@@ -48,8 +48,7 @@ export default function TermsScreen() {
         <BackHeader title="Terms" fallbackHref={`${BASE}/auth`} />
 
         <p className="type-small text-muted-foreground">
-          The short version: this is a prototype, the music is not real, and
-          nothing here touches the network.
+          How sign-in, playback, and saved data work in Yukirhythm.
         </p>
 
         <div className="space-y-7">

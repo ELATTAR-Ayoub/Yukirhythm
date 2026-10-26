@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { CheckIcon, PlusIcon } from "@radix-ui/react-icons";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
 import {
@@ -51,34 +52,11 @@ export default function AddToPlaylistDialog({
   // Podcasts hold episodes, not tracks — offering them here would be a lie.
   const targets = collections.filter((c) => c.kind === "music");
 
-  // The production mutation is followed by a library refresh. Keep each row
-  // visibly pending until that refreshed membership agrees with the click.
-  // A short minimum duration means even the synchronous preview store gives
-  // perceptible feedback instead of flashing too quickly to see.
+  // A changed checkbox may still be optimistic. Only mutation settlement can
+  // release a pending row; otherwise a slow write permits conflicting clicks.
   useEffect(() => {
-    const timers: ReturnType<typeof setTimeout>[] = [];
-    Object.entries(pending).forEach(([collectionId, operation]) => {
-      const collection = collections.find((c) => c.id === collectionId);
-      if (collection?.trackIds.includes(track.id) !== operation.desired) {
-        return;
-      }
-      const elapsed = Date.now() - operation.startedAt;
-      timers.push(
-        setTimeout(
-          () => {
-            setPending((current) => {
-              if (current[collectionId] !== operation) return current;
-              const next = { ...current };
-              delete next[collectionId];
-              return next;
-            });
-          },
-          Math.max(0, 600 - elapsed)
-        )
-      );
-    });
-    return () => timers.forEach(clearTimeout);
-  }, [collections, pending, track.id]);
+    setPending({});
+  }, [track.id]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -111,7 +89,21 @@ export default function AddToPlaylistDialog({
                       startedAt: Date.now(),
                     },
                   }));
-                  toggleTrackInCollection(c.id, track.id);
+                  void Promise.resolve(toggleTrackInCollection(c.id, track.id))
+                    .catch(() =>
+                      toast.error(
+                        "Couldn't update the playlist. Please try again."
+                      )
+                    )
+                    .finally(() => {
+                      setTimeout(() => {
+                        setPending((current) => {
+                          const next = { ...current };
+                          delete next[c.id];
+                          return next;
+                        });
+                      }, 600);
+                    });
                 }}
                 className={cn(
                   "w-full flex items-center gap-3 p-2 rounded-lg text-left",

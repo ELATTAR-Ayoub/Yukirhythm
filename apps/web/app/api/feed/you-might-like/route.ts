@@ -43,10 +43,11 @@ export async function GET(req: Request): Promise<Response> {
   const db = adminDb();
   const [userSnap, ctx, provider] = await Promise.all([
     db.collection("users").doc(uid).get(),
-    loadFeedContext(uid),
+    loadFeedContext(uid, new URL(req.url).searchParams.get("refresh") === "1"),
     getCatalogProvider(),
   ]);
-  const user = userSnap.data() as User | undefined;
+  const user = userSnap.data() as
+    (User & { feedRevision?: number }) | undefined;
   const personalized = user?.privacy?.personalization !== false;
 
   const taste = buildRecentTasteProfile(
@@ -195,7 +196,9 @@ export async function GET(req: Request): Promise<Response> {
     ]),
   ];
   const candidateDocs = candidateIds.length
-    ? await db.getAll(...candidateIds.map((id) => db.collection("tracks").doc(id)))
+    ? await db.getAll(
+        ...candidateIds.map((id) => db.collection("tracks").doc(id))
+      )
     : [];
   const candidates = new Map<string, Track>();
   candidateDocs.forEach((doc, index) => {
@@ -247,6 +250,11 @@ export async function GET(req: Request): Promise<Response> {
   );
 
   const result = { personalized, items };
-  await writeFeedSnapshot(uid, "you-might-like", result);
+  await writeFeedSnapshot(
+    uid,
+    "you-might-like",
+    result,
+    user?.feedRevision ?? 0
+  );
   return Response.json(result);
 }

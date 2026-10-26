@@ -65,6 +65,8 @@ function trackStateCollection() {
 }
 
 const fakeDb = {
+  getAll: async (...refs: { get: () => Promise<unknown> }[]) =>
+    Promise.all(refs.map((ref) => ref.get())),
   collection: (name: string) => {
     if (name === "users") {
       return {

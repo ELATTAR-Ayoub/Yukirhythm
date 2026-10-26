@@ -157,7 +157,10 @@ export default function StudioLayout({
   return (
     <AuthGate fallback={<StudioShellSkeleton />}>
       {(authenticatedUser) => (
-        <StudioProvider authenticatedUser={authenticatedUser}>
+        <StudioProvider
+          key={authenticatedUser.uid}
+          authenticatedUser={authenticatedUser}
+        >
           <Shell>{children}</Shell>
           <Toaster />
         </StudioProvider>

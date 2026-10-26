@@ -1,6 +1,15 @@
-import { describe, it, expect, beforeEach, beforeAll } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  beforeAll,
+  afterAll,
+  vi,
+} from "vitest";
 
 import { adminDb } from "@/lib/firebase/admin";
+import { withEventIds } from "@/lib/catalog/__integration__/event-body";
 import { ingestTracks } from "@/lib/catalog/ingest";
 import {
   clearFirestore,
@@ -39,15 +48,17 @@ const auth = (token: string, path = "/x", method = "GET", body?: unknown) =>
   new Request(`http://localhost${path}`, {
     method,
     headers: { Authorization: `Bearer ${token}` },
-    body: body ? JSON.stringify(body) : undefined,
+    body: body ? JSON.stringify(withEventIds(body)) : undefined,
   });
 
 let token: string;
 const DAY = 24 * 60 * 60 * 1000;
 
 beforeAll(async () => {
+  vi.stubEnv("ENABLE_LEGACY_LISTENING_SYNC", "true");
   token = await mintIdToken(`stats-${Date.now()}@x.com`);
 });
+afterAll(() => vi.unstubAllEnvs());
 
 describe("GET /api/me/stats against real Firestore", () => {
   beforeEach(async () => {
@@ -79,7 +90,7 @@ describe("GET /api/me/stats against real Firestore", () => {
           },
           {
             trackId: "t2",
-            listenedSec: 60,
+            listenedSec: 120,
             startedAt: now,
             clientHourOfDay: 22,
           },
@@ -87,7 +98,7 @@ describe("GET /api/me/stats against real Firestore", () => {
       })
     );
     const s = (await (await getStats(auth(token))).json()) as StatsRollup;
-    expect(s.minutesAllTime).toBe(6); // (180+120+60)/60
+    expect(s.minutesAllTime).toBe(7); // (180+120+120)/60
     expect(s.topArtists[0].artistId).toBe("UCt1");
     expect(s.topArtists[0].plays).toBe(2);
     expect(s.topTrackIds[0]).toBe("t1");

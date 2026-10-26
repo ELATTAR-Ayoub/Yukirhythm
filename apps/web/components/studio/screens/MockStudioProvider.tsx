@@ -43,6 +43,7 @@ import {
   type EnqueueMode,
 } from "./queue-utils";
 import type { TextureName } from "@/components/studio/Texture";
+import { DEFAULT_PRIVACY, type UserPrivacy } from "@/lib/catalog/model";
 
 export type CreateStudioCollectionInput = {
   title: string;
@@ -122,6 +123,11 @@ interface MockStudioValue {
   playShuffled: (tracks: MockTrack[], from?: MockCollection) => void;
   // auth
   user: MockUser | null;
+  privacy: UserPrivacy;
+  privacyLoading: boolean;
+  updatePrivacy: (patch: Partial<UserPrivacy>) => Promise<void>;
+  clearListeningHistory: () => Promise<void>;
+  makeCollectionShareable?: (id: string) => Promise<void>;
   /** Which IDP the popup opens for; defaults to google. */
   signIn: (provider?: "google" | "facebook") => void;
   signOut: () => void;
@@ -151,7 +157,10 @@ interface MockStudioValue {
   toggleLike: (trackId: string) => void;
   /** Add or remove a track from any collection. The add-to-playlist checklist
    *  needs both directions; addTrackToCollection only ever adds. */
-  toggleTrackInCollection: (collectionId: string, trackId: string) => void;
+  toggleTrackInCollection: (
+    collectionId: string,
+    trackId: string
+  ) => void | Promise<void>;
   /** Append a track to a collection; no-op if it's already in there. */
   addTrackToCollection: (collectionId: string, trackId: string) => void;
   /** Returns the created collection so a caller (the create-playlist route)
@@ -490,7 +499,9 @@ export default function MockStudioProvider({
 
   const playNext = useCallback(
     (track: MockTrack) => {
-      setQueue((current) => insertIntoQueue(current, track, "next", currentIndex));
+      setQueue((current) =>
+        insertIntoQueue(current, track, "next", currentIndex)
+      );
       setCurrentIndex((index) => (index < 0 ? 0 : index + 1));
       setProgressSec(0);
       setIsPlaying(true);
@@ -716,7 +727,14 @@ export default function MockStudioProvider({
   const youMightLikeLoading =
     feeds?.youMightLikeLoading ?? feeds?.loading ?? false;
 
+  const [privacy, setPrivacy] = useState<UserPrivacy>({ ...DEFAULT_PRIVACY });
   const value: MockStudioValue = {
+    privacy,
+    privacyLoading: false,
+    updatePrivacy: async (patch) => {
+      setPrivacy((current) => ({ ...current, ...patch }));
+    },
+    clearListeningHistory: async () => {},
     queue,
     playingCollection,
     navDirection,

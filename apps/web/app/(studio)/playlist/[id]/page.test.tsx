@@ -1,8 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 
 import MockStudioProvider from "@/components/studio/screens/MockStudioProvider";
 import PlaylistScreen from "./page";
+const backend = vi.hoisted(() => ({
+  collections: { get: vi.fn().mockRejectedValue(new Error("not found")) },
+}));
+vi.mock("@/lib/studio/useBackend", () => ({ useBackend: () => backend }));
 
 const nav = vi.hoisted(() => ({
   id: "liked",
@@ -53,14 +57,41 @@ describe("PlaylistScreen", () => {
     expect(screen.queryByLabelText("Clear queue")).toBeNull();
   });
 
-  it("falls back to an empty state for an unknown id", () => {
+  it("falls back to an empty state for an unknown id", async () => {
     nav.id = "does-not-exist";
     render(
       <MockStudioProvider>
         <PlaylistScreen />
       </MockStudioProvider>
     );
-    expect(screen.getByText(/Collection not found/i)).toBeTruthy();
+    await waitFor(() =>
+      expect(screen.getByText(/Collection not found/i)).toBeTruthy()
+    );
+  });
+
+  it("loads an accessible shared playlist outside the viewer's library", async () => {
+    nav.id = "shared-collection";
+    backend.collections.get.mockResolvedValueOnce({
+      collectionId: nav.id,
+      ownerId: "someone-else",
+      title: "Shared Mix",
+      description: "Shared",
+      contentType: "music",
+      tracks: [],
+      tags: [],
+      texture: "tx-k-silk",
+      cover: "texture",
+      visibility: "unlisted",
+    });
+    render(
+      <MockStudioProvider>
+        <PlaylistScreen />
+      </MockStudioProvider>
+    );
+    expect(
+      await screen.findByRole("heading", { name: "Shared Mix", level: 1 })
+    ).toBeInTheDocument();
+    expect(screen.queryByLabelText("Add music")).toBeNull();
   });
 
   it("keeps a just-created pending route rendered and replaces it with the server id", () => {

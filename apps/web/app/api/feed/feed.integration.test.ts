@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, beforeAll, afterAll } from "vitest";
 
 import { adminDb } from "@/lib/firebase/admin";
+import { withEventIds } from "@/lib/catalog/__integration__/event-body";
 import { ingestTracks } from "@/lib/catalog/ingest";
 import { setCatalogProvider } from "@/lib/catalog/provider";
 import {
@@ -74,7 +75,7 @@ const post = (token: string, path: string, body: unknown) =>
   new Request(`http://localhost${path}`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
-    body: JSON.stringify(body),
+    body: JSON.stringify(withEventIds(body)),
   });
 
 let token: string;
@@ -281,6 +282,9 @@ describe("new-releases cold start on an empty catalogue", () => {
           artists: [],
           playlists: [],
         };
+      },
+      async getTrack(id) {
+        return pt(id, { publishedAt: new Date().toISOString() });
       },
     });
     try {

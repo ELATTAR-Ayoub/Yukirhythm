@@ -1,3 +1,4 @@
+import { readJsonObject } from "@/lib/api/request-body";
 import { Timestamp } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/firebase/admin";
 import { uidFromRequest, unauthorized } from "@/lib/firebase/verify";
@@ -20,7 +21,7 @@ export async function PATCH(
   if (!uid) return unauthorized();
 
   const { collectionId } = await params;
-  const body = (await req.json().catch(() => ({}))) as { trackIds?: unknown };
+  const body = (await readJsonObject(req)) as { trackIds?: unknown };
   const order = Array.isArray(body.trackIds)
     ? body.trackIds.filter((t): t is string => typeof t === "string")
     : null;
@@ -45,7 +46,9 @@ export async function PATCH(
 
     const byId = new Map(c.tracks.map((t) => [t.trackId, t]));
     const isPermutation =
-      order.length === c.tracks.length && order.every((id) => byId.has(id));
+      order.length === c.tracks.length &&
+      new Set(order).size === order.length &&
+      order.every((id) => byId.has(id));
     if (!isPermutation) {
       status = 400;
       return;

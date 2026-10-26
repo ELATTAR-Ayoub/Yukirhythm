@@ -2,6 +2,7 @@
 
 import { CopyIcon } from "@radix-ui/react-icons";
 import { toast } from "sonner";
+import { useEffect, useState } from "react";
 
 import {
   Dialog,
@@ -54,6 +55,8 @@ interface ShareDialogProps {
   url: string;
   /** Prefilled copy for the share targets. */
   text: string;
+  blockedReason?: string;
+  onMakeShareable?: () => Promise<void>;
 }
 
 /**
@@ -68,7 +71,15 @@ export default function ShareDialog({
   title,
   url,
   text,
+  blockedReason,
+  onMakeShareable,
 }: ShareDialogProps) {
+  const [saving, setSaving] = useState(false);
+  const [unlocked, setUnlocked] = useState(false);
+  useEffect(() => {
+    if (!open) setUnlocked(false);
+  }, [open]);
+  const blocked = Boolean(blockedReason) && !unlocked;
   const copy = async () => {
     // Not every context grants clipboard access (insecure origin, denied
     // permission), and a silent failure would look like a successful copy.
@@ -86,7 +97,9 @@ export default function ShareDialog({
         <DialogHeader>
           <DialogTitle>Share “{title}”</DialogTitle>
           <DialogDescription>
-            Copy the link, or open it in an app to post yourself.
+            {blocked
+              ? blockedReason
+              : "Copy the link, or open it in an app to post yourself."}
           </DialogDescription>
         </DialogHeader>
 
@@ -94,22 +107,45 @@ export default function ShareDialog({
           {url}
         </p>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Button variant="default" onClick={copy}>
-            <CopyIcon className="mr-2 h-3.5 w-3.5" /> Copy link
-          </Button>
-          {TARGETS.map((t) => (
-            <Button key={t.id} variant="outline" asChild>
-              <a
-                href={t.href(url, text)}
-                target="_blank"
-                rel="noreferrer noopener"
-              >
-                {t.label}
-              </a>
+        {blocked ? (
+          onMakeShareable ? (
+            <Button
+              disabled={saving}
+              onClick={async () => {
+                setSaving(true);
+                try {
+                  await onMakeShareable();
+                  setUnlocked(true);
+                } catch {
+                  toast.error(
+                    "Couldn't make this playlist shareable. Please try again."
+                  );
+                } finally {
+                  setSaving(false);
+                }
+              }}
+            >
+              {saving ? "Saving…" : "Allow anyone with the link"}
             </Button>
-          ))}
-        </div>
+          ) : null
+        ) : (
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="default" onClick={copy}>
+              <CopyIcon className="mr-2 h-3.5 w-3.5" /> Copy link
+            </Button>
+            {TARGETS.map((t) => (
+              <Button key={t.id} variant="outline" asChild>
+                <a
+                  href={t.href(url, text)}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                >
+                  {t.label}
+                </a>
+              </Button>
+            ))}
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

@@ -23,6 +23,7 @@ interface HiddenYouTubePlayerProps {
   onStart: () => void;
   onProgress: (s: { playedSeconds: number }) => void;
   onEnded: () => void;
+  onError?: () => void;
 }
 
 /** Hidden real audio: the vinyl UI is decorative; sound comes from here. */

@@ -14,7 +14,6 @@ import {
   type MockCollection,
 } from "./mock-data";
 import { QUEUE_COLLECTION_ID } from "./useQueueCollection";
-import { QUEUE } from "@/components/studio/shell/routes";
 import TrackMenu from "./TrackMenu";
 
 vi.mock("next/navigation", () => ({
@@ -61,19 +60,19 @@ describe("TrackMenu", () => {
     fireEvent.click(screen.getByText("Share"));
 
     const dialog = within(screen.getByRole("dialog"));
-    // A link that resolves: there is no route for a single track, so it
-    // points at the playlist holding it.
+    // The source link works independently of the viewer's playlist access.
     expect(
-      dialog.getByText(new RegExp(`/playlist/${COLLECTION.id}`))
+      dialog.getByText(
+        `https://www.youtube.com/watch?v=${encodeURIComponent(TRACK.id)}`
+      )
     ).toBeTruthy();
     expect(dialog.getByText("Copy link")).toBeTruthy();
   });
 
-  it("shares the queue route, not a dead playlist link, for the synthetic queue collection", () => {
+  it("shares a source link for a track in the synthetic queue collection", () => {
     // useQueueCollection() falls back to a synthetic collection with id
     // "queue" when nothing has ever played. /playlist/queue does not
-    // resolve — app/(studio)/playlist/[id]/page.tsx renders "Collection not
-    // found" for it — so this must fall back to the queue route itself.
+    // resolve, so sharing a queued song must use the source URL.
     const QUEUE_COLLECTION: MockCollection = {
       id: QUEUE_COLLECTION_ID,
       title: "Up next",
@@ -98,7 +97,9 @@ describe("TrackMenu", () => {
 
     const dialog = within(screen.getByRole("dialog"));
     const urlNode = dialog.getByText(/^https?:\/\//);
-    expect(urlNode.textContent).toBe(`${window.location.origin}${QUEUE}`);
+    expect(urlNode.textContent).toBe(
+      `https://www.youtube.com/watch?v=${encodeURIComponent(TRACK.id)}`
+    );
   });
 
   it("opens a checklist of playlists", () => {

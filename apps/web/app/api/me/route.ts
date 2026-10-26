@@ -1,4 +1,5 @@
-import { Timestamp } from "firebase-admin/firestore";
+import { FieldValue, Timestamp } from "firebase-admin/firestore";
+import { invalidateFeedContext } from "../feed/_context";
 import { adminDb } from "@/lib/firebase/admin";
 import { uidFromRequest, unauthorized } from "@/lib/firebase/verify";
 import {
@@ -28,7 +29,7 @@ export async function POST(req: Request): Promise<Response> {
   const snap = await userRef(uid).get();
   if (snap.exists) return Response.json(snap.data());
 
-  const body = (await req.json().catch(() => ({}))) as Partial<User>;
+  const body = ((await req.json().catch(() => null)) ?? {}) as Partial<User>;
   const authProvider = body.authProvider === "facebook" ? "facebook" : "google";
   const user: User = {
     userId: uid,
@@ -43,8 +44,13 @@ export async function POST(req: Request): Promise<Response> {
     settings: { ...DEFAULT_SETTINGS },
     createdAt: Timestamp.now(),
   };
-  await userRef(uid).set(user);
-  return Response.json(user, { status: 201 });
+  const created = await adminDb().runTransaction(async (tx) => {
+    const current = await tx.get(userRef(uid));
+    if (current.exists) return { user: current.data(), status: 200 };
+    tx.create(userRef(uid), user);
+    return { user, status: 201 };
+  });
+  return Response.json(created.user, { status: created.status });
 }
 
 /**
@@ -61,7 +67,10 @@ export async function PATCH(req: Request): Promise<Response> {
   if (!snap.exists)
     return Response.json({ error: "Not found" }, { status: 404 });
 
-  const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+  const body = ((await req.json().catch(() => null)) ?? {}) as Record<
+    string,
+    unknown
+  >;
   const patch: Record<string, unknown> = {};
 
   if (body.privacy && typeof body.privacy === "object") {
@@ -88,6 +97,14 @@ export async function PATCH(req: Request): Promise<Response> {
   if (typeof body.handle === "string") patch.handle = body.handle;
 
   // merge:true so a nested privacy/settings patch does not clobber siblings.
-  await ref.set(patch, { merge: true });
+  const batch = adminDb().batch();
+  if (patch.privacy) {
+    patch.feedRevision = FieldValue.increment(1);
+    batch.delete(ref.collection("feeds").doc("new-releases"));
+    batch.delete(ref.collection("feeds").doc("you-might-like"));
+  }
+  batch.set(ref, patch, { merge: true });
+  await batch.commit();
+  invalidateFeedContext(uid);
   return Response.json((await ref.get()).data());
 }

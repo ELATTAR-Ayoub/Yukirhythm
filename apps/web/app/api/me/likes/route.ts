@@ -2,10 +2,6 @@ import type { QueryDocumentSnapshot } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/firebase/admin";
 import { uidFromRequest, unauthorized } from "@/lib/firebase/verify";
 import { LIKED_COLLECTION_ID, type Track } from "@/lib/catalog/model";
-import {
-  readRequestCache,
-  writeRequestCache,
-} from "@/lib/catalog/request-cache";
 
 export const runtime = "nodejs";
 
@@ -45,9 +41,8 @@ function likedAtMillis(value: unknown): number {
 export async function GET(req: Request): Promise<Response> {
   const uid = await uidFromRequest(req);
   if (!uid) return unauthorized();
-  const cacheKey = `likes:${uid}`;
-  const cached = readRequestCache<unknown>(cacheKey);
-  if (cached) return Response.json(cached);
+  // Serverless instances do not share invalidations. Always read mutable
+  // library state from Firestore so a successful like is visible immediately.
 
   const db = adminDb();
   const trackStateRef = db
@@ -98,6 +93,7 @@ export async function GET(req: Request): Promise<Response> {
     tracks,
     stats: { trackCount: trackIds.length, totalDurationSec },
   };
-  writeRequestCache(cacheKey, result, 5 * 60 * 1000);
-  return Response.json(result);
+  return Response.json(result, {
+    headers: { "Cache-Control": "private, no-store" },
+  });
 }

@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import type { User as FirebaseUser } from "firebase/auth";
+import type { StudioIdentity as FirebaseUser } from "@/lib/studio/useAuth";
 
 import Loader from "@/components/Loader";
 import { useAuthState } from "@/lib/studio/useAuth";

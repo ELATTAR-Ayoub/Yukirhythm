@@ -37,13 +37,7 @@ export default function CreatePlaylistScreen() {
         <div className="min-h-0 flex-1">
           <CreatePlaylistFlow
             onCreated={(collection) => {
-              // Production creation starts with an optimistic `pending-*` id
-              // and replaces it with the server id after the library refresh.
-              // Carry the title as a short-lived correlation key so the
-              // detail route can make that handoff without flashing
-              // "Collection not found".
-              const created = encodeURIComponent(collection.title);
-              router.push(`${playlistHref(collection.id)}?created=${created}`);
+              router.push(playlistHref(collection.id));
             }}
           />
         </div>

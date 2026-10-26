@@ -1,6 +1,7 @@
 import { Timestamp } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/firebase/admin";
 import { uidFromRequest, unauthorized } from "@/lib/firebase/verify";
+import { ensureTrack } from "@/lib/catalog/ensure-track";
 import {
   MAX_TRACKS_PER_COLLECTION,
   type Collection,
@@ -34,6 +35,19 @@ async function mutate(
   const db = adminDb();
   const ref = db.collection("collections").doc(collectionId);
   const trackRef = db.collection("tracks").doc(trackId);
+
+  if (op === "add") {
+    // Authorize before fetching provider data or creating a catalog record.
+    const collection = await ref.get();
+    if (!collection.exists)
+      return Response.json({ error: "Not found" }, { status: 404 });
+    if ((collection.data() as Collection).ownerId !== uid) {
+      return Response.json({ error: "Forbidden" }, { status: 403 });
+    }
+    if (!(await ensureTrack(trackId))) {
+      return Response.json({ error: "Track is unavailable" }, { status: 404 });
+    }
+  }
 
   let status = 200;
   await db.runTransaction(async (tx) => {

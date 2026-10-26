@@ -36,7 +36,7 @@ export async function PUT(req: Request, { params }: Params): Promise<Response> {
       status = 400; // saving your own is meaningless
       return;
     }
-    if (c.visibility === "private") {
+    if (c.visibility !== "public" && c.visibility !== "unlisted") {
       status = 403;
       return;
     }

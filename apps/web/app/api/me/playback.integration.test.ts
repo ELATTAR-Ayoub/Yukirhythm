@@ -1,4 +1,12 @@
-import { describe, it, expect, beforeEach, beforeAll } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  beforeAll,
+  afterAll,
+  vi,
+} from "vitest";
 
 import {
   clearFirestore,
@@ -20,8 +28,11 @@ const auth = (token: string, method = "GET", body?: unknown) =>
 let token: string;
 
 beforeAll(async () => {
+  // Compatibility routes are opt-in; normal playback remains browser-local.
+  vi.stubEnv("ENABLE_LEGACY_PLAYBACK_SYNC", "true");
   token = await mintIdToken(`play-${Date.now()}@x.com`);
 });
+afterAll(() => vi.unstubAllEnvs());
 
 describe("playback state against real Firestore", () => {
   beforeEach(() => clearFirestore());
@@ -67,22 +78,22 @@ describe("playback state against real Firestore", () => {
       await PUT(auth(token, "PUT", { volume: -1, positionSec: -5 }))
     ).json()) as PlaybackState;
     expect(under.volume).toBe(0);
-    expect(under.positionSec).toBe(0);
+    expect(
+      ((await (await GET(auth(token))).json()) as PlaybackState).positionSec
+    ).toBe(0);
   });
 
   it("rejects a bogus repeat mode, keeping the previous value", async () => {
     await PUT(auth(token, "PUT", { repeatMode: "one" }));
-    const s = (await (
-      await PUT(auth(token, "PUT", { repeatMode: "sideways" }))
-    ).json()) as PlaybackState;
+    await PUT(auth(token, "PUT", { repeatMode: "sideways" }));
+    const s = (await (await GET(auth(token))).json()) as PlaybackState;
     expect(s.repeatMode).toBe("one");
   });
 
   it("merges a partial PUT without wiping unset fields", async () => {
     await PUT(auth(token, "PUT", { queue: ["a", "b"], volume: 0.4 }));
-    const s = (await (
-      await PUT(auth(token, "PUT", { positionSec: 30 }))
-    ).json()) as PlaybackState;
+    await PUT(auth(token, "PUT", { positionSec: 30 }));
+    const s = (await (await GET(auth(token))).json()) as PlaybackState;
     expect(s.queue).toEqual(["a", "b"]);
     expect(s.volume).toBe(0.4);
     expect(s.positionSec).toBe(30);

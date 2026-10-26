@@ -54,20 +54,38 @@ export class ApiError extends Error {
   }
 }
 
-export function createBackendClient(getToken: TokenProvider) {
+export function createBackendClient(
+  getToken: TokenProvider,
+  transport?: (url: string, init?: RequestInit) => Promise<unknown>
+) {
   async function request<T>(url: string, init?: RequestInit): Promise<T> {
+    if (transport) return (await transport(url, init)) as T;
     const token = await getToken();
     const headers = new Headers(init?.headers);
     if (token) headers.set("Authorization", `Bearer ${token}`);
     if (init?.body) headers.set("Content-Type", "application/json");
 
-    const res = await fetch(url, { ...init, headers });
+    // Authenticated mutable responses must not outlive the active session in
+    // the HTTP cache. Discovery feeds have their own explicit application cache.
+    const res = await fetch(url, { ...init, headers, cache: "no-store" });
     if (!res.ok) {
-      const detail = await res.json().catch(() => ({}) as { error?: string });
-      throw new ApiError(res.status, detail.error ?? res.statusText);
+      const detail: unknown = await res.json().catch(() => null);
+      const message =
+        detail &&
+        typeof detail === "object" &&
+        "error" in detail &&
+        typeof detail.error === "string"
+          ? detail.error
+          : res.statusText || "Request failed";
+      throw new ApiError(res.status, message);
     }
     // 204 and other empty bodies parse to null rather than throwing.
-    return (await res.json().catch(() => null)) as T;
+    if (res.status === 204) return null as T;
+    try {
+      return (await res.json()) as T;
+    } catch {
+      throw new ApiError(502, "Invalid server response");
+    }
   }
 
   const body = (data: unknown) => JSON.stringify(data);
@@ -122,7 +140,10 @@ export function createBackendClient(getToken: TokenProvider) {
     },
 
     collections: {
-      list: () => request<Collection[]>(endpoints.collections.list()),
+      list: () =>
+        request<(Collection & { isPinned?: boolean })[]>(
+          endpoints.collections.list()
+        ),
       create: (input: Partial<Collection> & { title: string }) =>
         request<Collection>(endpoints.collections.create(), {
           method: "POST",
@@ -193,7 +214,12 @@ export function createBackendClient(getToken: TokenProvider) {
           method: "POST",
           body: body(input),
         }),
-      update: (patch: Partial<User>) =>
+      update: (
+        patch: Partial<Omit<User, "privacy" | "settings">> & {
+          privacy?: Partial<User["privacy"]>;
+          settings?: Partial<User["settings"]>;
+        }
+      ) =>
         request<User>(endpoints.me.root(), {
           method: "PATCH",
           body: body(patch),

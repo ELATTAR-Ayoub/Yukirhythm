@@ -215,21 +215,21 @@ describe("CreatePlaylistFlow", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Create playlist" }));
 
-    expect(onCreated).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(onCreated).toHaveBeenCalledTimes(1));
     const created = onCreated.mock.calls[0][0];
     expect(created.title).toBe("Rainy Tapes");
     expect(created.texture).toBe("tx-k-marble");
     expect(created.trackIds).toEqual(["t2"]); // Cobalt Dreams
   });
 
-  it("allows an empty track list — skipping step 2 creates a valid playlist", () => {
+  it("allows an empty track list — skipping step 2 creates a valid playlist", async () => {
     const onCreated = renderFlow();
 
     goToStep2("Quiet Room");
     goToStep3();
     fireEvent.click(screen.getByRole("button", { name: "Create playlist" }));
 
-    expect(onCreated).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(onCreated).toHaveBeenCalledTimes(1));
     expect(onCreated.mock.calls[0][0].trackIds).toEqual([]);
   });
 
@@ -298,7 +298,7 @@ describe("CreatePlaylistFlow", () => {
       expect((input as HTMLInputElement).value).toBe("nig");
     });
 
-    it("reaches createCollection as an array, in the order they were added", () => {
+    it("reaches createCollection as an array, in the order they were added", async () => {
       const onCreated = renderFlow();
       fireEvent.change(screen.getByLabelText("Name"), {
         target: { value: "Rainy Tapes" },
@@ -311,6 +311,7 @@ describe("CreatePlaylistFlow", () => {
       goToStep3(); // step 2 -> step 3
       fireEvent.click(screen.getByRole("button", { name: "Create playlist" }));
 
+      await waitFor(() => expect(onCreated).toHaveBeenCalledTimes(1));
       expect(onCreated.mock.calls[0][0].tags).toEqual(["lofi", "night"]);
     });
   });
@@ -340,7 +341,7 @@ describe("CreatePlaylistFlow", () => {
       goToStep3(); // -> step 3
       fireEvent.click(screen.getByRole("button", { name: "Create playlist" }));
 
-      expect(onCreated).toHaveBeenCalledTimes(1);
+      await waitFor(() => expect(onCreated).toHaveBeenCalledTimes(1));
       expect(onCreated.mock.calls[0][0].cover).toBe("mosaic");
     });
 

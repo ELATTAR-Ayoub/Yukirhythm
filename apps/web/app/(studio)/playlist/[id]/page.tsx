@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useBackend } from "@/lib/studio/useBackend";
+import { toStudioCollection } from "@/lib/studio/adapt";
+import {
+  registerStudioTracks,
+  type MockCollection,
+} from "@/components/studio/screens/mock-data";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 
 import BackHeader from "@/components/studio/screens/BackHeader";
@@ -13,6 +19,12 @@ import { LIBRARY, playlistHref } from "@/components/studio/shell/routes";
 
 export default function PlaylistScreen() {
   const { collections, libraryLoading } = useMockStudio();
+  const backend = useBackend();
+  const [remote, setRemote] = useState<{
+    id: string;
+    collection: MockCollection | null;
+    loading: boolean;
+  } | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   // next-env.d.ts pulls in next/navigation-types/compat/navigation, which
@@ -25,14 +37,38 @@ export default function PlaylistScreen() {
       ? params.id[0]
       : params.id
     : undefined;
-  const id = rawId ? decodeURIComponent(rawId) : undefined;
+  const id = rawId;
   const createdTitle = searchParams.get("created");
-  const collection = id
+  const ownedCollection = id
     ? (collections.find((c) => c.id === id) ??
       (id.startsWith("pending-") && createdTitle
         ? [...collections].reverse().find((c) => c.title === createdTitle)
         : undefined))
     : undefined;
+  const collection =
+    ownedCollection ?? (remote && remote.id === id ? remote.collection : null);
+  const needsRemote = Boolean(
+    id && !ownedCollection && !libraryLoading && !id.startsWith("pending-")
+  );
+  useEffect(() => {
+    if (!needsRemote || !id) return;
+    let live = true;
+    setRemote({ id, collection: null, loading: true });
+    void backend.collections
+      .get(id)
+      .then((saved) => {
+        if (!live) return;
+        const next = toStudioCollection(saved);
+        registerStudioTracks(next.tracks ?? []);
+        setRemote({ id, collection: next, loading: false });
+      })
+      .catch(() => {
+        if (live) setRemote({ id, collection: null, loading: false });
+      });
+    return () => {
+      live = false;
+    };
+  }, [backend, id, needsRemote]);
 
   // Once the refreshed library exposes the server-issued id, canonicalise
   // the optimistic URL. Until then `collection` keeps the detail page
@@ -46,7 +82,8 @@ export default function PlaylistScreen() {
   // The library loads asynchronously; an empty list on the first render is
   // "not loaded yet", not "missing". Claiming not-found here flashed a false
   // error on every direct navigation.
-  if (libraryLoading) return <PlaylistPageSkeleton />;
+  if (libraryLoading || (needsRemote && (remote?.id !== id || remote?.loading)))
+    return <PlaylistPageSkeleton />;
 
   if (!collection) {
     return (

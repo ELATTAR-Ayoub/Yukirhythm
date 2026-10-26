@@ -1,3 +1,4 @@
+import { readJsonObject } from "@/lib/api/request-body";
 import { Timestamp } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/firebase/admin";
 import { uidFromRequest, unauthorized } from "@/lib/firebase/verify";
@@ -15,7 +16,7 @@ export async function PUT(req: Request, { params }: Params): Promise<Response> {
   if (!uid) return unauthorized();
 
   const { collectionId } = await params;
-  const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+  const body = (await readJsonObject(req)) as Record<string, unknown>;
   const patch: Record<string, unknown> = { collectionId };
 
   if (typeof body.isPinned === "boolean") patch.isPinned = body.isPinned;

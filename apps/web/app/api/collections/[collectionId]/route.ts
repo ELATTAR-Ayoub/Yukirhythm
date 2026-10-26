@@ -1,7 +1,12 @@
+import { readJsonObject } from "@/lib/api/request-body";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/firebase/admin";
 import { uidFromRequest, unauthorized } from "@/lib/firebase/verify";
 import { LIKED_COLLECTION_ID, type Collection } from "@/lib/catalog/model";
+import {
+  estimatedDocumentBytes,
+  COLLECTION_MAX_BYTES,
+} from "@/lib/catalog/membership";
 
 export const runtime = "nodejs";
 
@@ -20,7 +25,11 @@ export async function GET(req: Request, { params }: Params): Promise<Response> {
   const c = await load(collectionId);
   if (!c) return Response.json({ error: "Not found" }, { status: 404 });
   // Others may read it only if it is not private.
-  if (c.ownerId !== uid && c.visibility === "private") {
+  if (
+    c.ownerId !== uid &&
+    c.visibility !== "public" &&
+    c.visibility !== "unlisted"
+  ) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
   return Response.json(c);
@@ -39,7 +48,7 @@ export async function PATCH(
   if (c.ownerId !== uid)
     return Response.json({ error: "Forbidden" }, { status: 403 });
 
-  const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+  const body = (await readJsonObject(req)) as Record<string, unknown>;
   const patch: Record<string, unknown> = { updatedAt: Timestamp.now() };
   if (typeof body.title === "string" && body.title.trim())
     patch.title = body.title.trim();
@@ -61,11 +70,21 @@ export async function PATCH(
   )
     patch.visibility = body.visibility;
 
-  await adminDb()
-    .collection("collections")
-    .doc(collectionId)
-    .set(patch, { merge: true });
-  return Response.json((await load(collectionId)) ?? {});
+  const ref = adminDb().collection("collections").doc(collectionId);
+  const updated = await adminDb().runTransaction(async (tx) => {
+    const current = await tx.get(ref);
+    if (!current.exists) return { status: 404, collection: null };
+    if (current.data()?.ownerId !== uid)
+      return { status: 403, collection: null };
+    const collection = { ...current.data(), ...patch };
+    if (estimatedDocumentBytes(collection) > COLLECTION_MAX_BYTES)
+      return { status: 413, collection: null };
+    tx.update(ref, patch);
+    return { status: 200, collection };
+  });
+  return updated.collection
+    ? Response.json(updated.collection)
+    : Response.json({ error: "Request failed" }, { status: updated.status });
 }
 
 export async function DELETE(
@@ -84,19 +103,21 @@ export async function DELETE(
     );
   }
 
-  const c = await load(collectionId);
-  if (!c) return Response.json({ error: "Not found" }, { status: 404 });
-  if (c.ownerId !== uid)
-    return Response.json({ error: "Forbidden" }, { status: 403 });
-
   const db = adminDb();
-  await db.runTransaction(async (tx) => {
-    tx.delete(db.collection("collections").doc(collectionId));
+  const status = await db.runTransaction(async (tx) => {
+    const ref = db.collection("collections").doc(collectionId);
+    const current = await tx.get(ref);
+    if (!current.exists) return 404;
+    if (current.data()?.ownerId !== uid) return 403;
+    tx.delete(ref);
     tx.set(
       db.collection("users").doc(uid),
       { counts: { collectionCount: FieldValue.increment(-1) } },
       { merge: true }
     );
+    return 200;
   });
+  if (status !== 200)
+    return Response.json({ error: "Request failed" }, { status });
   return Response.json({ ok: true });
 }

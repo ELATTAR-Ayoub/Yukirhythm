@@ -2,7 +2,10 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { MockTrack } from "./mock-data";
-import { useCachedStudioFeed } from "./useCachedStudioFeed";
+import {
+  clearCachedStudioFeeds,
+  useCachedStudioFeed,
+} from "./useCachedStudioFeed";
 
 const feedApi = vi.hoisted(() => ({
   newReleases: vi.fn(),
@@ -25,13 +28,15 @@ const providerTracks = [providerTrack];
 function Probe({
   loading = false,
   tracks = providerTracks,
+  userId = "user-1",
 }: {
   loading?: boolean;
   tracks?: MockTrack[];
+  userId?: string;
 }) {
   const feed = useCachedStudioFeed({
     feed: "new-releases",
-    userId: "user-1",
+    userId,
     providerTracks: tracks,
     providerLoading: loading,
   });
@@ -117,5 +122,53 @@ describe("useCachedStudioFeed", () => {
     expect(
       window.localStorage.getItem("yukirhythm:feed:v2:user-1:new-releases")
     ).toContain("refreshed-track");
+  });
+
+  it("ignores a refresh response belonging to the previous account", async () => {
+    let finish!: (value: unknown) => void;
+    feedApi.newReleases.mockReturnValueOnce(
+      new Promise((resolve) => {
+        finish = resolve;
+      })
+    );
+    const view = render(<Probe />);
+    fireEvent.click(screen.getByRole("button", { name: "Refresh" }));
+    view.rerender(
+      <Probe
+        userId="user-2"
+        tracks={[{ ...providerTrack, id: "other-account" }]}
+      />
+    );
+    await act(async () => {
+      finish({ items: [] });
+    });
+    expect(screen.getByTestId("tracks")).toHaveTextContent("other-account");
+  });
+
+  it("fetches fresh data after privacy invalidates a cached feed", async () => {
+    clearCachedStudioFeeds("user-1");
+    feedApi.newReleases.mockResolvedValueOnce({ items: [] });
+    render(<Probe />);
+    await act(async () => {});
+    expect(feedApi.newReleases).toHaveBeenCalledWith(true);
+    expect(screen.getByTestId("tracks")).not.toHaveTextContent(
+      "provider-track"
+    );
+  });
+
+  it("deduplicates rapid refresh clicks", async () => {
+    let finish!: (value: unknown) => void;
+    feedApi.newReleases.mockReturnValueOnce(
+      new Promise((resolve) => {
+        finish = resolve;
+      })
+    );
+    render(<Probe />);
+    fireEvent.click(screen.getByRole("button", { name: "Refresh" }));
+    fireEvent.click(screen.getByRole("button", { name: "Refresh" }));
+    expect(feedApi.newReleases).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      finish({ items: [] });
+    });
   });
 });

@@ -1,9 +1,7 @@
 "use client";
 
-import { toast } from "sonner";
-
 import { Button } from "@/components/ui/button";
-import { GoogleIcon } from "@/components/studio/BrandIcons";
+import { FacebookIcon, GoogleIcon } from "@/components/studio/BrandIcons";
 import AppearanceSetting from "@/components/studio/screens/AppearanceSetting";
 import BackHeader from "@/components/studio/screens/BackHeader";
 import SignInPrompt from "@/components/studio/screens/SignInPrompt";
@@ -17,14 +15,10 @@ const BASE = SCREENS;
 
 function SettingRow({ label, value }: { label: string; value: string }) {
   return (
-    <button
-      type="button"
-      onClick={() => toast(`“${label}” is mock-only for now`)}
-      className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-secondary transition-colors duration-fast text-left"
-    >
+    <div className="w-full flex items-center justify-between px-4 py-3.5 text-left">
       <span className="font-ui font-medium text-sm">{label}</span>
       <span className="text-xs text-muted-foreground">{value}</span>
-    </button>
+    </div>
   );
 }
 
@@ -40,7 +34,7 @@ export default function SettingsScreen() {
       <section>
         <SectionLabel>Playback</SectionLabel>
         <div className="mt-2 rounded-lg border border-border bg-card divide-y divide-border overflow-hidden">
-          <SettingRow label="Audio quality" value="High" />
+          <SettingRow label="Audio quality" value="Automatic (YouTube)" />
           <SettingRow label="Language" value="English" />
           <AppearanceSetting />
         </div>
@@ -50,13 +44,27 @@ export default function SettingsScreen() {
         <SectionLabel>Account</SectionLabel>
         <div className="mt-2 rounded-lg border border-border bg-card divide-y divide-border overflow-hidden">
           <div className="flex items-center gap-3 px-4 py-3.5">
-            <GoogleIcon className="h-4 w-4" />
+            {user.authProvider === "guest" ? null : user.authProvider ===
+              "facebook" ? (
+              <FacebookIcon className="h-4 w-4" />
+            ) : (
+              <GoogleIcon className="h-4 w-4" />
+            )}
             <span className="font-ui font-medium text-sm flex-1">
-              Connected with Google
+              {user.authProvider === "guest"
+                ? "Guest on this device"
+                : `Connected with ${user.authProvider === "facebook" ? "Facebook" : "Google"}`}
             </span>
             <span className="text-xs text-muted-foreground">{user.email}</span>
           </div>
         </div>
+        {user.authProvider === "guest" && (
+          <p className="mt-3 type-small text-muted-foreground">
+            Your library and preferences stay in this browser, including after
+            signing out. Clearing site data removes them. Sign out to choose an
+            account; guest data stays separate.
+          </p>
+        )}
       </section>
 
       <Button variant="destructive" className="w-full" onClick={handleSignOut}>

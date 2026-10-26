@@ -20,7 +20,9 @@ export async function readFeedSnapshot(
   const snap = await ref(uid, feed).get();
   if (!snap.exists) return null;
   const data = snap.data() as Partial<MaterializedFeed>;
-  return typeof data.personalized === "boolean" && Array.isArray(data.items)
+  return typeof data.personalized === "boolean" &&
+    Array.isArray(data.items) &&
+    data.items.length > 0
     ? { personalized: data.personalized, items: data.items }
     : null;
 }
@@ -30,11 +32,17 @@ export async function readFeedSnapshot(
 export async function writeFeedSnapshot(
   uid: string,
   feed: string,
-  value: MaterializedFeed
+  value: MaterializedFeed,
+  revision = 0
 ): Promise<void> {
-  await ref(uid, feed).set({
-    ...value,
-    generatedAt: Timestamp.now(),
-    schemaVersion: 1,
+  const db = adminDb();
+  await db.runTransaction(async (tx) => {
+    const profile = await tx.get(db.collection("users").doc(uid));
+    if ((profile.data()?.feedRevision ?? 0) !== revision) return;
+    tx.set(ref(uid, feed), {
+      ...value,
+      generatedAt: Timestamp.now(),
+      schemaVersion: 1,
+    });
   });
 }

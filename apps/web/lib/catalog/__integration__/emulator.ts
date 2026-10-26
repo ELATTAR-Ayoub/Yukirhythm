@@ -1,12 +1,16 @@
 /**
  * Helpers for integration tests that run against the real Firestore emulator.
  */
+import { clearRequestCache } from "@/lib/catalog/request-cache";
+import { clearFeedContextCache } from "@/app/api/feed/_context";
 
 const PROJECT = process.env.GCLOUD_PROJECT ?? "demo-yukirhythm";
 const HOST = process.env.FIRESTORE_EMULATOR_HOST ?? "127.0.0.1:8080";
 
 /** Wipes every document in the emulator via its admin REST endpoint. */
 export async function clearFirestore(): Promise<void> {
+  clearRequestCache();
+  clearFeedContextCache();
   const res = await fetch(
     `http://${HOST}/emulator/v1/projects/${PROJECT}/databases/(default)/documents`,
     { method: "DELETE" }

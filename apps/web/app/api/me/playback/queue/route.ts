@@ -1,3 +1,4 @@
+import { readJsonObject } from "@/lib/api/request-body";
 import { Timestamp } from "firebase-admin/firestore";
 import { gone } from "@/lib/api/disabled";
 import { adminDb } from "@/lib/firebase/admin";
@@ -15,11 +16,12 @@ const ref = (uid: string) =>
  * concurrent enqueues from two devices do not clobber each other.
  */
 export async function POST(req: Request): Promise<Response> {
-  if (process.env.ENABLE_LEGACY_PLAYBACK_SYNC !== "true") return gone("Playback queue sync");
+  if (process.env.ENABLE_LEGACY_PLAYBACK_SYNC !== "true")
+    return gone("Playback queue sync");
   const uid = await uidFromRequest(req);
   if (!uid) return unauthorized();
 
-  const body = (await req.json().catch(() => ({}))) as {
+  const body = (await readJsonObject(req)) as {
     trackId?: unknown;
     mode?: unknown;
   };
@@ -57,7 +59,8 @@ export async function POST(req: Request): Promise<Response> {
  * document is read or changed.
  */
 export async function DELETE(req: Request): Promise<Response> {
-  if (process.env.ENABLE_LEGACY_PLAYBACK_SYNC !== "true") return gone("Playback queue sync");
+  if (process.env.ENABLE_LEGACY_PLAYBACK_SYNC !== "true")
+    return gone("Playback queue sync");
   const uid = await uidFromRequest(req);
   if (!uid) return unauthorized();
 

@@ -28,9 +28,10 @@ interface CollectionMenuProps {
 
 /** The ⋯ menu on a library playlist: pin it, or share it. */
 export default function CollectionMenu({ collection }: CollectionMenuProps) {
-  const { togglePin } = useMockStudio();
+  const { togglePin, makeCollectionShareable } = useMockStudio();
   const [sharing, setSharing] = useState(false);
   const pinned = collection.pinned;
+  const localOnly = collection.ownerId?.startsWith("guest-");
 
   const url = absoluteUrl(playlistHref(collection.id));
   const text = `Listen to ${collection.title} on Yukirhythm`;
@@ -81,6 +82,23 @@ export default function CollectionMenu({ collection }: CollectionMenuProps) {
         title={collection.title}
         url={url}
         text={text}
+        blockedReason={
+          localOnly
+            ? "Guest playlists are saved only in this browser. Sign in to create playlists you can share online."
+            : collection.system
+              ? "Liked Songs is personal to your account. Create a playlist to share these tracks."
+              : collection.visibility === "private"
+                ? "This playlist is private. Allowing anyone with the link will make it unlisted and shareable."
+                : undefined
+        }
+        onMakeShareable={
+          !localOnly &&
+          !collection.system &&
+          collection.visibility === "private" &&
+          makeCollectionShareable
+            ? () => makeCollectionShareable(collection.id)
+            : undefined
+        }
       />
     </>
   );

@@ -48,6 +48,8 @@ export function toStudioCollection(
     .map((track) => toStudioTrack(track));
   return {
     id: c.collectionId,
+    ownerId: c.ownerId,
+    visibility: c.visibility,
     title: c.title,
     desc: c.description,
     texture: c.texture,
@@ -138,7 +140,18 @@ export function toStudioHistory(
 }
 
 export function toStudioUser(u: User): MockUser {
+  const created = u.createdAt as unknown as {
+    toMillis?: () => number;
+    _seconds?: number;
+    seconds?: number;
+  } | null;
   return {
+    authProvider: u.authProvider,
+    joinedAtMs:
+      created?.toMillis?.() ??
+      (typeof (created?._seconds ?? created?.seconds) === "number"
+        ? (created?._seconds ?? created?.seconds ?? 0) * 1000
+        : undefined),
     id: u.userId,
     userName: u.displayName || "You",
     email: u.email,

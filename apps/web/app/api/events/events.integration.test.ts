@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, beforeAll } from "vitest";
 
 import { adminDb } from "@/lib/firebase/admin";
+import { withEventIds } from "@/lib/catalog/__integration__/event-body";
 import { ingestTracks } from "@/lib/catalog/ingest";
 import {
   clearFirestore,
@@ -13,6 +14,7 @@ import { POST as ensureUser, PATCH as patchUser } from "../me/route";
 import { PUT as likeTrack } from "../me/tracks/[trackId]/route";
 import { POST as postEvents } from "./route";
 import { DELETE as clearHistory } from "../me/history/route";
+import { readFeedSnapshot, writeFeedSnapshot } from "../feed/_snapshot";
 
 function providerTrack(id: string, durationSec: number): ProviderTrack {
   return {
@@ -39,7 +41,7 @@ const auth = (token: string, method = "GET", body?: unknown) =>
   new Request("http://localhost/x", {
     method,
     headers: { Authorization: `Bearer ${token}` },
-    body: body ? JSON.stringify(body) : undefined,
+    body: body ? JSON.stringify(withEventIds(body)) : undefined,
   });
 
 let token: string;
@@ -247,5 +249,117 @@ describe("DELETE /api/me/history against real Firestore", () => {
     expect(s?.totalListenedSec).toBe(0);
     // like survives — clearing history is not unliking
     expect(s?.isLiked).toBe(true);
+  });
+});
+
+describe("adversarial event and cache consistency", () => {
+  beforeEach(async () => {
+    await clearFirestore();
+    await ingestTracks([providerTrack("t1", 200), providerTrack("t2", 200)]);
+    await ensureUser(auth(token, "POST", {}));
+  });
+  const event = (over: Record<string, unknown> = {}) => ({
+    eventId: "shared-listen-123",
+    trackId: "t1",
+    durationSec: 200,
+    listenedSec: 120,
+    startedAt: Date.now() - 1000,
+    ...over,
+  });
+
+  it("isolates identical event IDs belonging to different users", async () => {
+    const other = await mintIdToken(`isolation-${Date.now()}@example.com`);
+    await ensureUser(auth(other, "POST", {}));
+    await postEvents(auth(token, "POST", { events: [event()] }));
+    await postEvents(
+      auth(other, "POST", { events: [event({ trackId: "t2" })] })
+    );
+    const docs = await adminDb().collection("playEvents").get();
+    expect(docs.size).toBe(2);
+    expect(new Set(docs.docs.map((d) => d.data().userId)).size).toBe(2);
+  });
+
+  it("does not let a retry overwrite an accepted listen", async () => {
+    await postEvents(auth(token, "POST", { events: [event()] }));
+    await postEvents(
+      auth(token, "POST", {
+        events: [event({ trackId: "t2", listenedSec: 5 })],
+      })
+    );
+    const docs = await adminDb().collection("playEvents").get();
+    expect(docs.size).toBe(1);
+    expect(docs.docs[0].data().trackId).toBe("t1");
+    expect((await trackState(await currentUid(), "t1"))?.playCount).toBe(1);
+  });
+
+  it("merges simultaneous tab uploads without losing either taste event", async () => {
+    await Promise.all([
+      postEvents(auth(token, "POST", { events: [event()], tasteSnapshot: [] })),
+      postEvents(
+        auth(token, "POST", {
+          events: [event({ eventId: "second-listen-123", trackId: "t2" })],
+          tasteSnapshot: [],
+        })
+      ),
+    ]);
+    const taste = await adminDb()
+      .collection("users")
+      .doc(await currentUid())
+      .collection("views")
+      .doc("taste")
+      .get();
+    expect(taste.data()?.events).toHaveLength(2);
+    expect((await adminDb().collection("playEvents").get()).size).toBe(2);
+  });
+
+  it("ignores malformed elements and invalid IDs without a 500", async () => {
+    const result = await postEvents(
+      auth(token, "POST", {
+        events: [
+          null,
+          "bad",
+          [],
+          event({ eventId: "../escape" }),
+          event({ trackId: "a/b" }),
+        ],
+      })
+    );
+    expect(result.status).toBe(200);
+    expect((await result.json()).written).toBe(0);
+  });
+
+  it("does not resurrect cleared history when a delayed upload arrives", async () => {
+    const old = event({ startedAt: Date.now() - 60000 });
+    await postEvents(auth(token, "POST", { events: [old] }));
+    await clearHistory(auth(token, "DELETE"));
+    const retry = await postEvents(
+      auth(token, "POST", { events: [{ ...old, eventId: "late-listen-123" }] })
+    );
+    expect((await retry.json()).written).toBe(0);
+    expect((await adminDb().collection("playEvents").get()).size).toBe(0);
+    expect(
+      (
+        await adminDb()
+          .collection("users")
+          .doc(await currentUid())
+          .collection("views")
+          .doc("taste")
+          .get()
+      ).exists
+    ).toBe(false);
+  });
+
+  it("rejects a stale feed generation after preferences change", async () => {
+    const uid = await currentUid();
+    await patchUser(
+      auth(token, "PATCH", { privacy: { personalization: false } })
+    );
+    await writeFeedSnapshot(
+      uid,
+      "you-might-like",
+      { personalized: true, items: [{ trackId: "t1" }] },
+      0
+    );
+    expect(await readFeedSnapshot(uid, "you-might-like", false)).toBeNull();
   });
 });

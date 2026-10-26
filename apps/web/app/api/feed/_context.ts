@@ -33,7 +33,12 @@ async function readFeedContext(uid: string): Promise<FeedContext> {
   const [tasteSnap, owned, stateSnap] = await Promise.all([
     db.collection("users").doc(uid).collection("views").doc("taste").get(),
     db.collection("collections").where("ownerId", "==", uid).get(),
-    db.collection("users").doc(uid).collection("trackState").get(),
+    db
+      .collection("users")
+      .doc(uid)
+      .collection("trackState")
+      .where("isLiked", "==", true)
+      .get(),
   ]);
   type TasteEvent = Omit<StatEvent, "startedAtMs"> &
     Pick<Track, "artists" | "labels"> & {
@@ -46,11 +51,14 @@ async function readFeedContext(uid: string): Promise<FeedContext> {
   const events: StatEvent[] = storedEvents.map((e) => {
     return {
       ...e,
-      startedAtMs: typeof e.startedAtMs === "number"
-        ? e.startedAtMs
-        : typeof e.startedAt === "number"
-          ? e.startedAt
-          : (e.startedAt as unknown as { toMillis?: () => number })?.toMillis?.() ?? 0,
+      startedAtMs:
+        typeof e.startedAtMs === "number"
+          ? e.startedAtMs
+          : typeof e.startedAt === "number"
+            ? e.startedAt
+            : ((
+                e.startedAt as unknown as { toMillis?: () => number }
+              )?.toMillis?.() ?? 0),
     };
   });
 
@@ -73,7 +81,10 @@ async function readFeedContext(uid: string): Promise<FeedContext> {
   const completionCounts = new Map<string, number>();
   for (const event of events) {
     if (event.completed) {
-      completionCounts.set(event.trackId, (completionCounts.get(event.trackId) ?? 0) + 1);
+      completionCounts.set(
+        event.trackId,
+        (completionCounts.get(event.trackId) ?? 0) + 1
+      );
     }
   }
   const topPlayed = [...completionCounts]
@@ -89,6 +100,9 @@ async function readFeedContext(uid: string): Promise<FeedContext> {
       trackId: event.trackId,
       artists: event.artists ?? [],
       labels: event.labels ?? [],
+      labelIds:
+        (event as unknown as { labelIds?: string[] }).labelIds ??
+        (event.labels ?? []).map((l) => l.label),
     } as Track);
   }
   const missingLiked = likedTrackIds.filter((id) => !tasteTracks.has(id));
@@ -104,11 +118,15 @@ async function readFeedContext(uid: string): Promise<FeedContext> {
   return { events, exclude, topPlayed, likedTrackIds, tasteTracks };
 }
 
-export function loadFeedContext(uid: string): Promise<FeedContext> {
+export function loadFeedContext(
+  uid: string,
+  refresh = false
+): Promise<FeedContext> {
+  if (refresh) contextCache.delete(uid);
   const cached = contextCache.get(uid);
   if (cached && cached.expiresAt > Date.now()) return cached.value;
   const value = readFeedContext(uid).catch((error) => {
-    contextCache.delete(uid);
+    if (contextCache.get(uid)?.value === value) contextCache.delete(uid);
     throw error;
   });
   contextCache.set(uid, { expiresAt: Date.now() + CACHE_MS, value });
@@ -117,4 +135,8 @@ export function loadFeedContext(uid: string): Promise<FeedContext> {
 
 export function invalidateFeedContext(uid: string): void {
   contextCache.delete(uid);
+}
+
+export function clearFeedContextCache(): void {
+  contextCache.clear();
 }

@@ -10,7 +10,6 @@ import {
 } from "@/lib/catalog/__integration__/emulator";
 import type { CatalogProvider } from "@/lib/catalog/provider";
 import type { ProviderTrack } from "@/lib/catalog/types";
-import type { Track } from "@/lib/catalog/model";
 
 import { GET as searchGET } from "./search/route";
 import { GET as browseGET } from "./tracks/route";
@@ -104,7 +103,7 @@ describe("GET /api/catalog/search", () => {
     expect(res.status).toBe(400);
   });
 
-  it("hides non-embeddable tracks and ingests the rest into real Firestore", async () => {
+  it("hides non-embeddable tracks without persisting transient search results", async () => {
     const res = await searchGET(req("/api/catalog/search?q=daft+punk", token));
     expect(res.status).toBe(200);
 
@@ -117,15 +116,10 @@ describe("GET /api/catalog/search", () => {
 
     // the blocked track never reached the store
     const stored = await adminDb().collection("tracks").get();
-    expect(stored.docs.map((d) => d.id).sort()).toEqual([
-      "playable1",
-      "playable2",
-    ]);
-
-    const one = (
-      await adminDb().collection("tracks").doc("playable1").get()
-    ).data() as Track;
-    expect(one.texture).toBe(textureForId("playable1"));
+    expect(stored.size).toBe(0);
+    expect(body.tracks[0]).toMatchObject({
+      texture: textureForId("playable1"),
+    });
   });
 
   it("serves the second identical query from the cache", async () => {

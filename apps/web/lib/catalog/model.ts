@@ -164,7 +164,7 @@ export type User = {
   email: string;
   avatarUrl: string | null;
   bio: string | null;
-  authProvider: "google" | "facebook";
+  authProvider: "google" | "facebook" | "guest";
   counts: {
     followerCount: number;
     followingCount: number;

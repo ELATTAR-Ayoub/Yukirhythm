@@ -21,7 +21,12 @@ export interface MockTrack {
   labels?: {
     label: string;
     kind: "genre" | "mood";
-    source: "youtube-category" | "youtube-keywords" | "provider-topic" | "inferred" | "user";
+    source:
+      | "youtube-category"
+      | "youtube-keywords"
+      | "provider-topic"
+      | "inferred"
+      | "user";
     confidence: number;
   }[];
   /** Shared catalogue-selected start of the ten-second audition. */
@@ -45,6 +50,8 @@ export function previewStartForTrack(track: MockTrack): number {
 export type CollectionKind = "music" | "podcast";
 
 export interface MockCollection {
+  ownerId?: string;
+  visibility?: "private" | "unlisted" | "public";
   id: string;
   title: string;
   desc: string;
@@ -69,6 +76,8 @@ export interface MockCollection {
 }
 
 export interface MockUser {
+  authProvider?: "google" | "facebook" | "guest";
+  joinedAtMs?: number;
   id: string;
   userName: string;
   email: string;

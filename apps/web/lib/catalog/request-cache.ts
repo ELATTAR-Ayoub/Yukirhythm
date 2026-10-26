@@ -12,7 +12,6 @@ const flights =
   (root.__yukiRequestFlights = new Map<string, Promise<unknown>>());
 
 export function readRequestCache<T>(key: string): T | null {
-  if (process.env.NODE_ENV === "test") return null;
   const entry = cache.get(key);
   if (!entry) return null;
   if (entry.expiresAt <= Date.now()) {
@@ -23,13 +22,21 @@ export function readRequestCache<T>(key: string): T | null {
 }
 
 export function writeRequestCache<T>(key: string, value: T, ttlMs: number): T {
-  if (process.env.NODE_ENV === "test") return value;
+  // Bound process memory even when users issue many unique search queries.
+  if (!cache.has(key) && cache.size >= 500)
+    cache.delete(cache.keys().next().value!);
   cache.set(key, { expiresAt: Date.now() + ttlMs, value });
   return value;
 }
 
 export function invalidateRequestCache(key: string): void {
   cache.delete(key);
+  flights.delete(key);
+}
+
+export function clearRequestCache(): void {
+  cache.clear();
+  flights.clear();
 }
 
 export async function cachedSingleFlight<T>(
@@ -38,12 +45,19 @@ export async function cachedSingleFlight<T>(
   load: () => Promise<T>
 ): Promise<T> {
   const cached = readRequestCache<T>(key);
-  if (cached) return cached;
+  if (cached !== null) return cached;
   const running = flights.get(key) as Promise<T> | undefined;
   if (running) return running;
-  const request = load()
-    .then((value) => writeRequestCache(key, value, ttlMs))
-    .finally(() => flights.delete(key));
+  const request: Promise<T> = Promise.resolve()
+    .then(load)
+    .then((value) =>
+      flights.get(key) === request
+        ? writeRequestCache(key, value, ttlMs)
+        : value
+    )
+    .finally(() => {
+      if (flights.get(key) === request) flights.delete(key);
+    });
   flights.set(key, request);
   return request;
 }

@@ -45,11 +45,14 @@ export default function StatsScreen() {
     <div className="space-y-10">
       <div>
         <BackHeader title="Listening stats" fallbackHref={`${BASE}/profile`} />
+        <p className="type-small text-muted-foreground mb-4">
+          Based on the latest 2,000 saved listens in this browser.
+        </p>
         <div className="grid grid-cols-2 gap-3">
           <StatCard label="This week" value={`${stats.minutesWeek} min`} />
           <StatCard label="This month" value={`${stats.minutesMonth} min`} />
           <StatCard
-            label="All time"
+            label="Tracked time"
             value={`${Math.round(stats.minutesAllTime / 60)} hrs`}
           />
           <StatCard

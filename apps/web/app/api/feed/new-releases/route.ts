@@ -81,10 +81,11 @@ export async function GET(req: Request): Promise<Response> {
   const db = adminDb();
   const [userSnap, ctx, provider] = await Promise.all([
     db.collection("users").doc(uid).get(),
-    loadFeedContext(uid),
+    loadFeedContext(uid, new URL(req.url).searchParams.get("refresh") === "1"),
     getCatalogProvider(),
   ]);
-  const user = userSnap.data() as User | undefined;
+  const user = userSnap.data() as
+    (User & { feedRevision?: number }) | undefined;
   const personalized = user?.privacy?.personalization !== false;
 
   const taste = buildRecentTasteProfile(
@@ -170,7 +171,9 @@ export async function GET(req: Request): Promise<Response> {
   // still query/taste matched and embeddable; it only backfills empty slots.
   const rankedPool = [
     ...dated,
-    ...all.filter((track) => !dated.some((recent) => recent.trackId === track.trackId)),
+    ...all.filter(
+      (track) => !dated.some((recent) => recent.trackId === track.trackId)
+    ),
   ];
 
   const ranked = scoreNewReleases(
@@ -187,6 +190,6 @@ export async function GET(req: Request): Promise<Response> {
   );
 
   const result = { personalized, items };
-  await writeFeedSnapshot(uid, "new-releases", result);
+  await writeFeedSnapshot(uid, "new-releases", result, user?.feedRevision ?? 0);
   return Response.json(result);
 }

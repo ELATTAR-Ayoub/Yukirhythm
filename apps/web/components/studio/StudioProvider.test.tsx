@@ -20,6 +20,7 @@ const { backend, authState, hiddenPlayer } = vi.hoisted(() => ({
     props: null as null | {
       onReady: () => void;
       onProgress?: (s: { playedSeconds: number }) => void;
+      onError?: () => void;
       playerRef?: { current: unknown };
     },
     seekTo: vi.fn(),
@@ -38,6 +39,8 @@ const { backend, authState, hiddenPlayer } = vi.hoisted(() => ({
       library: vi.fn().mockResolvedValue({ collections: [], tracks: [] }),
       setTrackState: vi.fn().mockResolvedValue({}),
       setPin: vi.fn().mockResolvedValue({}),
+      update: vi.fn(),
+      clearHistory: vi.fn().mockResolvedValue({ ok: true }),
       playback: {
         get: vi.fn().mockResolvedValue({ queue: [], trackId: null }),
         save: vi.fn().mockResolvedValue({}),
@@ -46,7 +49,12 @@ const { backend, authState, hiddenPlayer } = vi.hoisted(() => ({
         removeFromQueue: vi.fn().mockResolvedValue({}),
       },
     },
-    collections: { list: vi.fn(), create: vi.fn() },
+    collections: {
+      list: vi.fn(),
+      create: vi.fn(),
+      addTrack: vi.fn(),
+      removeTrack: vi.fn(),
+    },
     feed: {
       jumpBackIn: vi.fn().mockRejectedValue(new Error("no")),
       newReleases: vi.fn().mockRejectedValue(new Error("no")),
@@ -90,6 +98,117 @@ vi.mock("next/dynamic", () => ({
 }));
 
 import StudioProvider from "./StudioProvider";
+import { toast } from "sonner";
+vi.mock("sonner", () => ({ toast: { error: vi.fn() } }));
+
+function LikesProbe() {
+  const {
+    collections,
+    libraryLoading,
+    isLiked,
+    toggleLike,
+    toggleTrackInCollection,
+  } = useMockStudio();
+  return (
+    <>
+      <div data-testid="likes-loading">{String(libraryLoading)}</div>
+      <div data-testid="heart">{String(isLiked("t1"))}</div>
+      <div data-testid="like-members">
+        {collections.find((c) => c.id === "liked")?.trackIds.join(",")}
+      </div>
+      <button onClick={() => void toggleLike("t1")}>heart</button>
+      <button onClick={() => void toggleTrackInCollection("liked", "t1")}>
+        check-liked
+      </button>
+    </>
+  );
+}
+
+describe("StudioProvider durable likes", () => {
+  beforeEach(() => {
+    backend.collections.list.mockResolvedValue([]);
+    backend.me.likes.mockResolvedValue({ trackIds: [], tracks: [] });
+    backend.me.setTrackState.mockReset().mockResolvedValue({});
+    backend.collections.addTrack.mockClear();
+    backend.collections.removeTrack.mockClear();
+    vi.mocked(toast.error).mockClear();
+  });
+
+  async function mountLikes() {
+    render(
+      <StudioProvider>
+        <LikesProbe />
+      </StudioProvider>
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId("likes-loading")).toHaveTextContent("false")
+    );
+  }
+
+  it("uses the likes API for the virtual playlist checklist in both directions", async () => {
+    await mountLikes();
+    fireEvent.click(screen.getByText("check-liked"));
+    await waitFor(() =>
+      expect(backend.me.setTrackState).toHaveBeenLastCalledWith("t1", {
+        isLiked: true,
+      })
+    );
+    expect(screen.getByTestId("heart")).toHaveTextContent("true");
+    expect(screen.getByTestId("like-members")).toHaveTextContent("t1");
+    fireEvent.click(screen.getByText("check-liked"));
+    await waitFor(() =>
+      expect(backend.me.setTrackState).toHaveBeenLastCalledWith("t1", {
+        isLiked: false,
+      })
+    );
+    expect(screen.getByTestId("heart")).toHaveTextContent("false");
+    expect(backend.collections.addTrack).not.toHaveBeenCalled();
+    expect(backend.collections.removeTrack).not.toHaveBeenCalled();
+  });
+
+  it("does not overwrite a successful like with an older library response", async () => {
+    await mountLikes();
+    const reads = backend.me.likes.mock.calls.length;
+    fireEvent.click(screen.getByText("heart"));
+    await act(async () => {});
+    expect(screen.getByTestId("heart")).toHaveTextContent("true");
+    expect(screen.getByTestId("like-members")).toHaveTextContent("t1");
+    expect(backend.me.likes).toHaveBeenCalledTimes(reads);
+  });
+
+  it("persists the final intent when a heart is toggled before its first write completes", async () => {
+    await mountLikes();
+    let finish!: (value: unknown) => void;
+    backend.me.setTrackState.mockReturnValueOnce(
+      new Promise((resolve) => {
+        finish = resolve;
+      })
+    );
+    fireEvent.click(screen.getByText("heart"));
+    fireEvent.click(screen.getByText("heart"));
+    expect(screen.getByTestId("heart")).toHaveTextContent("false");
+    expect(backend.me.setTrackState).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      finish({});
+    });
+    expect(backend.me.setTrackState).toHaveBeenLastCalledWith("t1", {
+      isLiked: false,
+    });
+    expect(screen.getByTestId("heart")).toHaveTextContent("false");
+  });
+
+  it("rolls back a failed write and allows retry", async () => {
+    await mountLikes();
+    backend.me.setTrackState.mockRejectedValueOnce(new Error("offline"));
+    fireEvent.click(screen.getByText("heart"));
+    await waitFor(() => expect(toast.error).toHaveBeenCalled());
+    expect(screen.getByTestId("heart")).toHaveTextContent("false");
+    expect(screen.getByTestId("like-members")).toBeEmptyDOMElement();
+    fireEvent.click(screen.getByText("heart"));
+    await act(async () => {});
+    expect(screen.getByTestId("heart")).toHaveTextContent("true");
+  });
+});
 
 /** Minimal catalog Track fixture — mirrors the one in adapt.test.ts. Only the
  *  fields toStudioTrack actually reads need real values. */
@@ -622,6 +741,108 @@ describe("StudioProvider playback session restore", () => {
     );
     expect(events).toEqual([]);
     expect(backend.events.ingest).not.toHaveBeenCalled();
+  });
+
+  it("restores a saved volume even when the queue is empty", async () => {
+    seedPlayback({ volume: 0.35, queue: [], trackId: null });
+    render(
+      <StudioProvider>
+        <PlaybackProbe />
+      </StudioProvider>
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId("volume")).toHaveTextContent("0.35")
+    );
+    expect(screen.getByTestId("now-playing")).toHaveTextContent("none");
+  });
+
+  it("settles the transport and reports an unplayable video", async () => {
+    render(
+      <StudioProvider>
+        <PlaybackProbe />
+      </StudioProvider>
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId("collections-count")).toHaveTextContent("1")
+    );
+    fireEvent.click(screen.getByText("play-user-track"));
+    act(() => hiddenPlayer.props?.onError?.());
+    expect(screen.getByTestId("is-loading")).toHaveTextContent("false");
+    expect(screen.getByTestId("is-playing")).toHaveTextContent("false");
+    expect(toast.error).toHaveBeenCalled();
+  });
+
+  it("does not record locally or upload when history consent is off", async () => {
+    backend.me.get.mockResolvedValueOnce({
+      userId: "u1",
+      displayName: "Yuki",
+      privacy: { saveHistory: false },
+    });
+    render(
+      <StudioProvider>
+        <PlaybackProbe />
+      </StudioProvider>
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId("collections-count")).toHaveTextContent("1")
+    );
+    fireEvent.click(screen.getByText("play-recommendation"));
+    act(() => {
+      for (let second = 1; second <= 10; second++)
+        hiddenPlayer.props?.onProgress?.({ playedSeconds: second });
+    });
+    fireEvent.click(screen.getByText("next"));
+    expect(localStorage.getItem("yukirhythm:history:v1:u1")).toBeNull();
+    expect(localStorage.getItem("yukirhythm:listens:v2:u1")).toBeNull();
+    expect(backend.events.ingest).not.toHaveBeenCalled();
+  });
+
+  it("does not include privacy-off listening when history is re-enabled", async () => {
+    function PrivacyProbe() {
+      const { updatePrivacy } = useMockStudio();
+      return (
+        <>
+          <PlaybackProbe />
+          <button onClick={() => void updatePrivacy({ saveHistory: false })}>
+            disable-history
+          </button>
+          <button onClick={() => void updatePrivacy({ saveHistory: true })}>
+            enable-history
+          </button>
+        </>
+      );
+    }
+    backend.me.update.mockImplementation(
+      async ({ privacy }: { privacy: { saveHistory: boolean } }) => ({
+        privacy: { ...privacy, personalization: true, publicProfile: false },
+      })
+    );
+    render(
+      <StudioProvider>
+        <PrivacyProbe />
+      </StudioProvider>
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId("collections-count")).toHaveTextContent("1")
+    );
+    fireEvent.click(screen.getByText("play-recommendation"));
+    await act(async () => {
+      fireEvent.click(screen.getByText("disable-history"));
+    });
+    act(() => {
+      for (let second = 1; second <= 30; second++)
+        hiddenPlayer.props?.onProgress?.({ playedSeconds: second });
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByText("enable-history"));
+    });
+    act(() => {
+      for (let second = 31; second <= 33; second++)
+        hiddenPlayer.props?.onProgress?.({ playedSeconds: second });
+    });
+    fireEvent.click(screen.getByText("next"));
+    expect(backend.events.ingest).not.toHaveBeenCalled();
+    expect(localStorage.getItem("yukirhythm:listens:v2:u1")).toBeNull();
   });
 
   it("counts heard seconds instead of seek position and persists recommendation attribution once", async () => {

@@ -13,7 +13,7 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <StudioProvider>
+    <StudioProvider authOnly>
       {children}
       <Toaster />
     </StudioProvider>

@@ -1,11 +1,14 @@
+import { readJsonObject } from "@/lib/api/request-body";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/firebase/admin";
 import { uidFromRequest, unauthorized } from "@/lib/firebase/verify";
 import { textureForId } from "@/lib/catalog/texture";
+import { ensureTrack } from "@/lib/catalog/ensure-track";
 import {
   type Collection,
   type CollectionTrack,
   type Track,
+  MAX_TRACKS_PER_COLLECTION,
 } from "@/lib/catalog/model";
 import {
   COLLECTION_MAX_BYTES,
@@ -37,13 +40,29 @@ export async function GET(req: Request): Promise<Response> {
   const savedCollections: Collection[] = [];
   for (const s of saved.docs) {
     const c = await db.collection("collections").doc(s.id).get();
-    if (c.exists && (c.data() as Collection).visibility !== "private") {
+    if (
+      c.exists &&
+      ["public", "unlisted"].includes((c.data() as Collection).visibility)
+    ) {
       savedCollections.push(c.data() as Collection);
     }
   }
 
   // Owned and saved are distinguishable by ownerId (saved have ownerId !== uid).
-  return Response.json([...owned, ...savedCollections]);
+  const pins = await db
+    .collection("users")
+    .doc(uid)
+    .collection("collectionState")
+    .where("isPinned", "==", true)
+    .get();
+  const pinnedIds = new Set(pins.docs.map((doc) => doc.id));
+  return Response.json(
+    [...owned, ...savedCollections].map((collection) => ({
+      ...collection,
+      isPinned: pinnedIds.has(collection.collectionId),
+    })),
+    { headers: { "Cache-Control": "private, no-store" } }
+  );
 }
 
 /**
@@ -54,7 +73,7 @@ export async function POST(req: Request): Promise<Response> {
   const uid = await uidFromRequest(req);
   if (!uid) return unauthorized();
 
-  const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+  const body = (await readJsonObject(req)) as Record<string, unknown>;
   const title = typeof body.title === "string" ? body.title.trim() : "";
   if (!title)
     return Response.json({ error: "Title is required" }, { status: 400 });
@@ -67,6 +86,24 @@ export async function POST(req: Request): Promise<Response> {
     ? body.trackIds.filter((t): t is string => typeof t === "string")
     : [];
   const uniqueTrackIds = [...new Set(rawTrackIds)];
+  if (
+    uniqueTrackIds.length > MAX_TRACKS_PER_COLLECTION ||
+    uniqueTrackIds.some((id) => !id || id.length > 300 || id.includes("/"))
+  ) {
+    return Response.json({ error: "Invalid track list" }, { status: 400 });
+  }
+  if (
+    title.length > 300 ||
+    (typeof body.description === "string" && body.description.length > 5000) ||
+    (Array.isArray(body.tags) &&
+      (body.tags.length > 20 ||
+        body.tags.some((tag) => typeof tag !== "string" || tag.length > 60)))
+  ) {
+    return Response.json(
+      { error: "Playlist details are too long" },
+      { status: 400 }
+    );
+  }
   const trackRefs = uniqueTrackIds.map((trackId) =>
     db.collection("tracks").doc(trackId)
   );
@@ -74,6 +111,15 @@ export async function POST(req: Request): Promise<Response> {
   const trackById = new Map<string, Track>();
   for (const snap of trackSnaps) {
     if (snap.exists) trackById.set(snap.id, snap.data() as Track);
+    else {
+      const track = await ensureTrack(snap.id);
+      if (!track)
+        return Response.json(
+          { error: "Track is unavailable" },
+          { status: 404 }
+        );
+      trackById.set(snap.id, track);
+    }
   }
   const tracks: CollectionTrack[] = [];
   let totalDurationSec = 0;

@@ -1,8 +1,9 @@
+import { readJsonObject } from "@/lib/api/request-body";
 import { Timestamp } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/firebase/admin";
 import { uidFromRequest, unauthorized } from "@/lib/firebase/verify";
-import { invalidateRequestCache } from "@/lib/catalog/request-cache";
 import { invalidateFeedContext } from "../../../feed/_context";
+import { ensureTrack } from "@/lib/catalog/ensure-track";
 
 export const runtime = "nodejs";
 
@@ -18,8 +19,12 @@ export async function PUT(req: Request, { params }: Params): Promise<Response> {
   if (!uid) return unauthorized();
 
   const { trackId } = await params;
-  const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+  const body = (await readJsonObject(req)) as Record<string, unknown>;
   const patch: Record<string, unknown> = { trackId };
+
+  if (body.isLiked === true && !(await ensureTrack(trackId))) {
+    return Response.json({ error: "Track is unavailable" }, { status: 404 });
+  }
 
   if (typeof body.isLiked === "boolean") {
     patch.isLiked = body.isLiked;
@@ -39,7 +44,6 @@ export async function PUT(req: Request, { params }: Params): Promise<Response> {
 
   await ref.set(patch, { merge: true });
   if (typeof body.isLiked === "boolean") {
-    invalidateRequestCache(`likes:${uid}`);
     invalidateFeedContext(uid);
   }
   return Response.json(patch);

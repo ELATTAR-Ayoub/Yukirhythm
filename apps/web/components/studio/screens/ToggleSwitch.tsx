@@ -6,6 +6,7 @@ interface ToggleSwitchProps {
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
   "aria-label": string;
+  disabled?: boolean;
 }
 
 /** Dependency-free switch for the privacy toggles. */
@@ -13,6 +14,7 @@ export default function ToggleSwitch({
   checked,
   onCheckedChange,
   "aria-label": ariaLabel,
+  disabled,
 }: ToggleSwitchProps) {
   return (
     <button
@@ -20,6 +22,7 @@ export default function ToggleSwitch({
       role="switch"
       aria-checked={checked}
       aria-label={ariaLabel}
+      disabled={disabled}
       onClick={() => onCheckedChange(!checked)}
       className={cn(
         "relative inline-flex h-6 w-10 shrink-0 items-center rounded-full border border-border",

@@ -21,6 +21,7 @@ import {
   DELETE as removeTrack,
 } from "./[collectionId]/tracks/[trackId]/route";
 import { PATCH as reorder } from "./[collectionId]/tracks/route";
+import { GET as listPublic } from "./public/route";
 
 function providerTrack(id: string, durationSec: number): ProviderTrack {
   return {
@@ -187,6 +188,71 @@ describe("collections against real Firestore", () => {
       await getCollection(auth(token), params)
     ).json()) as Collection;
     expect(c.title).toBe("New");
+  });
+});
+
+describe("collection mutation races and validation", () => {
+  beforeEach(async () => {
+    await clearFirestore();
+    await ingestTracks([providerTrack("t1", 120), providerTrack("t2", 120)]);
+    await freshUsers();
+  });
+  it("rejects duplicate track IDs in a reorder instead of dropping another song", async () => {
+    const saved = await (
+      await createCollection(j({ title: "Mix", trackIds: ["t1", "t2"] }, token))
+    ).json();
+    const ctx = {
+      params: Promise.resolve({ collectionId: saved.collectionId }),
+    };
+    expect(
+      (await reorder(j({ trackIds: ["t1", "t1"] }, token, "PATCH"), ctx)).status
+    ).toBe(400);
+    const after = await (await getCollection(auth(token), ctx)).json();
+    expect(after.tracks.map((t: { trackId: string }) => t.trackId)).toEqual([
+      "t1",
+      "t2",
+    ]);
+  });
+  it("decrements the collection count once when two deletes race", async () => {
+    const saved = await (
+      await createCollection(j({ title: "Mix" }, token))
+    ).json();
+    const ctx = {
+      params: Promise.resolve({ collectionId: saved.collectionId }),
+    };
+    const responses = await Promise.all([
+      deleteCollection(auth(token, "DELETE"), ctx),
+      deleteCollection(auth(token, "DELETE"), ctx),
+    ]);
+    expect(responses.map((r) => r.status).sort()).toEqual([200, 404]);
+    expect(
+      (await adminDb().collection("users").doc(saved.ownerId).get()).data()
+        ?.counts.collectionCount
+    ).toBe(0);
+  });
+  it("keeps unlisted collections out of profile discovery while allowing direct links", async () => {
+    const saved = await (
+      await createCollection(j({ title: "Unlisted" }, token))
+    ).json();
+    const ctx = {
+      params: Promise.resolve({ collectionId: saved.collectionId }),
+    };
+    await patchCollection(j({ visibility: "unlisted" }, token, "PATCH"), ctx);
+    expect((await getCollection(auth(otherToken), ctx)).status).toBe(200);
+    const listing = await listPublic(
+      new Request(
+        `http://localhost/api/collections/public?ownerId=${saved.ownerId}`,
+        { headers: { Authorization: `Bearer ${otherToken}` } }
+      )
+    );
+    expect(await listing.json()).toEqual([]);
+  });
+  it("treats null JSON and invalid track paths as validation errors", async () => {
+    expect((await createCollection(j(null, token))).status).toBe(400);
+    expect(
+      (await createCollection(j({ title: "Bad", trackIds: ["a/b"] }, token)))
+        .status
+    ).toBe(400);
   });
 });
 

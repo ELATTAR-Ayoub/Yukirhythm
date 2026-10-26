@@ -1,3 +1,4 @@
+import { readJsonObject } from "@/lib/api/request-body";
 import { Timestamp } from "firebase-admin/firestore";
 import { gone } from "@/lib/api/disabled";
 import { adminDb } from "@/lib/firebase/admin";
@@ -19,7 +20,8 @@ const asStringArray = (v: unknown): string[] | undefined =>
     : undefined;
 
 export async function GET(req: Request): Promise<Response> {
-  if (process.env.ENABLE_LEGACY_PLAYBACK_SYNC !== "true") return gone("Playback sync");
+  if (process.env.ENABLE_LEGACY_PLAYBACK_SYNC !== "true")
+    return gone("Playback sync");
   const uid = await uidFromRequest(req);
   if (!uid) return unauthorized();
 
@@ -36,11 +38,12 @@ export async function GET(req: Request): Promise<Response> {
  * ~10s and on pause/stop/unload, not every tick.
  */
 export async function PUT(req: Request): Promise<Response> {
-  if (process.env.ENABLE_LEGACY_PLAYBACK_SYNC !== "true") return gone("Playback sync");
+  if (process.env.ENABLE_LEGACY_PLAYBACK_SYNC !== "true")
+    return gone("Playback sync");
   const uid = await uidFromRequest(req);
   if (!uid) return unauthorized();
 
-  const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+  const body = (await readJsonObject(req)) as Record<string, unknown>;
   const patch: Partial<PlaybackState> = { updatedAt: Timestamp.now() };
 
   if (body.trackId === null || typeof body.trackId === "string")

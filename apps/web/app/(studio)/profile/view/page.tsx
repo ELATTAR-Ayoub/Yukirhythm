@@ -5,14 +5,13 @@ import BackHeader from "@/components/studio/screens/BackHeader";
 import SignInPrompt from "@/components/studio/screens/SignInPrompt";
 import StatCard from "@/components/studio/screens/StatCard";
 import { useMockStudio } from "@/components/studio/screens/MockStudioProvider";
-import { MOCK_STATS } from "@/components/studio/screens/mock-data";
 import { SCREENS } from "@/components/studio/shell/routes";
 
 /** Route base — the app lives at the root (see shell/routes.ts). */
 const BASE = SCREENS;
 
 export default function ViewProfileScreen() {
-  const { user } = useMockStudio();
+  const { user, stats } = useMockStudio();
   if (!user) return <SignInPrompt />;
 
   return (
@@ -26,17 +25,23 @@ export default function ViewProfileScreen() {
         </Avatar>
         <h2 className="font-display font-bold text-2xl">{user.userName}</h2>
         <p className="type-small text-muted-foreground">{user.email}</p>
-        <p className="font-label text-[10px] uppercase tracking-wider text-muted-foreground">
-          Joined March 2024
-        </p>
+        {user.joinedAtMs ? (
+          <p className="font-label text-[10px] uppercase tracking-wider text-muted-foreground">
+            Joined{" "}
+            {new Intl.DateTimeFormat("en", {
+              month: "long",
+              year: "numeric",
+            }).format(user.joinedAtMs)}
+          </p>
+        ) : null}
       </div>
       <div className="grid grid-cols-3 gap-3">
         <StatCard label="Followers" value={String(user.followers)} />
         <StatCard label="Following" value={String(user.following)} />
         <StatCard
           label="Minutes"
-          value={String(MOCK_STATS.minutesMonth)}
-          hint="this month"
+          value={String(stats?.minutesMonth ?? 0)}
+          hint="this month, this browser"
         />
       </div>
     </div>

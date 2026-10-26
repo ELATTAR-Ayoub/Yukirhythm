@@ -1,6 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { devSignIn, signInAsGuest } from "@/lib/studio/useAuth";
+import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -18,6 +21,7 @@ const BASE = SCREENS;
 export default function AuthScreen() {
   const router = useRouter();
   const { user, loading } = useAuthState();
+  const [localSigningIn, setLocalSigningIn] = useState(false);
 
   // The page's only exit: the moment Firebase reports a session — whether the
   // user just signed in here or arrived already signed in — hand off to the
@@ -47,20 +51,62 @@ export default function AuthScreen() {
               Listen your way
             </h1>
             <p className="type-small text-center text-muted-foreground">
-              One account for everything. Sign in or sign up in a single tap.
+              Sign in to sync your library, or listen as a guest on this device.
             </p>
 
             <SocialAuthButtons />
+            <Button
+              variant="outline"
+              onClick={() => {
+                try {
+                  signInAsGuest();
+                } catch {
+                  toast.error(
+                    "Guest mode needs browser storage. Allow local storage and try again."
+                  );
+                }
+              }}
+            >
+              Continue as guest
+            </Button>
+            <p className="type-small text-center text-muted-foreground">
+              Guest likes, playlists, history, and preferences stay in this
+              browser. Clearing site data removes them.
+            </p>
+            {process.env.NODE_ENV === "development" &&
+            process.env.NEXT_PUBLIC_AUTH_EMULATOR ? (
+              <Button
+                variant="outline"
+                disabled={localSigningIn}
+                onClick={async () => {
+                  setLocalSigningIn(true);
+                  try {
+                    await devSignIn(
+                      "local-audit@example.test",
+                      "local-emulator-only"
+                    );
+                  } catch {
+                    toast.error(
+                      "Local emulator sign-in failed. Check that the emulators are running."
+                    );
+                  } finally {
+                    setLocalSigningIn(false);
+                  }
+                }}
+              >
+                {localSigningIn ? "Signing in…" : "Use local test account"}
+              </Button>
+            ) : null}
 
             <p className="type-label normal-case tracking-normal font-normal text-muted-foreground text-center">
-              By continuing you agree to the mock{" "}
+              By continuing you agree to the{" "}
               <Link
                 href={`${BASE}/terms`}
                 className="text-foreground underline underline-offset-2 hover:text-primary transition-colors duration-fast"
               >
                 Terms
               </Link>
-              . Nothing here touches the network.
+              .
             </p>
           </div>
         </TextureBackground>
