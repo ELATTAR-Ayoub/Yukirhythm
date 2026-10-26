@@ -1,5 +1,6 @@
 import { uidFromRequest, unauthorized } from "@/lib/firebase/verify";
-import { getCatalogProvider } from "@/lib/catalog/provider";
+import { searchCatalog } from "@/lib/catalog/search";
+import { catalogSearchKey } from "@/lib/catalog/youtube-input";
 import { toTrackDoc } from "@/lib/catalog/ingest";
 import { cachedSingleFlight } from "@/lib/catalog/request-cache";
 import type { CatalogSearchType } from "@/lib/catalog/types";
@@ -29,12 +30,10 @@ export async function GET(req: Request): Promise<Response> {
 
   try {
     const body = await cachedSingleFlight<SearchResponse>(
-      `search:v2:${type}:${q.toLocaleLowerCase()}:${DEFAULT_LIMIT}`,
+      `search:v3:${type}:${catalogSearchKey(q)}:${DEFAULT_LIMIT}`,
       15 * 60 * 1000,
       async () => {
-        const result = await (
-          await getCatalogProvider()
-        ).search(q, { type, limit: DEFAULT_LIMIT });
+        const result = await searchCatalog(q, { type, limit: DEFAULT_LIMIT });
         return {
           query: result.query,
           type: result.type,

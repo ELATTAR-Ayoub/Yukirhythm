@@ -1,6 +1,8 @@
 import { getCatalogProvider } from "@/lib/catalog/provider";
 import { toArtistDoc, toTrackDoc } from "@/lib/catalog/ingest";
 import { cachedSingleFlight } from "@/lib/catalog/request-cache";
+import { searchCatalog } from "@/lib/catalog/search";
+import { catalogSearchKey } from "@/lib/catalog/youtube-input";
 
 /** Public, read-only provider access. Never creates Firebase users or database documents. */
 export async function GET(req: Request): Promise<Response> {
@@ -19,7 +21,7 @@ export async function GET(req: Request): Promise<Response> {
   }
   try {
     const result = await cachedSingleFlight(
-      `guest-catalog:v1:${op}:${q.toLowerCase()}:${id}`,
+      `guest-catalog:v2:${op}:${op === "search" ? catalogSearchKey(q) : q.toLowerCase()}:${id}`,
       15 * 60_000,
       async () => {
         const provider = await getCatalogProvider();
@@ -35,7 +37,7 @@ export async function GET(req: Request): Promise<Response> {
         const tracks =
           op === "similar"
             ? await provider.getRelatedTracks(id)
-            : (await provider.search(q, { type: "song", limit: 40 })).tracks;
+            : (await searchCatalog(q, { type: "song", limit: 40 })).tracks;
         return {
           tracks: tracks.filter((t) => t.isEmbeddable).map(toTrackDoc),
           artists: [],

@@ -96,7 +96,7 @@ export default function SearchScreen() {
           onChange={(e) => onChange(e.target.value)}
           type="search"
           enterKeyHint="search"
-          placeholder="Tracks, artists, collections…"
+          placeholder="Tracks, artists, YouTube ID or link…"
           aria-label="Search"
           className="pl-9"
         />
